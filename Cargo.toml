@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "bindings",
+    "matching_engine",
+    "helper",
+    "matching_engine_client",
+    "ivs_client",
+    "generator_client",
+    "listener"
+]

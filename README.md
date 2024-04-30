@@ -1,2 +1,1 @@
-# kalypso-unified
-All Common Components of Kalypso
+All common components of Kalypso in a single repository

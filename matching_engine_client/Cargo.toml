@@ -1,0 +1,26 @@
+[package]
+name = "matching_engine_client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde_json="1.0"
+bindings = { path = "../bindings", package = "foundry-contracts" }
+serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.16.1", features = ["full"] }
+actix-web = "4.3.0"
+openssl = { version = "0.10", features = ["vendored"] }
+ecies = {version = "0.2.6", features = ["std"]}
+dotenv = "0.15.0"
+validator = { version = "0.18.1", features = ["derive"] }
+env_logger = "0.11.3"
+log = "0.4"
+hex = "0.4"
+futures-util = "0.3"
+secp256k1 = "0.29.0"
+ethers = {version = "2.0.8", features = ["abigen", "ws", "rustls"] }
+uuid = { version = "1.4.1",features = ["v4","fast-rng","macro-diagnostics"] }
+actix-web-lab="0.20.2"
+serde_bytes = "0.11.14"
