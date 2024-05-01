@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use validator::Validate;
 
 pub struct SupervisordResponse {
@@ -11,23 +12,18 @@ pub struct ApiKeyFile {
     pub api_key: String,
 }
 
-pub struct ApiGenerationResponse {
-    pub api_key: String,
-    pub status: bool,
-    pub message: String,
-}
-
-pub struct VerifyApiResponse {
-    pub status: bool,
-    pub message: String,
-}
-
 #[derive(Serialize, Debug, Deserialize)]
 pub struct GeneratorConfig {
     pub address: String,
     pub ecies_private_key: String,
     pub data: String,
     pub supported_markets: Vec<String>,
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct MarketDetails {
+    pub port: String,
+    pub ivs_url: String,
 }
 
 #[derive(Serialize, Debug, Deserialize)]
@@ -44,7 +40,7 @@ pub struct RuntimeConfig {
     pub staking_token: String,
     pub attestation_verifier: String,
     pub entity_registry: String,
-    pub zkbob_market_id: u64,
+    pub markets: HashMap<String, MarketDetails>,
 }
 
 #[derive(Serialize, Debug, Deserialize)]
@@ -109,8 +105,7 @@ pub struct SetupRequestBodyRuntimeConfig {
     pub attestation_verifier: Option<String>,
     #[validate(required(message = "entity_registry was not provided in the runtime_config"))]
     pub entity_registry: Option<String>,
-    #[validate(required(message = "zkbob_market_id was not provided in the runtime_config"))]
-    pub zkbob_market_id: Option<u64>,
+    pub markets: HashMap<String, MarketDetails>,
 }
 
 #[derive(Serialize, Validate, Deserialize)]
@@ -145,7 +140,7 @@ pub struct UpdateRuntimeConfig {
     pub staking_token: Option<String>,
     pub attestation_verifier: Option<String>,
     pub entity_registry: Option<String>,
-    pub zkbob_market_id: Option<u64>,
+    pub markets: Option<HashMap<String, MarketDetails>>,
 }
 
 #[derive(Serialize, Debug, Validate, Deserialize)]
@@ -203,6 +198,20 @@ pub struct GeneratorPublicKeys {
 
 #[derive(Serialize, Debug, Validate, Deserialize)]
 pub struct SignAddress {
+    #[validate(required(message = "address was not provided in the JSON body"))]
+    pub address: Option<String>,
+}
+
+#[derive(Serialize, Debug, Validate, Deserialize)]
+pub struct SupervisordInputBody {
+    #[validate(required(message = "program_name was not provided in the JSON body"))]
+    pub program_name: Option<String>,
+}
+
+#[derive(Serialize, Debug, Validate, Deserialize)]
+pub struct SignAttestation {
+    #[validate(required(message = "attestation bytes were not provided in the JSON body"))]
+    pub attestation: Option<String>,
     #[validate(required(message = "address was not provided in the JSON body"))]
     pub address: Option<String>,
 }

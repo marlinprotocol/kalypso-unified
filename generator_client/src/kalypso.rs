@@ -6,15 +6,15 @@ use ecies::{PublicKey, SecretKey};
 use ethers::prelude::*;
 use ethers::providers::Provider;
 use ethers::types::U256;
+use reqwest::Response;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use uuid::Uuid;
 
 use crate::model::{
-    AddNewGenerator, ApiGenerationResponse, ApiKeyFile, GeneratorConfig, GeneratorConfigFile,
-    GeneratorPublicKeys, RuntimeConfig, RuntimeConfigFile, SetupRequestBodyGeneratorConfig,
-    SetupRequestBodyRuntimeConfig, UpdateRuntimeConfig, ValidationResponse, VerifyApiResponse,
+    AddNewGenerator, GeneratorConfig, GeneratorConfigFile, GeneratorPublicKeys, RuntimeConfig,
+    RuntimeConfigFile, SetupRequestBodyGeneratorConfig, SetupRequestBodyRuntimeConfig,
+    SignAttestation, UpdateRuntimeConfig, ValidationResponse,
 };
 
 macro_rules! update_field {
@@ -31,78 +31,6 @@ macro_rules! update_u64_field {
             $config.$field = new_value;
         }
     };
-}
-
-//generating API key
-pub async fn generate_api_key() -> Result<ApiGenerationResponse, Box<dyn std::error::Error>> {
-    //Checking if the config folder is already generated, if not creating a new one
-    let folder_path = "../generator_config";
-    if fs::metadata(&folder_path).await.is_ok() {
-        log::info!("generator_config folder already exists!");
-    } else {
-        fs::create_dir(&folder_path)
-            .await
-            .expect("Unable to create new folder");
-    }
-
-    //Checking if the API key was already generated
-    if fs::metadata("../generator_config/api_key.json")
-        .await
-        .is_ok()
-    {
-        log::info!("api_key.json already exists!");
-        return Ok(ApiGenerationResponse {
-            api_key: "".to_string(),
-            status: false,
-            message: "API was already generated. It cannot be generated again".to_string(),
-        });
-    }
-
-    let api_key = Uuid::new_v4();
-    let api_key_file = ApiKeyFile {
-        api_key: api_key.to_string(),
-    };
-    let json_string = serde_json::to_string(&api_key_file)?;
-    let mut file = File::create("../generator_config/api_key.json").await?;
-    tokio::io::AsyncWriteExt::write_all(&mut file, json_string.as_bytes()).await?;
-    Ok(ApiGenerationResponse {
-        api_key: api_key.to_string(),
-        status: true,
-        message: "API key generated. Please save this API key somewhere safe, it cannot be generated again.".to_string(),
-    })
-}
-
-//Verify api key
-pub async fn verify_api_key(
-    request_api_key: &str,
-) -> Result<VerifyApiResponse, Box<dyn std::error::Error>> {
-    //Checking if the API key was already generated
-    if fs::metadata("../generator_config/api_key.json")
-        .await
-        .is_err()
-    {
-        return Ok(VerifyApiResponse {
-            status: false,
-            message: "api_key is not generated".to_string(),
-        });
-    }
-    let file = File::open("../generator_config/api_key.json").await?;
-    let mut buf_reader = tokio::io::BufReader::new(file);
-
-    let mut content = String::new();
-    buf_reader.read_to_string(&mut content).await?;
-
-    let api_key_data: ApiKeyFile = serde_json::from_str(&content)?;
-    if api_key_data.api_key != request_api_key {
-        return Ok(VerifyApiResponse {
-            status: false,
-            message: "Authentication failed, wrong API key provided".to_string(),
-        });
-    }
-    Ok(VerifyApiResponse {
-        status: true,
-        message: "authenticated".to_string(),
-    })
 }
 
 //Get ECIES public key
@@ -229,7 +157,7 @@ pub async fn generate_runtime_file(
             .as_ref()
             .unwrap()
             .to_string(),
-        zkbob_market_id: runtime_config_body.zkbob_market_id.unwrap(),
+        markets: runtime_config_body.markets.clone(),
     };
 
     let generator_config_file = RuntimeConfigFile { runtime_config };
@@ -258,7 +186,9 @@ pub async fn update_runtime_config_with_new_data(
     update_field!(config, json_input, payment_token);
     update_field!(config, json_input, attestation_verifier);
     update_field!(config, json_input, entity_registry);
-    update_u64_field!(config, json_input, zkbob_market_id);
+    if let Some(new_markets_data) = &json_input.markets {
+        config_file.runtime_config.markets = new_markets_data.clone()
+    }
 
     Ok(config_file)
 }
@@ -340,8 +270,6 @@ pub async fn runtime_config_validation(
     chain_id: &i32,
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let key = private_key;
-    let chain_id = chain_id;
-    let rpc_url = rpc_url;
 
     let signer = key
         .parse::<LocalWallet>()
@@ -414,7 +342,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
         log::info!("Trying to fetch the ECIES key");
         // Checking if the generator ECIES pub key is updated in the contracts
         let generator_ecies_pub_key = entity_key_registry_contract
-            .pub_key(converted_generator_address, U256::from_str(&market_id)?)
+            .pub_key(converted_generator_address, U256::from_str(market_id)?)
             .await?;
         if generator_ecies_pub_key.len() < 2 {
             let validation_message = format!(
@@ -489,4 +417,35 @@ pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::E
     let digest = ethers::utils::keccak256(encoded);
     let signature = signer.sign_message(ethers::types::H256(digest)).await?;
     Ok(signature)
+}
+
+pub async fn sign_attest(
+    attestation: SignAttestation,
+) -> Result<Signature, Box<dyn std::error::Error>> {
+    // Using enclave private key for signature
+    let secp_file = fs::read("/app/secp.sec").await?;
+    let secp_private_key = secp256k1::SecretKey::from_slice(&secp_file)
+        .unwrap()
+        .display_secret()
+        .to_string();
+    let signer = secp_private_key.parse::<LocalWallet>().unwrap();
+    let attestation_bytes = attestation.attestation.unwrap();
+    let attestation_string: Vec<&str> = attestation_bytes.split("x").collect();
+    let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
+    let address = attestation.address.unwrap();
+    let values = vec![
+        ethers::abi::Token::Bytes(attestation_decoded),
+        ethers::abi::Token::Address(Address::from_str(&address)?),
+    ];
+    let encoded = ethers::abi::encode(&values);
+    let digest = ethers::utils::keccak256(encoded);
+    let signature = signer.sign_message(ethers::types::H256(digest)).await?;
+    Ok(signature)
+}
+
+//Benchmark proof generation. Return proof generation time in ms.
+pub async fn benchmark(endpoint: String) -> Result<Response, Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let res = client.get(endpoint).send().await?;
+    Ok(res)
 }

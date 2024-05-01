@@ -15,11 +15,10 @@ dotenv = "0.15.0"
 validator = { version = "0.18.1", features = ["derive"] }
 ecies = {version = "0.2.6", features = ["std"]}
 openssl = { version = "0.10", features = ["vendored"] }
-env_logger = "0.11.3"
+env_logger = "0.11"
 log = "0.4"
 hex = "0.4"
 futures-util = "0.3"
 secp256k1 = "0.29.0"
+reqwest = "0.12.4"
 ethers = {version = "2.0.8", features = ["abigen", "ws", "rustls"] }
-uuid = { version = "1.4.1",features = ["v4","fast-rng","macro-diagnostics"] }
-actix-web-lab="0.20.2"

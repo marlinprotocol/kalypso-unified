@@ -23,7 +23,6 @@ environment file for running outside the enclave:
 ```
 PORT=5000
 SUPERVISORD_PATH=./supervisord
-GENERATOR_PATH=kalypso-generator
 ```
 
 `Note : SUPERVISORD_PATH is the path to the supervisord executable`
@@ -31,88 +30,143 @@ GENERATOR_PATH=kalypso-generator
 For running inside enclave, pass this to supervisord:
 
 ```
-environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-generator
+environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord
 ```
 
 
-## Setps to start the generator
+## Steps to start the generator
+1. Register the generator
+   ```
+   yarn test ./test/generatorOperations/1_register.ts
+   ```
 
-<ol>
-  <li>Start the process by generating the api key by making a request to the endpoint: /api/generateApiKey (The generator api-key can only be generated once, so make sure you save it somewhere safe).</li>
-  <li>Generate the config file by making a request to the endpoint: /api/generatorConfigSetup. </li>
-  <li>Perform the SDK calls to register generator for a market: register, joinMarketPlace, updatePubkey ( Note : the attestation document and the generator's public keys can be fetched using the following SDK functions : getAttestation and getGeneratorPublicKeys ).</li>
-  <li>Start the generator by making a request to the endpoint: /api/startGenerator</li>
-</ol>
+2. Stake tokens
+   ```
+   yarn test ./test/generatorOperations/2_stake.ts
+   ```
+
+3. Join a marketplace
+   ```
+   yarn test ./test/generatorOperations/3_join_market_place.ts
+   ```
+
+4. Update the ECIES key with the help of KalypsoSDK
+    ```
+   yarn test ./test/generatorOperations/4_update_ecies_key.ts
+    ```
+5. Generate the config setup by making an HTTP call to the generator client:
+    ```
+   curl --location --request POST 'http://43.205.85.160:5000/api/generatorConfigSetup' \
+   --header 'Content-Type: application/json' \
+   --data-raw '{
+       "generator_config": [
+       {
+         "address": "0x0469866e13cd7DF08f5482FBb127a72fF197365D",
+         "data": "Some data",
+         "supported_markets": [
+           "1"
+         ]
+       }
+     ],
+   
+     "runtime_config": {
+       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/********************",
+       "http_url": "https://arb-sepolia.g.alchemy.com/v2/*******************",
+       "start_block":29108940,
+       "private_key": "******************************",
+       "chain_id": 421614,
+       "payment_token": "0x01d84D33CC8636F83d2bb771e184cE57d8356863",
+       "staking_token": "0xdb69299dDE4A00c99b885D9f8748B2AeD1Fe4Ed4",
+       "attestation_verifier": "0x3aB3487269206d5f6a10725d4e477BaA3611adcA",
+       "entity_registry": "0xBf6AfC0dB112e1e330Ea3fF4640Bac5fBA3e4B65",
+       "proof_market_place": "0x81C80965f4E1b073858cc9D55d7D9A517C9fF258",
+       "generator_registry": "0x2CcCb1ac0fa40922bc800619E09fc3bD821ea4F8",
+       "markets":{
+           "1":{
+               "port":"6000",
+               "ivs_url":"****************"
+           }
+       }
+     }
+   
+   }'
+    ```
+6. Start the zkbob-generator by invoking the following API call
+    ```
+    curl --location --request POST 'http://43.205.85.160:5000/api/startProgram' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "program_name":"zkbob-generator"
+    }'
+    ```
+7. Start the kalypso-listener by invoking the following API call
+    ```
+    curl --location --request POST 'http://43.205.85.160:5000/api/startProgram' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "program_name":"listener"
+    }'
+    ```
 
 
 ## APIs
 
-`Note : api-key provided below is a sample.`
-
-## End-point: generateApiKey
-### Method: POST
->```
->{{endpoint}}/api/generateApiKey
->```
-
-⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
-
-## End-point: getGeneratorStatus
+## End-point: getProgramStatus
 ### Method: GET
 >```
->{{endpoint}}/api/getGeneratorStatus
+>{{endpoint}}/api/getProgramStatus?program_name=listener
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
+`Note` : program_name is the name of the program in supervisord.
 
+⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
+
+## End-point: startProgram
+### Method: POST
+>```
+>{{endpoint}}/api/startProgram
+>```
+
+### Body (**raw**)
+`Note` : program_name is the name of the program in supervisord.
+```json
+{
+  "program_name":"zkbob-generator"
+}
+```
+
+⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
+
+## End-point: restartProgram
+### Method: POST
+>```
+>{{endpoint}}/api/restartProgram
+>```
+
+### Body (**raw**)
+`Note` : program_name is the name of the program in supervisord.
+```json
+{
+  "program_name":"listener"
+}
+```
 
 
 ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
 
-## End-point: startGenerator
+## End-point: stopProgram
 ### Method: POST
 >```
->{{endpoint}}/api/startGenerator
+>{{endpoint}}/api/stopProgram
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
-
-
-
-⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
-
-## End-point: restartGenerator
-### Method: POST
->```
->{{endpoint}}/api/restartGenerator
->```
-### Headers
-
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
-
-
-
-⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
-
-## End-point: stopGenerator
-### Method: POST
->```
->{{endpoint}}/api/stopGenerator
->```
-### Headers
-
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
-
+### Body (**raw**)
+`Note` : program_name is the name of the program in supervisord.
+```json
+{
+  "program_name":"zkbob-generator"
+}
+```
 
 
 ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
@@ -122,11 +176,7 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 >```
 >{{endpoint}}/api/fetchGeneratorPublicKeys
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
 
 
 ### Body (**raw**)
@@ -145,47 +195,43 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 >```
 >{{endpoint}}/api/generatorConfigSetup
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
 
 
 ### Body (**raw**)
 
 ```json
-{
-      "generator_config": [
-    {
-      "address": "0xb05e1dA573707223574443AC6DD1054A9e3A451F",
-      "data": "Eren",
-      "supported_markets": [
-        "0x07b7d625c70be57115ab18fc435ed0253425671cb91bd6547b7defbc75f52082"
-      ]
-    }
-  ],
-
-  "runtime_config": {
-    "ws_url": "wss://withered-fluent-road.nova-mainnet.quiknode.pro/1b70d9337ca08c879ab8043747ff9e47d6f68fb6/",
-    "http_url": "https://arbitrum-nova.publicnode.com",
-    "private_key": "{{private-key}}",
-    "start_block": 27432365,
-    "chain_id": 42170,
-    "payment_token": "0x28B6670dE9BD7fA4e718bd2D0fDdd27C8639c9b6",
-    "generator_registry": "0x5f23d4eC6607fb381759151B02795187815b0487",
-    "attestation_verifier": "0x90201271eD789Ed395ae2F1Cf5b0DC7FD3053176",
-    "entity_registry": "0x9d3b60F3527f3c07bC0Afd15Bc842D191fCD5c6D",
-    "proof_market_place": "0x2F1A3149D2798cA9Dfd7445B3cb713B4CD416b7d",
-    "transfer_verifier_wrapper": "0x158E4B78f26A38978BdA2fC6F5326711D3b7a9D6",
-    "zkb_verifier_wrapper": "0x0f782039EBDaba3D6f260298DFce5A35129BC716",
-    "priority_list": "0x980fC290Ae6FBfD16f21C7e7a493F490acE4064C",
-    "input_and_proof_format": "0x2424b9471b4B37F30d67F8B6b654B6b4720cD0a8",
-    "staking_token": "0x57044769E5aa95590E4f99C174D9b90e9D7300F8",
-    "zkbob_market_id":1
-  }
-
-}
+   {
+       "generator_config": [
+       {
+         "address": "0x0469866e13cd7DF08f5482FBb127a72fF197365D",
+         "data": "Some data",
+         "supported_markets": [
+           "1"
+         ]
+       }
+     ],
+   
+     "runtime_config": {
+       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/***************",
+       "http_url": "https://arb-sepolia.g.alchemy.com/v2/*************",
+       "start_block":29108940,
+       "private_key": "*********************************",
+       "chain_id": 421614,
+       "payment_token": "0x01d84D33CC8636F83d2bb771e184cE57d8356863",
+       "staking_token": "0xdb69299dDE4A00c99b885D9f8748B2AeD1Fe4Ed4",
+       "attestation_verifier": "0x3aB3487269206d5f6a10725d4e477BaA3611adcA",
+       "entity_registry": "0xBf6AfC0dB112e1e330Ea3fF4640Bac5fBA3e4B65",
+       "proof_market_place": "0x81C80965f4E1b073858cc9D55d7D9A517C9fF258",
+       "generator_registry": "0x2CcCb1ac0fa40922bc800619E09fc3bD821ea4F8",
+       "markets":{
+           "1":{
+               "port":"6000",
+               "ivs_url":"*************"
+           }
+       }
+     }
+   }
 ```
 
 
@@ -196,11 +242,7 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 >```
 >{{endpoint}}/api/updateRuntimeConfig
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
 
 
 ### Body (**raw**)
@@ -224,11 +266,7 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 >```
 >{{endpoint}}/api/addNewGenerator
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
 
 
 ### Body (**raw**)
@@ -251,11 +289,7 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 >```
 >{{endpoint}}/api/removeGenerator
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
 
 
 ### Body (**raw**)
@@ -274,11 +308,7 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 >```
 >{{endpoint}}/api/updateGeneratorConfig
 >```
-### Headers
 
-|Content-Type|Value|
-|---|---|
-|api-key|{{api-key}}|
 
 
 ### Body (**raw**)
@@ -303,12 +333,12 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
 
 ## End-point: build attestation
-### Method: POST
+### Method: GET
 
 `Note:  The endpoint here is the <ip:port> of the generator attestation-utility running inside the enclave. This is not a part of the generator-client.`
 
 >```
->{{endpoint}}/build/attestation
+>{{endpoint}}/attestation
 >```
 ### Body (**raw**)
 
@@ -325,7 +355,7 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 `Note:  The endpoint here is the <ip:port> of the whitelisted attestation verifier running inside the enclave. The endpoint will change in future. This is not a part of the generator-client.`
 
 >```
->{{endpoint}}/verify/attestation
+>{{endpoint}}/verify
 >```
 ### Body (**raw**)
 
@@ -347,6 +377,22 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 }
 ```
 
+⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
+### End-point: benchmark
+### Method: GET
+>```
+>{{endpoint}}/api/benchmark?market_id=1
+>```
+
+### Result 
+
+```
+{
+    "message": "Proof generated in 7755ms",
+    "data": null
+}
+```
+
 
 ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
 ## End-point: sign address
@@ -364,3 +410,79 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord,GENERATOR_PATH=kalypso-
 
 
 ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
+
+## End-point: sign attestation
+### Method: POST
+>```
+>{{endpoint}}/api/signAttestation
+>```
+### Body (**raw**)
+
+```json
+{
+    "attestation":"0x8444a1013822a059111.....01caa1a2200972735acf37eee6d18992e989a7",
+    "address":"0xBEf74FB32CCeB599EFdE2fa3B2285A9462D207d1"
+}
+```
+
+
+⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃ ⁃
+
+
+
+
+## Steps to benchmark the generator 
+
+1. Update the ECIES key with the help of KalypsoSDK
+    ```
+   yarn test ./test/generatorOperations/4_update_ecies_key.ts
+    ```
+2. Generate the config setup by making an HTTP call to the generator client:
+    ```
+   curl --location --request POST 'http://43.205.85.160:5000/api/generatorConfigSetup' \
+   --header 'Content-Type: application/json' \
+   --data-raw '{
+       "generator_config": [
+       {
+         "address": "0x0469866e13cd7DF08f5482FBb127a72fF197365D",
+         "data": "Some data",
+         "supported_markets": [
+           "1"
+         ]
+       }
+     ],
+   
+     "runtime_config": {
+       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/********************",
+       "http_url": "https://arb-sepolia.g.alchemy.com/v2/*******************",
+       "start_block":29108940,
+       "private_key": "******************************",
+       "chain_id": 421614,
+       "payment_token": "0x01d84D33CC8636F83d2bb771e184cE57d8356863",
+       "staking_token": "0xdb69299dDE4A00c99b885D9f8748B2AeD1Fe4Ed4",
+       "attestation_verifier": "0x3aB3487269206d5f6a10725d4e477BaA3611adcA",
+       "entity_registry": "0xBf6AfC0dB112e1e330Ea3fF4640Bac5fBA3e4B65",
+       "proof_market_place": "0x81C80965f4E1b073858cc9D55d7D9A517C9fF258",
+       "generator_registry": "0x2CcCb1ac0fa40922bc800619E09fc3bD821ea4F8",
+       "markets":{
+           "1":{
+               "port":"6000",
+               "ivs_url":"****************"
+           }
+       }
+     }
+   
+   }'
+    ```
+3. Start the zkbob-generator by invoking the following API call
+    ```
+    curl --location --request POST 'http://43.205.85.160:5000/api/startProgram' \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "program_name":"zkbob-generator"
+    }'
+    ```
+4. Benchmark the generator 
+    ```
+    curl --location --request GET 'http://43.205.85.160:5000/api/benchmark?market_id=1'
+    ```

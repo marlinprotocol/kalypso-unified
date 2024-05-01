@@ -1,6 +1,5 @@
 mod handler;
 mod kalypso;
-mod middleware;
 mod model;
 mod response;
 mod supervisord;

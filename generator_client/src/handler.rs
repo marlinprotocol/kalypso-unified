@@ -1,52 +1,54 @@
 use std::io::ErrorKind;
 
 use crate::kalypso::{
-    add_new_generator, contract_validation, generate_api_key, generate_config_file,
-    generate_runtime_file, get_public_keys_for_a_generator, read_generator_config_file,
-    read_runtime_config_file, runtime_config_validation, sign_addy, update_generator_config_file,
+    add_new_generator, benchmark, contract_validation, generate_config_file, generate_runtime_file,
+    get_public_keys_for_a_generator, read_generator_config_file, read_runtime_config_file,
+    runtime_config_validation, sign_addy, sign_attest, update_generator_config_file,
     update_runtime_config_file, update_runtime_config_with_new_data,
 };
-use crate::middleware::api_auth;
 use crate::model::{
     AddNewGenerator, GeneratorConfigSetupRequestBody, GetGeneratorPublicKeys, RemoveGenerator,
-    SignAddress, SupervisordResponse, UpdateGeneratorConfig, UpdateRuntimeConfig,
+    SignAddress, SignAttestation, SupervisordInputBody, SupervisordResponse, UpdateGeneratorConfig,
+    UpdateRuntimeConfig,
 };
 use crate::response::response;
-use crate::supervisord::{get_generator_status, start_generator, stop_generator};
+use crate::supervisord::{get_program_status, start_program, stop_program};
 use actix_web::http::StatusCode;
 use actix_web::{delete, get, post, put, web, Responder};
-use actix_web_lab::middleware::from_fn;
-use serde_json::Value;
+use ethers::types::BigEndianHash;
+use serde::Deserialize;
+use serde_json::{json, Value};
 use validator::Validate;
 
-// Generate API key
-#[post("/generateApiKey")]
-async fn generate_api_key_handler() -> impl Responder {
-    let api_key_response = match generate_api_key().await {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in generating the API key",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !api_key_response.status {
-        return response(&api_key_response.message, StatusCode::UNAUTHORIZED, None);
-    }
-
-    response(
-        &api_key_response.message,
-        StatusCode::OK,
-        Some(Value::String(api_key_response.api_key)),
-    )
+#[derive(Deserialize)]
+struct ProgramName {
+    program_name: String,
 }
 
-// Start generator
-#[post("/startGenerator")]
-async fn start_generator_handler() -> impl Responder {
+#[derive(Deserialize)]
+struct BenchmarkParams {
+    market_id: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct BenchmarkResponse {
+    message: String,
+    data: Value,
+}
+
+// Start a program on supervisord
+#[post("/startProgram")]
+async fn start_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
+    //Validating the main JSON body
+    let json_input = &jsonbody;
+    if let Err(err) = json_input.validate() {
+        log::error!("{}", err);
+        return response(
+            "Invalid payload",
+            StatusCode::BAD_REQUEST,
+            Some(Value::String(err.to_string())),
+        );
+    }
     //Smart contract checks
     let validation_status = contract_validation().await;
     let validation_status_result = match validation_status {
@@ -68,18 +70,19 @@ async fn start_generator_handler() -> impl Responder {
         );
     }
 
-    //Starting the generator with supervisord ctl
-    let supervisord_response = match start_generator() {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in starting the generator",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+    //Starting the program with supervisord ctl
+    let supervisord_response =
+        match start_program(json_input.program_name.as_ref().unwrap().to_string()) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", e);
+                return response(
+                    "There was an error in starting the program",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    None,
+                );
+            }
+        };
     if !supervisord_response.status {
         return response(
             &supervisord_response.output,
@@ -87,23 +90,34 @@ async fn start_generator_handler() -> impl Responder {
             None,
         );
     }
-    response("Generator started", StatusCode::OK, None)
+    response("Program started", StatusCode::OK, None)
 }
 
-//Stop generator
-#[post("/stopGenerator")]
-async fn stop_generator_handler() -> impl Responder {
-    let supervisord_response = match stop_generator() {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in stopping the generator",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+//Stop a program running on supervisord
+#[post("/stopProgram")]
+async fn stop_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
+    //Validating the main JSON body
+    let json_input = &jsonbody;
+    if let Err(err) = json_input.validate() {
+        log::error!("{}", err);
+        return response(
+            "Invalid payload",
+            StatusCode::BAD_REQUEST,
+            Some(Value::String(err.to_string())),
+        );
+    }
+    let supervisord_response =
+        match stop_program(json_input.program_name.as_ref().unwrap().to_string()) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", e);
+                return response(
+                    "There was an error in stopping the program",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    None,
+                );
+            }
+        };
     if !supervisord_response.status {
         return response(
             &supervisord_response.output,
@@ -111,12 +125,22 @@ async fn stop_generator_handler() -> impl Responder {
             None,
         );
     }
-    response("Generator stopped", StatusCode::OK, None)
+    response("Program stopped", StatusCode::OK, None)
 }
 
-//Restart generator
-#[post("/restartGenerator")]
-async fn restart_generator_handler() -> impl Responder {
+//Restart a program running on supervisord
+#[post("/restartProgram")]
+async fn restart_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
+    //Validating the main JSON body
+    let json_input = &jsonbody;
+    if let Err(err) = json_input.validate() {
+        log::error!("{}", err);
+        return response(
+            "Invalid payload",
+            StatusCode::BAD_REQUEST,
+            Some(Value::String(err.to_string())),
+        );
+    }
     //Smart contract checks
     let validation_status = contract_validation().await;
     let validation_status_result = match validation_status {
@@ -138,18 +162,19 @@ async fn restart_generator_handler() -> impl Responder {
         );
     }
 
-    // Stopping generator
-    let stop_supervisord_response = match stop_generator() {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in stopping the generator",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+    // Stopping program
+    let stop_supervisord_response =
+        match stop_program(json_input.program_name.as_ref().unwrap().to_string()) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", e);
+                return response(
+                    "There was an error in stopping the program",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    None,
+                );
+            }
+        };
     if !stop_supervisord_response.status {
         return response(
             &stop_supervisord_response.output,
@@ -158,18 +183,19 @@ async fn restart_generator_handler() -> impl Responder {
         );
     }
 
-    //Starting generator
-    let start_supervisord_response = match start_generator() {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in starting the generator",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+    //Starting program
+    let start_supervisord_response =
+        match start_program(json_input.program_name.as_ref().unwrap().to_string()) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", e);
+                return response(
+                    "There was an error in starting the program",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    None,
+                );
+            }
+        };
     if !start_supervisord_response.status {
         return response(
             &start_supervisord_response.output,
@@ -177,23 +203,33 @@ async fn restart_generator_handler() -> impl Responder {
             None,
         );
     }
-    response("Generator restarted", StatusCode::OK, None)
+    response("Program restarted", StatusCode::OK, None)
 }
 
-// Get generator status from the supervisord
-#[get("/getGeneratorStatus")]
-async fn get_generator_status_handler() -> impl Responder {
-    let supervisord_response: SupervisordResponse = match get_generator_status() {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in fetching the generator status.",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+// Get program status from the supervisord
+#[get("/getProgramStatus")]
+async fn get_program_status_handler(program_name: web::Query<ProgramName>) -> impl Responder {
+    //Validating the main JSON body
+    let program_name = &program_name.program_name;
+    if program_name.is_empty() {
+        return response(
+            "Invalid program name, please provide program name in the request query params.",
+            StatusCode::BAD_REQUEST,
+            None,
+        );
+    }
+    let supervisord_response: SupervisordResponse =
+        match get_program_status(program_name.to_string()) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", e);
+                return response(
+                    "There was an error in fetching the program status.",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    None,
+                );
+            }
+        };
     if !supervisord_response.status {
         return response(
             &supervisord_response.output,
@@ -202,7 +238,7 @@ async fn get_generator_status_handler() -> impl Responder {
         );
     }
     response(
-        "Generator status fetched",
+        "Program status fetched",
         StatusCode::OK,
         Some(Value::String(supervisord_response.output)),
     )
@@ -724,25 +760,118 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
         );
     }
     let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let signature = serde_json::to_value(sign_addy(&addy_to_be_signed).await.unwrap()).unwrap();
+    let signed = sign_addy(addy_to_be_signed).await.unwrap();
+    let signature = json!({
+        "r": ethers::types::H256::from_uint(&signed.r),
+        "s": ethers::types::H256::from_uint(&signed.s),
+        "v": signed.v
+    });
     response("Address signed", StatusCode::OK, Some(signature))
+}
+
+// Sign Attestaion
+#[post("/signAttestation")]
+async fn sign_attestation(jsonbody: web::Json<SignAttestation>) -> impl Responder {
+    // Validating inputs
+    let json_input = &jsonbody.0;
+    if let Err(err) = json_input.validate() {
+        log::error!("{}", err);
+        return response(
+            "Invalid attestation",
+            StatusCode::BAD_REQUEST,
+            Some(Value::String(err.to_string())),
+        );
+    }
+    let signed = sign_attest(jsonbody.0).await.unwrap();
+    let signature = json!({
+        "r": ethers::types::H256::from_uint(&signed.r),
+        "s": ethers::types::H256::from_uint(&signed.s),
+        "v": signed.v
+    });
+    response("Attestation signed", StatusCode::OK, Some(signature))
+}
+
+// Get program status from the supervisord
+#[get("/benchmark")]
+async fn benchmark_generator(benchmark_params: web::Query<BenchmarkParams>) -> impl Responder {
+    let runtime_config_file = match read_runtime_config_file().await {
+        Ok(config_file) => config_file,
+        Err(err) => {
+            log::error!("{}", err);
+            return response(
+                "There was an error reading the config file, Please make sure you have setup the generator config file.",
+                StatusCode::INTERNAL_SERVER_ERROR,
+                None,
+            );
+        }
+    };
+
+    let markets = runtime_config_file.runtime_config.markets;
+
+    let market_id = &benchmark_params.market_id;
+
+    if markets.contains_key(&market_id.to_string()) {
+        let generator_port = &markets.get(&market_id.to_string()).unwrap().port;
+
+        let benchmark_endpoint = format!("http://localhost:{}/api/benchmark", generator_port);
+
+        let benchmark_result = match benchmark(benchmark_endpoint).await {
+            Ok(benchmark_res) => benchmark_res,
+            Err(err) => {
+                log::error!("{}", err);
+                return response(
+                    &format!(
+                        "There was an issue while benchmarking the generator for market ID :{} ",
+                        market_id
+                    ),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    None,
+                );
+            }
+        };
+
+        if benchmark_result.status().is_server_error() {
+            let response_unwrapped: BenchmarkResponse = benchmark_result.json().await.unwrap();
+            let res_message = response_unwrapped.message;
+            return response(&res_message, StatusCode::INTERNAL_SERVER_ERROR, None);
+        }
+
+        if benchmark_result.status().is_success() {
+            let response_unwrapped: BenchmarkResponse = benchmark_result.json().await.unwrap();
+            let proof_generation_time = response_unwrapped.data.to_string().replace("\"", "");
+            let response_message = format!("Proof generated in {}ms", proof_generation_time);
+            return response(&response_message, StatusCode::OK, None);
+        }
+
+        return response(
+            "There was an issue while fetching benchmark result from the generator",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            None,
+        );
+    }
+
+    response(
+        &format!("No generator found for market ID :{} ", market_id),
+        StatusCode::BAD_REQUEST,
+        None,
+    )
 }
 
 // Routes
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
-        .wrap(from_fn(api_auth))
-        .service(generate_api_key_handler)
-        .service(start_generator_handler)
-        .service(stop_generator_handler)
-        .service(restart_generator_handler)
-        .service(get_generator_status_handler)
+        .service(start_program_handler)
+        .service(stop_program_handler)
+        .service(restart_program_handler)
+        .service(get_program_status_handler)
         .service(generate_config_setup)
         .service(update_runtime_config)
         // .service(add_new_generator_config)
         // .service(remove_generator_from_config)
         .service(update_generator_config)
         .service(fetch_generator_public_keys)
-        .service(sign_address);
+        .service(sign_address)
+        .service(sign_attestation)
+        .service(benchmark_generator);
     conf.service(scope);
 }

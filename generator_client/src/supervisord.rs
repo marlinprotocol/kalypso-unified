@@ -3,28 +3,28 @@ use std::process::Command;
 
 use crate::model::SupervisordResponse;
 
-//Get generator status
-pub fn get_generator_status() -> Result<SupervisordResponse, Box<dyn std::error::Error>> {
+//Get program status
+pub fn get_program_status(
+    program_name: String,
+) -> Result<SupervisordResponse, Box<dyn std::error::Error>> {
     let supervisord_path: String = env::var("SUPERVISORD_PATH")?
         .parse::<String>()
         .expect("Please provide a valid supervisord path");
 
-    let generator_path: String = env::var("GENERATOR_PATH")?
-        .parse::<String>()
-        .expect("Please provide a valid generator path");
+    let program_path: String = program_name;
 
-    log::info!("Fetching generator status..");
+    log::info!("Fetching program status..");
     let output = Command::new(supervisord_path)
         .arg("ctl")
         .arg("status")
-        .arg(generator_path)
+        .arg(program_path)
         .output()?;
 
     if !output.status.success() {
         let error_log = String::from_utf8(output.stderr)?;
         log::error!("{:#?}", error_log);
         let resp = SupervisordResponse {
-            output: "Error fetching generator status".to_string(),
+            output: "Error fetching program status".to_string(),
             status: false,
         };
         return Ok(resp);
@@ -32,55 +32,55 @@ pub fn get_generator_status() -> Result<SupervisordResponse, Box<dyn std::error:
     let log = String::from_utf8(output.stdout)?;
     if log.contains("Stopped") {
         let resp = SupervisordResponse {
-            output: "Generator hasn't been started yet.".to_string(),
+            output: "Program hasn't been started yet.".to_string(),
             status: true,
         };
         return Ok(resp);
     }
     if log.contains("Exited") {
         let resp = SupervisordResponse {
-            output: "Generator has been stopped.".to_string(),
+            output: "Program has been stopped.".to_string(),
             status: true,
         };
         return Ok(resp);
     }
     if log.contains("Running") {
         let resp = SupervisordResponse {
-            output: "Generator has been started.".to_string(),
+            output: "Program has been started.".to_string(),
             status: true,
         };
         return Ok(resp);
     }
 
     let resp = SupervisordResponse {
-        output: "Error fetching generator status".to_string(),
+        output: "Error fetching program status".to_string(),
         status: false,
     };
     Ok(resp)
 }
 
-//Start generator
-pub fn start_generator() -> Result<SupervisordResponse, Box<dyn std::error::Error>> {
+//Start program
+pub fn start_program(
+    program_name: String,
+) -> Result<SupervisordResponse, Box<dyn std::error::Error>> {
     let supervisord_path: String = env::var("SUPERVISORD_PATH")?
         .parse::<String>()
         .expect("Please provide a valid supervisord path");
 
-    let generator_path: String = env::var("GENERATOR_PATH")?
-        .parse::<String>()
-        .expect("Please provide a valid generator path");
+    let program_path: String = program_name;
 
-    log::info!("Starting generator...");
+    log::info!("Starting program...");
     let output = Command::new(supervisord_path)
         .arg("ctl")
         .arg("start")
-        .arg(generator_path)
+        .arg(program_path)
         .output()?;
 
     if !output.status.success() {
         let error_log = String::from_utf8(output.stderr)?;
         log::error!("{:#?}", error_log);
         let resp = SupervisordResponse {
-            output: "Error starting the generator".to_string(),
+            output: "Error starting the program".to_string(),
             status: false,
         };
         return Ok(resp);
@@ -89,40 +89,40 @@ pub fn start_generator() -> Result<SupervisordResponse, Box<dyn std::error::Erro
     let log = String::from_utf8(output.stdout)?;
     if log.contains("started") {
         let resp = SupervisordResponse {
-            output: "Generator started.".to_string(),
+            output: "Program started.".to_string(),
             status: true,
         };
         return Ok(resp);
     }
 
     let resp = SupervisordResponse {
-        output: "Error starting the generator".to_string(),
+        output: "Error starting the program".to_string(),
         status: false,
     };
     Ok(resp)
 }
 
-//Stop generator
-pub fn stop_generator() -> Result<SupervisordResponse, Box<dyn std::error::Error>> {
+//Stop program
+pub fn stop_program(
+    program_name: String,
+) -> Result<SupervisordResponse, Box<dyn std::error::Error>> {
     let supervisord_path: String = env::var("SUPERVISORD_PATH")?
         .parse::<String>()
         .expect("Please provide a valid supervisord path");
 
-    let generator_path: String = env::var("GENERATOR_PATH")?
-        .parse::<String>()
-        .expect("Please provide a valid generator path");
-    log::info!("Stopping the generator..");
+    let program_path: String = program_name;
+    log::info!("Stopping the program..");
     let output = Command::new(supervisord_path)
         .arg("ctl")
         .arg("stop")
-        .arg(generator_path)
+        .arg(program_path)
         .output()?;
 
     if !output.status.success() {
         let error_log = String::from_utf8(output.stderr)?;
         log::error!("{:#?}", error_log);
         let resp = SupervisordResponse {
-            output: "Error stopping the generator".to_string(),
+            output: "Error stopping the program".to_string(),
             status: false,
         };
         return Ok(resp);
@@ -131,14 +131,14 @@ pub fn stop_generator() -> Result<SupervisordResponse, Box<dyn std::error::Error
     let log = String::from_utf8(output.stdout)?;
     if log.contains("stopped") {
         let resp = SupervisordResponse {
-            output: "Generator stopped.".to_string(),
+            output: "Program stopped.".to_string(),
             status: true,
         };
         return Ok(resp);
     }
 
     let resp = SupervisordResponse {
-        output: "Error stopping the generator".to_string(),
+        output: "Error stopping the program".to_string(),
         status: false,
     };
     Ok(resp)
