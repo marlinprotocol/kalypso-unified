@@ -79,6 +79,7 @@ pub async fn process_proof_market_place_logs(
                         parsed_ask_created_log.ask_id
                     );
                 } else {
+                    ask_to_store.state = Some(AskState::InvalidSecret);
                     log::error!(
                         "Stored ask with AskId {:?} to store but flagged = false",
                         parsed_ask_created_log.ask_id

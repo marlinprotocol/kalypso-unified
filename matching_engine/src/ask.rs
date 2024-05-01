@@ -91,6 +91,7 @@ pub struct LocalAskStatus {
     pub assigned: usize,
     pub completed: usize,
     pub deadline_crossed: usize,
+    pub invalid_secret: usize,
 }
 
 impl Ord for LocalAsk {
@@ -336,6 +337,7 @@ impl LocalAskStore {
         let assigned = self.get_by_state(AskState::Assigned).get_count();
         let completed = self.get_by_state(AskState::Complete).get_count();
         let deadline_crossed = self.get_by_state(AskState::DeadlineCrossed).get_count();
+        let invalid_secret = self.get_by_state(AskState::InvalidSecret);
 
         let local_ask_status = LocalAskStatus {
             created,
@@ -343,6 +345,7 @@ impl LocalAskStore {
             assigned,
             completed,
             deadline_crossed,
+            invalid_secret,
         };
 
         local_ask_status
