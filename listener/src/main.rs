@@ -11,8 +11,6 @@ use std::{error::Error, str::FromStr, sync::Arc};
 mod generator_store;
 mod listener;
 
-mod secret_input_helpers;
-
 mod ask;
 use serde::{Deserialize, Serialize};
 

@@ -1,10 +1,13 @@
-use crate::{secret_input_helpers, MarketDetails};
+use crate::MarketDetails;
 use bindings::proof_marketplace::ProofMarketplace;
 use bindings::shared_types::Ask;
 use ethers::prelude::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
 use flate2::read::ZlibDecoder;
 use reqwest::Response;
+use secret_input_helpers::secret_inputs_helpers::{
+    decrypt_data_with_ecies_and_aes, decrypt_ecies, encrypt_ecies,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Read;
@@ -121,10 +124,11 @@ pub async fn generate_proof(
         // Handling compressed secret inputs
         let encrypted_secret_input = parsed_ask_created_log.secret_data.to_vec();
 
-        secret_input_helpers::decrypt_data_with_ecies_and_aes(
+        decrypt_data_with_ecies_and_aes(
             &encrypted_secret_input,
             &new_acl,
             ecies_private_key,
+            market_id,
         )?
     } else {
         Vec::new()
@@ -208,9 +212,9 @@ pub async fn generate_proof(
         let decoded_ecies = &hex::decode(trimmed_ecies_key)?;
         log::info!("Decoded the ecies key");
 
-        let cipher = secret_input_helpers::decrypt_ecies(ecies_private_key, &new_acl)?;
+        let cipher = decrypt_ecies(ecies_private_key, &new_acl)?;
         log::info!("Cipher generated");
-        let final_acl = secret_input_helpers::encrypt_ecies(decoded_ecies, cipher.as_slice())?;
+        let final_acl = encrypt_ecies(decoded_ecies, cipher.as_slice())?;
         log::info!("Final ACL generated");
         let encrypted_secret_input = parsed_ask_created_log.secret_data.to_vec();
         log::info!("Encrypted secret input fetched, fetching signature next");

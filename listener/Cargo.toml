@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 bindings = { path = "../bindings", package = "foundry-contracts" }
+secret_input_helpers = {path = "../helper", package = "helper"}
 ecies = "0.2.6"
 env_logger = "0.11.2"
 ethers ={version = "2.0.10", features = ["abigen", "ws", "rustls"] }
