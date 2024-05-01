@@ -165,6 +165,25 @@ pub async fn process_entity_key_registry_logs(
             }
             continue;
         }
+
+        if let Ok(initialized_logs) = entity_key_registry.decode_event_raw(
+            "Initialized",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!("Version: {:?}", initialized_logs);
+            continue;
+        }
+
+        if let Ok(attestation_auther_logs) = entity_key_registry.decode_event_raw(
+            "EnclaveImageAddedToFamily",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!("Attestation Auther logs: {:?}", attestation_auther_logs);
+            continue;
+        }
+
         log::error!("Unhandled log in entity key registry {:?}", log);
         return Err("Unhandled log in entity key registry".into());
     }

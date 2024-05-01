@@ -339,6 +339,13 @@ pub async fn process_proof_market_place_logs(
             continue;
         }
 
+        if let Ok(initialized_logs) =
+            proof_market_place.decode_event_raw("Initialized", log.topics.clone(), log.data.clone())
+        {
+            log::warn!("Version: {:?}", initialized_logs);
+            continue;
+        }
+
         log::warn!("unhandled log in proof market place {:?}", log);
         return Err("Unhandled log in proof market place".into());
     }
