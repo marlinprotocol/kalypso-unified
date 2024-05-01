@@ -135,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .route("/getStatus", web::get().to(routes::get_status))
                     .route("/getCipher", web::post().to(routes::get_cipher))
             })
-            .bind("127.0.0.1:3000")?
+            .bind("0.0.0.0:3000")?
             .run()
             .await
         });
