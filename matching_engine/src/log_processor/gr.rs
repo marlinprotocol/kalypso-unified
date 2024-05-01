@@ -386,6 +386,26 @@ pub async fn process_generator_registry_logs(
             continue;
         }
 
+        if let Ok(stake_lock_logs) = genertor_registry
+            .decode_event::<bindings::generator_registry::StakeLockReleasedFilter>(
+            "StakeLockReleased",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!("Stake Lock Released: {:?}", stake_lock_logs);
+            continue;
+        }
+
+        if let Ok(compute_lock_logs) = genertor_registry
+            .decode_event::<bindings::generator_registry::ComputeLockReleasedFilter>(
+            "ComputeLockReleased",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!("Compute Lock Released: {:?}", compute_lock_logs);
+            continue;
+        }
+
         log::warn!("unhandled log in generator registry {:?}", log);
         return Err("Unhandled log in generator registry".into());
     }
