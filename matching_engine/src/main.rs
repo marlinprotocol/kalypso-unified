@@ -118,8 +118,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let mut start_block: U64 = U64::from_dec_str(&start_block_string).unwrap();
+    let mut parsed_block = start_block;
+
     let confirmations = 10; // ideally this should be more
     let block_range = 20000; // Number of blocks to fetch logs from at once
+
+    let shared_parsed_store = Arc::new(Mutex::new(parsed_block));
+    let shared_parsed_block = Arc::clone(&shared_parsed_store);
 
     let shared_market_data = Arc::clone(&shared_market_store);
     let shared_local_ask_data = Arc::clone(&shared_local_ask_store);
@@ -128,12 +133,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let rt = Runtime::new().unwrap();
         let result = rt.block_on(async {
             HttpServer::new(move || {
+                use actix_extensible_rate_limit::{
+                    backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder},
+                    RateLimiter,
+                };
+                let backend = InMemoryBackend::builder().build();
+                let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 1)
+                    .real_ip_key()
+                    .build();
+                let middleware = RateLimiter::builder(backend.clone(), input)
+                    .add_headers()
+                    .build();
                 App::new()
+                    .wrap(middleware)
                     .app_data(Data::new(shared_market_data.clone()))
                     .app_data(Data::new(shared_local_ask_data.clone()))
+                    .app_data(Data::new(shared_parsed_block.clone()))
                     .route("/welcome", web::get().to(routes::welcome))
                     .route("/getStatus", web::get().to(routes::get_status))
                     .route("/getCipher", web::post().to(routes::get_cipher))
+                    .route("/getAskStatus", web::get().to(routes::get_ask_status_askid))
+                    .route(
+                        "/getLatestBlock",
+                        web::get().to(routes::get_latest_block_number),
+                    )
             })
             .bind("0.0.0.0:3000")?
             .run()
@@ -242,6 +265,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             start_block = end_block + 1;
+            let mut latest_parsed_block = shared_parsed_store.lock().await;
+            *latest_parsed_block = start_block;
             continue;
         }
 
