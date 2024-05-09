@@ -3,9 +3,9 @@ use actix_web::web::Data;
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 
+use ethers::core::types::{U256, U64};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use ethers::core::types::{U256,U64};
 
 use crate::ask::*;
 
@@ -92,7 +92,7 @@ pub async fn get_status(
 
 #[derive(Deserialize)]
 pub struct GetAskStatus {
-    ask_id: String,    
+    ask_id: String,
 }
 
 #[derive(Serialize)]
@@ -104,7 +104,6 @@ pub async fn get_ask_status_askid(
     _payload: web::Json<GetAskStatus>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-
     let local_ask_store = _local_ask_store.lock().await;
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
@@ -136,8 +135,7 @@ pub struct GetLatestBlockNumberResponse {
 
 pub async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
-)-> actix_web::Result<HttpResponse> {
-
+) -> actix_web::Result<HttpResponse> {
     let latest_parsed_block = _shared_parsed_block.lock().await;
 
     Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {

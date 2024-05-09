@@ -132,7 +132,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_handle = thread::spawn(|| {
         let rt = Runtime::new().unwrap();
         let result = rt.block_on(async {
-
             HttpServer::new(move || {
                 use actix_extensible_rate_limit::{
                     backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder},
@@ -140,12 +139,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
                 let backend = InMemoryBackend::builder().build();
                 let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 1)
-                .real_ip_key()
-                .build();
+                    .real_ip_key()
+                    .build();
                 let middleware = RateLimiter::builder(backend.clone(), input)
                     .add_headers()
                     .build();
-                App::new().wrap(middleware)
+                App::new()
+                    .wrap(middleware)
                     .app_data(Data::new(shared_market_data.clone()))
                     .app_data(Data::new(shared_local_ask_data.clone()))
                     .app_data(Data::new(shared_parsed_block.clone()))
@@ -153,7 +153,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .route("/getStatus", web::get().to(routes::get_status))
                     .route("/getCipher", web::post().to(routes::get_cipher))
                     .route("/getAskStatus", web::get().to(routes::get_ask_status_askid))
-                    .route("/getLatestBlock", web::get().to(routes::get_latest_block_number))
+                    .route(
+                        "/getLatestBlock",
+                        web::get().to(routes::get_latest_block_number),
+                    )
             })
             .bind("0.0.0.0:3000")?
             .run()
