@@ -132,8 +132,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server_handle = thread::spawn(|| {
         let rt = Runtime::new().unwrap();
         let result = rt.block_on(async {
+
             HttpServer::new(move || {
-                App::new()
+                use actix_extensible_rate_limit::{
+                    backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder},
+                    RateLimiter,
+                };
+                let backend = InMemoryBackend::builder().build();
+                let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 1)
+                .real_ip_key()
+                .build();
+                let middleware = RateLimiter::builder(backend.clone(), input)
+                    .add_headers()
+                    .build();
+                App::new().wrap(middleware)
                     .app_data(Data::new(shared_market_data.clone()))
                     .app_data(Data::new(shared_local_ask_data.clone()))
                     .app_data(Data::new(shared_parsed_block.clone()))

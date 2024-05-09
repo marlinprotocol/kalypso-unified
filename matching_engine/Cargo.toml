@@ -28,3 +28,4 @@ serde_json = "1.0.104"
 tokio = { version = "1.15.0", features = ["full"] }
 hex = "0.4.3"
 ecies = {version = "0.2.6", features = ["std"]}
+actix-extensible-rate-limit = "0.3.1"
