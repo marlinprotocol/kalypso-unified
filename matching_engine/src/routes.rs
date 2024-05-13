@@ -2,7 +2,7 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
-
+use secret_input_helpers::secret_inputs_helpers;
 use ethers::core::types::{U256, U64};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -137,8 +137,55 @@ pub async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
 ) -> actix_web::Result<HttpResponse> {
     let latest_parsed_block = _shared_parsed_block.lock().await;
+    let ask_id: String = _payload.ask_id.clone();
+    let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
+    let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
+
+    
     Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {
         block_number: latest_parsed_block.to_string(),
     }))
+}
+
+#[derive(Deserialize)]
+pub struct GetRequest {
+    ask_id: string,
+    has_private_inputs: bool,
+    private_input: p_i, 
+    key: p_k,
+}
+
+
+#[derive(serialize)]
+pub struct GetRequestResponse {
+    encrpyted_data : string,   
+}
+
+pub async fn get_request(
+    _payload: web::Json<GetAskStatus>,
+    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+) -> actix_web::Result<HttpResponse> {
+    let has_private_inputs: bool = _payload.has_private_inputs.clone();
+    if !has_private_inputs{
+        Ok(HttpResponse::UNAUTHORIZED().json(GetRequestResponse {
+            encrpyted_data:"UNAUTHORIZED",
+        }))
+    }
+    else{
+        let ask_id: String = _payload.ask_id.clone();
+        let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
+
+        let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
+        let serialized = serde_json::to_string(&local_ask).unwrap();
+
+        let key = _payload.key.clone();
+        let bytes: Vec<u8> = serialized.as_bytes().to_vec();
+
+        let encrypted_aes_data = secret_inputs_helpers::encrypt_aes_gcm(&bytes, &key, market_id).unwrap();
+
+        Ok(HttpResponse::Ok().json(GetRequestResponse {
+            encrpyted_data: encrypted_aes_data.to_string(),
+        }))
+    }
 }
