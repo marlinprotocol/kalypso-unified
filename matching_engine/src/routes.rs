@@ -151,9 +151,9 @@ pub async fn get_latest_block_number(
 #[derive(Deserialize)]
 pub struct GetRequest {
     ask_id: string,
-    has_private_inputs: bool,
-    private_input: p_i, 
-    key: p_k,
+    key: [u8],
+    signature: string,
+    hash_message:[u8; 32],
 }
 
 
@@ -163,20 +163,23 @@ pub struct GetRequestResponse {
 }
 
 pub async fn get_request(
-    _payload: web::Json<GetAskStatus>,
+    _payload: web::Json<GetRequest>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    let has_private_inputs: bool = _payload.has_private_inputs.clone();
-    if !has_private_inputs{
+
+    let ask_id: String = _payload.ask_id.clone();
+    let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
+
+    let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
+
+    if !local_ask.unwrap().has_private_inputs
+    {
         Ok(HttpResponse::UNAUTHORIZED().json(GetRequestResponse {
             encrpyted_data:"UNAUTHORIZED",
         }))
     }
-    else{
-        let ask_id: String = _payload.ask_id.clone();
-        let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
-
-        let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
+    else{    
+        let ivs_signer = utility::derive_address_from_signature(_payload.signature, _payload.hash_message);
         let serialized = serde_json::to_string(&local_ask).unwrap();
 
         let key = _payload.key.clone();
@@ -187,5 +190,6 @@ pub async fn get_request(
         Ok(HttpResponse::Ok().json(GetRequestResponse {
             encrpyted_data: encrypted_aes_data.to_string(),
         }))
-    }
+}
+    
 }
