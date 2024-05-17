@@ -47,20 +47,21 @@ pub fn derive_address_from_signature(signature: &str, message: &str) -> Option<S
     // Hash the message using Keccak-256
     let message_hash = keccak256(message.as_bytes());
 
+    let recovered = signature.recover(message_hash)?;
     // Recover the public key from the signature
-    let recovered_key = recover(
-        recoverable::Signature {
-            r: signature.r(),
-            s: signature.s(),
-            v: signature.recovery_id().into(),
-        },
-        &message_hash,
-    ).ok()?;
+    // let recovered_key = recover(
+    //     recoverable::Signature {
+    //         r: signature.r(),
+    //         s: signature.s(),
+    //         v: signature.recovery_id().into(),
+    //     },
+    //     &message_hash,
+    // ).ok()?;
 
-    // Derive the Ethereum address from the public key
-    let address_bytes = &keccak256(&recovered_key.to_bytes()[1..])[12..];
-    let address_hex = hex::encode(address_bytes);
-    let address = parse_address(&address_hex).ok()?;
-    some(address)
+    // // Derive the Ethereum address from the public key
+    // let address_bytes = &keccak256(&recovered_key.to_bytes()[1..])[12..];
+    // let address_hex = hex::encode(address_bytes);
+    // let address = parse_address(&address_hex).ok()?;
+    recovered
     
 }

@@ -1,6 +1,12 @@
 use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
+use bindings::entity_key_registry::EntityKeyRegistry;
+use ethers::core::k256::ecdsa::SigningKey;
+use ethers::core::k256::Secp256k1;
+use ethers::middleware::SignerMiddleware;
+use ethers::providers::Provider;
+use ethers::signers::Wallet;
 use serde::{Deserialize, Serialize};
 use secret_input_helpers::secret_inputs_helpers;
 use ethers::core::types::{U256, U64};
@@ -9,7 +15,7 @@ use tokio::sync::Mutex;
 
 use crate::ask::*;
 
-// use crate::utility;
+use crate::utility;
 
 #[derive(Serialize)]
 struct WelcomeResponse {
@@ -137,11 +143,6 @@ pub async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
 ) -> actix_web::Result<HttpResponse> {
     let latest_parsed_block = _shared_parsed_block.lock().await;
-    let ask_id: String = _payload.ask_id.clone();
-    let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
-
-    let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
-
     
     Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {
         block_number: latest_parsed_block.to_string(),
@@ -150,23 +151,24 @@ pub async fn get_latest_block_number(
 
 #[derive(Deserialize)]
 pub struct GetRequest {
-    ask_id: string,
-    key: [u8],
-    signature: string,
-    hash_message:[u8; 32],
+    ask_id: String,
+    signature: String,
 }
 
 
-#[derive(serialize)]
+#[derive(Serialize)]
 pub struct GetRequestResponse {
-    encrpyted_data : string,   
+    encrpyted_data : String,   
 }
 
 pub async fn get_request(
     _payload: web::Json<GetRequest>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+    _entity_key_registry: Data<Arc<Mutex<EntityKeyRegistry<SignerMiddleware<Provider<Provider>, Wallet<SigningKey<Secp256k1>>>>>>>,
 ) -> actix_web::Result<HttpResponse> {
+    let entity_key_registry = _entity_key_registry;
 
+    let local_ask_store = _local_ask_store.lock().await;
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
@@ -174,18 +176,35 @@ pub async fn get_request(
 
     if !local_ask.unwrap().has_private_inputs
     {
-        Ok(HttpResponse::UNAUTHORIZED().json(GetRequestResponse {
-            encrpyted_data:"UNAUTHORIZED",
+        Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
+            encrpyted_data:"UNAUTHORIZED".to_string(),
         }))
     }
-    else{    
-        let ivs_signer = utility::derive_address_from_signature(_payload.signature, _payload.hash_message);
+    else{
+
+        let ivs_signer = utility::derive_address_from_signature(&_payload.signature, &_payload.ask_id);
         let serialized = serde_json::to_string(&local_ask).unwrap();
 
-        let key = _payload.key.clone();
+        // let key = _payload.key.clone();
         let bytes: Vec<u8> = serialized.as_bytes().to_vec();
+        
+        let key = entity_key_registry.pub_keys(ivs_signer, 0)
+        .call()
+        .await
+        .unwrap();
 
-        let encrypted_aes_data = secret_inputs_helpers::encrypt_aes_gcm(&bytes, &key, market_id).unwrap();
+        let image = entity_key_registry.get_verified_key(key)
+        .call()
+        .await
+        .unwrap();
+        
+        if entity_key_registry.blackListedImages(image){
+            Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
+                encrpyted_data:"BlackListed".to_string(),
+            }))
+        }
+        else{
+        let encrypted_aes_data = secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&key, &bytes).unwrap();
 
         Ok(HttpResponse::Ok().json(GetRequestResponse {
             encrpyted_data: encrypted_aes_data.to_string(),
@@ -193,3 +212,5 @@ pub async fn get_request(
 }
     
 }
+}
+

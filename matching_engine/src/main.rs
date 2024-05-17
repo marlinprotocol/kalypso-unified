@@ -12,7 +12,7 @@ use tokio::sync::Mutex;
 mod ask;
 // mod utility;
 mod generator;
-
+mod utility;
 mod log_processor;
 mod routes;
 
@@ -117,6 +117,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client.clone(),
     );
 
+    let shared_entity_key_registry = bindings::entity_key_registry::EntityKeyRegistry::new(
+        entity_key_registry_address,
+        client.clone(),
+    );
+    let shared_entity_key  = Arc::new(Mutex::new(shared_entity_key_registry));
+    let clone_shared_entity_key = Arc::clone(&shared_entity_key);
+
     let mut start_block: U64 = U64::from_dec_str(&start_block_string).unwrap();
     let mut parsed_block = start_block;
 
@@ -149,6 +156,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .app_data(Data::new(shared_market_data.clone()))
                     .app_data(Data::new(shared_local_ask_data.clone()))
                     .app_data(Data::new(shared_parsed_block.clone()))
+                    .app_data(Data::new(clone_shared_entity_key.clone()))
                     .route("/welcome", web::get().to(routes::welcome))
                     .route("/getStatus", web::get().to(routes::get_status))
                     .route("/getCipher", web::post().to(routes::get_cipher))
