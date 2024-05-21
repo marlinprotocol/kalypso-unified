@@ -136,6 +136,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shared_market_data = Arc::clone(&shared_market_store);
     let shared_local_ask_data = Arc::clone(&shared_local_ask_store);
 
+    let matching_engine_key_for_server = hex::decode(matching_engine_key.clone()).unwrap();
+    let shared_matching_key = Arc::new(Mutex::new(matching_engine_key_for_server));
+    let shared_matching_key_clone = Arc::clone(&shared_matching_key);
+
     let server_handle = thread::spawn(|| {
         let rt = Runtime::new().unwrap();
         let result = rt.block_on(async {
@@ -156,11 +160,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .app_data(Data::new(shared_market_data.clone()))
                     .app_data(Data::new(shared_local_ask_data.clone()))
                     .app_data(Data::new(shared_parsed_block.clone()))
+                    .app_data(Data::new(shared_matching_key_clone.clone()))
                     .app_data(Data::new(clone_shared_entity_key.clone()))
                     .route("/welcome", web::get().to(routes::welcome))
                     .route("/getStatus", web::get().to(routes::get_status))
                     .route("/getCipher", web::post().to(routes::get_cipher))
                     .route("/getAskStatus", web::get().to(routes::get_ask_status_askid))
+                    .route("/getPrivInput", web::get().to(routes::get_priv_input))
+                    .route("/decryptRequest", web::get().to(routes::decrypt_request))
                     .route(
                         "/getLatestBlock",
                         web::get().to(routes::get_latest_block_number),
