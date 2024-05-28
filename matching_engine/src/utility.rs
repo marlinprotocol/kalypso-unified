@@ -79,3 +79,8 @@ fn string_to_signature(sig_str: &str) -> Result<Signature, Box<dyn Error>> {
 
     Ok(signature)
 }
+
+pub fn ivs_family_id(market_id: u256) -> [u8; 32] {
+    let encoded = encode(&["ivs", market_id]);
+    keccak256(&encoded)
+}

@@ -162,15 +162,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .app_data(Data::new(shared_parsed_block.clone()))
                     .app_data(Data::new(shared_matching_key_clone.clone()))
                     .app_data(Data::new(clone_shared_entity_key.clone()))
-                    .route("/welcome", web::get().to(routes::welcome))
-                    .route("/getStatus", web::get().to(routes::get_status))
-                    .route("/getCipher", web::post().to(routes::get_cipher))
-                    .route("/getAskStatus", web::get().to(routes::get_ask_status_askid))
-                    .route("/getPrivInput", web::get().to(routes::get_priv_input))
-                    .route("/decryptRequest", web::get().to(routes::decrypt_request))
+                    .route("/welcome", web::get().to(routes::welcome)) // Route to welcome endpoint
+                    .route("/getStatus", web::get().to(routes::get_status)) // Route to all ask status 
+                    .route("/getAskStatus", web::get().to(routes::get_ask_status_askid)) // Provide specific ask status
+                    .route("/getPrivInput", web::get().to(routes::get_priv_input)) // provide private inputs for a specific ask
+                    .route("/decryptRequest", web::get().to(routes::decrypt_request)) // Return decrypted input 
                     .route(
                         "/getLatestBlock",
-                        web::get().to(routes::get_latest_block_number),
+                        web::get().to(routes::get_latest_block_number), // Returns the latest Block parsed so far
                     )
             })
             .bind("0.0.0.0:3000")?
