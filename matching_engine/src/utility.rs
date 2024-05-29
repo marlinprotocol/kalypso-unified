@@ -1,10 +1,9 @@
-use ethers::{
-    core::k256,
-    utils::keccak256,
-};
+use ethers::utils::keccak256;
 use ethers::types::{Signature, SignatureError, H160};
 use ethers::core::utils::hex::FromHex;
 use std::error::Error;
+
+
 // fn ecrecover_from_signature(signature: &str, message_hash: &[u8]) -> Option<k256::ecdsa::VerifyingKey> {
 //     // Parse the signature from a hex string
 //     let signature = Signature::from_str(signature).ok()?;
@@ -80,7 +79,9 @@ fn string_to_signature(sig_str: &str) -> Result<Signature, Box<dyn Error>> {
     Ok(signature)
 }
 
-pub fn ivs_family_id(market_id: u256) -> [u8; 32] {
-    let encoded = encode(&["ivs", market_id]);
-    keccak256(&encoded)
+pub fn ivs_family_id(market_id: &str) -> [u8; 32] {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"ivs");
+    bytes.extend_from_slice(market_id.as_bytes());
+    keccak256(bytes)
 }

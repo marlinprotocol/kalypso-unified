@@ -9,12 +9,14 @@ use ethers::signers::Wallet;
 use serde::{Deserialize, Serialize};
 use secret_input_helpers::secret_inputs_helpers;
 use ethers::core::types::{U256, U64};
+use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::ask::*;
 
 use crate::utility;
+use crate::utility::ivs_family_id;
 
 #[derive(Serialize)]
 struct WelcomeResponse {
@@ -175,9 +177,9 @@ pub async fn get_priv_input(
 
     if !local_ask.unwrap().has_private_inputs
     {
-        return http_request::INVALID_request().json(json!({
+        return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid"
-        }))
+        })))
     }
 
     let matching_engine_key = _matching_engine_key.lock().await;
@@ -200,12 +202,11 @@ pub async fn get_priv_input(
         })))
     }
 
-    let family_id = ivs_family_id(ask_id_u256);
+    let family_id = ivs_family_id(&ask_id);
 
-    let result = entity_key_registry.allow_only_verified_family(family_id, image)    
+    let result = entity_key_registry.allow_only_verified_family(family_id, signer)    
     .call()
-    .await
-    .unwrap();
+    .await;
 
     match result {
         Ok(_) => {
@@ -218,7 +219,7 @@ pub async fn get_priv_input(
         }
     }
 
-        // let serialized = serde_json::to_string(&local_ask).unwrap();  
+
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
         &local_ask.unwrap().secret_data.clone().unwrap(),
         &local_ask.unwrap().secret_acl.clone().unwrap(),
@@ -278,12 +279,11 @@ pub async fn decrypt_request(
     let market_id: String = _payload.market_id.clone();
     let market_id_u256: U256 = U256::from_dec_str(&market_id).expect("Failed to parse string");
     
-    let family_id = ivs_family_id(market_id_u256);
+    let family_id = ivs_family_id(&market_id);
 
-    let result = entity_key_registry.allow_only_verified_family(family_id, image)    
+    let result = entity_key_registry.allow_only_verified_family(family_id, signer)    
     .call()
-    .await
-    .unwrap();
+    .await;
 
     match result {
         Ok(_) => {
