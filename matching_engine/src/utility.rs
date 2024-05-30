@@ -2,6 +2,7 @@ use ethers::utils::keccak256;
 use ethers::types::{Signature, SignatureError, H160};
 use ethers::core::utils::hex::FromHex;
 use std::error::Error;
+use hex::decode;
 
 
 // fn ecrecover_from_signature(signature: &str, message_hash: &[u8]) -> Option<k256::ecdsa::VerifyingKey> {
@@ -84,4 +85,18 @@ pub fn ivs_family_id(market_id: &str) -> [u8; 32] {
     bytes.extend_from_slice(b"ivs");
     bytes.extend_from_slice(market_id.as_bytes());
     keccak256(bytes)
+}
+
+pub fn public_key_to_address(public_key_hex: &str) -> Result<H160, hex::FromHexError> {
+    // Decode the public key from hex string to byte array
+    let public_key_bytes = decode(public_key_hex)?;
+
+    // Ensure the public key is 65 bytes (uncompressed format)
+    assert_eq!(public_key_bytes.len(), 65, "Public key should be 65 bytes in uncompressed format");
+
+    // Keccak256 hash of the public key (skipping the first byte which is 0x04)
+    let hash = keccak256(&public_key_bytes[1..]);
+
+    // Take the last 20 bytes of the hash to get the address
+    Ok(H160::from_slice(&hash[12..]))
 }

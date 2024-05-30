@@ -17,6 +17,7 @@ use crate::ask::*;
 
 use crate::utility;
 use crate::utility::ivs_family_id;
+use crate::utility::public_key_to_address;
 
 #[derive(Serialize)]
 struct WelcomeResponse {
@@ -153,6 +154,7 @@ pub async fn get_latest_block_number(
 #[derive(Deserialize)]
 pub struct GetPrivInput {
     ask_id: String,
+    ivs_pubkey: String,
     signature: String,
 }
 
@@ -169,7 +171,7 @@ pub async fn get_priv_input(
     _entity_key_registry: Data<Arc<Mutex<bindings::entity_key_registry::EntityKeyRegistry<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>>>>,
 ) -> actix_web::Result<HttpResponse> {
     
-    let local_ask_store = _local_ask_store.lock().await;
+    let local_ask_store = { _local_ask_store.lock().await };
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
@@ -185,6 +187,14 @@ pub async fn get_priv_input(
     let matching_engine_key = _matching_engine_key.lock().await;
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.ask_id).expect("Failed to recover signature");
+
+    let ivs_pubkey: String = _payload.ivs_pubkey.clone();
+
+    if public_key_to_address(&ivs_pubkey).unwrap() != signer {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "status": "invalid key ivs"
+        })))
+     }
 
     let image = entity_key_registry.get_verified_key(signer)
     .call()
@@ -245,6 +255,7 @@ pub struct DecryptRequest {
     private_input: String,
     acl: String,
     signature: String,
+    ivs_pubkey: String,
 }
 
 
@@ -258,6 +269,14 @@ pub async fn decrypt_request(
     
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id).expect("Failed to recover signature");
+
+    let ivs_pubkey: String = _payload.ivs_pubkey.clone();
+
+    if public_key_to_address(&ivs_pubkey).unwrap() != signer {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "status": "invalid key ivs"
+        })))
+     }
 
     let image = entity_key_registry.get_verified_key(signer)
     .call()
