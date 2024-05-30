@@ -9,8 +9,8 @@ use openssl::rand;
 use openssl::rand::rand_bytes;
 use openssl::symm;
 use openssl::symm::{Cipher, Crypter, Mode};
-use std::error::Error;
 use serde::Serialize;
+use std::error::Error;
 
 #[derive(Serialize)]
 pub struct SecretData {

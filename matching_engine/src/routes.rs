@@ -2,13 +2,13 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::k256::ecdsa::SigningKey;
+use ethers::core::types::{U256, U64};
 use ethers::middleware::SignerMiddleware;
 use ethers::providers::Http;
 use ethers::providers::Provider;
 use ethers::signers::Wallet;
-use serde::{Deserialize, Serialize};
 use secret_input_helpers::secret_inputs_helpers;
-use ethers::core::types::{U256, U64};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -145,7 +145,7 @@ pub async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
 ) -> actix_web::Result<HttpResponse> {
     let latest_parsed_block = _shared_parsed_block.lock().await;
-    
+
     Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {
         block_number: latest_parsed_block.to_string(),
     }))
@@ -158,65 +158,74 @@ pub struct GetPrivInput {
     signature: String,
 }
 
-
 #[derive(Serialize)]
 pub struct GetRequestResponse {
-    encrpyted_data : String,   
+    encrpyted_data: String,
 }
 
 pub async fn get_priv_input(
     _payload: web::Json<GetPrivInput>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
-    _entity_key_registry: Data<Arc<Mutex<bindings::entity_key_registry::EntityKeyRegistry<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>>>>,
+    _entity_key_registry: Data<
+        Arc<
+            Mutex<
+                bindings::entity_key_registry::EntityKeyRegistry<
+                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                >,
+            >,
+        >,
+    >,
 ) -> actix_web::Result<HttpResponse> {
-    
     let local_ask_store = { _local_ask_store.lock().await };
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
     let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
 
-    if !local_ask.unwrap().has_private_inputs
-    {
+    if !local_ask.unwrap().has_private_inputs {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid"
-        })))
+        })));
     }
 
     let matching_engine_key = _matching_engine_key.lock().await;
     let entity_key_registry = _entity_key_registry.lock().await;
-    let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.ask_id).expect("Failed to recover signature");
+    let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.ask_id)
+        .expect("Failed to recover signature");
 
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
 
     if public_key_to_address(&ivs_pubkey).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
-        })))
-     }
+        })));
+    }
 
-    let image = entity_key_registry.get_verified_key(signer)
-    .call()
-    .await
-    .unwrap();
-    
-    let image_blacklisted = entity_key_registry.black_listed_images(image)
-    .call()
-    .await
-    .unwrap();
+    let image = entity_key_registry
+        .get_verified_key(signer)
+        .call()
+        .await
+        .unwrap();
 
-    if image_blacklisted{
+    let image_blacklisted = entity_key_registry
+        .black_listed_images(image)
+        .call()
+        .await
+        .unwrap();
+
+    if image_blacklisted {
         return Ok(HttpResponse::Unauthorized().json(json!({
             "status": "BlackListed"
-        })))
+        })));
     }
 
     let family_id = ivs_family_id(&ask_id);
 
-    let result = entity_key_registry.allow_only_verified_family(family_id, signer)    
-    .call()
-    .await;
+    let result = entity_key_registry
+        .allow_only_verified_family(family_id, signer)
+        .call()
+        .await;
 
     match result {
         Ok(_) => {
@@ -229,25 +238,24 @@ pub async fn get_priv_input(
         }
     }
 
-
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
         &local_ask.unwrap().secret_data.clone().unwrap(),
         &local_ask.unwrap().secret_acl.clone().unwrap(),
         &matching_engine_key.clone(),
         local_ask.unwrap().market_id,
-    ).expect("Failed to get private inputs for the ask id");
+    )
+    .expect("Failed to get private inputs for the ask id");
 
-    let encrypted_aes_data = secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&image, &decrypted_secret_data).unwrap();
+    let encrypted_aes_data =
+        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&image, &decrypted_secret_data)
+            .unwrap();
 
     let serialized = serde_json::to_string(&encrypted_aes_data).unwrap();
 
     Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrpyted_data: serialized,
     }))
-
-    
 }
-
 
 #[derive(Deserialize)]
 pub struct DecryptRequest {
@@ -258,51 +266,60 @@ pub struct DecryptRequest {
     ivs_pubkey: String,
 }
 
-
 pub async fn decrypt_request(
     _payload: web::Json<DecryptRequest>,
     _market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
-    _entity_key_registry: Data<Arc<Mutex<bindings::entity_key_registry::EntityKeyRegistry<
-    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>>>>,
+    _entity_key_registry: Data<
+        Arc<
+            Mutex<
+                bindings::entity_key_registry::EntityKeyRegistry<
+                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                >,
+            >,
+        >,
+    >,
 ) -> actix_web::Result<HttpResponse> {
-    
     let entity_key_registry = _entity_key_registry.lock().await;
-    let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id).expect("Failed to recover signature");
+    let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id)
+        .expect("Failed to recover signature");
 
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
 
     if public_key_to_address(&ivs_pubkey).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
-        })))
-     }
+        })));
+    }
 
-    let image = entity_key_registry.get_verified_key(signer)
-    .call()
-    .await
-    .unwrap();
-    
-    let image_blacklisted = entity_key_registry.black_listed_images(image)
-    .call()
-    .await
-    .unwrap();
+    let image = entity_key_registry
+        .get_verified_key(signer)
+        .call()
+        .await
+        .unwrap();
 
-    if image_blacklisted{
+    let image_blacklisted = entity_key_registry
+        .black_listed_images(image)
+        .call()
+        .await
+        .unwrap();
+
+    if image_blacklisted {
         return Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
-            encrpyted_data:"BlackListed".to_string(),
-        }))
+            encrpyted_data: "BlackListed".to_string(),
+        }));
     }
 
     let market_store = _market_store.lock().await;
     let market_id: String = _payload.market_id.clone();
     let market_id_u256: U256 = U256::from_dec_str(&market_id).expect("Failed to parse string");
-    
+
     let family_id = ivs_family_id(&market_id);
 
-    let result = entity_key_registry.allow_only_verified_family(family_id, signer)    
-    .call()
-    .await;
+    let result = entity_key_registry
+        .allow_only_verified_family(family_id, signer)
+        .call()
+        .await;
 
     match result {
         Ok(_) => {
@@ -318,10 +335,10 @@ pub async fn decrypt_request(
 
     let image_id = market.unwrap().ivs_image_id;
 
-    if image_id != image{
+    if image_id != image {
         return Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
-            encrpyted_data:"Image ID Mismatch".to_string(),
-        }))
+            encrpyted_data: "Image ID Mismatch".to_string(),
+        }));
     }
 
     let secret_data = _payload.private_input.clone();
@@ -332,18 +349,16 @@ pub async fn decrypt_request(
         &acl.into_bytes(),
         &matching_engine_key.clone(),
         market_id_u256,
-    ).expect("Failed to get private inputs for the ask id");
+    )
+    .expect("Failed to get private inputs for the ask id");
 
-    let encrypted_aes_data = secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&image, &decrypted_secret_data).unwrap();
+    let encrypted_aes_data =
+        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&image, &decrypted_secret_data)
+            .unwrap();
 
     let serialized = serde_json::to_string(&encrypted_aes_data).unwrap();
 
     Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrpyted_data: serialized,
     }))
-
 }
-    
-
-
-

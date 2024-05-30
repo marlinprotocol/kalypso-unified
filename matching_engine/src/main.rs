@@ -12,9 +12,9 @@ use tokio::sync::Mutex;
 mod ask;
 // mod utility;
 mod generator;
-mod utility;
 mod log_processor;
 mod routes;
+mod utility;
 
 use tokio::runtime::Runtime;
 
@@ -121,7 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         entity_key_registry_address,
         client.clone(),
     );
-    let shared_entity_key  = Arc::new(Mutex::new(shared_entity_key_registry));
+    let shared_entity_key = Arc::new(Mutex::new(shared_entity_key_registry));
     let clone_shared_entity_key = Arc::clone(&shared_entity_key);
 
     let mut start_block: U64 = U64::from_dec_str(&start_block_string).unwrap();
@@ -163,10 +163,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .app_data(Data::new(shared_matching_key_clone.clone()))
                     .app_data(Data::new(clone_shared_entity_key.clone()))
                     .route("/welcome", web::get().to(routes::welcome)) // Route to welcome endpoint
-                    .route("/getStatus", web::get().to(routes::get_status)) // Route to all ask status 
-                    .route("/getAskStatus", web::get().to(routes::get_ask_status_askid)) // Provide specific ask status
-                    .route("/getPrivInput", web::get().to(routes::get_priv_input)) // provide private inputs for a specific ask
-                    .route("/decryptRequest", web::get().to(routes::decrypt_request)) // Return decrypted input 
+                    .route("/getStatus", web::get().to(routes::get_status)) // Route to all ask status
+                    .route(
+                        "/getAskStatus",
+                        web::post().to(routes::get_ask_status_askid),
+                    ) // Provide specific ask status
+                    .route("/getPrivInput", web::post().to(routes::get_priv_input)) // provide private inputs for a specific ask
+                    .route("/decryptRequest", web::post().to(routes::decrypt_request)) // Return decrypted input
                     .route(
                         "/getLatestBlock",
                         web::get().to(routes::get_latest_block_number), // Returns the latest Block parsed so far
