@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use hex::decode;
 
 use crate::ask::*;
 
@@ -202,6 +203,8 @@ pub async fn get_priv_input(
         })));
     }
 
+    let ivs_pubkey_vec = decode(ivs_pubkey).unwrap();
+
     let image = entity_key_registry
         .get_verified_key(signer)
         .call()
@@ -247,7 +250,7 @@ pub async fn get_priv_input(
     .expect("Failed to get private inputs for the ask id");
 
     let encrypted_aes_data =
-        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&image, &decrypted_secret_data)
+        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&ivs_pubkey_vec, &decrypted_secret_data)
             .unwrap();
 
     let serialized = serde_json::to_string(&encrypted_aes_data).unwrap();
@@ -291,6 +294,8 @@ pub async fn decrypt_request(
             "status": "invalid key ivs"
         })));
     }
+
+    let ivs_pubkey_vec = decode(ivs_pubkey).unwrap();
 
     let image = entity_key_registry
         .get_verified_key(signer)
@@ -353,7 +358,7 @@ pub async fn decrypt_request(
     .expect("Failed to get private inputs for the ask id");
 
     let encrypted_aes_data =
-        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&image, &decrypted_secret_data)
+        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&ivs_pubkey_vec, &decrypted_secret_data)
             .unwrap();
 
     let serialized = serde_json::to_string(&encrypted_aes_data).unwrap();
