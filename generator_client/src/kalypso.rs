@@ -7,6 +7,7 @@ use ethers::prelude::*;
 use ethers::providers::Provider;
 use ethers::types::U256;
 use reqwest::Response;
+use std::env;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
@@ -340,40 +341,45 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
         let converted_generator_address = Address::from_str(&generator.address)?;
         let market_id = &generator.supported_markets[0];
         log::info!("Trying to fetch the ECIES key");
-        // Checking if the generator ECIES pub key is updated in the contracts
-        let generator_ecies_pub_key = entity_key_registry_contract
-            .pub_key(converted_generator_address, U256::from_str(market_id)?)
-            .await?;
-        if generator_ecies_pub_key.len() < 2 {
-            let validation_message = format!(
-                "ECIES key not udpated in the registry for generator : {}",
-                generator.address
-            );
-            return Ok(ValidationResponse {
-                message: validation_message,
-                status: false,
-            });
-        }
-        log::info!("ECIES key is updated in the registry");
-        let local_ecies_pub_key = get_public_keys_for_a_generator(&generator.ecies_private_key)
-            .await?
-            .generator_ecies_public_key;
+        let skip_verification =
+            env::var("SKIP_VERIFICATION").unwrap_or_else(|_| "false".to_string()) == "true";
 
-        let mut prepended_key_array = [0u8; 65];
-        prepended_key_array[0] = 0x04;
-        prepended_key_array[1..].copy_from_slice(&generator_ecies_pub_key);
-        let public_key = ecies::PublicKey::parse(&prepended_key_array).unwrap();
-        let encoded_key = hex::encode(public_key.serialize_compressed());
-        let contract_ecies_public_key = "0x".to_string() + &encoded_key;
+        if !skip_verification {
+            // Checking if the generator ECIES pub key is updated in the contracts
+            let generator_ecies_pub_key = entity_key_registry_contract
+                .pub_key(converted_generator_address, U256::from_str(market_id)?)
+                .await?;
+            if generator_ecies_pub_key.len() < 2 {
+                let validation_message = format!(
+                    "ECIES key not udpated in the registry for generator : {}",
+                    generator.address
+                );
+                return Ok(ValidationResponse {
+                    message: validation_message,
+                    status: false,
+                });
+            }
+            log::info!("ECIES key is updated in the registry");
+            let local_ecies_pub_key = get_public_keys_for_a_generator(&generator.ecies_private_key)
+                .await?
+                .generator_ecies_public_key;
 
-        if local_ecies_pub_key != contract_ecies_public_key {
-            let validation_message = format!("Local ECIES pub key does not match the the ecies pub key in registry for generator : {}",generator.address);
-            return Ok(ValidationResponse {
-                message: validation_message,
-                status: false,
-            });
+            let mut prepended_key_array = [0u8; 65];
+            prepended_key_array[0] = 0x04;
+            prepended_key_array[1..].copy_from_slice(&generator_ecies_pub_key);
+            let public_key = ecies::PublicKey::parse(&prepended_key_array).unwrap();
+            let encoded_key = hex::encode(public_key.serialize_compressed());
+            let contract_ecies_public_key = "0x".to_string() + &encoded_key;
+
+            if local_ecies_pub_key != contract_ecies_public_key {
+                let validation_message = format!("Local ECIES pub key does not match the the ecies pub key in registry for generator : {}",generator.address);
+                return Ok(ValidationResponse {
+                    message: validation_message,
+                    status: false,
+                });
+            }
+            log::info!("Local ECIES key is same as the one in the contract");
         }
-        log::info!("Local ECIES key is same as the one in the contract");
 
         // Checking if generator has registered for the market provided in supported_markets vec
         for market in generator.supported_markets {
