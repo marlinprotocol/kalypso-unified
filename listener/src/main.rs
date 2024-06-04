@@ -259,6 +259,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         Err(err) => return log::error!("{}", err),
                     };
 
+                    dbg!(&proof);
+                    
                     let proof_transaction = match proof {
                         listener::Proof::ValidProof(proof) => {
                             log::info!("Submitting proof on-chain...");
@@ -266,7 +268,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .lock()
                                 .await
                                 .submit_proof(event.ask_id, proof)
-                                .gas(1000000)
                                 .send()
                                 .await
                                 .unwrap()
