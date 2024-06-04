@@ -266,6 +266,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .lock()
                                 .await
                                 .submit_proof(event.ask_id, proof)
+                                .gas(1000000)
                                 .send()
                                 .await
                                 .unwrap()
