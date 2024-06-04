@@ -328,7 +328,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let ask_details: &(pmp::Ask, u8, H160, H160) =
                     &proof_marketplace_ws.list_of_ask(event.ask_id).await?;
                 
-                log::warn!("{:?}", &gen);
+                log::warn!("Generator Data: {:?}", &gen);
                 if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                     gen
                 } else {
