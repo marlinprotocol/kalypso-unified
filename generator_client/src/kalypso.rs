@@ -388,6 +388,10 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
                 .generator_info_per_market(converted_generator_address, U256::from_str(&market)?)
                 .call()
                 .await?;
+            log::info!("generator address {}", converted_generator_address);
+            log::info!("market {}", &market);
+            dbg!(&generator_data);
+            
             if generator_data.0 == 0 {
                 let validation_message = format!(
                     "Generator {} is not registered for market {}. Please register and try again",
