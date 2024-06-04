@@ -348,7 +348,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
             log::info!("Performing ecies key validation in the contracts");
             // Checking if the generator ECIES pub key is updated in the contracts
             let generator_ecies_pub_key = entity_key_registry_contract
-                .pub_key(converted_generator_address, U256::from_str(market_id)?)
+                .pub_key(converted_generator_address, U256::from_dec_str(market_id)?)
                 .await?;
             if generator_ecies_pub_key.len() < 2 {
                 let validation_message = format!(
@@ -385,13 +385,13 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
         // Checking if generator has registered for the market provided in supported_markets vec
         for market in generator.supported_markets {
             let generator_data = generator_registry_contract
-                .generator_info_per_market(converted_generator_address, U256::from_str(&market)?)
+                .generator_info_per_market(converted_generator_address, U256::from_dec_str(&market)?)
                 .call()
                 .await?;
             log::info!("generator address {}", converted_generator_address);
             log::info!("market {}", &market);
             dbg!(&generator_data);
-            
+
             if generator_data.0 == 0 {
                 let validation_message = format!(
                     "Generator {} is not registered for market {}. Please register and try again",
