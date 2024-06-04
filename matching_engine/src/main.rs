@@ -138,7 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     RateLimiter,
                 };
                 let backend = InMemoryBackend::builder().build();
-                let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 1)
+                let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 5)
                     .real_ip_key()
                     .build();
                 let middleware = RateLimiter::builder(backend.clone(), input)
