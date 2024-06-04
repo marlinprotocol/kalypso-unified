@@ -345,6 +345,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
             env::var("SKIP_VERIFICATION").unwrap_or_else(|_| "false".to_string()) == "true";
 
         if !skip_verification {
+            log::info!("Performing ecies key validation in the contracts");
             // Checking if the generator ECIES pub key is updated in the contracts
             let generator_ecies_pub_key = entity_key_registry_contract
                 .pub_key(converted_generator_address, U256::from_str(market_id)?)
