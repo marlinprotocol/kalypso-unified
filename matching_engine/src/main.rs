@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let mut start_block: U64 = U64::from_dec_str(&start_block_string).unwrap();
-    let mut parsed_block = start_block;
+    let parsed_block = start_block;
 
     let confirmations = 10; // ideally this should be more
     let block_range = 20000; // Number of blocks to fetch logs from at once
@@ -292,7 +292,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let available_asks = available_asks.unwrap();
-        log::debug!("{}", available_asks.len());
+        log::warn!("available asks: {}", available_asks.len());
 
         let mut task_list = vec![];
         for random_pending_ask in available_asks {
@@ -305,6 +305,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 random_pending_ask.reward,
             )
             .await;
+            log::warn!("idle generators: {}", &idle_generators.len());
             log::debug!("Fetched idle generators");
 
             if !idle_generators.is_empty() {
@@ -566,9 +567,7 @@ async fn get_idle_generators(
             }
         };
 
-        log::debug!("getting generator query list");
         let generators = generator_query.result();
-        log::debug!("getting idle generators list");
 
         generator::idle_generator_selector(generators)
     };

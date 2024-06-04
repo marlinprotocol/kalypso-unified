@@ -59,6 +59,25 @@ pub async fn process_proof_market_place_logs(
                 invalid_secret_flag: false,
             };
 
+            // [matching_engine/src/log_processor/pm.rs:63:17] ask_to_store = LocalAsk {
+            //     ask_id: 220,
+            //     market_id: 6,
+            //     reward: 14500000000000000000,
+            //     expiry: 100050812875,
+            //     proving_time: 100000000000,
+            //     deadline: 0,
+            //     prover_refund_address: 0x2f3f64c69b2954ce2f85d1f92a4151bfc71c78ea,
+            //     prover_data: Bytes(0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000003f616c656f31726e3633366739346d783371716866376d37396e736e65336c6c7634647173323537303779687763726b393270306b7772633971653339327767000000000000000000000000000000000000000000000000000000000000000004337536340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000043175363400000000000000000000000000000000000000000000000000000000),
+            //     has_private_inputs: false,
+            //     secret_data: None,
+            //     secret_acl: None,
+            //     state: Some(
+            //         The ask was created,
+            //     ),
+            //     generator: None,
+            //     invalid_secret_flag: false,
+            // }
+
             if parsed_ask_created_log.has_private_inputs {
                 ask_to_store.secret_data = Some(parsed_ask_created_log.secret_data);
                 ask_to_store.secret_acl = Some(parsed_ask_created_log.acl);
@@ -75,7 +94,7 @@ pub async fn process_proof_market_place_logs(
                 if decrypted_secret_data.is_ok() {
                     ask_to_store.invalid_secret_flag = true;
                     log::info!(
-                        "Stored ask with AskId {:?} to store",
+                        "Stored private ask with AskId {:?} to store",
                         parsed_ask_created_log.ask_id
                     );
                 } else {
@@ -87,8 +106,9 @@ pub async fn process_proof_market_place_logs(
                 }
                 local_ask_store.insert(ask_to_store);
             } else {
+                ask_to_store.invalid_secret_flag = true;
                 // repeated, try to modify if-else logic and work!..
-                log::debug!(
+                log::info!(
                     "Stored {:?} ask to store, Market: {}",
                     parsed_ask_created_log.ask_id,
                     &ask_to_store.market_id
