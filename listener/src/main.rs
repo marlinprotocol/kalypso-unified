@@ -232,7 +232,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let ask_state = &proof_marketplace_ws.get_ask_state(event.ask_id).await?;
             let ask_state = ask::get_ask_state(*ask_state);
             if ask_state == ask::AskState::Assigned {
-                log::info!("Need to generate proof for ASK ID : {}", event.ask_id);
+                log::info!(
+                    "Need to generate proof (polling) for ASK ID : {}",
+                    event.ask_id
+                );
                 let gen_ecies_private_key = generator.ecies_priv_key.serialize();
 
                 let proof_market_place_clone_ws = Arc::clone(&proof_marketplace_ws);
@@ -240,6 +243,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let markets_clone = Arc::clone(&markets);
                 // code inside thread starts here
                 tokio::spawn(async move {
+                    log::warn!("Spin up new thread from proof generation calls");
                     let generate_proof_args = GenerateProofParams {
                         ask_id: event.ask_id,
                         new_acl: event.new_acl,
@@ -345,7 +349,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let ask_state = &proof_marketplace_ws.get_ask_state(event.ask_id).await?;
         let ask_state = ask::get_ask_state(*ask_state);
         if ask_state == ask::AskState::Assigned {
-            log::info!("Need to generate proof for ASK ID : {}", event.ask_id);
+            log::info!(
+                "Need to generate proof (on event) for ASK ID : {}",
+                event.ask_id
+            );
             let gen_ecies_private_key = generator.ecies_priv_key.serialize();
             let submitter_pmp_clone_http = Arc::clone(&submitter_pmp);
             let proof_market_place_clone_ws = Arc::clone(&proof_marketplace_ws);

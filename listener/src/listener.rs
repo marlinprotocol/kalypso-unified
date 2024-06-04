@@ -85,7 +85,7 @@ pub async fn generate_proof(
     let start_block = *start_block;
     let mut ask_log: Vec<ethers::core::types::Log> = vec![];
 
-    let blocks_at_once = 1000;
+    let blocks_at_once = 9999;
     while start_block <= end_block {
         let begin = if end_block >= start_block + blocks_at_once {
             end_block - blocks_at_once
