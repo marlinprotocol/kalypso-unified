@@ -259,8 +259,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         Err(err) => return log::error!("{}", err),
                     };
 
-                    dbg!(&proof);
-                    
+                    log::debug!("{:?}", &proof);
+
                     let proof_transaction = match proof {
                         listener::Proof::ValidProof(proof) => {
                             log::info!("Submitting proof on-chain...");
