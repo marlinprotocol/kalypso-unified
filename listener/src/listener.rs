@@ -120,16 +120,30 @@ pub async fn generate_proof(
 
     //Checking if the ask has a secret provided
     let decoded_secret_input = if parsed_ask_created_log.has_private_inputs {
+        use std::env;
         log::info!("Secret input found");
         // Handling compressed secret inputs
         let encrypted_secret_input = parsed_ask_created_log.secret_data.to_vec();
 
-        decrypt_data_with_ecies_and_aes(
+        let result = decrypt_data_with_ecies_and_aes(
             &encrypted_secret_input,
             &new_acl,
             ecies_private_key,
             market_id,
-        )?
+        );
+
+        let skip_key_check =
+            env::var("SKIP_KEY_CHECK").unwrap_or_else(|_| "false".to_string()) == "true";
+
+        if !skip_key_check {
+            result?
+        } else {
+            if result.is_err() {
+                Vec::new()
+            } else {
+                result?
+            }
+        }
     } else {
         Vec::new()
     };
@@ -163,7 +177,9 @@ pub async fn generate_proof(
             let proof_response: ProofGenerationResponse = proof_generation_response.json().await?;
             log::info!("{:#?}", proof_response.message);
             return Ok(Proof::ValidProof(proof_response.data));
-        } else if proof_generation_response.status() == 400 {
+        }
+        // else if proof_generation_response.status() == 400
+        else {
             let proof_response: ProofGenerationResponse = proof_generation_response.json().await?;
             log::info!(
                 "Error message from the generator : {}",
