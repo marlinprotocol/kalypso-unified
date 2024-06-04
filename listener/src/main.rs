@@ -19,7 +19,7 @@ struct GeneratorConfigModel {
     address: String,
     ecies_private_key: String,
     data: Option<String>,
-    supported_markets: Vec<U256>,
+    supported_markets: Vec<String>,
     staked_amount: Option<U256>,
     min_reward: Option<U256>,
 }
@@ -158,7 +158,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let mut supported_markets: Vec<U256> = vec![];
 
         for market in config.supported_markets.into_iter() {
-            supported_markets.push(market);
+            let market_temp = U256::from_dec_str(&market).unwrap();
+            supported_markets.push(market_temp);
         }
 
         let generator = generator_store::Generator {
