@@ -216,12 +216,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                         gen
                     } else {
-                        log::debug!("Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}", event.ask_id, gen.address, ask_details.0.market_id);
+                        log::warn!("Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}", event.ask_id, gen.address, ask_details.0.market_id);
                         continue;
                     }
                 }
                 None => {
-                    log::debug!(
+                    log::warn!(
                         "Skipping ask: {:?}, because it is not assigned to my generators",
                         event.ask_id
                     );
@@ -259,7 +259,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         Err(err) => return log::error!("{}", err),
                     };
 
-                    log::debug!("{:?}", &proof);
+                    log::warn!("{:?}", &proof);
 
                     let proof_transaction = match proof {
                         listener::Proof::ValidProof(proof) => {
@@ -330,7 +330,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                     gen
                 } else {
-                    log::debug!(
+                    log::warn!(
                         "Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}",
                         event.ask_id,
                         gen.address,
@@ -340,7 +340,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
             None => {
-                log::debug!(
+                log::warn!(
                     "Skipping ask: {:?}, because it is not assigned to my generators",
                     event.ask_id
                 );
