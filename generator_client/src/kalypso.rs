@@ -385,7 +385,10 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
         // Checking if generator has registered for the market provided in supported_markets vec
         for market in generator.supported_markets {
             let generator_data = generator_registry_contract
-                .generator_info_per_market(converted_generator_address, U256::from_dec_str(&market)?)
+                .generator_info_per_market(
+                    converted_generator_address,
+                    U256::from_dec_str(&market)?,
+                )
                 .call()
                 .await?;
             log::info!("generator address {}", converted_generator_address);

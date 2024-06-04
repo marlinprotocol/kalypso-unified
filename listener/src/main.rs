@@ -213,6 +213,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Some(gen) => {
                     let ask_details: &(pmp::Ask, u8, H160, H160) =
                         &proof_marketplace_ws.list_of_ask(event.ask_id).await?;
+
+                    log::warn!("Generator Data (on polling): {:?}", &gen);
                     if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                         gen
                     } else {
@@ -327,8 +329,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Some(gen) => {
                 let ask_details: &(pmp::Ask, u8, H160, H160) =
                     &proof_marketplace_ws.list_of_ask(event.ask_id).await?;
-                
-                log::warn!("Generator Data: {:?}", &gen);
+
+                log::warn!("Generator Data (on event): {:?}", &gen);
                 if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                     gen
                 } else {
