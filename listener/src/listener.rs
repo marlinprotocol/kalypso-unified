@@ -131,7 +131,7 @@ pub async fn generate_proof(
             market_id,
         );
 
-        result.unwrap_or_else(|_| Vec::new())
+        result.unwrap()
     } else {
         Vec::new()
     };
