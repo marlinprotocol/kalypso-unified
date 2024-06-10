@@ -271,7 +271,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .lock()
                                 .await
                                 .submit_proof(event.ask_id, proof)
-                                .gas(30000000)
                                 .send()
                                 .await
                                 .unwrap()
@@ -287,7 +286,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     event.ask_id,
                                     invalid_proof_signature,
                                 )
-                                .gas(30000000)
                                 .send()
                                 .await
                                 .unwrap()
@@ -391,7 +389,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             .lock()
                             .await
                             .submit_proof(event.ask_id, proof)
-                            .gas(30000000)
                             .send()
                             .await
                             .unwrap()
@@ -404,7 +401,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             .lock()
                             .await
                             .submit_proof_for_invalid_inputs(event.ask_id, invalid_proof_signature)
-                            .gas(30000000)
                             .send()
                             .await
                             .unwrap()
