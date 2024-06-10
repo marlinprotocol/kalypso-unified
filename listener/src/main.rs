@@ -270,7 +270,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             submitter_pmp_clone_http
                                 .lock()
                                 .await
-                                .submit_proof(event.ask_id, proof)
+                                .submit_proof(event.ask_id, proof).gas(1000000)
                                 .send()
                                 .await
                                 .unwrap()
@@ -285,7 +285,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .submit_proof_for_invalid_inputs(
                                     event.ask_id,
                                     invalid_proof_signature,
-                                )
+                                ).gas(1000000)
                                 .send()
                                 .await
                                 .unwrap()
@@ -388,7 +388,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         submitter_pmp_clone_http
                             .lock()
                             .await
-                            .submit_proof(event.ask_id, proof)
+                            .submit_proof(event.ask_id, proof).gas(1000000)
                             .send()
                             .await
                             .unwrap()
@@ -400,7 +400,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         submitter_pmp_clone_http
                             .lock()
                             .await
-                            .submit_proof_for_invalid_inputs(event.ask_id, invalid_proof_signature)
+                            .submit_proof_for_invalid_inputs(event.ask_id, invalid_proof_signature).gas(1000000)
                             .send()
                             .await
                             .unwrap()
