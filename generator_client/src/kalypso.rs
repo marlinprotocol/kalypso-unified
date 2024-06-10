@@ -72,7 +72,11 @@ pub async fn generate_config_file(
     }
 
     //Using the enclave secp secret for ecies private key
-    let secp_private_key = get_private_key().await.unwrap();
+    let read_secp_private_key = fs::read("/app/secp.sec").await?;
+    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
+        .unwrap()
+        .display_secret()
+        .to_string();
 
     //Structure data
     let config_file_path = folder_path.to_string() + "/generator_config.json";
@@ -234,7 +238,11 @@ pub async fn add_new_generator(
     let new_generator = &json_input.0;
 
     //Using the enclave secp secret for ecies private key
-    let secp_private_key = get_private_key().await.unwrap();
+    let read_secp_private_key = fs::read("/app/secp.sec").await?;
+    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
+        .unwrap()
+        .display_secret()
+        .to_string();
 
     let new_generator_data = GeneratorConfig {
         address: new_generator.address.as_ref().unwrap().to_string(),
@@ -412,8 +420,11 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
 
 pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::Error>> {
     //Using the enclave secp secret for ecies private key
-    let secp_private_key = get_private_key().await.unwrap();
-
+    let read_secp_private_key = fs::read("/app/secp.sec").await?;
+    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
+        .unwrap()
+        .display_secret()
+        .to_string();
     let signer = secp_private_key.parse::<LocalWallet>().unwrap();
     let values = vec![ethers::abi::Token::Address(Address::from_str(address)?)];
     let encoded = ethers::abi::encode(&values);
@@ -426,8 +437,11 @@ pub async fn sign_attest(
     attestation: SignAttestation,
 ) -> Result<Signature, Box<dyn std::error::Error>> {
     // Using enclave private key for signature
-    let secp_private_key = get_private_key().await.unwrap();
-
+    let secp_file = fs::read("/app/secp.sec").await?;
+    let secp_private_key = secp256k1::SecretKey::from_slice(&secp_file)
+        .unwrap()
+        .display_secret()
+        .to_string();
     let signer = secp_private_key.parse::<LocalWallet>().unwrap();
     let attestation_bytes = attestation.attestation.unwrap();
     let attestation_string: Vec<&str> = attestation_bytes.split("x").collect();
@@ -448,22 +462,4 @@ pub async fn benchmark(endpoint: String) -> Result<Response, Box<dyn std::error:
     let client = reqwest::Client::new();
     let res = client.get(endpoint).send().await?;
     Ok(res)
-}
-
-async fn get_private_key() -> Result<String, Box<dyn std::error::Error>> {
-    let use_debug_key = env::var("USE_DEBUG_KEY").unwrap_or_else(|_| "false".to_string()) == "true";
-    let default_secp_private_key =
-        "ece2e1fa7802638a06a25886313c414def824839b7c910c3a56ea60a4a6bdad4";
-
-    let secp_private_key = if use_debug_key {
-        default_secp_private_key.to_string()
-    } else {
-        let read_secp_private_key = fs::read("/app/secp.sec").await?;
-        secp256k1::SecretKey::from_slice(&read_secp_private_key)
-            .unwrap()
-            .display_secret()
-            .to_string()
-    };
-
-    return Ok(secp_private_key);
 }
