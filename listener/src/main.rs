@@ -270,7 +270,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             submitter_pmp_clone_http
                                 .lock()
                                 .await
-                                .submit_proof(event.ask_id, proof).gas(1000000)
+                                .submit_proof(event.ask_id, proof)
+                                .gas(30000000)
                                 .send()
                                 .await
                                 .unwrap()
@@ -285,7 +286,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .submit_proof_for_invalid_inputs(
                                     event.ask_id,
                                     invalid_proof_signature,
-                                ).gas(1000000)
+                                )
+                                .gas(30000000)
                                 .send()
                                 .await
                                 .unwrap()
@@ -388,7 +390,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         submitter_pmp_clone_http
                             .lock()
                             .await
-                            .submit_proof(event.ask_id, proof).gas(1000000)
+                            .submit_proof(event.ask_id, proof)
+                            .gas(30000000)
                             .send()
                             .await
                             .unwrap()
@@ -400,7 +403,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         submitter_pmp_clone_http
                             .lock()
                             .await
-                            .submit_proof_for_invalid_inputs(event.ask_id, invalid_proof_signature).gas(1000000)
+                            .submit_proof_for_invalid_inputs(event.ask_id, invalid_proof_signature)
+                            .gas(30000000)
                             .send()
                             .await
                             .unwrap()
