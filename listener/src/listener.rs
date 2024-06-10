@@ -14,13 +14,16 @@ use std::io::Read;
 use std::sync::Arc;
 use std::time::Instant;
 
-type ProofMarketPlaceContractWs =
-    Arc<ProofMarketplace<SignerMiddleware<Provider<Ws>, Wallet<SigningKey>>>>;
+// type ProofMarketPlaceContractWs =
+//     Arc<ProofMarketplace<SignerMiddleware<Provider<Ws>, Wallet<SigningKey>>>>;
+
+type ProofMarketPlaceContractHttp =
+    Arc<ProofMarketplace<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>>;
 
 pub struct GenerateProofParams<'a> {
     pub ask_id: ethers::types::U256,
     pub new_acl: ethers::types::Bytes,
-    pub proof_market_place_contract_ws: ProofMarketPlaceContractWs,
+    pub proof_market_place_contract_http: ProofMarketPlaceContractHttp,
     pub ecies_private_key: &'a [u8],
     pub start_block: &'a U64,
     pub end_block: &'a U64,
@@ -61,7 +64,7 @@ pub async fn generate_proof(
     generate_proof_params: GenerateProofParams<'_>,
 ) -> Result<Proof, Box<dyn std::error::Error>> {
     let GenerateProofParams {
-        proof_market_place_contract_ws,
+        proof_market_place_contract_http,
         ask_id,
         start_block,
         end_block,
@@ -69,8 +72,11 @@ pub async fn generate_proof(
         new_acl,
         markets,
     } = generate_proof_params;
-    let client = proof_market_place_contract_ws.client();
-    let list_of_ask: &Ask = &proof_market_place_contract_ws.list_of_ask(ask_id).await?.0;
+    let client = proof_market_place_contract_http.client();
+    let list_of_ask: &Ask = &proof_market_place_contract_http
+        .list_of_ask(ask_id)
+        .await?
+        .0;
     let market_id = list_of_ask.market_id;
 
     let fetching_ask_secret_timer_start = Instant::now();
@@ -94,7 +100,7 @@ pub async fn generate_proof(
         };
 
         // Fetching ask Transaction hash
-        let ask_event_filter = &proof_market_place_contract_ws
+        let ask_event_filter = &proof_market_place_contract_http
             .ask_created_filter()
             .filter
             .from_block(begin)
@@ -110,7 +116,7 @@ pub async fn generate_proof(
         end_block = begin - 1;
     }
 
-    let parsed_ask_created_log = proof_market_place_contract_ws
+    let parsed_ask_created_log = proof_market_place_contract_http
         .decode_event::<bindings::proof_marketplace::AskCreatedFilter>(
             "AskCreated",
             ask_log[0].topics.clone(),

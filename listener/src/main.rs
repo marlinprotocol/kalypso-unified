@@ -6,7 +6,8 @@ use listener::GenerateProofParams;
 use openssl::rand::rand_bytes;
 use std::collections::HashMap;
 use std::fs;
-use std::{error::Error, str::FromStr, sync::Arc};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::{error::Error, str::FromStr, sync::Arc, thread, time::Duration};
 
 mod generator_store;
 mod listener;
@@ -37,7 +38,7 @@ pub struct MarketDetails {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct RuntimeConfigModel {
-    ws_url: String,
+    ws_url: Option<String>,
     http_url: String,
     private_key: String,
     proof_market_place: String,
@@ -75,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let key = runtime_config.private_key;
     let chain_id = runtime_config.chain_id;
-    let ws_url = runtime_config.ws_url;
+
     let http_url = runtime_config.http_url;
     let proof_market_place_var = runtime_config.proof_market_place;
     let markets = Arc::new(runtime_config.markets);
@@ -83,11 +84,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let signer = key.parse::<LocalWallet>().unwrap().with_chain_id(chain_id);
     let signer_address = signer.address();
     log::info!("Gas payers address : {:?}", signer.address());
-
-    let provider_ws = Provider::<Ws>::connect_with_reconnects(&ws_url, 2)
-        .await?
-        .with_signer(signer.clone());
-    let client_ws = Arc::new(provider_ws.clone());
 
     let provider_http = Provider::<Http>::connect(&http_url)
         .await
@@ -102,9 +98,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     log::info!("Wallet nonce : {}", wallet_nonce);
 
     let proof_marketplace_address = Address::from_str(&proof_market_place_var)?;
-    let proof_marketplace_ws = Arc::new(pmp::ProofMarketplace::new(
+    let proof_marketplace_http = Arc::new(pmp::ProofMarketplace::new(
         proof_marketplace_address,
-        Arc::clone(&client_ws),
+        Arc::clone(&client_http),
     ));
 
     let submitter_pmp = Arc::new(tokio::sync::Mutex::new(pmp::ProofMarketplace::new(
@@ -173,7 +169,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     log::info!("Total number of generators {:?}", key_store.count());
 
-    let block_to_use = client_ws
+    let block_to_use = client_http
         .provider()
         .get_block_number()
         .await
@@ -183,11 +179,38 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut start_block = runtime_start_block;
 
     let blocks_at_once = 10000;
-    while start_block <= block_to_use {
-        let end = if start_block + blocks_at_once <= block_to_use {
-            start_block + blocks_at_once
+
+    let should_stop = Arc::new(AtomicBool::new(false));
+    let stop_handle = should_stop.clone();
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c().await.unwrap();
+        stop_handle.store(true, Ordering::Release);
+    });
+
+    let thread_count = Arc::new(AtomicUsize::new(0));
+    let max_thread_count = 20;
+
+    loop {
+        if should_stop.load(Ordering::Acquire) {
+            log::info!("Gracefully shutting down...");
+            break;
+        }
+
+        if thread_count.load(Ordering::SeqCst) >= max_thread_count {
+            thread::sleep(Duration::from_millis(60));
+            log::warn!(
+                "Stopped proof generation as {} proof generations in progress",
+                max_thread_count
+            );
+            continue;
+        }
+
+        let latest_block = provider_http.get_block_number().await.unwrap();
+
+        let end = if start_block + blocks_at_once > latest_block {
+            latest_block - 1
         } else {
-            block_to_use
+            start_block + blocks_at_once - 1
         };
 
         log::info!(
@@ -196,16 +219,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             end
         );
 
-        let filter = proof_marketplace_ws
+        let filter = proof_marketplace_http
             .task_created_filter()
             .filter
             .from_block(start_block)
             .to_block(end);
 
-        let logs = client_ws.provider().get_logs(&filter).await?;
+        let logs = client_http.provider().get_logs(&filter).await?;
 
         for log in logs {
-            let event = proof_marketplace_ws.decode_event::<pmp::TaskCreatedFilter>(
+            let event = proof_marketplace_http.decode_event::<pmp::TaskCreatedFilter>(
                 "TaskCreated",
                 log.topics,
                 log.data,
@@ -213,18 +236,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let generator = match key_store.get_generator(&event.generator) {
                 Some(gen) => {
                     let ask_details: &(pmp::Ask, u8, H160, H160) =
-                        &proof_marketplace_ws.list_of_ask(event.ask_id).await?;
+                        &proof_marketplace_http.list_of_ask(event.ask_id).await?;
 
-                    log::warn!("Generator Data (on polling): {:?}", &gen);
+                    log::debug!("Generator Data (on polling): {:?}", &gen);
                     if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                         gen
                     } else {
-                        log::warn!("Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}", event.ask_id, gen.address, ask_details.0.market_id);
+                        log::debug!("Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}", event.ask_id, gen.address, ask_details.0.market_id);
                         continue;
                     }
                 }
                 None => {
-                    log::warn!(
+                    log::debug!(
                         "Skipping ask: {:?}, because it is not assigned to my generators",
                         event.ask_id
                     );
@@ -232,7 +255,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             };
 
-            let ask_state = &proof_marketplace_ws.get_ask_state(event.ask_id).await?;
+            let ask_state = &proof_marketplace_http.get_ask_state(event.ask_id).await?;
             let ask_state = ask::get_ask_state(*ask_state);
             if ask_state == ask::AskState::Assigned {
                 log::info!(
@@ -241,16 +264,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 );
                 let gen_ecies_private_key = generator.ecies_priv_key.serialize();
 
-                let proof_market_place_clone_ws = Arc::clone(&proof_marketplace_ws);
+                let proof_market_place_clone_http = Arc::clone(&proof_marketplace_http);
                 let submitter_pmp_clone_http = Arc::clone(&submitter_pmp);
                 let markets_clone = Arc::clone(&markets);
                 // code inside thread starts here
+
+                thread_count.fetch_add(1, Ordering::SeqCst);
+                let thread_count_clone = Arc::clone(&thread_count);
+
                 tokio::spawn(async move {
                     log::warn!("Spin up new thread from proof generation calls");
                     let generate_proof_args = GenerateProofParams {
                         ask_id: event.ask_id,
                         new_acl: event.new_acl,
-                        proof_market_place_contract_ws: proof_market_place_clone_ws,
+                        proof_market_place_contract_http: proof_market_place_clone_http,
                         ecies_private_key: &gen_ecies_private_key,
                         start_block: &runtime_start_block,
                         end_block: &block_to_use,
@@ -262,7 +289,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         Err(err) => return log::error!("{}", err),
                     };
 
-                    log::warn!("{:?}", &proof);
+                    log::info!("{:?}", &proof);
 
                     let proof_transaction = match proof {
                         listener::Proof::ValidProof(proof) => {
@@ -306,123 +333,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             log::error!("Error in submitting proof for ASK ID : {}", event.ask_id);
                         }
                     }
+
+                    thread_count_clone.fetch_sub(1, Ordering::SeqCst);
                     // code inside thread ends here
                 });
             }
         }
 
         start_block = end + 1;
-    }
-
-    log::info!(
-        "Start listening for new TASKS from block : {}",
-        block_to_use
-    );
-
-    let event = Contract::event_of_type::<pmp::TaskCreatedFilter>(Arc::clone(&client_ws))
-        .from_block(block_to_use)
-        .address(ValueOrArray::Array(vec![proof_marketplace_address]));
-
-    let mut stream = event.subscribe_with_meta().await?;
-
-    while let Some(Ok((event, meta))) = stream.next().await {
-        let generator = match key_store.get_generator(&event.generator) {
-            Some(gen) => {
-                let ask_details: &(pmp::Ask, u8, H160, H160) =
-                    &proof_marketplace_ws.list_of_ask(event.ask_id).await?;
-
-                log::warn!("Generator Data (on event): {:?}", &gen);
-                if gen.supported_market_ids.contains(&ask_details.0.market_id) {
-                    gen
-                } else {
-                    log::warn!(
-                        "Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}",
-                        event.ask_id,
-                        gen.address,
-                        ask_details.0.market_id
-                    );
-                    continue;
-                }
-            }
-            None => {
-                log::warn!(
-                    "Skipping ask: {:?}, because it is not assigned to my generators",
-                    event.ask_id
-                );
-                continue;
-            }
-        };
-
-        let ask_state = &proof_marketplace_ws.get_ask_state(event.ask_id).await?;
-        let ask_state = ask::get_ask_state(*ask_state);
-        if ask_state == ask::AskState::Assigned {
-            log::info!(
-                "Need to generate proof (on event) for ASK ID : {}",
-                event.ask_id
-            );
-            let gen_ecies_private_key = generator.ecies_priv_key.serialize();
-            let submitter_pmp_clone_http = Arc::clone(&submitter_pmp);
-            let proof_market_place_clone_ws = Arc::clone(&proof_marketplace_ws);
-            let markets_clone = Arc::clone(&markets);
-
-            tokio::spawn(async move {
-                // code inside thread starts here
-                let generate_proof_args = GenerateProofParams {
-                    ask_id: event.ask_id,
-                    new_acl: event.new_acl,
-                    proof_market_place_contract_ws: proof_market_place_clone_ws,
-                    ecies_private_key: &gen_ecies_private_key,
-                    start_block: &runtime_start_block,
-                    end_block: &meta.block_number,
-                    markets: &markets_clone,
-                };
-
-                let proof = match listener::generate_proof(generate_proof_args).await {
-                    Ok(proof) => proof,
-                    Err(err) => return log::error!("{}", err),
-                };
-
-                let proof_transaction = match proof {
-                    listener::Proof::ValidProof(proof) => {
-                        log::info!("Submitting proof on-chain...");
-                        submitter_pmp_clone_http
-                            .lock()
-                            .await
-                            .submit_proof(event.ask_id, proof)
-                            .send()
-                            .await
-                            .unwrap()
-                            .await
-                            .unwrap()
-                    }
-                    listener::Proof::InvalidProof(invalid_proof_signature) => {
-                        log::info!("Submitting signature on-chain...");
-                        submitter_pmp_clone_http
-                            .lock()
-                            .await
-                            .submit_proof_for_invalid_inputs(event.ask_id, invalid_proof_signature)
-                            .send()
-                            .await
-                            .unwrap()
-                            .await
-                            .unwrap()
-                    }
-                };
-
-                match proof_transaction {
-                    Some(tx_data) => {
-                        log::info!(
-                            "Submitted proof for New ask with id : {} via transaction {:?}",
-                            event.ask_id,
-                            tx_data.transaction_hash
-                        );
-                    }
-                    None => {
-                        log::error!("Error in submitting proof for ASK ID : {}", event.ask_id);
-                    }
-                }
-            });
-        }
     }
 
     Ok(())
