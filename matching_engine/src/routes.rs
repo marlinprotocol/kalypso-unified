@@ -249,11 +249,12 @@ pub async fn get_priv_input(
     )
     .expect("Failed to get private inputs for the ask id");
 
-    let encrypted_aes_data =
-        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&ivs_pubkey_vec, &decrypted_secret_data)
+    let encrypted_ecies_data =
+        secret_inputs_helpers::encrypt_ecies(&decrypted_secret_data,&ivs_pubkey_vec)
             .unwrap();
 
-    let serialized = serde_json::to_string(&encrypted_aes_data).unwrap();
+
+    let serialized = serde_json::to_string(&encrypted_ecies_data).unwrap();
 
     Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrpyted_data: serialized,
@@ -288,14 +289,13 @@ pub async fn decrypt_request(
         .expect("Failed to recover signature");
 
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
+    let ivs_pubkey_vec = hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key");
 
-    if public_key_to_address(&ivs_pubkey).unwrap() != signer {
+    if public_key_to_address(&ivs_pubkey.clone()).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
         })));
-    }
-
-    let ivs_pubkey_vec = decode(ivs_pubkey).unwrap();
+    }    
 
     let image = entity_key_registry
         .get_verified_key(signer)
@@ -346,22 +346,22 @@ pub async fn decrypt_request(
         }));
     }
 
-    let secret_data = _payload.private_input.clone();
-    let acl = _payload.acl.clone();
+    let secret_data = hex::decode(_payload.private_input.clone()).expect("invalid_data");
+    let acl = hex::decode(_payload.acl.clone()).expect("invalid acl data");
     let matching_engine_key = _matching_engine_key.lock().await;
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
-        &secret_data.into_bytes(),
-        &acl.into_bytes(),
+        &secret_data,
+        &acl,
         &matching_engine_key.clone(),
         market_id_u256,
     )
     .expect("Failed to get private inputs for the ask id");
 
-    let encrypted_aes_data =
-        secret_inputs_helpers::encrypt_data_with_ecies_and_aes(&ivs_pubkey_vec, &decrypted_secret_data)
+    let encrypted_ecies_data =
+        secret_inputs_helpers::encrypt_ecies(&ivs_pubkey_vec,&decrypted_secret_data,)
             .unwrap();
 
-    let serialized = serde_json::to_string(&encrypted_aes_data).unwrap();
+    let serialized = serde_json::to_string(&encrypted_ecies_data).unwrap();
 
     Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrpyted_data: serialized,
