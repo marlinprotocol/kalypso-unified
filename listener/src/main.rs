@@ -280,7 +280,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         proof_market_place_contract_http: proof_market_place_clone_http,
                         ecies_private_key: &gen_ecies_private_key,
                         start_block: &runtime_start_block,
-                        end_block: &block_to_use,
+                        end_block: &latest_block,
                         markets: &markets_clone,
                     };
 
