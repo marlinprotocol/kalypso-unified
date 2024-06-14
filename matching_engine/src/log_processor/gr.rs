@@ -61,40 +61,49 @@ pub async fn process_generator_registry_logs(
             continue;
         }
 
-        if let Ok(parsed_deregistered_generator_log) =
-            genertor_registry
-                .decode_event::<bindings::generator_registry::DeregisteredGeneratorFilter>(
-                    "DeregisteredGenerator",
-                    log.topics.clone(),
-                    log.data.clone(),
-                )
-        {
+        if let Ok(parsed_deregistered_generator_log) = genertor_registry.decode_event_raw(
+            "DeregisteredGenerator",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
             log::debug!(
                 "Deregistering Generator: {:?}",
-                parsed_deregistered_generator_log.generator
+                parsed_deregistered_generator_log.get(0).unwrap()
             );
-            let address = parsed_deregistered_generator_log.generator;
+            let address = parsed_deregistered_generator_log
+                .get(0)
+                .unwrap()
+                .clone()
+                .into_address()
+                .unwrap();
 
             generator_store.remove_by_address(&address);
             continue;
         }
 
-        if let Ok(generator_reward_address_change_log) =
-            genertor_registry
-                .decode_event::<bindings::generator_registry::ChangedGeneratorRewardAddressFilter>(
-                    "ChangedGeneratorRewardAddress",
-                    log.topics.clone(),
-                    log.data.clone(),
-                )
-        {
+        if let Ok(generator_reward_address_change_log) = genertor_registry.decode_event_raw(
+            "ChangedGeneratorRewardAddress",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
             log::debug!(
                 "Generator: {:?}, new reward address: {:?}",
-                generator_reward_address_change_log.generator,
-                generator_reward_address_change_log.new_reward_address
+                generator_reward_address_change_log.get(0).unwrap(),
+                generator_reward_address_change_log.get(1).unwrap()
             );
 
-            let address = generator_reward_address_change_log.generator;
-            let reward_address = generator_reward_address_change_log.new_reward_address;
+            let address = generator_reward_address_change_log
+                .get(0)
+                .unwrap()
+                .clone()
+                .into_address()
+                .unwrap();
+            let reward_address = generator_reward_address_change_log
+                .get(1)
+                .unwrap()
+                .clone()
+                .into_address()
+                .unwrap();
 
             generator_store.update_reward_address(&address, reward_address);
             continue;
