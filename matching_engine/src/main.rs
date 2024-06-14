@@ -152,7 +152,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .route("/welcome", web::get().to(routes::welcome))
                     .route("/getStatus", web::get().to(routes::get_status))
                     .route("/getCipher", web::post().to(routes::get_cipher))
-                    .route("/getAskStatus", web::get().to(routes::get_ask_status_askid))
+                    .route("/getAskStatus", web::post().to(routes::get_ask_status_askid))
                     .route(
                         "/getLatestBlock",
                         web::get().to(routes::get_latest_block_number),
