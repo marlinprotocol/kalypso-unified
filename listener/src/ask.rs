@@ -29,6 +29,14 @@ impl std::fmt::Debug for AskState {
 }
 
 pub fn get_ask_state(state: u8) -> AskState {
+    // enum values in contract
+
+    // NULL,
+    // CREATE,
+    // UNASSIGNED,
+    // ASSIGNED,
+    // COMPLETE,
+    // DEADLINE_CROSSED
     match state {
         0 => AskState::Null,
         1 => AskState::Create,

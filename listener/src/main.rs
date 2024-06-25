@@ -208,6 +208,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let latest_block = provider_http.get_block_number().await.unwrap();
 
         let end = if start_block + blocks_at_once > latest_block {
+            thread::sleep(Duration::from_millis(2000)); // to reduce calls on eth_latestBlock
             latest_block - 1
         } else {
             start_block + blocks_at_once - 1
@@ -256,7 +257,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             };
 
             let ask_state = &proof_marketplace_http.get_ask_state(event.ask_id).await?;
+            dbg!(&ask_state);
             let ask_state = ask::get_ask_state(*ask_state);
+            dbg!(ask_state);
             if ask_state == ask::AskState::Assigned {
                 log::info!(
                     "Need to generate proof (polling) for ASK ID : {}",

@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::io::Read;
 use std::sync::Arc;
 use std::time::Instant;
+use std::{thread, time::Duration};
 
 // type ProofMarketPlaceContractWs =
 //     Arc<ProofMarketplace<SignerMiddleware<Provider<Ws>, Wallet<SigningKey>>>>;
@@ -113,6 +114,7 @@ pub async fn generate_proof(
             ask_log = logs;
             break;
         }
+        thread::sleep(Duration::from_millis(2000)); // to reduce calls and avoid rate limit (will be problem only for old requests, not new ones)
         end_block = begin - 1;
     }
 
