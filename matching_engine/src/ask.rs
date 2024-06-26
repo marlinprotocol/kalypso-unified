@@ -123,6 +123,13 @@ impl AskQueryResult {
         self.asks
     }
 
+    pub fn sort_by_ask_id(mut self) -> Self {
+        if let Some(ref mut asks) = self.asks {
+            asks.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
+        }
+        self
+    }
+
     #[allow(unused)]
     pub fn filter_by_market_id(self, market_id: U256) -> Self {
         let filtered = self.asks.map(|asks| {
@@ -313,10 +320,9 @@ impl LocalAskStore {
         }
     }
 
-    #[allow(unused)]
-    fn get_by_market_id(&self, market_id: U256) -> AskQueryResult {
+    pub fn get_by_market_id(&self, market_id: &U256) -> AskQueryResult {
         AskQueryResult {
-            asks: self.market_id_index.get(&market_id).cloned(),
+            asks: self.market_id_index.get(market_id).cloned(),
         }
     }
 

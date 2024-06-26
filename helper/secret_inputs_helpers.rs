@@ -9,8 +9,10 @@ use openssl::rand;
 use openssl::rand::rand_bytes;
 use openssl::symm;
 use openssl::symm::{Cipher, Crypter, Mode};
+use serde::Serialize;
 use std::error::Error;
 
+#[derive(Serialize)]
 pub struct SecretData {
     #[allow(unused)]
     encrypted_data: Vec<u8>,

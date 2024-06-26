@@ -1,5 +1,6 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use tokio::sync::MutexGuard;
@@ -304,7 +305,7 @@ impl Ord for Generator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
     generators: HashMap<Address, Generator>,
@@ -321,6 +322,10 @@ impl GeneratorStore {
             state_index: HashMap::new(),
             address_index: HashMap::new(),
         }
+    }
+
+    pub fn all_generators_address(self) -> Vec<Address> {
+        self.generators.keys().cloned().collect()
     }
 
     pub fn insert(&mut self, generator: Generator) {
@@ -356,7 +361,6 @@ impl GeneratorStore {
             .insert((address, market_id), generator_market);
     }
 
-    #[allow(unused)]
     pub fn get_by_address_and_market(
         &self,
         address: &Address,
