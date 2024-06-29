@@ -32,8 +32,9 @@ struct Config {
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct MarketDetails {
-    pub port: String,
+    pub port: Option<String>,
     pub ivs_url: String,
+    pub prover_gateway_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -295,7 +296,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     log::info!("{:?}", &proof);
 
                     let proof_transaction = match proof {
-                        listener::Proof::ValidProof(proof) => {
+                        crate::listener::prover::Proof::ValidProof(proof) => {
                             log::info!("Submitting proof on-chain...");
                             submitter_pmp_clone_http
                                 .lock()
@@ -307,7 +308,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 .await
                                 .unwrap()
                         }
-                        listener::Proof::InvalidProof(invalid_proof_signature) => {
+                        crate::listener::prover::Proof::InvalidProof(invalid_proof_signature) => {
                             log::info!("Submitting signature on-chain...");
                             submitter_pmp_clone_http
                                 .lock()
