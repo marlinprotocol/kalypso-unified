@@ -204,6 +204,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let latest_block = provider_http.get_block_number().await.unwrap();
         let end_block = if start_block + block_range > latest_block {
+            thread::sleep(Duration::from_millis(600));
             latest_block - 1
         } else {
             start_block + block_range - 1
@@ -536,7 +537,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // to avoid rate limit
-        thread::sleep(Duration::from_millis(600));
+        thread::sleep(Duration::from_millis(6000));
         // timeout.join().unwrap();
     }
 
