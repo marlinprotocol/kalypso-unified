@@ -188,7 +188,7 @@ pub async fn get_priv_input(
         Ok(_) => {
             println!("Image in family");
         }
-        Err(err) => {
+        Err(_) => {
             return Ok(HttpResponse::Unauthorized().json(json!({
                 "status": "ImageNotInFamily"
             })))
@@ -282,7 +282,7 @@ pub async fn decrypt_request(
         Ok(_) => {
             println!("Image in family");
         }
-        Err(err) => {
+        Err(_) => {
             return Ok(HttpResponse::Unauthorized().json(json!({
                 "status": "ImageNotInFamily"
             })))
