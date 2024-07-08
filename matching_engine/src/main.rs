@@ -202,9 +202,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             break;
         }
 
-        let latest_block = provider_http.get_block_number().await.unwrap();
+        let latest_block = match provider_http.get_block_number().await {
+            Ok(data) => data,
+            _ => {
+                log::error!("Sleeping the thread for latest block fetch to avoid rate limit");
+                thread::sleep(Duration::from_millis(5000));
+                continue;
+            }
+        };
         let end_block = if start_block + block_range > latest_block {
-            thread::sleep(Duration::from_millis(600));
             latest_block - 1
         } else {
             start_block + block_range - 1
@@ -226,7 +232,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     entity_key_registry_address,
                 ]);
 
-            let logs = provider_http.get_logs(&filter).await?;
+            let logs = match provider_http.get_logs(&filter).await {
+                Ok(data) => data,
+                _ => {
+                    log::error!("Sleeping the thread for logs to avoid rate limit");
+                    thread::sleep(Duration::from_millis(5000));
+                    continue;
+                }
+            };
 
             let grouped_logs = &logs
                 .into_iter()
@@ -361,10 +374,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 // state confirmation
-                let ask_state = proof_marketplace
+                let ask_state = match proof_marketplace
                     .get_ask_state(random_pending_ask.ask_id)
                     .await
-                    .unwrap();
+                {
+                    Ok(data) => data,
+                    _ => {
+                        log::error!(
+                            "Skipping ask {} because no status received from chain state",
+                            random_pending_ask.ask_id
+                        );
+                        thread::sleep(Duration::from_millis(5000));
+                        continue;
+                    }
+                };
                 let ask_state = ask::get_ask_state(ask_state);
 
                 if ask_state != ask::AskState::Create {
@@ -377,10 +400,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     continue;
                 }
 
-                let generator_state = generator_registry
+                let generator_state = match generator_registry
                     .get_generator_state(idle_generator.address, idle_generator.market_id)
                     .await
-                    .unwrap();
+                {
+                    Ok(data) => data,
+                    _ => {
+                        log::error!("Skipping ask {} because no generator {}-market-{} status received from chain state", random_pending_ask.ask_id, idle_generator.address, idle_generator.market_id);
+                        thread::sleep(Duration::from_millis(5000));
+                        continue;
+                    }
+                };
                 let generator_state = generator::get_generator_state(generator_state.0);
 
                 if generator_state != generator::GeneratorState::Joined
@@ -512,14 +542,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 log::info!("Tx created at {:?}", std::time::Instant::now());
 
-                let batch_relay_tx = batch_relay_tx_pending
-                    .send()
-                    .await
-                    .unwrap()
-                    .confirmations(10)
-                    .await
-                    .unwrap()
-                    .unwrap();
+                // let batch_relay_tx = batch_relay_tx_pending
+                //     .send()
+                //     .await
+                //     .unwrap()
+                //     .confirmations(10)
+                //     .await
+                //     .unwrap()
+                //     .unwrap();
+                let batch_relay_tx = match batch_relay_tx_pending.send().await {
+                    Ok(data) => data.confirmations(10),
+                    _ => {
+                        log::error!("failed sending the transaction");
+                        thread::sleep(Duration::from_millis(5000));
+                        continue;
+                    }
+                };
+
+                let batch_relay_tx = batch_relay_tx.await.unwrap().unwrap();
 
                 log::info!(
                     "Relayed {:?} requests tx: {:?}",
@@ -537,7 +577,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // to avoid rate limit
-        thread::sleep(Duration::from_millis(6000));
+        thread::sleep(Duration::from_millis(600));
         // timeout.join().unwrap();
     }
 
