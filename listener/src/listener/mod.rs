@@ -56,7 +56,10 @@ pub async fn generate_proof(
         let confidential_prover = ConfidentialProver::new(
             format!("{}/api/checkInputs", ivs_url),
             format!("{}/api/generateProofForInvalidInputs", ivs_url),
-            format!("http://0.0.0.0:{}/api/generateProof", generator_port.clone().unwrap()),
+            format!(
+                "http://0.0.0.0:{}/api/generateProof",
+                generator_port.clone().unwrap()
+            ),
             parsed_ask_created_log.ask_id,
             public_inputs.into(),
             decoded_secret_input.into(),

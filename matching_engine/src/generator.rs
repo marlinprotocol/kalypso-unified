@@ -1,6 +1,5 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
-use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use tokio::sync::MutexGuard;
