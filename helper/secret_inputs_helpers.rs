@@ -61,7 +61,7 @@ pub fn decrypt_aes_gcm(
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let iv_length = 12; // GCM recommends a 12-byte IV
     let auth_tag_length = 16; // GCM uses a 16-byte authentication tag
-    let mut aad = vec![0; 32]; // additional athenticated data
+    let mut aad = [0; 32]; // additional athenticated data
     let aad = u256_to_u8_vector(market_id);
     if encrypted_data.len() <= (iv_length + auth_tag_length) {
         return Err(Box::new(std::io::Error::new(
@@ -73,15 +73,15 @@ pub fn decrypt_aes_gcm(
     let iv = &encrypted_data[0..iv_length];
     let encrypted_text = &encrypted_data[iv_length..encrypted_data.len()];
 
-    let nonce = Nonce::from_slice(&iv[..]);
-    let key = Key::<Aes256Gcm>::from_slice(&secret_key[..]);
-    let cipher = aes_gcm::Aes256Gcm::new(&key);
+    let nonce = Nonce::from_slice(iv);
+    let key = Key::<Aes256Gcm>::from_slice(secret_key);
+    let cipher = aes_gcm::Aes256Gcm::new(key);
     let payload = Payload {
-        msg: &encrypted_text[..],
+        msg: encrypted_text,
         aad: &aad[..],
     };
 
-    let decrypted = cipher.decrypt(&nonce, payload);
+    let decrypted = cipher.decrypt(nonce, payload);
 
     match decrypted {
         Ok(decrypted) => Ok(decrypted),
@@ -114,19 +114,19 @@ pub fn encrypt_aes_gcm(
     let mut iv = vec![0; 12]; // GCM recommends a 12-byte IV
     rand::rand_bytes(&mut iv)?;
 
-    let key = Key::<Aes256Gcm>::from_slice(&key[..]);
-    let cipher = aes_gcm::Aes256Gcm::new(&key);
+    let key = Key::<Aes256Gcm>::from_slice(key);
+    let cipher = aes_gcm::Aes256Gcm::new(key);
     let nonce = Nonce::from_slice(&iv[..]);
 
-    let mut aad = vec![0; 32]; // additional athenticated data
+    let mut aad = [0; 32]; // additional athenticated data
     let add = u256_to_u8_vector(market_id);
 
     let payload = Payload {
-        msg: &data[..],
+        msg: data,
         aad: &aad[..],
     };
 
-    let encrypted = cipher.encrypt(&nonce, payload).expect("Decryption failed");
+    let encrypted = cipher.encrypt(nonce, payload).expect("Decryption failed");
     // let mut encrypter = symm::Crypter::new(cipher, symm::Mode::Encrypt, key, Some(&iv))?;
     // let mut encrypted = vec![0; data.len() + cipher.block_size()];
     // let count = encrypter.update(data, &mut encrypted)?;

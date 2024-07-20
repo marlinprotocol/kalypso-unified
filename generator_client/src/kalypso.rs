@@ -188,7 +188,10 @@ pub async fn update_runtime_config_with_new_data(
     update_field!(config, json_input, attestation_verifier);
     update_field!(config, json_input, entity_registry);
     if let Some(new_markets_data) = &json_input.markets {
-        config_file.runtime_config.markets = new_markets_data.clone()
+        config_file
+            .runtime_config
+            .markets
+            .clone_from(new_markets_data)
     }
 
     Ok(config_file)
@@ -444,7 +447,7 @@ pub async fn sign_attest(
         .to_string();
     let signer = secp_private_key.parse::<LocalWallet>().unwrap();
     let attestation_bytes = attestation.attestation.unwrap();
-    let attestation_string: Vec<&str> = attestation_bytes.split("x").collect();
+    let attestation_string: Vec<&str> = attestation_bytes.split('x').collect();
     let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
     let address = attestation.address.unwrap();
     let values = vec![

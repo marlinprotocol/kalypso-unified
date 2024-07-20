@@ -484,9 +484,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut generators = vec![];
                 let mut new_acls = vec![];
 
-                #[allow(unused_variables)]
-                let mut index = 0;
-
                 for pending_task in task_list {
                     let pending_ask = pending_task.0;
                     let idle_generator = pending_task.1;
@@ -495,7 +492,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ask_ids.push(pending_ask.ask_id);
                     generators.push(idle_generator.address);
                     new_acls.push(ethers::types::Bytes::from(new_acl));
-                    index += 1;
                 }
 
                 let values = vec![

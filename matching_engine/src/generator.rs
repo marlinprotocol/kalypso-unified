@@ -1,14 +1,13 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use tokio::sync::MutexGuard;
 
 use rand::Rng;
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
 
-#[derive(Default, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash, Copy)]
+#[derive(Default, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash, Copy, Clone)]
 pub enum GeneratorState {
     #[default]
     Null,
@@ -30,19 +29,6 @@ impl std::fmt::Debug for GeneratorState {
             GeneratorState::PendingConfirmation => "The generator is selected for task",
         };
         write!(f, "{}", value_str)
-    }
-}
-
-impl Clone for GeneratorState {
-    fn clone(&self) -> Self {
-        match self {
-            GeneratorState::Null => GeneratorState::Null,
-            GeneratorState::Joined => GeneratorState::Joined,
-            GeneratorState::NoComputeAvailable => GeneratorState::NoComputeAvailable,
-            GeneratorState::Wip => GeneratorState::Wip,
-            GeneratorState::RequestedForExit => GeneratorState::RequestedForExit,
-            GeneratorState::PendingConfirmation => GeneratorState::PendingConfirmation,
-        }
     }
 }
 
@@ -189,7 +175,7 @@ pub fn idle_generator_selector(
 }
 
 fn get_percentile_by_position(
-    vec: &Vec<&GeneratorInfoPerMarket>,
+    vec: &[&GeneratorInfoPerMarket],
     generator: &GeneratorInfoPerMarket,
 ) -> f64 {
     let index = vec.iter().position(|&x| x == generator).unwrap() as f64;
@@ -231,9 +217,9 @@ pub fn weighted_generator_selection(
         2 => {
             let mut weights = [0.4, 0.6];
             let mut tmp = 0.0;
-            for i in 0..2 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..2] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -247,9 +233,9 @@ pub fn weighted_generator_selection(
         3 => {
             let mut weights = [0.2, 0.5, 0.3];
             let mut tmp = 0.0;
-            for i in 0..3 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..3] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -263,9 +249,9 @@ pub fn weighted_generator_selection(
         4 => {
             let mut weights = [0.1, 0.3, 0.4, 0.2];
             let mut tmp = 0.0;
-            for i in 0..4 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..4] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -279,9 +265,9 @@ pub fn weighted_generator_selection(
         5 => {
             let mut weights = [0.1, 0.3, 0.2, 0.1, 0.3];
             let mut tmp = 0.0;
-            for i in 0..5 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..5] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -296,12 +282,6 @@ pub fn weighted_generator_selection(
     }
 
     Some(generator)
-}
-
-impl Ord for Generator {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.address.cmp(&other.address)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -624,14 +604,12 @@ impl GeneratorStore {
                 let idle_compute = generator.declared_compute.sub(generator.compute_consumed);
                 let utilization = generator.intended_compute_util;
                 let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent {
-                    if idle_compute.gt(&elem.compute_required_per_request) {
-                        generator_result.push(
-                            self.generator_markets
-                                .get(&(elem.address, elem.market_id))
-                                .unwrap(),
-                        );
-                    }
+                if utilization >= exponent && idle_compute.gt(&elem.compute_required_per_request) {
+                    generator_result.push(
+                        self.generator_markets
+                            .get(&(elem.address, elem.market_id))
+                            .unwrap(),
+                    );
                 }
             }
         }
@@ -651,14 +629,12 @@ impl GeneratorStore {
                 let remaining_stake = generator.total_stake.sub(generator.stake_locked);
                 let utilization = generator.intended_stake_util;
                 let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent {
-                    if remaining_stake.gt(&min_stake) {
-                        generator_result.push(
-                            self.generator_markets
-                                .get(&(elem.address, elem.market_id))
-                                .unwrap(),
-                        );
-                    }
+                if utilization >= exponent && remaining_stake.gt(&min_stake) {
+                    generator_result.push(
+                        self.generator_markets
+                            .get(&(elem.address, elem.market_id))
+                            .unwrap(),
+                    );
                 }
             }
         }
@@ -703,17 +679,17 @@ impl KeyStore {
 
     // Updated to reflect the tuple key
     pub fn get_by_address(&self, address: &Address, value: u64) -> Option<&Key> {
-        self.keys.get(&(address.clone(), value))
+        self.keys.get(&(*address, value))
     }
 
     // Updated to reflect the tuple key
     pub fn remove_by_address(&mut self, address: &Address, value: u64) {
-        self.keys.remove(&(address.clone(), value));
+        self.keys.remove(&(*address, value));
     }
 
     // Updated to reflect the tuple key
     pub fn update_pub_key(&mut self, address: &Address, value: u64, new_pub_key: Option<Bytes>) {
-        if let Some(key) = self.keys.get_mut(&(address.clone(), value)) {
+        if let Some(key) = self.keys.get_mut(&(*address, value)) {
             key.ecies_pub_key = new_pub_key;
         }
     }

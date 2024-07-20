@@ -6,7 +6,7 @@ use crate::kalypso::{
     matching_engine_config_validation, read_matching_engine_config_file, sign_addy, sign_attest,
     update_matching_engine_config_file, update_matching_engine_config_with_new_data,
 };
-use crate::middleware::api_auth;
+
 use crate::model::{
     MatchingEngineConfigSetupRequestBody, MatchingEnginePublicKeys, SignAddress, SignAttestation,
     SupervisordResponse, UpdateMatchingEngineConfig,
@@ -15,7 +15,6 @@ use crate::response::response;
 use crate::supervisord::{get_matching_engine_status, start_matching_engine, stop_matching_engine};
 use actix_web::http::StatusCode;
 use actix_web::{get, post, put, web, Responder};
-use actix_web_lab::middleware::from_fn;
 use ethers::types::BigEndianHash;
 use serde_json::{json, Value};
 use validator::Validate;
@@ -420,7 +419,7 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
         );
     }
     let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let signed = sign_addy(&addy_to_be_signed).await.unwrap();
+    let signed = sign_addy(addy_to_be_signed).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),
