@@ -345,8 +345,6 @@ impl LocalAskStore {
         let deadline_crossed = self.get_by_state(AskState::DeadlineCrossed).get_count();
         let invalid_secret = self.get_by_state(AskState::InvalidSecret).get_count();
 
-        
-
         LocalAskStatus {
             created,
             unassigned,

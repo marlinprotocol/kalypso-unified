@@ -49,23 +49,25 @@ pub async fn process_entity_key_registry_logs(
             continue;
         }
 
-        if let Ok(_) = entity_key_registry
+        if entity_key_registry
             .decode_event::<bindings::entity_key_registry::EnclaveKeyRevokedFilter>(
                 "EnclaveKeyRevoked",
                 log.topics.clone(),
                 log.clone().data,
             )
+            .is_ok()
         {
             log::warn!("Skipped EnclaveKeyRevoked event");
             continue;
         }
 
-        if let Ok(_) = entity_key_registry
+        if entity_key_registry
             .decode_event::<bindings::entity_key_registry::EnclaveKeyVerifiedFilter>(
                 "EnclaveKeyVerified",
                 log.topics.clone(),
                 log.clone().data,
             )
+            .is_ok()
         {
             log::warn!("Skipped EnclaveKeyVerified event");
             continue;

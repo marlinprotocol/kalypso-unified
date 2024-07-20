@@ -70,7 +70,8 @@ pub async fn process_generator_registry_logs(
                 "Deregistering Generator: {:?}",
                 parsed_deregistered_generator_log.first().unwrap()
             );
-            let address = parsed_deregistered_generator_log.first()
+            let address = parsed_deregistered_generator_log
+                .first()
                 .unwrap()
                 .clone()
                 .into_address()
@@ -91,7 +92,8 @@ pub async fn process_generator_registry_logs(
                 generator_reward_address_change_log.get(1).unwrap()
             );
 
-            let address = generator_reward_address_change_log.first()
+            let address = generator_reward_address_change_log
+                .first()
                 .unwrap()
                 .clone()
                 .into_address()

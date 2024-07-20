@@ -484,7 +484,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let mut generators = vec![];
                 let mut new_acls = vec![];
 
-
                 for pending_task in task_list {
                     let pending_ask = pending_task.0;
                     let idle_generator = pending_task.1;

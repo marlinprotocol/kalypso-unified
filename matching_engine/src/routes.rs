@@ -118,19 +118,21 @@ pub struct GetRequestResponse {
     encrpyted_data: String,
 }
 
+type EntityRegistryInstance = Data<
+    Arc<
+        Mutex<
+            bindings::entity_key_registry::EntityKeyRegistry<
+                SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+            >,
+        >,
+    >,
+>;
+
 pub async fn get_priv_input(
     _payload: web::Json<GetPrivInput>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
-    _entity_key_registry: Data<
-        Arc<
-            Mutex<
-                bindings::entity_key_registry::EntityKeyRegistry<
-                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                >,
-            >,
-        >,
-    >,
+    _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
     let local_ask_store = { _local_ask_store.lock().await };
     let ask_id: String = _payload.ask_id.clone();
@@ -226,15 +228,7 @@ pub async fn decrypt_request(
     _payload: web::Json<DecryptRequest>,
     _market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
-    _entity_key_registry: Data<
-        Arc<
-            Mutex<
-                bindings::entity_key_registry::EntityKeyRegistry<
-                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                >,
-            >,
-        >,
-    >,
+    _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id)

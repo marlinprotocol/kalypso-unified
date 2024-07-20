@@ -49,8 +49,6 @@ pub fn derive_address_from_signature(
 
     let message_hash = keccak256(message);
 
-    
-
     signature.recover(message_hash)
 }
 
