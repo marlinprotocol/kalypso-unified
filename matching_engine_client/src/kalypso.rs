@@ -208,11 +208,7 @@ pub async fn matching_engine_config_validation(
     rpc_url: &str,
     chain_id: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let key = private_key;
-    let chain_id = chain_id;
-    let rpc_url = rpc_url;
-
-    let signer = key
+    let signer = private_key
         .parse::<LocalWallet>()
         .unwrap()
         .with_chain_id(U64::from_dec_str(chain_id).unwrap().as_u64());

@@ -18,33 +18,38 @@ pub async fn process_entity_key_registry_logs(
             continue;
         }
 
-        if let Ok(_) = entity_key_registry
+        if entity_key_registry
             .decode_event::<bindings::entity_key_registry::EnclaveImageWhitelistedFilter>(
-            "EnclaveImageWhitelisted",
-            log.topics.clone(),
-            log.clone().data,
-        ) {
+                "EnclaveImageWhitelisted",
+                log.topics.clone(),
+                log.clone().data,
+            )
+            .is_ok()
+        {
             log::warn!("Skipped EnclaveImageWhitelisted event");
             continue;
         }
 
-        if let Ok(_) = entity_key_registry
+        if entity_key_registry
             .decode_event::<bindings::entity_key_registry::EnclaveImageRevokedFilter>(
                 "EnclaveImageRevoked",
                 log.topics.clone(),
                 log.clone().data,
             )
+            .is_ok()
         {
             log::warn!("Skipped EnclaveImageRevoked event");
             continue;
         }
 
-        if let Ok(_) = entity_key_registry
+        if entity_key_registry
             .decode_event::<bindings::entity_key_registry::EnclaveImageWhitelistedFilter>(
-            "EnclaveImageWhitelisted",
-            log.topics.clone(),
-            log.clone().data,
-        ) {
+                "EnclaveImageWhitelisted",
+                log.topics.clone(),
+                log.clone().data,
+            )
+            .is_ok()
+        {
             log::warn!("Skipped EnclaveImageWhitelisted event");
             continue;
         }
