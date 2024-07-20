@@ -443,7 +443,7 @@ pub async fn market_info(
     };
 
     Ok(HttpResponse::Ok().json(MarketInfoResponse {
-        market_info: market_id.into(),
+        market_info: market_id,
         asks,
         generator_info,
     }))

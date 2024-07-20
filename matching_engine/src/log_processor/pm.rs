@@ -200,7 +200,7 @@ pub async fn process_proof_market_place_logs(
                 new_market_place
             );
 
-            let market_id_bytes = new_market_place.get(0).unwrap();
+            let market_id_bytes = new_market_place.first().unwrap();
             let market_id = market_id_bytes.clone().into_uint().unwrap();
 
             let market = proof_market_place
@@ -243,7 +243,7 @@ pub async fn process_proof_market_place_logs(
             log.data.clone(),
         ) {
             let ask_id = {
-                let ask_id_bytes = ask_not_generated.get(0).unwrap();
+                let ask_id_bytes = ask_not_generated.first().unwrap();
                 ask_id_bytes.clone().into_uint().unwrap()
             };
             log::warn!(
@@ -283,7 +283,7 @@ pub async fn process_proof_market_place_logs(
             log.topics.clone(),
             log.data.clone(),
         ) {
-            let ask_id_bytes = invalid_inputs_detected_log.get(0).unwrap();
+            let ask_id_bytes = invalid_inputs_detected_log.first().unwrap();
             let ask_id = ask_id_bytes.clone().into_uint().unwrap();
 
             log::warn!(

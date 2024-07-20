@@ -28,7 +28,7 @@ pub async fn process_generator_registry_logs(
                 parsed_registered_generator_log
             );
 
-            let generator_bytes = parsed_registered_generator_log.get(0).unwrap();
+            let generator_bytes = parsed_registered_generator_log.first().unwrap();
             let compute_bytes = parsed_registered_generator_log.get(1).unwrap();
             let stake_bytes = parsed_registered_generator_log.get(2).unwrap();
             let address = generator_bytes.clone().into_address().unwrap();
@@ -68,10 +68,9 @@ pub async fn process_generator_registry_logs(
         ) {
             log::debug!(
                 "Deregistering Generator: {:?}",
-                parsed_deregistered_generator_log.get(0).unwrap()
+                parsed_deregistered_generator_log.first().unwrap()
             );
-            let address = parsed_deregistered_generator_log
-                .get(0)
+            let address = parsed_deregistered_generator_log.first()
                 .unwrap()
                 .clone()
                 .into_address()
@@ -88,12 +87,11 @@ pub async fn process_generator_registry_logs(
         ) {
             log::debug!(
                 "Generator: {:?}, new reward address: {:?}",
-                generator_reward_address_change_log.get(0).unwrap(),
+                generator_reward_address_change_log.first().unwrap(),
                 generator_reward_address_change_log.get(1).unwrap()
             );
 
-            let address = generator_reward_address_change_log
-                .get(0)
+            let address = generator_reward_address_change_log.first()
                 .unwrap()
                 .clone()
                 .into_address()

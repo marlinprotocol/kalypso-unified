@@ -624,14 +624,12 @@ impl GeneratorStore {
                 let idle_compute = generator.declared_compute.sub(generator.compute_consumed);
                 let utilization = generator.intended_compute_util;
                 let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent {
-                    if idle_compute.gt(&elem.compute_required_per_request) {
-                        generator_result.push(
-                            self.generator_markets
-                                .get(&(elem.address, elem.market_id))
-                                .unwrap(),
-                        );
-                    }
+                if utilization >= exponent && idle_compute.gt(&elem.compute_required_per_request) {
+                    generator_result.push(
+                        self.generator_markets
+                            .get(&(elem.address, elem.market_id))
+                            .unwrap(),
+                    );
                 }
             }
         }
@@ -651,14 +649,12 @@ impl GeneratorStore {
                 let remaining_stake = generator.total_stake.sub(generator.stake_locked);
                 let utilization = generator.intended_stake_util;
                 let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent {
-                    if remaining_stake.gt(&min_stake) {
-                        generator_result.push(
-                            self.generator_markets
-                                .get(&(elem.address, elem.market_id))
-                                .unwrap(),
-                        );
-                    }
+                if utilization >= exponent && remaining_stake.gt(&min_stake) {
+                    generator_result.push(
+                        self.generator_markets
+                            .get(&(elem.address, elem.market_id))
+                            .unwrap(),
+                    );
                 }
             }
         }
@@ -703,17 +699,17 @@ impl KeyStore {
 
     // Updated to reflect the tuple key
     pub fn get_by_address(&self, address: &Address, value: u64) -> Option<&Key> {
-        self.keys.get(&(address.clone(), value))
+        self.keys.get(&(*address, value))
     }
 
     // Updated to reflect the tuple key
     pub fn remove_by_address(&mut self, address: &Address, value: u64) {
-        self.keys.remove(&(address.clone(), value));
+        self.keys.remove(&(*address, value));
     }
 
     // Updated to reflect the tuple key
     pub fn update_pub_key(&mut self, address: &Address, value: u64, new_pub_key: Option<Bytes>) {
-        if let Some(key) = self.keys.get_mut(&(address.clone(), value)) {
+        if let Some(key) = self.keys.get_mut(&(*address, value)) {
             key.ecies_pub_key = new_pub_key;
         }
     }

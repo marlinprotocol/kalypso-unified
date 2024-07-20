@@ -120,7 +120,7 @@ pub async fn process_entity_key_registry_logs(
                         None => {
                             let key = Key {
                                 address: user,
-                                key_index: key_index,
+                                key_index,
                                 ecies_pub_key: Some((*pub_key_array).into()),
                             };
                             key_store.insert(key.address, key_index, key);
@@ -137,7 +137,7 @@ pub async fn process_entity_key_registry_logs(
                         None => {
                             let key = Key {
                                 address: user,
-                                key_index: key_index,
+                                key_index,
                                 ecies_pub_key: None,
                             };
                             key_store.insert(user, key_index, key);

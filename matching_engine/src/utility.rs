@@ -47,11 +47,11 @@ pub fn derive_address_from_signature(
     let signature =
         string_to_signature(signature_str).expect("Failed to convert hex string to Signature");
 
-    let message_hash = keccak256(&message);
+    let message_hash = keccak256(message);
 
-    let recovered = signature.recover(message_hash);
+    
 
-    recovered
+    signature.recover(message_hash)
 }
 
 fn string_to_signature(sig_str: &str) -> Result<Signature, Box<dyn Error>> {
@@ -74,7 +74,7 @@ fn string_to_signature(sig_str: &str) -> Result<Signature, Box<dyn Error>> {
     let signature = Signature {
         r: r.into(),
         s: s.into(),
-        v: v as u64,
+        v,
     };
 
     Ok(signature)
