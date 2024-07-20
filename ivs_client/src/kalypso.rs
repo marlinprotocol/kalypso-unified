@@ -48,7 +48,7 @@ pub async fn generate_api_key() -> Result<ApiGenerationResponse, Box<dyn std::er
     })
 }
 
-//Verify api key
+#[allow(unused)]
 pub async fn verify_api_key(
     request_api_key: &str,
 ) -> Result<VerifyApiResponse, Box<dyn std::error::Error>> {

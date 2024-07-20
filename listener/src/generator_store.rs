@@ -6,6 +6,7 @@ pub struct Generator {
     pub address: Address,
     pub supported_market_ids: Vec<U256>,
     pub ecies_priv_key: SecretKey,
+    #[allow(unused)]
     pub ecies_pub_key: PublicKey,
 }
 

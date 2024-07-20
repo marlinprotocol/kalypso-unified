@@ -8,6 +8,7 @@ use actix_web_lab::middleware::Next;
 
 use crate::{kalypso::verify_api_key, response::response};
 
+#[allow(unused)]
 pub async fn api_auth(
     req: ServiceRequest,
     next: Next<impl MessageBody + 'static>,

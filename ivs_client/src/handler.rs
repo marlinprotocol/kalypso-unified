@@ -1,13 +1,12 @@
 use crate::kalypso::{
     generate_api_key, generate_ivs_config_file, get_public_keys_for_ivs, sign_addy, sign_attest,
 };
-use crate::middleware::api_auth;
 use crate::model::{SignAddress, SignAttestation, SupervisordResponse};
 use crate::response::response;
 use crate::supervisord::{get_ivs_status, start_ivs, stop_ivs};
 use actix_web::http::StatusCode;
 use actix_web::{get, post, web, Responder};
-use actix_web_lab::middleware::from_fn;
+
 use ethers::types::BigEndianHash;
 use serde_json::{json, Value};
 use validator::Validate;

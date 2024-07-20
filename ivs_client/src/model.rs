@@ -48,6 +48,7 @@ pub struct SignAttestation {
 }
 
 impl SignAttestation {
+    #[allow(unused)]
     pub fn new(attestation: &str, address: &str) -> SignAttestation {
         SignAttestation {
             attestation: Some(attestation.to_string()),
