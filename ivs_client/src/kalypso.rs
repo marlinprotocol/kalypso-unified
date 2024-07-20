@@ -179,7 +179,7 @@ pub async fn fetch_signed_attestation(
 ) -> Result<Signature, Box<dyn std::error::Error>> {
     let signer = private_key.parse::<LocalWallet>().unwrap();
     let attestation_bytes = attestation.attestation.unwrap();
-    let attestation_string: Vec<&str> = attestation_bytes.split("x").collect();
+    let attestation_string: Vec<&str> = attestation_bytes.split('x').collect();
     let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
     let address = attestation.address.unwrap();
     let values = vec![

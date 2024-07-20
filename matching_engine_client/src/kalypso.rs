@@ -215,7 +215,7 @@ pub async fn matching_engine_config_validation(
     let signer = key
         .parse::<LocalWallet>()
         .unwrap()
-        .with_chain_id(U64::from_dec_str(&chain_id.to_string()).unwrap().as_u64());
+        .with_chain_id(U64::from_dec_str(chain_id).unwrap().as_u64());
 
     let provider_http = Provider::<Http>::try_from(rpc_url)
         .unwrap()
@@ -383,7 +383,7 @@ pub async fn sign_attest(
         .to_string();
     let signer = secp_private_key.parse::<LocalWallet>().unwrap();
     let attestation_bytes = attestation.attestation.unwrap();
-    let attestation_string: Vec<&str> = attestation_bytes.split("x").collect();
+    let attestation_string: Vec<&str> = attestation_bytes.split('x').collect();
     let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
     let address = attestation.address.unwrap();
     let values = vec![

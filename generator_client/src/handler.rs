@@ -838,7 +838,7 @@ async fn benchmark_generator(benchmark_params: web::Query<BenchmarkParams>) -> i
 
         if benchmark_result.status().is_success() {
             let response_unwrapped: BenchmarkResponse = benchmark_result.json().await.unwrap();
-            let proof_generation_time = response_unwrapped.data.to_string().replace("\"", "");
+            let proof_generation_time = response_unwrapped.data.to_string().replace('"', "");
             let response_message = format!("Proof generated in {}ms", proof_generation_time);
             return response(&response_message, StatusCode::OK, None);
         }

@@ -419,7 +419,7 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
         );
     }
     let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let signed = sign_addy(&addy_to_be_signed).await.unwrap();
+    let signed = sign_addy(addy_to_be_signed).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),
