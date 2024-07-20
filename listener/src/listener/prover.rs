@@ -31,11 +31,11 @@ pub trait Prover {
         if check_input.valid {
             let proof = self.generate_proof().await?;
             let proof = hex::decode(proof.proof)?;
-            return Ok(Proof::ValidProof(proof.into()));
+            Ok(Proof::ValidProof(proof.into()))
         } else {
             let proof = self.generate_proof_for_invalid_inputs().await?;
             let proof = hex::decode(proof.proof)?;
-            return Ok(Proof::InvalidProof(proof.into()));
+            Ok(Proof::InvalidProof(proof.into()))
         }
     }
 }

@@ -65,7 +65,7 @@ pub async fn generate_proof(
             decoded_secret_input.into(),
         );
 
-        return confidential_prover.get_proof().await;
+        confidential_prover.get_proof().await
     } else {
         // market without confidential inputs
         let ivs_url = &markets.get(&market_id.to_string()).unwrap().ivs_url;
@@ -82,7 +82,7 @@ pub async fn generate_proof(
             public_inputs.into(),
         );
 
-        return non_confidential_prover.get_proof().await;
+        non_confidential_prover.get_proof().await
     }
 }
 
