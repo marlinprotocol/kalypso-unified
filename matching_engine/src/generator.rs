@@ -7,7 +7,7 @@ use rand::Rng;
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
 
-#[derive(Default, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash, Copy)]
+#[derive(Default, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash, Copy, Clone)]
 pub enum GeneratorState {
     #[default]
     Null,
@@ -29,12 +29,6 @@ impl std::fmt::Debug for GeneratorState {
             GeneratorState::PendingConfirmation => "The generator is selected for task",
         };
         write!(f, "{}", value_str)
-    }
-}
-
-impl Clone for GeneratorState {
-    fn clone(&self) -> Self {
-        *self
     }
 }
 
