@@ -1,7 +1,6 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use tokio::sync::MutexGuard;
 
 use rand::Rng;
@@ -35,14 +34,7 @@ impl std::fmt::Debug for GeneratorState {
 
 impl Clone for GeneratorState {
     fn clone(&self) -> Self {
-        match self {
-            GeneratorState::Null => GeneratorState::Null,
-            GeneratorState::Joined => GeneratorState::Joined,
-            GeneratorState::NoComputeAvailable => GeneratorState::NoComputeAvailable,
-            GeneratorState::Wip => GeneratorState::Wip,
-            GeneratorState::RequestedForExit => GeneratorState::RequestedForExit,
-            GeneratorState::PendingConfirmation => GeneratorState::PendingConfirmation,
-        }
+        *self
     }
 }
 
@@ -189,7 +181,7 @@ pub fn idle_generator_selector(
 }
 
 fn get_percentile_by_position(
-    vec: &Vec<&GeneratorInfoPerMarket>,
+    vec: &[&GeneratorInfoPerMarket],
     generator: &GeneratorInfoPerMarket,
 ) -> f64 {
     let index = vec.iter().position(|&x| x == generator).unwrap() as f64;
@@ -231,9 +223,9 @@ pub fn weighted_generator_selection(
         2 => {
             let mut weights = [0.4, 0.6];
             let mut tmp = 0.0;
-            for i in 0..2 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..2] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -247,9 +239,9 @@ pub fn weighted_generator_selection(
         3 => {
             let mut weights = [0.2, 0.5, 0.3];
             let mut tmp = 0.0;
-            for i in 0..3 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..3] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -263,9 +255,9 @@ pub fn weighted_generator_selection(
         4 => {
             let mut weights = [0.1, 0.3, 0.4, 0.2];
             let mut tmp = 0.0;
-            for i in 0..4 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..4] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -279,9 +271,9 @@ pub fn weighted_generator_selection(
         5 => {
             let mut weights = [0.1, 0.3, 0.2, 0.1, 0.3];
             let mut tmp = 0.0;
-            for i in 0..5 {
-                tmp += weights[i];
-                weights[i] = tmp;
+            for weight in &mut weights[0..5] {
+                tmp += *weight;
+                *weight = tmp;
             }
 
             let selector = rng.gen_range(0.0..1.0);
@@ -296,12 +288,6 @@ pub fn weighted_generator_selection(
     }
 
     Some(generator)
-}
-
-impl Ord for Generator {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.address.cmp(&other.address)
-    }
 }
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,6 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::collections::HashMap;
 
 #[allow(unused)]
@@ -92,12 +91,6 @@ pub struct LocalAskStatus {
     pub completed: usize,
     pub deadline_crossed: usize,
     pub invalid_secret: usize,
-}
-
-impl Ord for LocalAsk {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.ask_id.cmp(&other.ask_id)
-    }
 }
 
 pub struct LocalAskStore {
