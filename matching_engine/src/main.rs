@@ -344,7 +344,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if !idle_generators.is_empty() {
                 // assign task here
-                let mut generator_store = shared_generator_store.lock().await;
+                let mut generator_store = { shared_generator_store.lock().await };
                 let key_store = shared_key_store.lock().await;
                 let idle_generator =
                     generator::random_generator_selection(idle_generators).unwrap();
@@ -427,7 +427,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         generator_state,
                     );
                 } else {
-                    let market_store = shared_market_store.lock().await;
+                    let market_store = { shared_market_store.lock().await };
                     let slashing_penalty = market_store
                         .get_slashing_penalty_by_market_id(&idle_generator.market_id)
                         .unwrap();
