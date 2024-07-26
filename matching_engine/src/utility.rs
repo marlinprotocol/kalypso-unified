@@ -1,5 +1,6 @@
+use ethers::abi::{encode, Token};
 use ethers::core::utils::hex::FromHex;
-use ethers::types::{Signature, SignatureError, H160};
+use ethers::types::{Signature, SignatureError, H160, U256};
 use ethers::utils::keccak256;
 use hex::decode;
 use std::error::Error;
@@ -79,10 +80,11 @@ fn string_to_signature(sig_str: &str) -> Result<Signature, Box<dyn Error>> {
 }
 
 pub fn ivs_family_id(market_id: &str) -> [u8; 32] {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"ivs");
-    bytes.extend_from_slice(market_id.as_bytes());
-    keccak256(bytes)
+    let market_id = U256::from_dec_str(market_id).expect("Invalid market_id");
+    let tokens = vec![Token::String("ivs".to_string()), Token::Uint(market_id)];
+    let encoded = encode(&tokens);
+
+    keccak256(encoded)
 }
 
 pub fn public_key_to_address(public_key_hex: &str) -> Result<H160, hex::FromHexError> {

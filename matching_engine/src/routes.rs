@@ -115,7 +115,7 @@ pub struct GetPrivInput {
 
 #[derive(Serialize)]
 pub struct GetRequestResponse {
-    encrpyted_data: String,
+    encrypted_data: String,
 }
 
 type EntityRegistryInstance = Data<
@@ -211,7 +211,7 @@ pub async fn get_priv_input(
     let serialized = serde_json::to_string(&encrypted_ecies_data).unwrap();
 
     Ok(HttpResponse::Ok().json(GetRequestResponse {
-        encrpyted_data: serialized,
+        encrypted_data: serialized,
     }))
 }
 
@@ -243,25 +243,24 @@ pub async fn decrypt_request(
         })));
     }
 
-    let image = entity_key_registry
+    let image_id_in_er = entity_key_registry
         .get_verified_key(signer)
         .call()
         .await
         .unwrap();
 
     let image_blacklisted = entity_key_registry
-        .black_listed_images(image)
+        .black_listed_images(image_id_in_er)
         .call()
         .await
         .unwrap();
 
     if image_blacklisted {
         return Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
-            encrpyted_data: "BlackListed".to_string(),
+            encrypted_data: "BlackListed".to_string(),
         }));
     }
 
-    let market_store = _market_store.lock().await;
     let market_id: String = _payload.market_id.clone();
     let market_id_u256: U256 = U256::from_dec_str(&market_id).expect("Failed to parse string");
 
@@ -282,15 +281,28 @@ pub async fn decrypt_request(
             })))
         }
     }
-    let market = market_store.get_market_by_market_id(&market_id_u256);
 
-    let image_id = market.unwrap().ivs_image_id;
+    // locks must be dropped..
+    // let market_store = _market_store.lock().await;
 
-    if image_id != image {
-        return Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
-            encrpyted_data: "Image ID Mismatch".to_string(),
-        }));
-    }
+    // matching engine has no idea about the extra images that are being added to the market, they must be indexed first in pm.rs and then it's data to be used here
+    // till then commenting out this part
+    // let image_id_locally = match market_store.get_market_by_market_id(&market_id_u256) {
+    //     Some(data) => data.ivs_image_id,
+    //     None => {
+    //         return Ok(HttpResponse::ExpectationFailed().json(json!({
+    //             "status": "No Info About the market"
+    //         })))
+    //     }
+    // };
+
+    // dbg!(hex::encode(image_id_locally));
+    // dbg!(hex::encode(image_id_in_er));
+    // if image_id_locally != image_id_in_er {
+    //     return Ok(HttpResponse::BadRequest().json(json!({
+    //         "status": "Request doesn't originate from required IVS"
+    //     })))
+    // }
 
     let secret_data = hex::decode(_payload.private_input.clone()).expect("invalid_data");
     let acl = hex::decode(_payload.acl.clone()).expect("invalid acl data");
@@ -301,15 +313,15 @@ pub async fn decrypt_request(
         &matching_engine_key.clone(),
         market_id_u256,
     )
-    .expect("Failed to get private inputs for the ask id");
+    .expect("Failed to get decrypted inputs");
 
     let encrypted_ecies_data =
         secret_inputs_helpers::encrypt_ecies(&ivs_pubkey_vec, &decrypted_secret_data).unwrap();
 
-    let serialized = serde_json::to_string(&encrypted_ecies_data).unwrap();
+    let serialized = hex::encode(encrypted_ecies_data);
 
     Ok(HttpResponse::Ok().json(GetRequestResponse {
-        encrpyted_data: serialized,
+        encrypted_data: serialized,
     }))
 }
 
@@ -378,7 +390,7 @@ pub async fn market_info(
     let market_id_u256 = market_id_u256.unwrap();
 
     let asks = {
-        let local_ask_store = _local_ask_store.lock().await;
+        let local_ask_store = { _local_ask_store.lock().await };
         let asks = local_ask_store
             .get_by_market_id(&market_id_u256)
             .sort_by_ask_id()
@@ -407,7 +419,7 @@ pub async fn market_info(
     };
 
     let generator_info = {
-        let generator_store = _generator_store.lock().await;
+        let generator_store = { _generator_store.lock().await };
         let all_generators = generator_store.clone().all_generators_address();
 
         let mut count = 0;
