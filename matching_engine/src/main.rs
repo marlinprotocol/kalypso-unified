@@ -1,29 +1,25 @@
+use crate::generator::GeneratorState;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
+use ask::{LocalAsk, LocalAskStore, MarketMetadataStore};
 use dotenv::dotenv;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
+use generator::{GeneratorStore, KeyStore};
 use itertools::Itertools;
 use secret_input_helpers::secret_inputs_helpers;
+use serde::{Deserialize, Serialize};
 use std::ops::{Add, Sub};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{fs, str::FromStr, sync::Arc, thread, time::Duration};
+use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
 mod ask;
-// mod utility;
 mod generator;
 mod log_processor;
+mod middlewares;
 mod routes;
 mod utility;
-
-use tokio::runtime::Runtime;
-
-use ask::{LocalAsk, LocalAskStore, MarketMetadataStore};
-use generator::{GeneratorStore, KeyStore};
-
-use crate::generator::GeneratorState;
-
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct MatchingEngineConfig {
@@ -145,38 +141,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let rt = Runtime::new().unwrap();
         let result = rt.block_on(async {
             HttpServer::new(move || {
-                use actix_extensible_rate_limit::{
-                    backend::{memory::InMemoryBackend, SimpleInputFunctionBuilder},
-                    RateLimiter,
-                };
-                let backend = InMemoryBackend::builder().build();
-                let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 5)
-                    .real_ip_key()
-                    .build();
-                let middleware = RateLimiter::builder(backend.clone(), input)
-                    .add_headers()
-                    .build();
                 App::new()
-                    .wrap(middleware)
+                    .wrap(middlewares::ratelimiter::get_rate_limiter())
                     .app_data(Data::new(shared_market_data.clone()))
                     .app_data(Data::new(shared_local_ask_data.clone()))
                     .app_data(Data::new(shared_parsed_block.clone()))
                     .app_data(Data::new(shared_matching_key_clone.clone()))
                     .app_data(Data::new(clone_shared_entity_key.clone()))
                     .app_data(Data::new(shared_generator_data.clone()))
-                    .route("/welcome", web::get().to(routes::welcome)) // Route to welcome endpoint
-                    .route("/getStatus", web::get().to(routes::get_status)) // Route to all ask status
+                    .route("/welcome", web::get().to(routes::chain_status::welcome)) // Route to welcome endpoint
+                    .route("/getStatus", web::get().to(routes::ask_status::get_status)) // Route to all ask status
                     .route(
                         "/getAskStatus",
-                        web::post().to(routes::get_ask_status_askid),
+                        web::post().to(routes::ask_status::get_ask_status_askid),
                     ) // Provide specific ask status
-                    .route("/getPrivInput", web::post().to(routes::get_priv_input)) // provide private inputs for a specific ask
-                    .route("/decryptRequest", web::post().to(routes::decrypt_request)) // Return decrypted input
+                    .route(
+                        "/getPrivInput",
+                        web::post().to(routes::get_priv_inputs::get_priv_input),
+                    ) // provide private inputs for a specific ask
+                    .route(
+                        "/decryptRequest",
+                        web::post().to(routes::decrypt_request::decrypt_request),
+                    ) // Return decrypted input
                     .route(
                         "/getLatestBlock",
-                        web::get().to(routes::get_latest_block_number), // Returns the latest Block parsed so far
+                        web::get().to(routes::chain_status::get_latest_block_number), // Returns the latest Block parsed so far
                     )
-                    .route("/marketInfo", web::post().to(routes::market_info))
+                    .route(
+                        "/marketInfo",
+                        web::post().to(routes::market_info::market_info),
+                    )
             })
             .bind("0.0.0.0:3000")?
             .run()
