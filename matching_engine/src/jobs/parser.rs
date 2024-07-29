@@ -1,7 +1,8 @@
+use anyhow::Result;
 use ethers::prelude::*;
-use itertools::Itertools;
 use k256::ecdsa::SigningKey;
 use secret_input_helpers::secret_inputs_helpers;
+use std::collections::HashMap;
 use std::ops::{Add, Sub};
 use std::{
     str::FromStr,
@@ -32,7 +33,7 @@ type GeneratorRegistryInstance = bindings::generator_registry::GeneratorRegistry
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
 >;
 
-struct LogParser {
+pub struct LogParser {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<Mutex<U64>>,
     block_range: U64,
@@ -50,8 +51,9 @@ struct LogParser {
 }
 
 impl LogParser {
-    #[allow(unused)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
+        should_stop: Arc<AtomicBool>,
         rpc_url: String,
         relayer_signer: Wallet<SigningKey>,
         start_block: Arc<Mutex<U64>>,
@@ -73,7 +75,7 @@ impl LogParser {
         let provider_http = Arc::new(provider_http);
 
         LogParser {
-            should_stop: Arc::new(AtomicBool::new(false)),
+            should_stop,
             start_block,
             block_range,
             confirmations,
@@ -90,8 +92,7 @@ impl LogParser {
         }
     }
 
-    #[allow(unused)]
-    pub async fn parse(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn parse(&self) -> anyhow::Result<()> {
         loop {
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
@@ -131,63 +132,72 @@ impl LogParser {
                     }
                 };
 
-                let grouped_logs = &logs
-                    .into_iter()
-                    .group_by(|log| log.block_number.unwrap_or_default());
+                let mut grouped_logs: HashMap<U64, Vec<Log>> = HashMap::new();
 
-                for (block_number, group) in grouped_logs {
+                for log in logs {
+                    let block_number = log.block_number.unwrap_or_default();
+                    grouped_logs.entry(block_number).or_default().push(log);
+                }
+
+                let mut sorted_block_numbers: Vec<U64> = grouped_logs.keys().cloned().collect();
+                sorted_block_numbers.sort();
+
+                for block_number in sorted_block_numbers {
                     log::debug!("Processing block {}", block_number);
-                    for log in group {
-                        log::debug!(
-                            "Processing logs for block number: {:?}, log-index: {:?}",
-                            block_number,
-                            log.log_index
-                        );
+                    if let Some(group) = grouped_logs.get(&block_number) {
+                        for log in group {
+                            log::debug!(
+                                "Processing logs for block number: {:?}, log-index: {:?}",
+                                block_number,
+                                log.log_index
+                            );
 
-                        if log.address.eq(&proof_marketplace_address) {
-                            log_processor::pm::process_proof_market_place_logs(
-                                vec![log],
-                                self.proof_marketplace.clone(),
-                                &self.shared_local_ask_store,
-                                &self.shared_generator_store,
-                                &self.shared_market_store,
-                                &self.matching_engine_key,
-                            )
-                            .await?;
+                            if log.address.eq(&proof_marketplace_address) {
+                                log_processor::pm::process_proof_market_place_logs(
+                                    vec![log.clone()],
+                                    self.proof_marketplace.clone(),
+                                    &self.shared_local_ask_store,
+                                    &self.shared_generator_store,
+                                    &self.shared_market_store,
+                                    &self.matching_engine_key,
+                                )
+                                .await
+                                .unwrap();
 
-                            continue;
+                                continue;
+                            }
+                            if log.address.eq(&generator_registry_address) {
+                                log_processor::gr::process_generator_registry_logs(
+                                    vec![log.clone()],
+                                    self.generator_registry.clone(),
+                                    &self.shared_generator_store,
+                                )
+                                .await
+                                .unwrap();
+
+                                continue;
+                            }
+
+                            if log.address.eq(&entity_key_registry_address) {
+                                log_processor::er::process_entity_key_registry_logs(
+                                    vec![log.clone()],
+                                    self.entity_registry.clone(),
+                                    &self.shared_key_store,
+                                )
+                                .await
+                                .unwrap();
+                                continue;
+                            }
+
+                            log::error!("Log of unknown contract found {:?}", log.address);
+                            return Err(anyhow::anyhow!("Unknown log"));
                         }
-                        if log.address.eq(&generator_registry_address) {
-                            log_processor::gr::process_generator_registry_logs(
-                                vec![log],
-                                self.generator_registry.clone(),
-                                &self.shared_generator_store,
-                            )
-                            .await?;
-
-                            continue;
-                        }
-
-                        if log.address.eq(&entity_key_registry_address) {
-                            log_processor::er::process_entity_key_registry_logs(
-                                vec![log],
-                                self.entity_registry.clone(),
-                                &self.shared_key_store,
-                            )
-                            .await?;
-                            continue;
-                        }
-
-                        log::error!("Log of unknown contract found {:?}", log.address);
-                        return Err("Unknown log".into());
                     }
-
                     log::debug!("Processed block {}", block_number);
                 }
 
                 start_block = end_block + 1;
-                let mut latest_parsed_block = { *self.start_block.lock().await };
-                latest_parsed_block = start_block;
+                *self.start_block.lock().await = start_block;
                 continue;
             }
             match self.create_match(end_block).await {

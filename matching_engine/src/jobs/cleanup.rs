@@ -1,55 +1,57 @@
-use ethers::{
-    core::k256::ecdsa::SigningKey,
-    middleware::SignerMiddleware,
-    providers::{Http, Provider},
-    signers::Wallet,
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
+    time::Duration,
 };
-use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::ask::{self, LocalAskStore};
 
-#[allow(unused)]
-pub async fn ask_store_cleanup(
-    ask_store: &Arc<Mutex<LocalAskStore>>,
-    proof_market_place: bindings::proof_marketplace::ProofMarketplace<
-        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-    >,
-) {
-    let mut ask_store = ask_store.lock().await;
+use super::ProofMarketplaceInstance;
 
-    // Removing the completed asks
-    let completed_asks = ask_store.get_by_state(ask::AskState::Complete).result();
+pub struct CleanupTool {
+    should_stop: Arc<AtomicBool>,
+    ask_store: Arc<Mutex<LocalAskStore>>,
+    #[allow(unused)]
+    proof_market_place: ProofMarketplaceInstance,
+}
 
-    if completed_asks.is_some() {
-        for elem in completed_asks.unwrap() {
-            ask_store.remove_by_ask_id(&elem.ask_id);
+impl CleanupTool {
+    pub fn new(
+        should_stop: Arc<AtomicBool>,
+        ask_store: Arc<Mutex<LocalAskStore>>,
+        proof_market_place: ProofMarketplaceInstance,
+    ) -> Self {
+        CleanupTool {
+            should_stop,
+            ask_store,
+            proof_market_place,
         }
     }
 
-    // Checking and removing the assigned asks
-    let assigned_asks = ask_store.get_by_state(ask::AskState::Assigned).result();
+    pub async fn ask_store_cleanup(self) -> anyhow::Result<()> {
+        loop {
+            thread::sleep(Duration::from_secs(20));
+            if self.should_stop.load(Ordering::Acquire) {
+                log::info!("Gracefully shutting down...");
+                break;
+            }
+            let mut ask_store = { self.ask_store.lock().await };
 
-    if assigned_asks.is_some() {
-        for elem in assigned_asks.unwrap() {
-            let ask_state = proof_market_place.get_ask_state(elem.ask_id).await.unwrap();
-            let ask_state = ask::get_ask_state(ask_state);
-            if ask_state != ask::AskState::Assigned || ask_state != ask::AskState::Create {
-                ask_store.remove_by_ask_id(&elem.ask_id);
+            // Removing the completed asks
+            let completed_asks = ask_store.get_by_state(ask::AskState::Complete).result();
+
+            if completed_asks.is_some() {
+                for elem in completed_asks.unwrap() {
+                    log::info!("Removed Completed ask:{}", &elem.ask_id);
+                    ask_store.remove_by_ask_id(&elem.ask_id);
+                }
             }
         }
-    }
 
-    // Checking and removing the idle asks
-    let idle_asks = ask_store.get_by_state(ask::AskState::Create).result();
-
-    if idle_asks.is_some() {
-        for elem in idle_asks.unwrap() {
-            let ask_state = proof_market_place.get_ask_state(elem.ask_id).await.unwrap();
-            let ask_state = ask::get_ask_state(ask_state);
-            if ask_state != ask::AskState::Assigned || ask_state != ask::AskState::Create {
-                ask_store.remove_by_ask_id(&elem.ask_id);
-            }
-        }
+        Ok(())
     }
 }
