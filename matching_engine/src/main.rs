@@ -174,13 +174,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         shared_key_store,
         chain_id,
     ));
-    let parser_handle = {
-        let parser_clone = Arc::clone(&parser);
-        tokio::spawn(async move {
-            parser_clone.parse().await.unwrap();
-            Ok(())
-        })
-    };
+
+    let parser_handle = tokio::spawn(async move {
+        parser.parse().await.unwrap();
+        Ok(())
+    });
+
     handles.push(parser_handle);
 
     let cleanup_tool = CleanupTool::new(should_stop, shared_local_ask_store, proof_marketplace);
