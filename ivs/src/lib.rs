@@ -13,12 +13,13 @@ pub fn get_test_request() -> Request<()> {
 }
 
 pub fn generate_check_input_request(
-    secret_input_paylod: Option<models::SecretInputPayload>,
-) -> Request<models::SecretInputPayload> {
+    secret_input_paylod: Option<models::InputPayload>,
+) -> Request<models::InputPayload> {
     Request {
         request_type: RequestType::POST(secret_input_paylod.unwrap_or_else(|| {
-            models::SecretInputPayload {
-                secrets: "secret".into(),
+            models::InputPayload {
+                secrets: Some("secret".into()),
+                public: "public_inputs".into(),
             }
         })),
         service_endpoint: "/api/checkInput".into(),
@@ -63,16 +64,17 @@ pub fn generate_check_encrypted_inputs_request(
     }
 }
 
-pub fn generate_verify_inputs_and_secrets_request(
-    verify_input_and_secret_payload: Option<models::VerifyInputsAndSecrets>,
-) -> Request<models::VerifyInputsAndSecrets> {
+pub fn generate_verify_inputs_and_proof_request(
+    verify_input_and_secret_payload: Option<models::VerifyInputsAndProof>,
+) -> Request<models::VerifyInputsAndProof> {
     Request {
         request_type: RequestType::POST(verify_input_and_secret_payload.unwrap_or_else(|| {
-            models::VerifyInputsAndSecrets {
-                public: "public".into(),
-                secrets: Some("secrets".into()),
+            models::VerifyInputsAndProof {
+                proof: "proof".into(),
+                public_input: Some("public_inputs".into()),
+                private_input: "private_inputs".into(),
             }
         })),
-        service_endpoint: "/api/verifyInputsAndSecrets".into(),
+        service_endpoint: "/api/verifyInputsAndProof".into(),
     }
 }

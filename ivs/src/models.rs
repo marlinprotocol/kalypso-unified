@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct SecretInputPayload {
-    pub secrets: String,
+pub struct InputPayload {
+    pub public: String,
+    pub secrets: Option<String>,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
@@ -23,7 +24,8 @@ pub struct AskPayload {
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct VerifyInputsAndSecrets {
-    pub public: String,
-    pub secrets: Option<String>,
+pub struct VerifyInputsAndProof {
+    pub public_input: Option<String>,
+    pub private_input: String,
+    pub proof: String,
 }
