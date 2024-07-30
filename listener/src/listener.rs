@@ -295,14 +295,7 @@ async fn generate_proof_from_generator(
     port: String,
     ask_id: u64,
 ) -> Result<Response, Box<dyn std::error::Error>> {
-    #[derive(Serialize, Debug)]
-    struct Payload {
-        ask: Ask,
-        private_input: Vec<u8>,
-        ask_id: u64,
-    }
-
-    let payload = Payload {
+    let payload = generator::models::AskInputPayload {
         ask,
         private_input,
         ask_id,
