@@ -1,5 +1,4 @@
 use super::EntityRegistryInstance;
-use super::GetRequestResponse;
 use crate::ask::*;
 use crate::utility;
 use actix_web::web;
@@ -7,6 +6,7 @@ use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
 use hex::decode;
+use matching_engine::models::GetRequestResponse;
 use secret_input_helpers::secret_inputs_helpers;
 use serde::Deserialize;
 use serde_json::json;

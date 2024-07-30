@@ -84,7 +84,10 @@ impl ServiceChecker {
                     }
                 }
                 None => {
-                    println!("Service: {}, Status Code: (Service Error, Fixed Needed in API)", service.name());
+                    println!(
+                        "Service: {}, Status Code: (Service Error, Fixed Needed in API)",
+                        service.name()
+                    );
                 }
             }
         }

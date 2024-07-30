@@ -4,7 +4,6 @@ use ethers::middleware::SignerMiddleware;
 use ethers::providers::Http;
 use ethers::providers::Provider;
 use ethers::signers::Wallet;
-use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -23,8 +22,3 @@ type EntityRegistryInstance = Data<
         >,
     >,
 >;
-
-#[derive(Serialize)]
-pub struct GetRequestResponse {
-    encrypted_data: String,
-}

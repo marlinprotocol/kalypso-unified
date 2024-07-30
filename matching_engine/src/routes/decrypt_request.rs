@@ -2,8 +2,8 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
+use matching_engine::models::{DecryptRequest, GetRequestResponse};
 use secret_input_helpers::secret_inputs_helpers;
-use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -11,16 +11,7 @@ use tokio::sync::Mutex;
 use crate::ask::*;
 use crate::utility;
 
-use super::{EntityRegistryInstance, GetRequestResponse};
-
-#[derive(Deserialize)]
-pub struct DecryptRequest {
-    market_id: String,
-    private_input: String,
-    acl: String,
-    signature: String,
-    ivs_pubkey: String,
-}
+use super::EntityRegistryInstance;
 
 pub async fn decrypt_request(
     _payload: web::Json<DecryptRequest>,
