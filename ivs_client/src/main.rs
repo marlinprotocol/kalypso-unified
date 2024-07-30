@@ -2,7 +2,6 @@ mod handler;
 mod kalypso;
 mod middleware;
 mod model;
-mod response;
 mod supervisord;
 
 use actix_web::{App, HttpServer};

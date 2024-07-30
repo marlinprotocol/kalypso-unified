@@ -11,11 +11,11 @@ use crate::model::{
     SignAddress, SignAttestation, SupervisordInputBody, SupervisordResponse, UpdateGeneratorConfig,
     UpdateRuntimeConfig,
 };
-use crate::response::response;
 use crate::supervisord::{get_program_status, start_program, stop_program};
 use actix_web::http::StatusCode;
 use actix_web::{delete, get, post, put, web, Responder};
 use ethers::types::BigEndianHash;
+use helper::response::response;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use validator::Validate;
