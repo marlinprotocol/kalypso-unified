@@ -5,4 +5,6 @@ edition = "2021"
 
 [dependencies]
 bindings = { path = "../bindings", package = "foundry-contracts" }
+ethers ={version = "2.0.10", features = ["abigen", "ws", "rustls"] }
 serde = { version = "1.0", features = ["derive"] }
+generator_models = { path = "../generator", package = "generator" }

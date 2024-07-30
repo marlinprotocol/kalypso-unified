@@ -8,4 +8,6 @@ members = [
     "generator_client",
     "listener", 
     "ivs", 
-    "generator"]
+    "generator", 
+    "integration_checks"
+]
