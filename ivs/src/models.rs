@@ -27,7 +27,8 @@ pub struct EncryptedInputPayload {
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct VerifyInputsAndSecrets {
-    pub public: String,
-    pub secrets: Option<String>,
+pub struct VerifyInputsAndProof {
+    pub public_input: Option<String>,
+    pub private_input: String,
+    pub proof: String,
 }
