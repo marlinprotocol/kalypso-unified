@@ -38,19 +38,6 @@ pub enum Proof {
 }
 
 #[derive(Deserialize, Debug)]
-struct ProofGenerationResponse {
-    message: String,
-    data: Bytes,
-}
-
-// Define the response format struct
-#[derive(Deserialize)]
-struct IvsResponse {
-    signature: String,
-    ask_id: u64,
-}
-
-#[derive(Deserialize, Debug)]
 struct ApiDataResponse {
     ivs_ecies_public_key: String,
 }
@@ -170,13 +157,15 @@ pub async fn generate_proof(
         )
         .await?;
         if proof_generation_response.status().is_success() {
-            let proof_response: ProofGenerationResponse = proof_generation_response.json().await?;
+            let proof_response: generator::models::ProofGenerationResponse =
+                proof_generation_response.json().await?;
             log::info!("{:#?}", proof_response.message);
             return Ok(Proof::ValidProof(proof_response.data));
         }
         // else if proof_generation_response.status() == 400
         else {
-            let proof_response: ProofGenerationResponse = proof_generation_response.json().await?;
+            let proof_response: generator::models::ProofGenerationResponse =
+                proof_generation_response.json().await?;
             log::info!(
                 "Error message from the generator : {}",
                 proof_response.message
@@ -206,7 +195,8 @@ pub async fn generate_proof(
         )
         .await?;
         if proof_generation_response.status().is_success() {
-            let proof_response: ProofGenerationResponse = proof_generation_response.json().await?;
+            let proof_response: generator::models::ProofGenerationResponse =
+                proof_generation_response.json().await?;
             log::info!("{:#?}", proof_response.message);
             return Ok(Proof::ValidProof(proof_response.data));
         }
@@ -237,7 +227,8 @@ pub async fn generate_proof(
             hex::encode(final_acl),
         )
         .await?;
-        let response_data: IvsResponse = invalid_proof_signature.json().await?;
+        let response_data: ivs::models::InvalidInputsAttestationResponse =
+            invalid_proof_signature.json().await?;
         log::info!(
             "Submitting signature for invalid inputs for ASK ID : {}",
             response_data.ask_id
@@ -277,7 +268,7 @@ async fn get_proof_for_invalid_request(
     };
     log::info!("Payload generated");
 
-    let ivs_endpoint_to_fetch_signature = format!("{}:3030/checkInputWithSignature", ivs_url);
+    let ivs_endpoint_to_fetch_signature = format!("{}/api/getAttestationForInvalidInputs", ivs_url);
 
     // Make the POST request
     let res = client

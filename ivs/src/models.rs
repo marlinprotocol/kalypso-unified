@@ -29,3 +29,19 @@ pub struct VerifyInputsAndProof {
     pub private_input: String,
     pub proof: String,
 }
+
+#[derive(Deserialize)]
+pub struct SimpleCheckInputResponse {
+    pub is_input_valid: bool,
+}
+
+#[derive(Deserialize)]
+pub struct InvalidInputsAttestationResponse {
+    pub signature: String,
+    pub ask_id: u64,
+}
+
+#[derive(Deserialize)]
+pub struct VerifyInputAndProofResponse {
+    pub is_input_and_proof_valid: bool,
+}

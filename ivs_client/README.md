@@ -75,7 +75,7 @@ curl --location --request POST 'http://43.205.177.43:3030/checkInput' \
 
 ### Check inputs with signature
 ``` cmd
-curl --location --request POST 'http://43.205.177.43:3030/checkInputWithSignature' \
+curl --location --request POST 'http://43.205.177.43:3030/getAttestationForInvalidInputs' \
 --header 'Content-Type: application/json' \
 --data-raw '{"ask_id":1,"public_inputs":"009...4d4","encrypted_secret":"4f6...2d7","acl":"04d...c62"}'
 ```

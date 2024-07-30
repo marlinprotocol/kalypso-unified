@@ -53,9 +53,13 @@ async fn test_generator_services(generator_url: &String) -> Result<(), Box<dyn E
     let generator_service = generator::ServiceChecker {
         server_url: generator_url.into(),
         services: vec![
-            Box::new(generator::get_test_request()),
-            Box::new(generator::get_benchmark_request()),
-            Box::new(generator::generate_proof_request(
+            Box::new(generator::get_test_request::<generator::models::TestResponse>()),
+            Box::new(generator::get_benchmark_request::<
+                generator::models::TestResponse,
+            >()),
+            Box::new(generator::generate_proof_request::<
+                generator::models::ProofGenerationResponse,
+            >(
                 create_payload("./integration_checks/proverCustomData/generate_proof_payload.json")
                     .await,
             )),
@@ -69,17 +73,21 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
     let generator_service = generator::ServiceChecker {
         server_url: ivs_url.into(),
         services: vec![
-            Box::new(ivs::get_test_request()),
-            Box::new(ivs::generate_check_input_request(
+            Box::new(ivs::get_test_request::<generator::models::TestResponse>()),
+            Box::new(ivs::generate_check_input_request::<ivs::models::SimpleCheckInputResponse>(
                 create_payload("integration_checks/ivsCustomData/check_input_payload.json").await,
             )),
-            Box::new(ivs::generate_get_attestation_for_invalid_input_request(
+            Box::new(ivs::generate_get_attestation_for_invalid_input_request::<ivs::models::InvalidInputsAttestationResponse>(
                 create_payload("./integration_checks/ivsCustomData/get_attestation_for_invalid_inputs_payload.json").await,
             )),
-            Box::new(ivs::generate_check_encrypted_inputs_request(
+            Box::new(ivs::generate_check_encrypted_inputs_request::<ivs::models::SimpleCheckInputResponse>(
                 create_payload("./integration_checks/ivsCustomData/check_encrypted_input_payload.json").await)
             ),
-            Box::new(ivs::generate_verify_inputs_and_proof_request(create_payload("integration_checks/ivsCustomData/verify_inputs_and_proof_payload.json").await)),
+            Box::new(ivs::generate_verify_inputs_and_proof_request::<
+                ivs::models::VerifyInputAndProofResponse
+                >(
+                    create_payload("integration_checks/ivsCustomData/verify_inputs_and_proof_payload.json").await)
+                ),
         ],
     };
     generator_service.check_all_services().await;
