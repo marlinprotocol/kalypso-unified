@@ -1,7 +1,6 @@
 use ethers::types::{Bytes, U256};
-use serde::Serialize;
 
-use super::prover::{post_request, CheckInputResponse, GenerateProofResponse, Prover};
+use super::prover::{post_request, Prover};
 
 pub struct NonConfidentialProver {
     input_verification_executable_check_input_url: String,
@@ -29,26 +28,16 @@ impl NonConfidentialProver {
     }
 }
 
-#[derive(Serialize)]
-pub struct InputPayload {
-    pub public: String,
-}
-
-#[derive(Serialize)]
-pub struct InvalidInputPayload {
-    pub ask_id: String,
-    pub public: String,
-}
-
 impl Prover for NonConfidentialProver {
     async fn check_inputs(
         &self,
-    ) -> Result<super::prover::CheckInputResponse, Box<dyn std::error::Error>> {
-        let payload = InputPayload {
+    ) -> Result<ivs::models::CheckInputResponse, Box<dyn std::error::Error>> {
+        let payload = ivs::models::InputPayload {
             public: hex::encode(&self.public),
+            secrets: None,
         };
 
-        post_request::<InputPayload, CheckInputResponse>(
+        post_request::<ivs::models::InputPayload, ivs::models::CheckInputResponse>(
             &self.input_verification_executable_check_input_url,
             &payload,
         )
@@ -57,27 +46,29 @@ impl Prover for NonConfidentialProver {
 
     async fn generate_proof(
         &self,
-    ) -> Result<super::prover::GenerateProofResponse, Box<dyn std::error::Error>> {
-        let payload = InputPayload {
+    ) -> Result<generator::models::GenerateProofResponse, Box<dyn std::error::Error>> {
+        let payload = ivs::models::InputPayload {
             public: hex::encode(&self.public),
+            secrets: None,
         };
 
-        post_request::<InputPayload, GenerateProofResponse>(
+        post_request::<ivs::models::InputPayload, generator::models::GenerateProofResponse>(
             &self.prover_executable_generate_proof_url,
             &payload,
         )
         .await
     }
 
-    async fn generate_proof_for_invalid_inputs(
+    async fn generate_attestation_for_invalid_inputs(
         &self,
-    ) -> Result<super::prover::GenerateProofResponse, Box<dyn std::error::Error>> {
-        let payload: InvalidInputPayload = InvalidInputPayload {
+    ) -> Result<generator::models::GenerateProofResponse, Box<dyn std::error::Error>> {
+        let payload: ivs::models::InvalidInputPayload = ivs::models::InvalidInputPayload {
             ask_id: self.ask_id.to_string(),
             public: hex::encode(&self.public),
+            secrets: None,
         };
 
-        post_request::<InvalidInputPayload, GenerateProofResponse>(
+        post_request::<ivs::models::InvalidInputPayload, generator::models::GenerateProofResponse>(
             &self.input_verification_executable_generate_proof_for_invalid_inputs_url,
             &payload,
         )

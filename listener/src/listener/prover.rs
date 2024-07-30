@@ -1,17 +1,7 @@
 use ethers::types::Bytes;
 use reqwest::Client;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
-
-#[derive(Deserialize)]
-pub struct CheckInputResponse {
-    pub valid: bool,
-}
-
-#[derive(Deserialize)]
-pub struct GenerateProofResponse {
-    pub proof: String,
-}
 
 #[derive(Debug, Clone)]
 pub enum Proof {
@@ -20,11 +10,13 @@ pub enum Proof {
 }
 
 pub trait Prover {
-    async fn check_inputs(&self) -> Result<CheckInputResponse, Box<dyn Error>>;
-    async fn generate_proof(&self) -> Result<GenerateProofResponse, Box<dyn Error>>;
-    async fn generate_proof_for_invalid_inputs(
+    async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, Box<dyn Error>>;
+    async fn generate_proof(
         &self,
-    ) -> Result<GenerateProofResponse, Box<dyn Error>>;
+    ) -> Result<generator::models::GenerateProofResponse, Box<dyn Error>>;
+    async fn generate_attestation_for_invalid_inputs(
+        &self,
+    ) -> Result<generator::models::GenerateProofResponse, Box<dyn Error>>;
 
     async fn get_proof(&self) -> Result<Proof, Box<dyn Error>> {
         let check_input = self.check_inputs().await?;
@@ -33,7 +25,7 @@ pub trait Prover {
             let proof = hex::decode(proof.proof)?;
             Ok(Proof::ValidProof(proof.into()))
         } else {
-            let proof = self.generate_proof_for_invalid_inputs().await?;
+            let proof = self.generate_attestation_for_invalid_inputs().await?;
             let proof = hex::decode(proof.proof)?;
             Ok(Proof::InvalidProof(proof.into()))
         }

@@ -55,9 +55,9 @@ pub async fn generate_proof(
         let generator_port = &markets.get(&market_id.to_string()).unwrap().port;
         let confidential_prover = ConfidentialProver::new(
             format!("{}/api/checkInputs", ivs_url),
-            format!("{}/api/generateProofForInvalidInputs", ivs_url),
+            format!("{}/api/getAttestationForInvalidInputs", ivs_url),
             format!(
-                "http://0.0.0.0:{}/api/generateProof",
+                "http://localhost:{}/api/generateProof",
                 generator_port.clone().unwrap()
             ),
             parsed_ask_created_log.ask_id,
@@ -76,7 +76,7 @@ pub async fn generate_proof(
 
         let non_confidential_prover = NonConfidentialProver::new(
             format!("{}/api/checkInputs", ivs_url),
-            format!("{}/api/generateProofForInvalidInputs", ivs_url),
+            format!("{}/api/getAttestationForInvalidInputs", ivs_url),
             generator_url.clone().unwrap().clone(),
             parsed_ask_created_log.ask_id,
             public_inputs.into(),

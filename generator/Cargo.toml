@@ -1,0 +1,8 @@
+[package]
+name = "generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bindings = { path = "../bindings", package = "foundry-contracts" }
+serde = { version = "1.0", features = ["derive"] }

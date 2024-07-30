@@ -15,9 +15,9 @@ use std::error::Error;
 #[derive(Serialize)]
 pub struct SecretData {
     #[allow(unused)]
-    encrypted_data: Vec<u8>,
+    pub encrypted_data: Vec<u8>,
     #[allow(unused)]
-    acl_data: Vec<u8>,
+    pub acl_data: Vec<u8>,
 }
 
 #[allow(unused)]

@@ -6,5 +6,6 @@ members = [
     "matching_engine_client",
     "ivs_client",
     "generator_client",
-    "listener"
-]
+    "listener", 
+    "ivs", 
+    "generator"]
