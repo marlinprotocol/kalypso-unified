@@ -22,7 +22,15 @@ Cargo.lock
 
 .vscode
 
-*.json
+generator_config*.json
+runtime_config*.json
+matching_engine_config*.json
+
+integration_checks/ivsCustomData
+integration_checks/ivsCustomData/*
+
+integration_checks/proverCustomData
+integration_checks/proverCustomData/*
 
 test.sh
 test_*.sh

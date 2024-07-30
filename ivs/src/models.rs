@@ -23,6 +23,7 @@ pub struct AskPayload {
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct VerifyProofPayload {
-    pub execution: Option<String>,
+pub struct VerifyInputsAndSecrets {
+    pub public: String,
+    pub secrets: Option<String>,
 }
