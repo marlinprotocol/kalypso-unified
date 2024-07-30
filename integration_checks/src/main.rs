@@ -71,12 +71,18 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
         services: vec![
             Box::new(ivs::get_test_request()),
             Box::new(ivs::generate_input_request(
-                create_payload("integration_checks/ivsCustomData/check_input_payload.json").await,
+                create_payload("./integration_checks/ivsCustomData/check_input_payload.json").await,
             )),
             Box::new(ivs::generate_invalid_input_request(
-                create_payload("integration_checks/ivsCustomData/check_invalid_input_payload.json")
+                create_payload("./integration_checks/ivsCustomData/check_invalid_input_payload.json")
                     .await,
             )),
+            Box::new(ivs::generate_check_encrypted_inputs_request(
+                create_payload("./integration_checks/ivsCustomData/check_encrypted_input_payload.json").await
+            )),
+            Box::new(ivs::generate_verify_inputs_and_secrets_request(
+                create_payload("./integration_checks/ivsCustomData/verify_inputs_and_secrets_payload.json").await
+            ))
         ],
     };
     generator_service.check_all_services().await;

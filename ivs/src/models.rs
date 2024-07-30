@@ -17,3 +17,17 @@ pub struct InvalidInputPayload {
 pub struct CheckInputResponse {
     pub valid: bool,
 }
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct EncryptedInputPayload {
+    pub acl: String,
+    pub encrypted_secrets: String,
+    pub me_decryption_url: String,
+    pub market_id: String,
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct VerifyInputsAndSecrets {
+    pub public: String,
+    pub secrets: Option<String>,
+}
