@@ -35,13 +35,13 @@ pub struct SimpleCheckInputResponse {
     pub is_input_valid: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct InvalidInputsAttestationResponse {
     pub signature: String,
     pub ask_id: u64,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct VerifyInputAndProofResponse {
     pub is_input_and_proof_valid: bool,
 }
