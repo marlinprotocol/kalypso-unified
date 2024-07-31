@@ -12,3 +12,8 @@ pub struct DecryptRequest {
 pub struct GetRequestResponse {
     pub encrypted_data: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct WelcomeResponse {
+    pub status: String,
+}

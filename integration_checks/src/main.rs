@@ -55,7 +55,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn test_matching_engine_services(matching_engine_url: &String) -> Result<(), Box<dyn Error>> {
     let matching_engine_service_checker = generator::ServiceChecker {
         server_url: matching_engine_url.into(),
-        services: vec![Box::new(matching_engine::get_welcome_request::<()>())],
+        services: vec![Box::new(matching_engine::get_welcome_request::<
+            matching_engine::models::WelcomeResponse,
+        >())],
     };
 
     matching_engine_service_checker.check_all_services().await;

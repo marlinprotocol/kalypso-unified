@@ -1,5 +1,6 @@
 use actix_web::web::Data;
 use actix_web::HttpResponse;
+use matching_engine::models::WelcomeResponse;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -21,11 +22,8 @@ pub async fn get_latest_block_number(
     }))
 }
 
-#[derive(Serialize)]
-struct WelcomeResponse {
-    status: &'static str,
-}
-
 pub async fn welcome() -> actix_web::Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(WelcomeResponse { status: "ok" }))
+    Ok(HttpResponse::Ok().json(WelcomeResponse {
+        status: "ok".into(),
+    }))
 }
