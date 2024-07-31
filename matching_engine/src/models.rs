@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::ask::LocalAskStatus;
+use crate::{
+    ask::{AskState, LocalAskStatus},
+    generator::GeneratorState,
+};
 #[derive(Deserialize, Serialize)]
 pub struct DecryptRequest {
     pub market_id: String,
@@ -28,4 +31,62 @@ pub struct GetLatestBlockNumberResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetStatusResponse {
     pub local_ask_status: LocalAskStatus,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetAskStatus {
+    pub ask_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetAskStatusResponse {
+    pub state: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MarketInfo {
+    pub market_id: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MarketInfoResponse {
+    pub market_info: String,
+    pub asks: Option<Vec<AskInfoToSend>>,
+    pub generator_info: Option<GeneratorsInfoForMarket>,
+}
+
+use ethers::core::types::{Address, U256};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
+pub struct AskInfoToSend {
+    pub ask_id: U256,
+    pub market_id: U256,
+    pub reward: U256,
+    pub expiry: U256,
+    pub proving_time: U256,
+    pub deadline: U256,
+    pub has_private_inputs: bool,
+    pub state: Option<AskState>,
+    pub generator: Option<Address>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GeneratorInfo {
+    pub generator_address: Address,
+    pub stake_locked: U256,
+    pub total_stake: U256,
+    pub compute_consumed: U256,
+    pub declared_compute: U256,
+    pub compute_required_per_request: U256,
+    pub proof_generation_cost: U256,
+    pub proposed_time: U256,
+    pub active_requests: U256,
+    pub proofs_submitted: U256,
+    pub state: Option<GeneratorState>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GeneratorsInfoForMarket {
+    pub count: i32,
+    pub generators: Vec<GeneratorInfo>,
 }

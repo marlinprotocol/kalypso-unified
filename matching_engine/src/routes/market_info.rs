@@ -1,58 +1,14 @@
 use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
-use ethers::core::types::{Address, U256};
+use ethers::core::types::U256;
 use matching_engine::ask::*;
-use matching_engine::generator::{GeneratorState, GeneratorStore};
-use serde::{Deserialize, Serialize};
+use matching_engine::generator::GeneratorStore;
+use matching_engine::models::{
+    AskInfoToSend, GeneratorInfo, GeneratorsInfoForMarket, MarketInfo, MarketInfoResponse,
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-
-#[derive(Deserialize)]
-pub struct MarketInfo {
-    market_id: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
-pub struct AskInfoToSend {
-    pub ask_id: U256,
-    pub market_id: U256,
-    pub reward: U256,
-    pub expiry: U256,
-    pub proving_time: U256,
-    pub deadline: U256,
-    pub has_private_inputs: bool,
-    pub state: Option<AskState>,
-    pub generator: Option<Address>,
-}
-
-#[derive(Serialize)]
-pub struct MarketInfoResponse {
-    market_info: String,
-    asks: Option<Vec<AskInfoToSend>>,
-    generator_info: Option<GeneratorsInfoForMarket>,
-}
-
-#[derive(Serialize)]
-pub struct GeneratorInfo {
-    generator_address: Address,
-    stake_locked: U256,
-    total_stake: U256,
-    compute_consumed: U256,
-    declared_compute: U256,
-    compute_required_per_request: U256,
-    proof_generation_cost: U256,
-    proposed_time: U256,
-    active_requests: U256,
-    proofs_submitted: U256,
-    state: Option<GeneratorState>,
-}
-
-#[derive(Serialize)]
-pub struct GeneratorsInfoForMarket {
-    count: i32,
-    generators: Vec<GeneratorInfo>,
-}
 
 pub async fn market_info(
     _payload: web::Json<MarketInfo>,

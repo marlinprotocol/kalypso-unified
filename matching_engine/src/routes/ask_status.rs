@@ -2,20 +2,12 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
-use matching_engine::{ask::*, models::GetStatusResponse};
-use serde::{Deserialize, Serialize};
+use matching_engine::{
+    ask::*,
+    models::{GetAskStatus, GetAskStatusResponse, GetStatusResponse},
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-
-#[derive(Deserialize)]
-pub struct GetAskStatus {
-    ask_id: String,
-}
-
-#[derive(Serialize)]
-pub struct GetAskStatusResponse {
-    state: String,
-}
 
 pub async fn get_status(
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
@@ -35,19 +27,32 @@ pub async fn get_ask_status_askid(
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
-    let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
+    let local_ask = match local_ask_store.get_by_ask_id(&ask_id_u256) {
+        Some(data) => data,
+        None => {
+            return Ok(HttpResponse::NotFound().json(GetAskStatusResponse {
+                state: "Request Not Found".to_owned(),
+            }))
+        }
+    };
 
-    let ask_state_enum: Option<AskState> = local_ask.unwrap().state;
+    let ask_state_enum = match local_ask.state {
+        Some(data) => data,
+        None => {
+            return Ok(HttpResponse::NotFound().json(GetAskStatusResponse {
+                state: "Request State Not Found".to_owned(),
+            }))
+        }
+    };
 
     let ask_state = match ask_state_enum {
-        Some(AskState::Null) => "NULL",
-        Some(AskState::Create) => "Create",
-        Some(AskState::UnAssigned) => "UnAssigned",
-        Some(AskState::Assigned) => "Assigned",
-        Some(AskState::Complete) => "Complete",
-        Some(AskState::DeadlineCrossed) => "DeadlineCrossed",
-        Some(AskState::InvalidSecret) => "InvalidSecret",
-        None => "None", // Handle the None case
+        AskState::Null => "NULL",
+        AskState::Create => "Create",
+        AskState::UnAssigned => "UnAssigned",
+        AskState::Assigned => "Assigned",
+        AskState::Complete => "Complete",
+        AskState::DeadlineCrossed => "DeadlineCrossed",
+        AskState::InvalidSecret => "InvalidSecret",
     };
 
     Ok(HttpResponse::Ok().json(GetAskStatusResponse {
