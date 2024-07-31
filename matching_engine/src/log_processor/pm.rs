@@ -3,9 +3,9 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::ask::*;
-use crate::generator::*;
-use crate::secret_inputs_helpers;
+use kalypso_helper::secret_inputs_helpers;
+use matching_engine::ask::*;
+use matching_engine::generator::*;
 
 use bindings::proof_marketplace as pmp;
 

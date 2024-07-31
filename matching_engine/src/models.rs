@@ -8,12 +8,17 @@ pub struct DecryptRequest {
     pub ivs_pubkey: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GetRequestResponse {
     pub encrypted_data: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WelcomeResponse {
     pub status: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GetLatestBlockNumberResponse {
+    pub block_number: String,
 }

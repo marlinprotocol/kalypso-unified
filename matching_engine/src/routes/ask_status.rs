@@ -1,14 +1,14 @@
-use crate::ask::*;
 use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
+use matching_engine::ask::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Serialize)]
-struct GetStatusResponse {
+pub struct GetStatusResponse {
     local_ask_status: LocalAskStatus,
 }
 

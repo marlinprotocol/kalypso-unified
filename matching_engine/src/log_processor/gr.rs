@@ -2,7 +2,8 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::{generator::*, log_processor::constants};
+use crate::log_processor::constants;
+use matching_engine::generator::*;
 
 pub async fn process_generator_registry_logs(
     logs: Vec<Log>,

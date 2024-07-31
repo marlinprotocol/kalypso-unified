@@ -1,7 +1,7 @@
 use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
-use secret_input_helpers::secret_inputs_helpers;
+use kalypso_helper::secret_inputs_helpers;
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 use std::{
@@ -15,10 +15,10 @@ use std::{
 };
 use tokio::sync::Mutex;
 
-use crate::{
+use crate::log_processor;
+use matching_engine::{
     ask::{self, LocalAsk, LocalAskStore, MarketMetadataStore},
     generator::{self, GeneratorState, GeneratorStore, KeyStore},
-    log_processor,
 };
 
 type EntityRegistryInstance = bindings::entity_key_registry::EntityKeyRegistry<

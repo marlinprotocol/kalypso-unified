@@ -1,16 +1,10 @@
 use actix_web::web::Data;
 use actix_web::HttpResponse;
-use matching_engine::models::WelcomeResponse;
-use serde::Serialize;
+use matching_engine::models::{GetLatestBlockNumberResponse, WelcomeResponse};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use ethers::core::types::U64;
-
-#[derive(Serialize)]
-pub struct GetLatestBlockNumberResponse {
-    block_number: String,
-}
 
 pub async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,

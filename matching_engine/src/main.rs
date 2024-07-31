@@ -1,20 +1,23 @@
-use ask::{LocalAskStore, MarketMetadataStore};
+mod jobs;
+mod log_processor;
+
 use dotenv::dotenv;
 use ethers::prelude::*;
-use generator::{GeneratorStore, KeyStore};
 use jobs::cleanup::CleanupTool;
 use jobs::parser::LogParser;
 use jobs::server::MatchingEngineServer;
-use secret_input_helpers::secret_inputs_helpers;
+use matching_engine::{
+    ask::{LocalAskStore, MarketMetadataStore},
+    generator::{GeneratorStore, KeyStore},
+};
+
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{fs, str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
 
-mod ask;
-mod generator;
-mod jobs;
-mod log_processor;
+// mod ask;
+// mod generator;
 mod middlewares;
 mod routes;
 mod utility;

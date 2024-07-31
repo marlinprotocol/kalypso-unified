@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::sync::Mutex;
 
-use crate::ask::{self, LocalAskStore};
+use matching_engine::ask::{self, LocalAskStore};
 
 use super::ProofMarketplaceInstance;
 

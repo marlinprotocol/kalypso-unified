@@ -9,9 +9,11 @@ use ethers::signers::Wallet;
 use ethers::types::U64;
 use tokio::sync::Mutex;
 
-use crate::ask::{LocalAskStore, MarketMetadataStore};
-use crate::generator::GeneratorStore;
 use crate::{middlewares, routes};
+use matching_engine::{
+    ask::{LocalAskStore, MarketMetadataStore},
+    generator::GeneratorStore,
+};
 
 type EntityRegistryInstance = Arc<
     Mutex<
