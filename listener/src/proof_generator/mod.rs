@@ -1,4 +1,4 @@
-use crate::MarketDetails;
+use crate::job_creator::MarketDetails;
 use bindings::proof_marketplace::{AskCreatedFilter, ProofMarketplace};
 use bindings::shared_types::Ask;
 use confidential_provers::ConfidentialProver;
@@ -27,7 +27,7 @@ pub struct GenerateProofParams<'a> {
     pub ask_id: ethers::types::U256,
     pub new_acl: ethers::types::Bytes,
     pub proof_market_place_contract_http: ProofMarketPlaceContractHttp,
-    pub ecies_private_key: &'a [u8],
+    pub ecies_private_key: &'a Option<ecies::SecretKey>,
     pub start_block: &'a U64,
     pub end_block: &'a U64,
     pub markets: &'a HashMap<String, MarketDetails>,
@@ -46,7 +46,7 @@ pub async fn generate_proof(
         .markets
         .contains_key(&market_id.to_string())
     {
-        return Err("Circuit not implemented".into());
+        return Err("Market not being proven for".into());
     }
 
     if parsed_ask_created_log.has_private_inputs {
@@ -62,7 +62,9 @@ pub async fn generate_proof(
             ),
             parsed_ask_created_log.ask_id,
             public_inputs.into(),
-            decoded_secret_input.into(),
+            decoded_secret_input
+                .expect("Unable to decode secret for confidential markets")
+                .into(),
         );
 
         confidential_prover.get_proof().await
@@ -86,16 +88,16 @@ pub async fn generate_proof(
     }
 }
 
-type DecodedSecret<'a> = (
+type InputAndDecodedSecret<'a> = (
     Vec<u8>,
-    Vec<u8>,
+    Option<Vec<u8>>,
     U256,
     AskCreatedFilter,
     &'a HashMap<String, MarketDetails>,
 );
 async fn fetch_decoded_secret(
     generate_proof_params: GenerateProofParams<'_>,
-) -> Result<DecodedSecret, Box<dyn std::error::Error>> {
+) -> Result<InputAndDecodedSecret, Box<dyn std::error::Error>> {
     let GenerateProofParams {
         proof_market_place_contract_http,
         ask_id,
@@ -167,13 +169,17 @@ async fn fetch_decoded_secret(
         let result = decrypt_data_with_ecies_and_aes(
             &encrypted_secret_input,
             &new_acl,
-            ecies_private_key,
+            ecies_private_key.unwrap().serialize().as_ref(),
             market_id,
         );
 
-        result.unwrap()
+        let result = result.unwrap();
+        let mut decoder = ZlibDecoder::new(&result[..]);
+        let mut decoded_secret_input: Vec<u8> = Vec::new();
+        decoder.read_to_end(&mut decoded_secret_input).unwrap();
+        Some(decoded_secret_input)
     } else {
-        Vec::new()
+        None
     };
 
     let ask_secret_fetch_time = fetching_ask_secret_timer_start.elapsed().as_millis();
@@ -181,10 +187,6 @@ async fn fetch_decoded_secret(
         "Took {} ms for fetching the secret inputs for the ask",
         ask_secret_fetch_time
     );
-
-    let mut decoder = ZlibDecoder::new(&decoded_secret_input[..]);
-    let mut decoded_secret_input: Vec<u8> = Vec::new();
-    decoder.read_to_end(&mut decoded_secret_input).unwrap();
 
     Ok((
         list_of_ask.prover_data.to_vec(),

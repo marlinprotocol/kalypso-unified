@@ -24,3 +24,4 @@ toml = "0.8.2"
 uuid= {version = "1.4.1", features = ["v4","fast-rng","macro-diagnostics"]}
 generator = { path = "../generator", package = "generator" }
 ivs = { path = "../ivs", package = "ivs" }
+anyhow = "1.0.86"

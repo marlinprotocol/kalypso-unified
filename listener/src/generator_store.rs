@@ -5,9 +5,9 @@ use std::collections::HashMap;
 pub struct Generator {
     pub address: Address,
     pub supported_market_ids: Vec<U256>,
-    pub ecies_priv_key: SecretKey,
+    pub ecies_priv_key: Option<SecretKey>,
     #[allow(unused)]
-    pub ecies_pub_key: PublicKey,
+    pub ecies_pub_key: Option<PublicKey>,
 }
 
 pub struct GeneratorStore {
