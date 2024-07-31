@@ -7,6 +7,7 @@ use std::{error::Error, fmt::Debug, str::FromStr};
 enum ToolType {
     Prover,
     Ivs,
+    MatchingEngine,
 }
 
 impl FromStr for ToolType {
@@ -16,6 +17,7 @@ impl FromStr for ToolType {
         match s.to_lowercase().as_str() {
             "prover" => Ok(ToolType::Prover),
             "ivs" => Ok(ToolType::Ivs),
+            "matching_engine" => Ok(ToolType::MatchingEngine),
             _ => Err("Invalid type. Must be 'prover' or 'ivs'.".into()),
         }
     }
@@ -44,8 +46,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let _ = match tool_type {
         ToolType::Prover => test_generator_services(url).await,
         ToolType::Ivs => test_ivs_services(url).await,
+        ToolType::MatchingEngine => test_matching_engine_services(url).await,
     };
 
+    Ok(())
+}
+
+async fn test_matching_engine_services(matching_engine_url: &String) -> Result<(), Box<dyn Error>> {
+    let matching_engine_service_checker = generator::ServiceChecker {
+        server_url: matching_engine_url.into(),
+        services: vec![Box::new(matching_engine::get_welcome_request::<()>())],
+    };
+
+    matching_engine_service_checker.check_all_services().await;
     Ok(())
 }
 
@@ -70,7 +83,7 @@ async fn test_generator_services(generator_url: &String) -> Result<(), Box<dyn E
 }
 
 async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
-    let generator_service = generator::ServiceChecker {
+    let ivs_service_checker = generator::ServiceChecker {
         server_url: ivs_url.into(),
         services: vec![
             Box::new(ivs::get_test_request::<generator::models::TestResponse>()),
@@ -106,7 +119,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
             )),
         ],
     };
-    generator_service.check_all_services().await;
+    ivs_service_checker.check_all_services().await;
     Ok(())
 }
 fn parse_tool_type(value: &str) -> Result<ToolType, String> {
