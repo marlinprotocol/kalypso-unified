@@ -30,7 +30,7 @@ pub struct VerifyInputsAndProof {
     pub proof: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct SimpleCheckInputResponse {
     pub is_input_valid: bool,
 }
