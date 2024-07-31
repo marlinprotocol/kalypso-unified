@@ -1,6 +1,8 @@
 pub mod ask;
 pub mod generator;
+pub mod middlewares;
 pub mod models;
+pub mod utility;
 
 use service_check_helper::{Request, RequestType};
 

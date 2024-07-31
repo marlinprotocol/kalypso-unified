@@ -2,15 +2,10 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
-use matching_engine::ask::*;
+use matching_engine::{ask::*, models::GetStatusResponse};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-
-#[derive(Serialize)]
-pub struct GetStatusResponse {
-    local_ask_status: LocalAskStatus,
-}
 
 #[derive(Deserialize)]
 pub struct GetAskStatus {

@@ -62,6 +62,9 @@ async fn test_matching_engine_services(matching_engine_url: &String) -> Result<(
             Box::new(matching_engine::get_latest_block_request::<
                 matching_engine::models::GetLatestBlockNumberResponse,
             >()),
+            Box::new(matching_engine::get_status_request::<
+                matching_engine::models::GetStatusResponse,
+            >()),
         ],
     };
 

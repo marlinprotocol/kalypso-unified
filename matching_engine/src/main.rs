@@ -1,5 +1,6 @@
 mod jobs;
 mod log_processor;
+mod routes;
 
 use dotenv::dotenv;
 use ethers::prelude::*;
@@ -18,9 +19,8 @@ use tokio::sync::Mutex;
 
 // mod ask;
 // mod generator;
-mod middlewares;
-mod routes;
-mod utility;
+// mod middlewares;
+// mod utility;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct MatchingEngineConfig {

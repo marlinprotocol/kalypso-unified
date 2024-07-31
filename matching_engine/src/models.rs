@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+
+use crate::ask::LocalAskStatus;
 #[derive(Deserialize, Serialize)]
 pub struct DecryptRequest {
     pub market_id: String,
@@ -21,4 +23,9 @@ pub struct WelcomeResponse {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GetLatestBlockNumberResponse {
     pub block_number: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetStatusResponse {
+    pub local_ask_status: LocalAskStatus,
 }
