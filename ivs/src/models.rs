@@ -2,15 +2,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct InputPayload {
-    pub public: String,
-    pub secrets: Option<String>,
+    pub public: Vec<u8>,
+    pub secrets: Option<Vec<u8>>,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct InvalidInputPayload {
-    pub ask_id: String,
-    pub public: String,
-    pub secrets: Option<String>,
+    pub ask_id: ethers::types::U256,
+    pub public: Vec<u8>,
+    pub secrets: Option<Vec<u8>>,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
@@ -20,15 +20,15 @@ pub struct CheckInputResponse {
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct EncryptedInputPayload {
-    pub acl: String,
-    pub encrypted_secrets: String,
+    pub acl: Vec<u8>,
+    pub encrypted_secrets: Vec<u8>,
     pub me_decryption_url: String,
-    pub market_id: String,
+    pub market_id: ethers::types::U256,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct VerifyInputsAndProof {
-    pub public_input: Option<String>,
-    pub private_input: String,
-    pub proof: String,
+    pub public_input: Option<Vec<u8>>,
+    pub private_input: Option<Vec<u8>>,
+    pub proof: Vec<u8>,
 }

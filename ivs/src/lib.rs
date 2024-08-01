@@ -67,7 +67,7 @@ pub fn generate_verify_inputs_and_proof_request<R>(
             models::VerifyInputsAndProof {
                 proof: "proof".into(),
                 public_input: Some("public_inputs".into()),
-                private_input: "private_inputs".into(),
+                private_input: vec![1, 2, 3, 4].into(),
             }
         })),
         service_endpoint: "/api/verifyInputsAndProof".into(),

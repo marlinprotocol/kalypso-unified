@@ -21,7 +21,7 @@ impl ConfidentialProver {
         public: Bytes,
         secrets: Bytes,
     ) -> Self {
-        ConfidentialProver {
+        Self {
             input_verification_executable_check_input_url,
             input_verification_executable_generate_proof_for_invalid_inputs_url,
             prover_executable_generate_proof_url,
@@ -30,47 +30,44 @@ impl ConfidentialProver {
             secrets,
         }
     }
+
+    fn prepare_payload(&self) -> (Vec<u8>, Option<Vec<u8>>) {
+        (self.public.to_vec(), Some(self.secrets.to_vec()))
+    }
 }
 
-impl Prover for ConfidentialProver {
-    async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, Box<dyn Error>> {
-        let payload = ivs::models::InputPayload {
-            public: hex::encode(&self.public),
-            secrets: Some(hex::encode(&self.secrets)),
-        };
+type BoxError = Box<dyn Error>;
 
-        post_request::<ivs::models::InputPayload, ivs::models::CheckInputResponse>(
+impl Prover for ConfidentialProver {
+    async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
+        let (public, secrets) = self.prepare_payload();
+        let payload = ivs::models::InputPayload { public, secrets };
+
+        post_request(
             &self.input_verification_executable_check_input_url,
             &payload,
         )
         .await
     }
 
-    async fn generate_proof(
-        &self,
-    ) -> Result<generator::models::GenerateProofResponse, Box<dyn Error>> {
-        let payload = ivs::models::InputPayload {
-            public: hex::encode(&self.public),
-            secrets: Some(hex::encode(&self.secrets)),
-        };
+    async fn generate_proof(&self) -> Result<generator::models::GenerateProofResponse, BoxError> {
+        let (public, secrets) = self.prepare_payload();
+        let payload = generator::models::InputPayload { public, secrets };
 
-        post_request::<ivs::models::InputPayload, generator::models::GenerateProofResponse>(
-            &self.prover_executable_generate_proof_url,
-            &payload,
-        )
-        .await
+        post_request(&self.prover_executable_generate_proof_url, &payload).await
     }
 
     async fn generate_attestation_for_invalid_inputs(
         &self,
-    ) -> Result<generator::models::GenerateProofResponse, Box<dyn Error>> {
-        let payload: ivs::models::InvalidInputPayload = ivs::models::InvalidInputPayload {
-            ask_id: self.ask_id.to_string(),
-            public: hex::encode(&self.public),
-            secrets: Some(hex::encode(&self.secrets)),
+    ) -> Result<generator::models::GenerateProofResponse, BoxError> {
+        let (public, secrets) = self.prepare_payload();
+        let payload = ivs::models::InvalidInputPayload {
+            ask_id: self.ask_id,
+            public,
+            secrets,
         };
 
-        post_request::<ivs::models::InvalidInputPayload, generator::models::GenerateProofResponse>(
+        post_request(
             &self.input_verification_executable_generate_proof_for_invalid_inputs_url,
             &payload,
         )

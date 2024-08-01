@@ -2,18 +2,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct InputPayload {
-    pub public: String,
-    pub secrets: Option<String>,
+    pub public: Vec<u8>,
+    pub secrets: Option<Vec<u8>>,
+}
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct GenerateProofResponse {
+    pub proof: Vec<u8>,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct TestResponse {
     pub data: String,
-}
-
-#[derive(Serialize, Debug, Deserialize, Clone)]
-pub struct GenerateProofResponse {
-    pub proof: String,
 }
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
