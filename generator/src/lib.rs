@@ -129,13 +129,13 @@ impl ServiceChecker {
                     }
 
                     if !is_type_ok || code != service.expected_status_code() {
-                        println!("Request Info:");
+                        println!("Expectation:");
                         println!("  {}", service.request_info());
                     }
                 }
                 None => {
                     println!("Status Code: Service Error (Fix Needed in API)");
-                    println!("Request Info:");
+                    println!("Expectation:");
                     println!("  {}", service.request_info());
                 }
             }
