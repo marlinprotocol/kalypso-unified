@@ -38,7 +38,7 @@ type BoxError = Box<dyn Error>;
 impl Prover for NonConfidentialProver {
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
         let (public, secrets) = self.prepare_payload();
-        let payload = ivs::models::InputPayload { public, secrets };
+        let payload = generator::models::InputPayload { public, secrets };
 
         post_request(
             &self.input_verification_executable_check_input_url,

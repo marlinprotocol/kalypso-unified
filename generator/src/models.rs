@@ -19,5 +19,5 @@ pub struct TestResponse {
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct BenchmarkResponse {
     pub data: String,
-    pub time_in_ms: u64,
+    pub time_in_ms: u128,
 }
