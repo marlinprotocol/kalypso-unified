@@ -389,9 +389,8 @@ impl JobCreator {
                 };
 
                 let ask_state = &proof_marketplace_http.get_ask_state(event.ask_id).await?;
-                dbg!(&ask_state);
                 let ask_state = ask::get_ask_state(*ask_state);
-                dbg!(ask_state);
+                println!("Ask: {} state: {:?}", event.ask_id, ask_state);
                 if ask_state == ask::AskState::Assigned {
                     log::info!(
                         "Need to generate proof (polling) for ASK ID : {}",
