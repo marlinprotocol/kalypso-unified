@@ -23,6 +23,14 @@ pub fn get_latest_block_request<R>() -> Request<(), R> {
     }
 }
 
+pub fn get_key_balance_request<R>() -> Request<(), R> {
+    Request {
+        request_type: RequestType::GET,
+        service_endpoint: "/getKeyBalance".into(),
+        _marker: std::marker::PhantomData::<R>,
+    }
+}
+
 pub fn get_status_request<R>() -> Request<(), R> {
     Request {
         request_type: RequestType::GET,

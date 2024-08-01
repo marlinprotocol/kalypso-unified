@@ -90,3 +90,9 @@ pub struct GeneratorsInfoForMarket {
     pub count: i32,
     pub generators: Vec<GeneratorInfo>,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct BalanceResponse {
+    pub balance: Option<ethers::types::U256>,
+    pub status: String,
+}

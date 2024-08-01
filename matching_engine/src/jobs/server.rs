@@ -29,8 +29,9 @@ pub struct MatchingEngineServer {
     shared_local_ask_data: Arc<Mutex<LocalAskStore>>,
     shared_parsed_block: Arc<Mutex<U64>>,
     shared_matching_key_clone: Arc<Mutex<Vec<u8>>>,
-    clone_shared_entity_key: EntityRegistryInstance,
+    shared_entity_key_registry: EntityRegistryInstance,
     shared_generator_data: Arc<Mutex<GeneratorStore>>,
+    relayer_key_balance: Arc<Mutex<ethers::types::U256>>,
 }
 
 impl MatchingEngineServer {
@@ -39,16 +40,18 @@ impl MatchingEngineServer {
         shared_local_ask_data: Arc<Mutex<LocalAskStore>>,
         shared_parsed_block: Arc<Mutex<U64>>,
         shared_matching_key_clone: Arc<Mutex<Vec<u8>>>,
-        clone_shared_entity_key: EntityRegistryInstance,
+        shared_entity_key_registry: EntityRegistryInstance,
         shared_generator_data: Arc<Mutex<GeneratorStore>>,
+        relayer_key_balance: Arc<Mutex<ethers::types::U256>>,
     ) -> Self {
         MatchingEngineServer {
             shared_market_data,
             shared_local_ask_data,
             shared_parsed_block,
             shared_matching_key_clone,
-            clone_shared_entity_key,
+            shared_entity_key_registry,
             shared_generator_data,
+            relayer_key_balance,
         }
     }
 
@@ -60,10 +63,15 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_local_ask_data.clone()))
                 .app_data(Data::new(self.shared_parsed_block.clone()))
                 .app_data(Data::new(self.shared_matching_key_clone.clone()))
-                .app_data(Data::new(self.clone_shared_entity_key.clone()))
+                .app_data(Data::new(self.shared_entity_key_registry.clone()))
                 .app_data(Data::new(self.shared_generator_data.clone()))
-                .route("/welcome", web::get().to(routes::chain_status::welcome)) // Route to welcome endpoint
-                .route("/getStatus", web::get().to(routes::ask_status::get_status)) // Route to all ask status
+                .app_data(Data::new(self.relayer_key_balance.clone()))
+                .route("/welcome", web::get().to(routes::chain_status::welcome))
+                .route("/getStatus", web::get().to(routes::ask_status::get_status))
+                .route(
+                    "/getKeyBalance",
+                    web::get().to(routes::chain_status::gas_key_balance),
+                )
                 .route(
                     "/getAskStatus",
                     web::post().to(routes::ask_status::get_ask_status_askid),

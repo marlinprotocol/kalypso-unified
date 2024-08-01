@@ -71,6 +71,9 @@ async fn test_matching_engine_services(matching_engine_url: &String) -> Result<(
             Box::new(matching_engine::get_single_market_info::<
                 matching_engine::models::MarketInfoResponse,
             >(None)),
+            Box::new(matching_engine::get_key_balance_request::<
+                matching_engine::models::BalanceResponse,
+            >()),
         ],
     };
 

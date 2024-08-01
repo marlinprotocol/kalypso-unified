@@ -57,6 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shared_generator_store = Arc::new(Mutex::new(generator_list_store));
     let shared_market_store = Arc::new(Mutex::new(market_list_store));
     let shared_key_store = Arc::new(Mutex::new(key_list_store));
+    let relayer_key_balance = Arc::new(Mutex::new(ethers::types::U256::zero()));
 
     let rpc_url = config.rpc_url;
     let chain_id = config.chain_id;
@@ -86,6 +87,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap()
         // .with_signer(matching_engine_signer.clone());
         .with_signer(relayer_signer.clone());
+    // let relay_key_balance = provider_http.get_balance(relayer_signer.address(), None).await;.
+
     let client = Arc::new(provider_http.clone());
 
     // Creating contract instance for proof market place
@@ -119,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client.clone(),
     );
     let shared_entity_key = Arc::new(Mutex::new(shared_entity_key_registry));
-    let clone_shared_entity_key = Arc::clone(&shared_entity_key);
+    let shared_entity_key_registry = Arc::clone(&shared_entity_key);
 
     let shared_parsed_store = Arc::new(Mutex::new(
         U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
@@ -151,8 +154,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         shared_local_ask_data,
         shared_parsed_block.clone(),
         shared_matching_key_clone,
-        clone_shared_entity_key,
+        shared_entity_key_registry,
         shared_generator_data,
+        relayer_key_balance.clone(),
     );
 
     let server_handle = tokio::spawn(server.start_server());
@@ -163,7 +167,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let parser = Arc::new(LogParser::new(
         should_stop.clone(),
         rpc_url,
-        relayer_signer,
+        relayer_signer.clone(),
         shared_parsed_block,
         block_range.into(),
         confirmations.into(),
@@ -185,7 +189,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     handles.push(parser_handle);
 
-    let cleanup_tool = CleanupTool::new(should_stop, shared_local_ask_store, proof_marketplace);
+    let cleanup_tool = CleanupTool::new(
+        should_stop,
+        shared_local_ask_store,
+        proof_marketplace,
+        relayer_signer.address(),
+        relayer_key_balance,
+    );
     let cleanup_handle = tokio::spawn(async move {
         cleanup_tool.ask_store_cleanup().await.unwrap();
         Ok(())
