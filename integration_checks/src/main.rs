@@ -110,16 +110,34 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
             Box::new(ivs::get_test_request::<generator::models::TestResponse>()),
             Box::new(
                 ivs::generate_input_request::<ivs::models::CheckInputResponse>(
-                    create_payload("./integration_checks/ivsCustomData/check_input_payload.json")
+                    create_payload("./integration_checks/ivsCustomData/1_check_valid_input_payload.json")
                         .await,
                     StatusCode::OK,
                 ),
             ),
+            Box::new(
+                ivs::generate_input_request::<ivs::models::CheckInputResponse>(
+                    create_payload(
+                        "./integration_checks/ivsCustomData/2_check_invalid_input_payload.json",
+                    )
+                    .await,
+                    StatusCode::OK,
+                ),
+            ),
+            Box::new(ivs::generate_invalid_input_request::<
+                ivs::models::CheckInputResponse,
+            >(
+                create_payload(
+                    "./integration_checks/ivsCustomData/3_get_attestation_for_valid_input.json",
+                )
+                .await,
+                StatusCode::OK,
+            )),
             Box::new(ivs::generate_invalid_input_request::<
                 generator::models::GenerateProofResponse,
             >(
                 create_payload(
-                    "./integration_checks/ivsCustomData/check_invalid_input_payload.json",
+                    "./integration_checks/ivsCustomData/4_get_attestation_for_invalid_inputs_payload.json",
                 )
                 .await,
                 StatusCode::OK,
@@ -128,16 +146,25 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                 ivs::models::CheckInputResponse,
             >(
                 create_payload(
-                    "./integration_checks/ivsCustomData/check_encrypted_input_payload.json",
+                    "./integration_checks/ivsCustomData/5_check_encrypted_input_payload.json",
+                )
+                .await,
+                StatusCode::OK,
+            )),
+            Box::new(ivs::generate_check_encrypted_inputs_request::<
+                ivs::models::CheckInputResponse,
+            >(
+                create_payload(
+                    "./integration_checks/ivsCustomData/6_check_encrypted_invalid_input_payload.json",
                 )
                 .await,
                 StatusCode::OK,
             )),
             Box::new(ivs::generate_verify_inputs_and_proof_request::<
-                ivs::models::CheckInputResponse,
+                ivs::models::VerifyInputAndProofResponse,
             >(
                 create_payload(
-                    "integration_checks/ivsCustomData/verify_inputs_and_proof_payload.json",
+                    "./integration_checks/ivsCustomData/verify_inputs_and_proof_payload.json",
                 )
                 .await,
                 StatusCode::OK,
