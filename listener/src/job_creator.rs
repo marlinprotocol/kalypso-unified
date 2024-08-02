@@ -2,15 +2,21 @@ use bindings::proof_marketplace as pmp;
 use ethers::prelude::*;
 use ethers::types::U256;
 use ethers::{abi::Address, providers::Provider};
+use kalypso_helper::custom_logger::CustomLogger;
 use openssl::rand::rand_bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::{str::FromStr, sync::Arc, thread, time::Duration};
+use std::{
+    str::FromStr,
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
 use crate::proof_generator::GenerateProofParams;
 use crate::{ask, generator_store, proof_generator};
-use std::fs;
+use warp::Filter;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct GeneratorConfigModel {
@@ -54,14 +60,42 @@ pub struct RuntimeConfig {
 pub struct JobCreator {
     config: Config,
     runtime_config: RuntimeConfig,
+    #[allow(unused)]
+    log_storage: Arc<Mutex<Vec<String>>>,
 }
 
 impl JobCreator {
     pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
+        Self::initialize(config, runtime_config)
+    }
+
+    fn initialize(config: Config, runtime_config: RuntimeConfig) -> Self {
+        let log_storage = Arc::new(Mutex::new(Vec::new()));
+        let storage_clone = log_storage.clone();
+
+        log::set_boxed_logger(Box::new(CustomLogger::new(storage_clone))).unwrap();
+        log::set_max_level(log::LevelFilter::Info);
+
+        tokio::spawn(Self::start_logging_server(log_storage.clone()));
+
         Self {
             config,
             runtime_config,
+            log_storage,
         }
+    }
+
+    fn start_logging_server(
+        log_storage: Arc<Mutex<Vec<String>>>,
+    ) -> impl std::future::Future<Output = ()> + Send {
+        let log_route = warp::path::end().map(move || {
+            let logs = log_storage.lock().unwrap();
+            warp::reply::json(&*logs)
+        });
+
+        let server = warp::serve(log_route).run(([127, 0, 0, 1], 9999));
+
+        Box::pin(server)
     }
 
     pub fn simple_listener_for_non_confidential_prover(
@@ -114,11 +148,9 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self {
-            config,
-            runtime_config,
-        }
+        Self::initialize(config, runtime_config)
     }
+
     pub fn simple_listener_for_confidential_prover(
         generator_address: String,
         ecies_private_key: String,
@@ -129,7 +161,7 @@ impl JobCreator {
         generator_registry: String,
         start_block: u64,
         chain_id: u64,
-        prover_port: String
+        prover_port: String,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -169,26 +201,20 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self {
-            config,
-            runtime_config,
-        }
+        Self::initialize(config, runtime_config)
     }
 
     pub fn from_config_paths(
         generator_config_path: &str,
         runtime_config_path: &str,
     ) -> anyhow::Result<Self> {
-        let file_content = fs::read_to_string(&generator_config_path)?;
+        let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
 
-        let file_content = fs::read_to_string(&runtime_config_path)?;
+        let file_content = std::fs::read_to_string(runtime_config_path)?;
         let runtime_config: RuntimeConfig = serde_json::from_str(&file_content)?;
 
-        Ok(Self {
-            config,
-            runtime_config,
-        })
+        Ok(Self::initialize(config, runtime_config))
     }
 
     pub async fn run(&self) -> anyhow::Result<()> {
@@ -389,7 +415,7 @@ impl JobCreator {
 
                 let ask_state = &proof_marketplace_http.get_ask_state(event.ask_id).await?;
                 let ask_state = ask::get_ask_state(*ask_state);
-                println!("Ask: {} state: {:?}", event.ask_id, ask_state);
+                log::info!("Ask: {} state: {:?}", event.ask_id, ask_state);
                 if ask_state == ask::AskState::Assigned {
                     log::info!(
                         "Need to generate proof (polling) for ASK ID : {}",

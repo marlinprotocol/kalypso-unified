@@ -6,9 +6,9 @@ use ethers::prelude::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
 use flate2::read::ZlibDecoder;
 
+use kalypso_helper::secret_inputs_helpers::decrypt_data_with_ecies_and_aes;
 use non_confidential_prover::NonConfidentialProver;
 use prover::{Proof, Prover};
-use secret_input_helpers::secret_inputs_helpers::decrypt_data_with_ecies_and_aes;
 use std::collections::HashMap;
 use std::io::Read;
 use std::sync::Arc;
@@ -87,7 +87,10 @@ pub async fn generate_proof(
 
         let non_confidential_prover = NonConfidentialProver::new(
             format!("{}/api/checkInput", ivs_url.clone().unwrap()),
-            format!("{}/api/getAttestationForInvalidInputs", ivs_url.clone().unwrap()),
+            format!(
+                "{}/api/getAttestationForInvalidInputs",
+                ivs_url.clone().unwrap()
+            ),
             format!("{}/api/verifyInputsAndProof", ivs_url.clone().unwrap()),
             generator_url.clone().unwrap().clone(),
             parsed_ask_created_log.ask_id,

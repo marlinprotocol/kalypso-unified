@@ -6,22 +6,22 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.86"
 bindings = { path = "../bindings", package = "foundry-contracts" }
-secret_input_helpers = {path = "../helper", package = "helper"}
 ecies = "0.2.6"
-env_logger = "0.11.2"
 ethers ={version = "2.0.10", features = ["abigen", "ws", "rustls"] }
 flate2 = "1.0.28"
+generator = { path = "../generator", package = "generator" }
 hex = "0.4"
 itertools = "0.12.1"
+ivs = { path = "../ivs", package = "ivs" }
 log = "0.4"
 openssl = { version = "0.10.56", features = ["vendored"] }
 reqwest = "0.12.4"
+kalypso_helper = {path = "../helper", package = "helper"}
 serde = { version = "1.0", features = ["derive"] }
 serde_json="1.0"
 tokio = { version = "1.16.1", features = ["full"] }
 toml = "0.8.2"
 uuid= {version = "1.4.1", features = ["v4","fast-rng","macro-diagnostics"]}
-generator = { path = "../generator", package = "generator" }
-ivs = { path = "../ivs", package = "ivs" }
-anyhow = "1.0.86"
+warp = "0.3"
