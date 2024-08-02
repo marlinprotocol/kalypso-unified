@@ -9,6 +9,7 @@ pub struct NonConfidentialProver {
     prover_executable_generate_proof_url: String,
     ask_id: U256,
     public: Bytes,
+    client: reqwest::Client,
 }
 
 impl NonConfidentialProver {
@@ -25,6 +26,7 @@ impl NonConfidentialProver {
             prover_executable_generate_proof_url,
             ask_id,
             public,
+            client: reqwest::Client::new(),
         }
     }
 
@@ -41,6 +43,7 @@ impl Prover for NonConfidentialProver {
         let payload = generator::models::InputPayload { public, secrets };
 
         post_request(
+            &self.client,
             &self.input_verification_executable_check_input_url,
             &payload,
         )
@@ -51,7 +54,12 @@ impl Prover for NonConfidentialProver {
         let (public, secrets) = self.prepare_payload();
         let payload = generator::models::InputPayload { public, secrets };
 
-        post_request(&self.prover_executable_generate_proof_url, &payload).await
+        post_request(
+            &self.client,
+            &self.prover_executable_generate_proof_url,
+            &payload,
+        )
+        .await
     }
 
     async fn generate_attestation_for_invalid_inputs(
@@ -65,6 +73,7 @@ impl Prover for NonConfidentialProver {
         };
 
         post_request(
+            &self.client,
             &self.input_verification_executable_generate_proof_for_invalid_inputs_url,
             &payload,
         )

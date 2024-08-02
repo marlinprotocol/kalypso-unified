@@ -10,6 +10,7 @@ pub struct ConfidentialProver {
     ask_id: U256,
     public: Bytes,
     secrets: Bytes,
+    client: reqwest::Client,
 }
 
 impl ConfidentialProver {
@@ -28,6 +29,10 @@ impl ConfidentialProver {
             ask_id,
             public,
             secrets,
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(10))
+                .build()
+                .unwrap(),
         }
     }
 
@@ -42,8 +47,8 @@ impl Prover for ConfidentialProver {
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
         let (public, secrets) = self.prepare_payload();
         let payload = generator::models::InputPayload { public, secrets };
-
         post_request(
+            &self.client,
             &self.input_verification_executable_check_input_url,
             &payload,
         )
@@ -54,7 +59,12 @@ impl Prover for ConfidentialProver {
         let (public, secrets) = self.prepare_payload();
         let payload = generator::models::InputPayload { public, secrets };
 
-        post_request(&self.prover_executable_generate_proof_url, &payload).await
+        post_request(
+            &self.client,
+            &self.prover_executable_generate_proof_url,
+            &payload,
+        )
+        .await
     }
 
     async fn generate_attestation_for_invalid_inputs(
@@ -68,6 +78,7 @@ impl Prover for ConfidentialProver {
         };
 
         post_request(
+            &self.client,
             &self.input_verification_executable_generate_proof_for_invalid_inputs_url,
             &payload,
         )

@@ -32,12 +32,15 @@ pub trait Prover {
     }
 }
 
-pub async fn post_request<T, R>(url: &str, payload: &T) -> Result<R, Box<dyn Error>>
+pub async fn post_request<T, R>(
+    client: &Client,
+    url: &str,
+    payload: &T,
+) -> Result<R, Box<dyn Error>>
 where
     T: Serialize,
     R: DeserializeOwned,
 {
-    let client = Client::new();
     let response = client.post(url).json(payload).send().await?;
 
     if response.status().is_success() {
