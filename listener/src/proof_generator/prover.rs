@@ -17,11 +17,28 @@ pub trait Prover {
     async fn generate_attestation_for_invalid_inputs(
         &self,
     ) -> Result<generator::models::GenerateProofResponse, Box<dyn Error>>;
+    async fn verify_inputs_and_proof(
+        &self,
+        proof: &Vec<u8>,
+    ) -> Result<ivs::models::VerifyInputAndProofResponse, Box<dyn Error>>;
 
     async fn get_proof(&self) -> Result<Proof, Box<dyn Error>> {
         let check_input = self.check_inputs().await?;
         if check_input.valid {
             let proof = self.generate_proof().await?;
+            let check_proof = self.verify_inputs_and_proof(proof.proof.as_ref()).await;
+            match check_proof {
+                Ok(data) => {
+                    if data.is_input_and_proof_valid {
+                        log::info!("Generated Proof is Valid: Rechecked with IVS");
+                    } else {
+                        log::warn!("Generated Proof is Invalid: Rechecked with IVS");
+                    }
+                }
+                _ => {
+                    log::warn!("Generated Proof could not be verified against IVS");
+                }
+            }
             Ok(Proof::ValidProof(proof.proof.into()))
         } else {
             let proof = self.generate_attestation_for_invalid_inputs().await?;
