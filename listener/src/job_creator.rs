@@ -61,27 +61,38 @@ pub struct JobCreator {
     config: Config,
     runtime_config: RuntimeConfig,
     #[allow(unused)]
-    log_storage: Arc<Mutex<Vec<String>>>,
+    log_storage: Option<Arc<Mutex<Vec<String>>>>,
 }
 
 impl JobCreator {
-    pub fn new(config: Config, runtime_config: RuntimeConfig) -> Self {
-        Self::initialize(config, runtime_config)
+    pub fn new(config: Config, runtime_config: RuntimeConfig, enable_logging_server: bool) -> Self {
+        Self::initialize(config, runtime_config, enable_logging_server)
     }
 
-    fn initialize(config: Config, runtime_config: RuntimeConfig) -> Self {
-        let log_storage = Arc::new(Mutex::new(Vec::new()));
-        let storage_clone = log_storage.clone();
+    fn initialize(
+        config: Config,
+        runtime_config: RuntimeConfig,
+        enable_logging_server: bool,
+    ) -> Self {
+        if enable_logging_server {
+            let log_storage = Arc::new(Mutex::new(Vec::new()));
+            let storage_clone = log_storage.clone();
 
-        log::set_boxed_logger(Box::new(CustomLogger::new(storage_clone))).unwrap();
-        log::set_max_level(log::LevelFilter::Info);
+            log::set_boxed_logger(Box::new(CustomLogger::new(storage_clone))).unwrap();
+            log::set_max_level(log::LevelFilter::Info);
 
-        tokio::spawn(Self::start_logging_server(log_storage.clone()));
-
-        Self {
-            config,
-            runtime_config,
-            log_storage,
+            tokio::spawn(Self::start_logging_server(log_storage.clone()));
+            Self {
+                config,
+                runtime_config,
+                log_storage: Some(log_storage),
+            }
+        } else {
+            Self {
+                config,
+                runtime_config,
+                log_storage: None,
+            }
         }
     }
 
@@ -109,6 +120,7 @@ impl JobCreator {
         chain_id: u64,
         prover_gateway_url: String,
         ivs_url: String,
+        enable_logging_server: bool,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -148,7 +160,7 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config)
+        Self::initialize(config, runtime_config, enable_logging_server)
     }
 
     pub fn simple_listener_for_confidential_prover(
@@ -162,6 +174,7 @@ impl JobCreator {
         start_block: u64,
         chain_id: u64,
         prover_port: String,
+        enable_logging_server: bool,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -201,12 +214,13 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config)
+        Self::initialize(config, runtime_config, enable_logging_server)
     }
 
     pub fn from_config_paths(
         generator_config_path: &str,
         runtime_config_path: &str,
+        enable_logging_server: bool,
     ) -> anyhow::Result<Self> {
         let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
@@ -214,7 +228,11 @@ impl JobCreator {
         let file_content = std::fs::read_to_string(runtime_config_path)?;
         let runtime_config: RuntimeConfig = serde_json::from_str(&file_content)?;
 
-        Ok(Self::initialize(config, runtime_config))
+        Ok(Self::initialize(
+            config,
+            runtime_config,
+            enable_logging_server,
+        ))
     }
 
     pub async fn run(&self) -> anyhow::Result<()> {
