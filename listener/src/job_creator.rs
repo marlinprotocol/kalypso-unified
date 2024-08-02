@@ -30,7 +30,7 @@ pub struct Config {
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct MarketDetails {
     pub port: Option<String>,
-    pub ivs_url: String,
+    pub ivs_url: Option<String>,
     pub prover_gateway_url: Option<String>,
 }
 
@@ -102,7 +102,7 @@ impl JobCreator {
                     supported_market_dec_string,
                     MarketDetails {
                         port: None,
-                        ivs_url,
+                        ivs_url: Some(ivs_url),
                         prover_gateway_url: Some(prover_gateway_url),
                     },
                 );
@@ -129,8 +129,7 @@ impl JobCreator {
         generator_registry: String,
         start_block: u64,
         chain_id: u64,
-        prover_port: String,
-        ivs_url: String,
+        prover_port: String
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -158,7 +157,7 @@ impl JobCreator {
                     supported_market_dec_string,
                     MarketDetails {
                         port: Some(prover_port),
-                        ivs_url,
+                        ivs_url: None,
                         prover_gateway_url: None,
                     },
                 );

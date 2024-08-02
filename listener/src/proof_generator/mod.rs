@@ -51,12 +51,20 @@ pub async fn generate_proof(
 
     if parsed_ask_created_log.has_private_inputs {
         // market with confidential inputs
-        let ivs_url = &markets.get(&market_id.to_string()).unwrap().ivs_url;
         let generator_port = &markets.get(&market_id.to_string()).unwrap().port;
         let confidential_prover = ConfidentialProver::new(
-            format!("{}/api/checkInput", ivs_url),
-            format!("{}/api/getAttestationForInvalidInputs", ivs_url),
-            format!("{}/api/verifyInputsAndProof", ivs_url),
+            format!(
+                "http://localhost:{}/api/checkInput",
+                generator_port.clone().unwrap()
+            ),
+            format!(
+                "http://localhost:{}/api/getAttestationForInvalidInputs",
+                generator_port.clone().unwrap()
+            ),
+            format!(
+                "http://localhost:{}/api/verifyInputsAndProof",
+                generator_port.clone().unwrap()
+            ),
             format!(
                 "http://localhost:{}/api/generateProof",
                 generator_port.clone().unwrap()
@@ -78,9 +86,9 @@ pub async fn generate_proof(
             .prover_gateway_url;
 
         let non_confidential_prover = NonConfidentialProver::new(
-            format!("{}/api/checkInput", ivs_url),
-            format!("{}/api/getAttestationForInvalidInputs", ivs_url),
-            format!("{}/api/verifyInputsAndProof", ivs_url),
+            format!("{}/api/checkInput", ivs_url.clone().unwrap()),
+            format!("{}/api/getAttestationForInvalidInputs", ivs_url.clone().unwrap()),
+            format!("{}/api/verifyInputsAndProof", ivs_url.clone().unwrap()),
             generator_url.clone().unwrap().clone(),
             parsed_ask_created_log.ask_id,
             public_inputs.into(),
