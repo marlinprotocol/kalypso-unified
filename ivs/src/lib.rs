@@ -40,11 +40,11 @@ pub fn generate_invalid_input_request<R>(
 ) -> Request<models::InvalidInputPayload, R> {
     Request {
         request_type: RequestType::POST(secret_input_paylod.unwrap_or_else(|| {
-            models::InvalidInputPayload {
-                ask_id: "1".into(),
-                public: "public".into(),
-                secrets: Some("secrets".into()),
-            }
+            models::InvalidInputPayload::from_plain_secrets(
+                "1".into(),
+                "public".into(),
+                "secrets".into(),
+            )
         })),
         service_endpoint: "/api/getAttestationForInvalidInputs".into(),
         _marker: std::marker::PhantomData::<R>,

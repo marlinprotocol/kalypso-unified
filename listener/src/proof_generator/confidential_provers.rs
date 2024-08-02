@@ -74,11 +74,12 @@ impl Prover for ConfidentialProver {
         &self,
     ) -> Result<generator::models::GenerateProofResponse, BoxError> {
         let (public, secrets) = self.prepare_payload();
-        let payload = ivs::models::InvalidInputPayload {
-            ask_id: self.ask_id,
+
+        let payload = ivs::models::InvalidInputPayload::from_plain_secrets(
+            self.ask_id,
             public,
-            secrets,
-        };
+            secrets.unwrap(),
+        );
 
         post_request(
             &self.client,

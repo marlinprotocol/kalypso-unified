@@ -69,11 +69,8 @@ impl Prover for NonConfidentialProver {
         &self,
     ) -> Result<generator::models::GenerateProofResponse, BoxError> {
         let (public, _) = self.prepare_payload(); // `secrets` is always `None`
-        let payload = ivs::models::InvalidInputPayload {
-            ask_id: self.ask_id,
-            public,
-            secrets: None,
-        };
+
+        let payload = ivs::models::InvalidInputPayload::only_public_inputs(self.ask_id, public);
 
         post_request(
             &self.client,
