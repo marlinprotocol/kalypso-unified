@@ -41,9 +41,11 @@ where
     let response = client.post(url).json(payload).send().await?;
 
     if response.status().is_success() {
+        log::info!("POST: {} | Response: {}", url, response.status());
         let response_payload = response.json::<R>().await?;
         Ok(response_payload)
     } else {
+        log::error!("POST: {} | Response: {}", url, response.status());
         Err(Box::new(response.error_for_status().unwrap_err()))
     }
 }
