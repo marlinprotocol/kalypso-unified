@@ -362,7 +362,14 @@ impl JobCreator {
                 continue;
             }
 
-            let latest_block = provider_http.get_block_number().await.unwrap();
+            let latest_block = match provider_http.get_block_number().await {
+                Ok(data) => data,
+                Err(err) => {
+                    log::error!("{}", err);
+                    thread::sleep(Duration::from_millis(1000));
+                    continue;
+                }
+            };
 
             let end = if start_block + blocks_at_once > latest_block {
                 thread::sleep(Duration::from_millis(2000)); // to reduce calls on eth_latestBlock
