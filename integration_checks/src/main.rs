@@ -173,7 +173,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                 ivs::models::VerifyInputAndProofResponse,
             >(
                 create_payload(
-                    "./integration_checks/ivsCustomData/verify_inputs_and_proof_payload.json",
+                    "./integration_checks/ivsCustomData/7_verify_inputs_and_proof_payload.json",
                 )
                 .await,
                 StatusCode::OK, "Should be able to verify inputs and generated proof".into()
