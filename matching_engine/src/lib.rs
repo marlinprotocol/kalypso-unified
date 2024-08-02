@@ -14,6 +14,7 @@ pub fn get_welcome_request<R>() -> Request<(), R> {
         service_endpoint: "/welcome".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code: StatusCode::OK,
+        info: "Checks server reach".into(),
     }
 }
 
@@ -23,6 +24,7 @@ pub fn get_latest_block_request<R>() -> Request<(), R> {
         service_endpoint: "/getLatestBlock".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code: StatusCode::OK,
+        info: "Checks upto which block ME has reached".into(),
     }
 }
 
@@ -32,6 +34,7 @@ pub fn get_key_balance_request<R>() -> Request<(), R> {
         service_endpoint: "/getKeyBalance".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code: StatusCode::OK,
+        info: "Checks balance of gas key".into(),
     }
 }
 
@@ -41,12 +44,14 @@ pub fn get_status_request<R>() -> Request<(), R> {
         service_endpoint: "/getStatus".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code: StatusCode::OK,
+        info: "Checks ME overal status".into(),
     }
 }
 
 pub fn get_single_ask_status_request<R>(
     input_payload: Option<GetAskStatus>,
     expected_status_code: StatusCode,
+    info: String,
 ) -> Request<GetAskStatus, R> {
     Request {
         request_type: RequestType::POST(
@@ -55,12 +60,14 @@ pub fn get_single_ask_status_request<R>(
         service_endpoint: "/getAskStatus".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code,
+        info,
     }
 }
 
 pub fn get_single_market_info<R>(
     input_payload: Option<MarketInfo>,
     expected_status_code: StatusCode,
+    info: String,
 ) -> Request<MarketInfo, R> {
     Request {
         request_type: RequestType::POST(input_payload.unwrap_or_else(|| MarketInfo {
@@ -69,5 +76,6 @@ pub fn get_single_market_info<R>(
         service_endpoint: "/marketInfo".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code,
+        info,
     }
 }

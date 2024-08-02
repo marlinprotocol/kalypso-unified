@@ -13,6 +13,7 @@ pub struct Request<T: Serialize, R> {
     pub request_type: RequestType<T>,
     pub service_endpoint: String,
     pub expected_status_code: reqwest::StatusCode,
+    pub info: String,
 
     pub _marker: std::marker::PhantomData<R>,
 }
@@ -41,6 +42,7 @@ pub trait Run {
     fn request_info(&self) -> String;
     fn expected_status_code(&self) -> reqwest::StatusCode;
     fn hash_payload(&self) -> Option<String>;
+    fn info(&self) -> String;
 }
 
 #[async_trait]
@@ -49,6 +51,10 @@ where
     T: Serialize + Send + Sync,
     R: Serialize + DeserializeOwned + Send + Sync,
 {
+    fn info(&self) -> String {
+        self.info.clone()
+    }
+
     fn hash_payload(&self) -> Option<String> {
         self.hash_payload()
     }
@@ -113,6 +119,7 @@ impl ServiceChecker {
         for service in &self.services {
             let status_code = service.execute(&self.server_url).await;
             println!("\nService: {}", service.name());
+            println!("Info: {}", service.info());
 
             // Print the payload hash for POST requests
             if let Some(hash) = service.hash_payload() {
@@ -152,6 +159,7 @@ pub fn get_test_request<R>() -> Request<(), R> {
         service_endpoint: "/api/test".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code: StatusCode::OK,
+        info: "Checks server reach".into(),
     }
 }
 
@@ -161,12 +169,14 @@ pub fn get_benchmark_request<R>() -> Request<(), R> {
         service_endpoint: "/api/benchmark".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code: StatusCode::OK,
+        info: "Generate benchmark info for the prover".into(),
     }
 }
 
 pub fn generate_proof_request<R>(
     input_payload: Option<models::InputPayload>,
     expected_status_code: StatusCode,
+    info: String,
 ) -> Request<models::InputPayload, R> {
     Request {
         request_type: RequestType::POST(input_payload.unwrap_or_else(|| models::InputPayload {
@@ -176,5 +186,6 @@ pub fn generate_proof_request<R>(
         service_endpoint: "/api/generateProof".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code,
+        info,
     }
 }

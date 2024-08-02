@@ -68,10 +68,18 @@ async fn test_matching_engine_services(matching_engine_url: &String) -> Result<(
             >()),
             Box::new(matching_engine::get_single_ask_status_request::<
                 matching_engine::models::GetAskStatusResponse,
-            >(None, StatusCode::OK)),
+            >(
+                None,
+                StatusCode::OK,
+                "Checks a default preloaded ask".into(),
+            )),
             Box::new(matching_engine::get_single_market_info::<
                 matching_engine::models::MarketInfoResponse,
-            >(None, StatusCode::OK)),
+            >(
+                None,
+                StatusCode::OK,
+                "Checks a default preloaded Market".into(),
+            )),
             Box::new(matching_engine::get_key_balance_request::<
                 matching_engine::models::BalanceResponse,
             >()),
@@ -96,6 +104,7 @@ async fn test_generator_services(generator_url: &String) -> Result<(), Box<dyn E
                 create_payload("./integration_checks/proverCustomData/generate_proof_payload.json")
                     .await,
                 StatusCode::OK,
+                "Should generate proof for this valid proof payload".into(),
             )),
         ],
     };
@@ -112,7 +121,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                 ivs::generate_input_request::<ivs::models::CheckInputResponse>(
                     create_payload("./integration_checks/ivsCustomData/1_check_valid_input_payload.json")
                         .await,
-                    StatusCode::OK,
+                    StatusCode::OK, "Should check this valid payload".into()
                 ),
             ),
             Box::new(
@@ -121,7 +130,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                         "./integration_checks/ivsCustomData/2_check_invalid_input_payload.json",
                     )
                     .await,
-                    StatusCode::OK,
+                    StatusCode::OK, "Should check this invalid payload".into()
                 ),
             ),
             Box::new(ivs::generate_invalid_input_request::<
@@ -131,7 +140,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                     "./integration_checks/ivsCustomData/3_get_attestation_for_valid_input.json",
                 )
                 .await,
-                StatusCode::OK,
+                StatusCode::OK, "Should not fetch attestation for this valid input".into()
             )),
             Box::new(ivs::generate_invalid_input_request::<
                 generator::models::GenerateProofResponse,
@@ -140,7 +149,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                     "./integration_checks/ivsCustomData/4_get_attestation_for_invalid_inputs_payload.json",
                 )
                 .await,
-                StatusCode::OK,
+                StatusCode::OK, "Should fetch attestation for this invalid input".into()
             )),
             Box::new(ivs::generate_check_encrypted_inputs_request::<
                 ivs::models::CheckInputResponse,
@@ -149,7 +158,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                     "./integration_checks/ivsCustomData/5_check_encrypted_input_payload.json",
                 )
                 .await,
-                StatusCode::OK,
+                StatusCode::OK, "Should be able to check these valid encrypted inputs".into()
             )),
             Box::new(ivs::generate_check_encrypted_inputs_request::<
                 ivs::models::CheckInputResponse,
@@ -158,7 +167,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                     "./integration_checks/ivsCustomData/6_check_encrypted_invalid_input_payload.json",
                 )
                 .await,
-                StatusCode::OK,
+                StatusCode::OK, "Should be able to check these invalid encrypted inputs".into()
             )),
             Box::new(ivs::generate_verify_inputs_and_proof_request::<
                 ivs::models::VerifyInputAndProofResponse,
@@ -167,7 +176,7 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                     "./integration_checks/ivsCustomData/verify_inputs_and_proof_payload.json",
                 )
                 .await,
-                StatusCode::OK,
+                StatusCode::OK, "Should be able to verify inputs and generated proof".into()
             )),
         ],
     };
