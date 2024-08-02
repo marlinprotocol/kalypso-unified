@@ -21,10 +21,10 @@ pub fn generate_input_request<R>(
 ) -> Request<generator_models::models::InputPayload, R> {
     Request {
         request_type: RequestType::POST(secret_input_paylod.unwrap_or_else(|| {
-            generator_models::models::InputPayload {
-                secrets: Some("secret".into()),
-                public: "public".into(),
-            }
+            generator_models::models::InputPayload::from_plain_secrets(
+                "public".into(),
+                "secrets".into(),
+            )
         })),
         service_endpoint: "/api/checkInput".into(),
         _marker: std::marker::PhantomData::<R>,

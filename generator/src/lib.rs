@@ -179,9 +179,8 @@ pub fn generate_proof_request<R>(
     info: String,
 ) -> Request<models::InputPayload, R> {
     Request {
-        request_type: RequestType::POST(input_payload.unwrap_or_else(|| models::InputPayload {
-            public: "public".into(),
-            secrets: Some("secrets".into()),
+        request_type: RequestType::POST(input_payload.unwrap_or_else(|| {
+            models::InputPayload::from_plain_secrets("public".into(), "secrets".into())
         })),
         service_endpoint: "/api/generateProof".into(),
         _marker: std::marker::PhantomData::<R>,

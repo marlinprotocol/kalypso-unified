@@ -42,8 +42,8 @@ type BoxError = Box<dyn Error>;
 
 impl Prover for NonConfidentialProver {
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
-        let (public, secrets) = self.prepare_payload();
-        let payload = generator::models::InputPayload { public, secrets };
+        let (public, _) = self.prepare_payload();
+        let payload = generator::models::InputPayload::only_public_inputs(public);
 
         post_request(
             &self.client,
@@ -54,8 +54,8 @@ impl Prover for NonConfidentialProver {
     }
 
     async fn generate_proof(&self) -> Result<generator::models::GenerateProofResponse, BoxError> {
-        let (public, secrets) = self.prepare_payload();
-        let payload = generator::models::InputPayload { public, secrets };
+        let (public, _) = self.prepare_payload();
+        let payload = generator::models::InputPayload::only_public_inputs(public);
 
         post_request(
             &self.client,

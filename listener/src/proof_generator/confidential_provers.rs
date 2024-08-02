@@ -49,7 +49,7 @@ type BoxError = Box<dyn Error>;
 impl Prover for ConfidentialProver {
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
         let (public, secrets) = self.prepare_payload();
-        let payload = generator::models::InputPayload { public, secrets };
+        let payload = generator::models::InputPayload::from_plain_secrets(public, secrets.unwrap());
         post_request(
             &self.client,
             &self.input_verification_executable_check_input_url,
@@ -60,7 +60,7 @@ impl Prover for ConfidentialProver {
 
     async fn generate_proof(&self) -> Result<generator::models::GenerateProofResponse, BoxError> {
         let (public, secrets) = self.prepare_payload();
-        let payload = generator::models::InputPayload { public, secrets };
+        let payload = generator::models::InputPayload::from_plain_secrets(public, secrets.unwrap());
 
         post_request(
             &self.client,
