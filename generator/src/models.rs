@@ -22,7 +22,7 @@ impl InputPayload {
         }
     }
 
-    pub fn encrypted_secrets(public: Vec<u8>, encrypted_data: Vec<u8>, acl: Vec<u8>) -> Self {
+    pub fn from_encrypted_secrets(public: Vec<u8>, encrypted_data: Vec<u8>, acl: Vec<u8>) -> Self {
         InputPayload {
             public,
             secrets: Some(Secrets::EncryptedSecrets(EncryptedSecret {
