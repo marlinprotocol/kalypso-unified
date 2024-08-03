@@ -59,7 +59,6 @@ impl InvalidInputPayload {
     pub fn get_plain_secrets_from_encrypted_secrets(
         &self,
         decryption_key: Vec<u8>,
-        market_id: U256,
     ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         match self.secrets.clone().unwrap() {
             Secrets::PlainSecrets(_) => return Err("Can't decrypt the plain text".into()),
@@ -68,7 +67,7 @@ impl InvalidInputPayload {
                     &data.encrypted_data,
                     &data.acl,
                     &decryption_key,
-                    market_id,
+                    U256::max_value(),
                 )
             }
         }
