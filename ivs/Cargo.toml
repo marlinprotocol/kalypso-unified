@@ -10,3 +10,4 @@ serde = { version = "1.0", features = ["derive"] }
 generator_models = { path = "../generator", package = "generator" }
 reqwest = { version = "0.12.4", features = ["json"] }
 kalypso_helper = { path = "../helper", package = "helper" } 
+rand = "0.8"

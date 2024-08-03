@@ -11,3 +11,4 @@ serde_json="1.0"
 reqwest = { version = "0.12.4", features = ["json"] }
 async-trait = "0.1.81"
 kalypso_helper = { path = "../helper", package = "helper" } 
+rand = "0.8"
