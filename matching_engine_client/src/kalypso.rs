@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::model::{
     ApiGenerationResponse, ApiKeyFile, MatchingEngineConfig, MatchingEngineConfigSetupRequestBody,
-     UpdateMatchingEngineConfig, ValidationResponse, VerifyApiResponse,
+    UpdateMatchingEngineConfig, ValidationResponse, VerifyApiResponse,
 };
 
 macro_rules! update_field {

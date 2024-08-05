@@ -15,7 +15,7 @@ use tokio::io::AsyncReadExt;
 use crate::model::{
     AddNewGenerator, GeneratorConfig, GeneratorConfigFile, GeneratorPublicKeys, RuntimeConfig,
     RuntimeConfigFile, SetupRequestBodyGeneratorConfig, SetupRequestBodyRuntimeConfig,
-     UpdateRuntimeConfig, ValidationResponse,
+    UpdateRuntimeConfig, ValidationResponse,
 };
 
 macro_rules! update_field {

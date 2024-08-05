@@ -10,6 +10,7 @@ pub struct ExternalConfidentialProver {
 
 impl ExternalConfidentialProver {
     #[allow(unused)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         input_verification_executable_check_input_url: String,
         input_verification_executable_generate_proof_for_invalid_inputs_url: String,

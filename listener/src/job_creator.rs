@@ -109,6 +109,7 @@ impl JobCreator {
         Box::pin(server)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn simple_listener_for_non_confidential_prover(
         generator_address: String,
         supported_market_dec_string: String,
@@ -163,6 +164,7 @@ impl JobCreator {
         Self::initialize(config, runtime_config, enable_logging_server)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn simple_listener_for_confidential_prover(
         generator_address: String,
         ecies_private_key: String,
