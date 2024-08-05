@@ -1,4 +1,6 @@
 pub mod models;
+use std::time::Instant;
+
 use async_trait::async_trait;
 use ethers::core::k256::sha2::{Digest, Sha256};
 use reqwest::{Client, StatusCode};
@@ -37,7 +39,7 @@ where
 
 #[async_trait]
 pub trait Run {
-    async fn execute(&self, server_url: &str) -> Option<(StatusCode, bool, String)>;
+    async fn execute(&self, server_url: &str) -> Option<(StatusCode, bool, String, u128)>;
     fn name(&self) -> String;
     fn request_info(&self) -> String;
     fn expected_status_code(&self) -> reqwest::StatusCode;
@@ -76,21 +78,30 @@ where
         }
     }
 
-    async fn execute(&self, server_url: &str) -> Option<(StatusCode, bool, String)> {
+    async fn execute(&self, server_url: &str) -> Option<(StatusCode, bool, String, u128)> {
         let client = Client::new();
         let url = format!("{}{}", server_url, self.service_endpoint);
+
+        let start_time = Instant::now();
 
         let response = match &self.request_type {
             RequestType::GET => client.get(&url).send().await,
             RequestType::POST(payload) => client.post(&url).json(payload).send().await,
         };
 
+        let elapsed_time = start_time.elapsed().as_millis();
+
         match response {
             Ok(data) => {
                 let status = data.status();
                 match data.json::<R>().await {
-                    Ok(_) => Some((status, true, "".into())),
-                    Err(_) => Some((status, false, std::any::type_name::<R>().into())),
+                    Ok(_) => Some((status, true, "".into(), elapsed_time)),
+                    Err(_) => Some((
+                        status,
+                        false,
+                        std::any::type_name::<R>().into(),
+                        elapsed_time,
+                    )),
                 }
             }
             Err(_) => None,
@@ -127,8 +138,9 @@ impl ServiceChecker {
             }
 
             match status_code {
-                Some((code, is_type_ok, expected_type_name)) => {
+                Some((code, is_type_ok, expected_type_name, elapsed_time)) => {
                     println!("Status Code: {}", code);
+                    println!("Time Taken: {} ms", elapsed_time);
 
                     if !is_type_ok {
                         println!("Mismatch Detected:");
