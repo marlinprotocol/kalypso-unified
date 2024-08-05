@@ -11,11 +11,12 @@ aes-gcm = "0.10.3"
 ecies = {version = "0.2.6", features = ["std"]}
 ethers = { version = "2", features = ["rustls"] }
 hex = "0.4.3"
+log = "0.4"
 openssl = { version = "0.10.57", features = ["vendored"] }
 secp256k1 = "0.28.0"
 serde = "1.0.178"
 serde_json = "1.0"
-log = "0.4"
+validator = { version = "0.18.1", features = ["derive"] }
 
 [lib]
 name = "helper"

@@ -1,15 +1,11 @@
-use crate::kalypso::{
-    generate_api_key, generate_ivs_config_file, get_public_keys_for_ivs, sign_addy, sign_attest,
-};
-use crate::model::{SignAddress, SignAttestation, SupervisordResponse};
+use crate::kalypso::{generate_api_key, generate_ivs_config_file, get_public_keys_for_ivs};
+use crate::model::SupervisordResponse;
 use crate::supervisord::{get_ivs_status, start_ivs, stop_ivs};
 use actix_web::http::StatusCode;
 use actix_web::{get, post, web, Responder};
 use helper::response::response;
 
-use ethers::types::BigEndianHash;
-use serde_json::{json, Value};
-use validator::Validate;
+use serde_json::Value;
 
 // Generate API key
 #[post("/generateApiKey")]
@@ -201,51 +197,6 @@ async fn fetch_input_verifier_public_keys() -> impl Responder {
     )
 }
 
-// Sign Address
-#[post("/signAddress")]
-async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
-    //Validating inputs
-    let json_input = &jsonbody.0;
-    if let Err(err) = json_input.validate() {
-        log::error!("{}", err);
-        return response(
-            "Invalid payload",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-    let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let signed = sign_addy(addy_to_be_signed).await.unwrap();
-    let signature = json!({
-        "r": ethers::types::H256::from_uint(&signed.r),
-        "s": ethers::types::H256::from_uint(&signed.s),
-        "v": signed.v
-    });
-    response("Address signed", StatusCode::OK, Some(signature))
-}
-
-// Sign Attestaion
-#[post("/signAttestation")]
-async fn sign_attestation(jsonbody: web::Json<SignAttestation>) -> impl Responder {
-    // Validating inputs
-    let json_input = &jsonbody.0;
-    if let Err(err) = json_input.validate() {
-        log::error!("{}", err);
-        return response(
-            "Invalid attestation",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-    let signed = sign_attest(jsonbody.0).await.unwrap();
-    let signature = json!({
-        "r": ethers::types::H256::from_uint(&signed.r),
-        "s": ethers::types::H256::from_uint(&signed.s),
-        "v": signed.v
-    });
-    response("Attestation signed", StatusCode::OK, Some(signature))
-}
-
 // Routes
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
@@ -256,7 +207,7 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(get_input_verifier_status_handler)
         .service(generate_config_setup)
         .service(fetch_input_verifier_public_keys)
-        .service(sign_address)
-        .service(sign_attestation);
+        .service(helper::common_handlers::sign_address)
+        .service(helper::common_handlers::sign_attestation);
     conf.service(scope);
 }

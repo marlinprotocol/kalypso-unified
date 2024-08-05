@@ -16,10 +16,10 @@ generator = { path = "../generator", package = "generator" }
 hex = "0.4"
 itertools = "0.12.1"
 ivs = { path = "../ivs", package = "ivs" }
+kalypso_helper = {path = "../helper", package = "helper"}
 log = "0.4"
 openssl = { version = "0.10.56", features = ["vendored"] }
 reqwest = "0.12.4"
-kalypso_helper = {path = "../helper", package = "helper"}
 serde = { version = "1.0", features = ["derive"] }
 serde_json="1.0"
 tokio = { version = "1.16.1", features = ["full"] }

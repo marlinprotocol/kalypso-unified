@@ -15,7 +15,7 @@ use tokio::io::AsyncReadExt;
 use crate::model::{
     AddNewGenerator, GeneratorConfig, GeneratorConfigFile, GeneratorPublicKeys, RuntimeConfig,
     RuntimeConfigFile, SetupRequestBodyGeneratorConfig, SetupRequestBodyRuntimeConfig,
-    SignAttestation, UpdateRuntimeConfig, ValidationResponse,
+     UpdateRuntimeConfig, ValidationResponse,
 };
 
 macro_rules! update_field {
@@ -409,51 +409,9 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
     })
 }
 
-pub async fn sign_addy(
-    ecies_private_key: String,
-    address: &str,
-) -> Result<Signature, Box<dyn std::error::Error>> {
-    let signer = ecies_private_key.clone().parse::<LocalWallet>().unwrap();
-    let values = vec![ethers::abi::Token::Address(Address::from_str(address)?)];
-    let encoded = ethers::abi::encode(&values);
-    let digest = ethers::utils::keccak256(encoded);
-    let signature = signer.sign_message(ethers::types::H256(digest)).await?;
-    Ok(signature)
-}
-
-pub async fn sign_attest(
-    ecies_private_key: String,
-    attestation: SignAttestation,
-) -> Result<Signature, Box<dyn std::error::Error>> {
-    let signer = ecies_private_key.parse::<LocalWallet>().unwrap();
-    let attestation_bytes = attestation.attestation.unwrap();
-    let attestation_string: Vec<&str> = attestation_bytes.split('x').collect();
-    let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
-    let address = attestation.address.unwrap();
-    let values = vec![
-        ethers::abi::Token::Bytes(attestation_decoded),
-        ethers::abi::Token::Address(Address::from_str(&address)?),
-    ];
-    let encoded = ethers::abi::encode(&values);
-    let digest = ethers::utils::keccak256(encoded);
-    let signature = signer.sign_message(ethers::types::H256(digest)).await?;
-    Ok(signature)
-}
-
 //Benchmark proof generation. Return proof generation time in ms.
 pub async fn benchmark(endpoint: String) -> Result<Response, Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
     let res = client.get(endpoint).send().await?;
     Ok(res)
 }
-
-// async fn read_secp_private_key() -> Result<String, Box<dyn std::error::Error>> {
-//     //Using the enclave secp secret for ecies private key
-//     let read_secp_private_key = fs::read("/app/secp.sec").await?;
-//     let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
-//         .unwrap()
-//         .display_secret()
-//         .to_string();
-
-//     Ok(secp_private_key)
-// }

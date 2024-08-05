@@ -9,8 +9,9 @@ use tokio::io::AsyncReadExt;
 use uuid::Uuid;
 
 use crate::model::{
-    ApiGenerationResponse, ApiKeyFile, IvsConfig, IvsPublicKeys, SignAttestation, VerifyApiResponse,
+    ApiGenerationResponse, ApiKeyFile, IvsConfig, IvsPublicKeys, VerifyApiResponse,
 };
+use helper::common_handlers::SignAttestation;
 
 //generating API key
 pub async fn generate_api_key() -> Result<ApiGenerationResponse, Box<dyn std::error::Error>> {
@@ -146,34 +147,8 @@ pub async fn read_ivs_config_file() -> Result<IvsConfig, Box<dyn std::error::Err
     Ok(ivs_config_file)
 }
 
-pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::Error>> {
-    //Using the enclave secp secret for ecies private key
-    let read_secp_private_key = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
-        .unwrap()
-        .display_secret()
-        .to_string();
-    let signer = secp_private_key.parse::<LocalWallet>().unwrap();
-    let values = vec![ethers::abi::Token::Address(Address::from_str(address)?)];
-    let encoded = ethers::abi::encode(&values);
-    let digest = ethers::utils::keccak256(encoded);
-    let signature = signer.sign_message(ethers::types::H256(digest)).await?;
-    Ok(signature)
-}
-
-pub async fn sign_attest(
-    attestation: SignAttestation,
-) -> Result<Signature, Box<dyn std::error::Error>> {
-    // Using enclave private key for signature
-    let secp_file = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&secp_file)
-        .unwrap()
-        .display_secret()
-        .to_string();
-    fetch_signed_attestation(attestation, secp_private_key).await
-}
-
-pub async fn fetch_signed_attestation(
+#[allow(unused)]
+async fn fetch_signed_attestation(
     attestation: SignAttestation,
     private_key: String,
 ) -> Result<Signature, Box<dyn std::error::Error>> {
@@ -198,8 +173,8 @@ pub async fn fetch_signed_attestation(
 mod tests {
 
     use super::fetch_signed_attestation;
-    use crate::model::SignAttestation;
     use ethers::types::BigEndianHash;
+    use helper::common_handlers::SignAttestation;
     use serde_json::json;
 
     #[tokio::test]

@@ -4,22 +4,20 @@ use std::sync::{Arc, Mutex};
 use crate::kalypso::{
     add_new_generator, benchmark, contract_validation, generate_config_file, generate_runtime_file,
     get_public_keys_for_a_generator, read_generator_config_file, read_runtime_config_file,
-    runtime_config_validation, sign_addy, sign_attest, update_generator_config_file,
-    update_runtime_config_file, update_runtime_config_with_new_data,
+    runtime_config_validation, update_generator_config_file, update_runtime_config_file,
+    update_runtime_config_with_new_data,
 };
 use crate::model::{
     AddNewGenerator, GeneratorConfigSetupRequestBody, GetGeneratorPublicKeys, RemoveGenerator,
-    SignAddress, SignAttestation, SupervisordInputBody, SupervisordResponse, UpdateGeneratorConfig,
-    UpdateRuntimeConfig,
+    SupervisordInputBody, SupervisordResponse, UpdateGeneratorConfig, UpdateRuntimeConfig,
 };
 use crate::supervisord::{get_program_status, start_program, stop_program};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{delete, get, post, put, web, Responder};
-use ethers::types::BigEndianHash;
 use helper::response::response;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::Value;
 use validator::Validate;
 
 #[derive(Deserialize)]
@@ -763,67 +761,6 @@ async fn fetch_generator_public_keys(
     )
 }
 
-// Sign Address
-#[post("/signAddress")]
-async fn sign_address(
-    jsonbody: web::Json<SignAddress>,
-    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
-) -> impl Responder {
-    //Validating inputs
-    let json_input = &jsonbody.0;
-    if let Err(err) = json_input.validate() {
-        log::error!("{}", err);
-        return response(
-            "Invalid payload",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-    let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
-    };
-    let signed = sign_addy(ecies_priv_key, addy_to_be_signed).await.unwrap();
-    let signature = json!({
-        "r": ethers::types::H256::from_uint(&signed.r),
-        "s": ethers::types::H256::from_uint(&signed.s),
-        "v": signed.v
-    });
-    response("Address signed", StatusCode::OK, Some(signature))
-}
-
-// Sign Attestaion
-#[post("/signAttestation")]
-async fn sign_attestation(
-    jsonbody: web::Json<SignAttestation>,
-    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
-) -> impl Responder {
-    // Validating inputs
-    let json_input = &jsonbody.0;
-    if let Err(err) = json_input.validate() {
-        log::error!("{}", err);
-        return response(
-            "Invalid attestation",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
-    };
-
-    let signed = sign_attest(ecies_priv_key, jsonbody.0).await.unwrap();
-    let signature = json!({
-        "r": ethers::types::H256::from_uint(&signed.r),
-        "s": ethers::types::H256::from_uint(&signed.s),
-        "v": signed.v
-    });
-    response("Attestation signed", StatusCode::OK, Some(signature))
-}
-
 // Get program status from the supervisord
 #[get("/benchmark")]
 async fn benchmark_generator(benchmark_params: web::Query<BenchmarkParams>) -> impl Responder {
@@ -903,8 +840,8 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         // .service(remove_generator_from_config)
         .service(update_generator_config)
         .service(fetch_generator_public_keys)
-        .service(sign_address)
-        .service(sign_attestation)
-        .service(benchmark_generator);
+        .service(benchmark_generator)
+        .service(helper::common_handlers::sign_address)
+        .service(helper::common_handlers::sign_attestation);
     conf.service(scope);
 }

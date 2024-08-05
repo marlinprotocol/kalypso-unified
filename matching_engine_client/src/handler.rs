@@ -3,21 +3,20 @@ use std::io::ErrorKind;
 use crate::kalypso::{
     contract_validation, generate_api_key, generate_matching_engine_config_file,
     get_matching_engine_ecies_public_key, get_matching_engine_public_key,
-    matching_engine_config_validation, read_matching_engine_config_file, sign_addy, sign_attest,
+    matching_engine_config_validation, read_matching_engine_config_file,
     update_matching_engine_config_file, update_matching_engine_config_with_new_data,
 };
 
 use crate::model::{
-    MatchingEngineConfigSetupRequestBody, MatchingEnginePublicKeys, SignAddress, SignAttestation,
-    SupervisordResponse, UpdateMatchingEngineConfig,
+    MatchingEngineConfigSetupRequestBody, MatchingEnginePublicKeys, SupervisordResponse,
+    UpdateMatchingEngineConfig,
 };
 use crate::supervisord::{get_matching_engine_status, start_matching_engine, stop_matching_engine};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
-use ethers::types::BigEndianHash;
 use helper::response::response;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use validator::Validate;
 
@@ -413,66 +412,6 @@ async fn get_matching_engine_public_keys() -> impl Responder {
     )
 }
 
-// Sign Address
-#[post("/signAddress")]
-async fn sign_address(
-    jsonbody: web::Json<SignAddress>,
-    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
-) -> impl Responder {
-    //Validating inputs
-    let json_input = &jsonbody.0;
-    if let Err(err) = json_input.validate() {
-        log::error!("{}", err);
-        return response(
-            "Invalid payload",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-    let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
-    };
-    let signed = sign_addy(ecies_priv_key, addy_to_be_signed).await.unwrap();
-    let signature = json!({
-        "r": ethers::types::H256::from_uint(&signed.r),
-        "s": ethers::types::H256::from_uint(&signed.s),
-        "v": signed.v
-    });
-    response("Address signed", StatusCode::OK, Some(signature))
-}
-
-// Sign Attestaion
-#[post("/signAttestation")]
-async fn sign_attestation(
-    jsonbody: web::Json<SignAttestation>,
-    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
-) -> impl Responder {
-    // Validating inputs
-    let json_input = &jsonbody.0;
-    if let Err(err) = json_input.validate() {
-        log::error!("{}", err);
-        return response(
-            "Invalid attestation",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
-    };
-    let signed = sign_attest(ecies_priv_key, jsonbody.0).await.unwrap();
-    let signature = json!({
-        "r": ethers::types::H256::from_uint(&signed.r),
-        "s": ethers::types::H256::from_uint(&signed.s),
-        "v": signed.v
-    });
-    response("Attestation signed", StatusCode::OK, Some(signature))
-}
-
 // Routes
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
@@ -484,7 +423,7 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(generate_config_setup)
         .service(get_matching_engine_public_keys)
         .service(update_matching_engine_config)
-        .service(sign_address)
-        .service(sign_attestation);
+        .service(helper::common_handlers::sign_address)
+        .service(helper::common_handlers::sign_attestation);
     conf.service(scope);
 }

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use validator::Validate;
 
 pub struct SupervisordResponse {
     pub output: String,
@@ -31,28 +30,4 @@ pub struct IvsConfig {
 pub struct IvsPublicKeys {
     pub ivs_public_key: String,
     pub ivs_ecies_public_key: String,
-}
-
-#[derive(Serialize, Debug, Validate, Deserialize)]
-pub struct SignAddress {
-    #[validate(required(message = "address was not provided in the JSON body"))]
-    pub address: Option<String>,
-}
-
-#[derive(Serialize, Debug, Validate, Deserialize)]
-pub struct SignAttestation {
-    #[validate(required(message = "attestation bytes were not provided in the JSON body"))]
-    pub attestation: Option<String>,
-    #[validate(required(message = "address was not provided in the JSON body"))]
-    pub address: Option<String>,
-}
-
-impl SignAttestation {
-    #[allow(unused)]
-    pub fn new(attestation: &str, address: &str) -> SignAttestation {
-        SignAttestation {
-            attestation: Some(attestation.to_string()),
-            address: Some(address.to_string()),
-        }
-    }
 }
