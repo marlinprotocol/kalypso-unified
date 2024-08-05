@@ -1,4 +1,5 @@
 use std::io::ErrorKind;
+use std::sync::{Arc, Mutex};
 
 use crate::kalypso::{
     add_new_generator, benchmark, contract_validation, generate_config_file, generate_runtime_file,
@@ -13,6 +14,7 @@ use crate::model::{
 };
 use crate::supervisord::{get_program_status, start_program, stop_program};
 use actix_web::http::StatusCode;
+use actix_web::web::Data;
 use actix_web::{delete, get, post, put, web, Responder};
 use ethers::types::BigEndianHash;
 use helper::response::response;
@@ -248,6 +250,7 @@ async fn get_program_status_handler(program_name: web::Query<ProgramName>) -> im
 #[post("/generatorConfigSetup")]
 async fn generate_config_setup(
     jsonbody: web::Json<GeneratorConfigSetupRequestBody>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
 ) -> impl Responder {
     //Validating the main JSON body
     let json_input = &jsonbody;
@@ -325,8 +328,13 @@ async fn generate_config_setup(
         );
     }
 
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+
     //Generating the generator config file
-    let generate_config_file = generate_config_file(generator_config_body).await;
+    let generate_config_file = generate_config_file(generator_config_body, ecies_priv_key).await;
     match generate_config_file {
         Ok(data) => data,
         Err(e) => {
@@ -455,7 +463,10 @@ async fn update_runtime_config(jsonbody: web::Json<UpdateRuntimeConfig>) -> impl
 
 // Update runtime config
 #[post("/addNewGenerator")]
-async fn add_new_generator_config(jsonbody: web::Json<AddNewGenerator>) -> impl Responder {
+async fn add_new_generator_config(
+    jsonbody: web::Json<AddNewGenerator>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
     let json_input = &jsonbody;
     if let Err(err) = json_input.validate() {
         log::error!("{}", err);
@@ -492,7 +503,13 @@ async fn add_new_generator_config(jsonbody: web::Json<AddNewGenerator>) -> impl 
         );
     }
 
-    let updated_generator_config_data_call = add_new_generator(json_input, config_file).await;
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+
+    let updated_generator_config_data_call =
+        add_new_generator(json_input, ecies_priv_key, config_file).await;
     let updated_generator_config_data = match updated_generator_config_data_call {
         Ok(data) => data,
         Err(e) => {
@@ -748,7 +765,10 @@ async fn fetch_generator_public_keys(
 
 // Sign Address
 #[post("/signAddress")]
-async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
+async fn sign_address(
+    jsonbody: web::Json<SignAddress>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
     //Validating inputs
     let json_input = &jsonbody.0;
     if let Err(err) = json_input.validate() {
@@ -760,7 +780,11 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
         );
     }
     let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let signed = sign_addy(addy_to_be_signed).await.unwrap();
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+    let signed = sign_addy(ecies_priv_key, addy_to_be_signed).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),
@@ -771,7 +795,10 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
 
 // Sign Attestaion
 #[post("/signAttestation")]
-async fn sign_attestation(jsonbody: web::Json<SignAttestation>) -> impl Responder {
+async fn sign_attestation(
+    jsonbody: web::Json<SignAttestation>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
     // Validating inputs
     let json_input = &jsonbody.0;
     if let Err(err) = json_input.validate() {
@@ -782,7 +809,13 @@ async fn sign_attestation(jsonbody: web::Json<SignAttestation>) -> impl Responde
             Some(Value::String(err.to_string())),
         );
     }
-    let signed = sign_attest(jsonbody.0).await.unwrap();
+
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+
+    let signed = sign_attest(ecies_priv_key, jsonbody.0).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),

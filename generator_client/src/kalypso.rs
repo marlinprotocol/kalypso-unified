@@ -60,6 +60,7 @@ pub async fn get_public_keys_for_a_generator(
 //Generate Config file
 pub async fn generate_config_file(
     generator_config_body: &Vec<SetupRequestBodyGeneratorConfig>,
+    ecies_private_key: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create config_file_folder
     let folder_path = "../generator_config";
@@ -71,13 +72,6 @@ pub async fn generate_config_file(
             .expect("Unable to create new folder");
     }
 
-    //Using the enclave secp secret for ecies private key
-    let read_secp_private_key = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
-        .unwrap()
-        .display_secret()
-        .to_string();
-
     //Structure data
     let config_file_path = folder_path.to_string() + "/generator_config.json";
     let mut generator_config: Vec<GeneratorConfig> = Vec::new();
@@ -85,7 +79,7 @@ pub async fn generate_config_file(
         let generator_data = GeneratorConfig {
             address: generator.address.as_ref().unwrap().to_string(),
             data: generator.data.as_ref().unwrap().to_string(),
-            ecies_private_key: secp_private_key.clone(),
+            ecies_private_key: ecies_private_key.clone(),
             supported_markets: generator.supported_markets.as_ref().unwrap().to_vec(),
         };
         generator_config.push(generator_data);
@@ -235,22 +229,16 @@ pub async fn read_generator_config_file() -> Result<GeneratorConfigFile, Box<dyn
 //Add a new generator to the generator config
 pub async fn add_new_generator(
     json_input: &Json<AddNewGenerator>,
+    ecies_private_key: String,
     mut config_file: GeneratorConfigFile,
 ) -> Result<GeneratorConfigFile, Box<dyn std::error::Error>> {
     //Updating the existing generator list
     let new_generator = &json_input.0;
 
-    //Using the enclave secp secret for ecies private key
-    let read_secp_private_key = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
-        .unwrap()
-        .display_secret()
-        .to_string();
-
     let new_generator_data = GeneratorConfig {
         address: new_generator.address.as_ref().unwrap().to_string(),
         data: new_generator.data.as_ref().unwrap().to_string(),
-        ecies_private_key: secp_private_key,
+        ecies_private_key: ecies_private_key.clone(),
         supported_markets: new_generator.supported_markets.as_ref().unwrap().to_vec(),
     };
     config_file.generator_config.push(new_generator_data);
@@ -421,14 +409,11 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
     })
 }
 
-pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::Error>> {
-    //Using the enclave secp secret for ecies private key
-    let read_secp_private_key = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
-        .unwrap()
-        .display_secret()
-        .to_string();
-    let signer = secp_private_key.parse::<LocalWallet>().unwrap();
+pub async fn sign_addy(
+    ecies_private_key: String,
+    address: &str,
+) -> Result<Signature, Box<dyn std::error::Error>> {
+    let signer = ecies_private_key.clone().parse::<LocalWallet>().unwrap();
     let values = vec![ethers::abi::Token::Address(Address::from_str(address)?)];
     let encoded = ethers::abi::encode(&values);
     let digest = ethers::utils::keccak256(encoded);
@@ -437,15 +422,10 @@ pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::E
 }
 
 pub async fn sign_attest(
+    ecies_private_key: String,
     attestation: SignAttestation,
 ) -> Result<Signature, Box<dyn std::error::Error>> {
-    // Using enclave private key for signature
-    let secp_file = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&secp_file)
-        .unwrap()
-        .display_secret()
-        .to_string();
-    let signer = secp_private_key.parse::<LocalWallet>().unwrap();
+    let signer = ecies_private_key.parse::<LocalWallet>().unwrap();
     let attestation_bytes = attestation.attestation.unwrap();
     let attestation_string: Vec<&str> = attestation_bytes.split('x').collect();
     let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
@@ -466,3 +446,14 @@ pub async fn benchmark(endpoint: String) -> Result<Response, Box<dyn std::error:
     let res = client.get(endpoint).send().await?;
     Ok(res)
 }
+
+// async fn read_secp_private_key() -> Result<String, Box<dyn std::error::Error>> {
+//     //Using the enclave secp secret for ecies private key
+//     let read_secp_private_key = fs::read("/app/secp.sec").await?;
+//     let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
+//         .unwrap()
+//         .display_secret()
+//         .to_string();
+
+//     Ok(secp_private_key)
+// }
