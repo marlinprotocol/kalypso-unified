@@ -13,10 +13,12 @@ use crate::model::{
 };
 use crate::supervisord::{get_matching_engine_status, start_matching_engine, stop_matching_engine};
 use actix_web::http::StatusCode;
+use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
 use ethers::types::BigEndianHash;
 use helper::response::response;
 use serde_json::{json, Value};
+use std::sync::{Arc, Mutex};
 use validator::Validate;
 
 // Generate API key
@@ -212,6 +214,7 @@ async fn get_matching_engine_status_handler() -> impl Responder {
 #[post("/matchingEngineConfigSetup")]
 async fn generate_config_setup(
     jsonbody: web::Json<MatchingEngineConfigSetupRequestBody>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
 ) -> impl Responder {
     //Validating the main JSON body
     let matching_engine_config_body = &jsonbody;
@@ -254,9 +257,14 @@ async fn generate_config_setup(
         );
     }
 
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+
     //Generating the matching_engine config file
     let matching_engine_config_file =
-        generate_matching_engine_config_file(matching_engine_config_body).await;
+        generate_matching_engine_config_file(matching_engine_config_body, ecies_priv_key).await;
     match matching_engine_config_file {
         Ok(data) => data,
         Err(e) => {
@@ -407,7 +415,10 @@ async fn get_matching_engine_public_keys() -> impl Responder {
 
 // Sign Address
 #[post("/signAddress")]
-async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
+async fn sign_address(
+    jsonbody: web::Json<SignAddress>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
     //Validating inputs
     let json_input = &jsonbody.0;
     if let Err(err) = json_input.validate() {
@@ -419,7 +430,11 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
         );
     }
     let addy_to_be_signed = json_input.address.as_ref().unwrap();
-    let signed = sign_addy(addy_to_be_signed).await.unwrap();
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+    let signed = sign_addy(ecies_priv_key, addy_to_be_signed).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),
@@ -430,7 +445,10 @@ async fn sign_address(jsonbody: web::Json<SignAddress>) -> impl Responder {
 
 // Sign Attestaion
 #[post("/signAttestation")]
-async fn sign_attestation(jsonbody: web::Json<SignAttestation>) -> impl Responder {
+async fn sign_attestation(
+    jsonbody: web::Json<SignAttestation>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
     // Validating inputs
     let json_input = &jsonbody.0;
     if let Err(err) = json_input.validate() {
@@ -441,7 +459,12 @@ async fn sign_attestation(jsonbody: web::Json<SignAttestation>) -> impl Responde
             Some(Value::String(err.to_string())),
         );
     }
-    let signed = sign_attest(jsonbody.0).await.unwrap();
+
+    let ecies_priv_key = {
+        let key = ecies_priv_key.lock().unwrap().clone();
+        hex::encode(key)
+    };
+    let signed = sign_attest(ecies_priv_key, jsonbody.0).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),

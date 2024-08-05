@@ -18,7 +18,9 @@ pub struct ApiGenerationResponse {
 }
 
 pub struct VerifyApiResponse {
+    #[allow(unused)]
     pub status: bool,
+    #[allow(unused)]
     pub message: String,
 }
 

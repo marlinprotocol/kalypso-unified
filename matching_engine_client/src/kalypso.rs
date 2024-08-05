@@ -63,7 +63,7 @@ pub async fn generate_api_key() -> Result<ApiGenerationResponse, Box<dyn std::er
     })
 }
 
-//Verify api key
+#[allow(unused)]
 pub async fn verify_api_key(
     request_api_key: &str,
 ) -> Result<VerifyApiResponse, Box<dyn std::error::Error>> {
@@ -99,6 +99,7 @@ pub async fn verify_api_key(
 //Generate matching engine config file
 pub async fn generate_matching_engine_config_file(
     me_config_body: &MatchingEngineConfigSetupRequestBody,
+    ecies_private_key: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create config_file_folder
     let folder_path = "../matching_engine_config";
@@ -110,14 +111,7 @@ pub async fn generate_matching_engine_config_file(
             .expect("Unable to create new folder");
     }
 
-    // Generate a random private key
-    // Get enclave private key
-    let key_path = "app/secp.sec";
-    let mut file = File::open(key_path).await?;
-    let mut priv_key = [0u8; 32];
-    file.read_exact(&mut priv_key).await?;
-
-    let matching_engine_key = ByteBuf::from(priv_key);
+    let matching_engine_key = ByteBuf::from(hex::decode(ecies_private_key).unwrap());
 
     //Structure data
     let config_file_path = folder_path.to_string() + "/matching_engine_config.json";
@@ -353,14 +347,11 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
     })
 }
 
-pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::Error>> {
-    //Using the enclave secp secret for ecies private key
-    let read_secp_private_key = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&read_secp_private_key)
-        .unwrap()
-        .display_secret()
-        .to_string();
-    let signer = secp_private_key.parse::<LocalWallet>().unwrap();
+pub async fn sign_addy(
+    ecies_private_key: String,
+    address: &str,
+) -> Result<Signature, Box<dyn std::error::Error>> {
+    let signer = ecies_private_key.parse::<LocalWallet>().unwrap();
     let values = vec![ethers::abi::Token::Address(Address::from_str(address)?)];
     let encoded = ethers::abi::encode(&values);
     let digest = ethers::utils::keccak256(encoded);
@@ -369,15 +360,10 @@ pub async fn sign_addy(address: &str) -> Result<Signature, Box<dyn std::error::E
 }
 
 pub async fn sign_attest(
+    ecies_private_key: String,
     attestation: SignAttestation,
 ) -> Result<Signature, Box<dyn std::error::Error>> {
-    // Using enclave private key for signature
-    let secp_file = fs::read("/app/secp.sec").await?;
-    let secp_private_key = secp256k1::SecretKey::from_slice(&secp_file)
-        .unwrap()
-        .display_secret()
-        .to_string();
-    let signer = secp_private_key.parse::<LocalWallet>().unwrap();
+    let signer = ecies_private_key.parse::<LocalWallet>().unwrap();
     let attestation_bytes = attestation.attestation.unwrap();
     let attestation_string: Vec<&str> = attestation_bytes.split('x').collect();
     let attestation_decoded = hex::decode(attestation_string[1]).unwrap();
