@@ -19,7 +19,7 @@ pub trait Prover {
     ) -> Result<generator::models::GenerateProofResponse, Box<dyn Error>>;
     async fn verify_inputs_and_proof(
         &self,
-        proof: &Vec<u8>,
+        proof: &[u8],
     ) -> Result<ivs::models::VerifyInputAndProofResponse, Box<dyn Error>>;
 
     async fn get_proof(&self) -> Result<Proof, Box<dyn Error>> {

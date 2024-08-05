@@ -242,6 +242,12 @@ impl AskQueryResult {
     }
 }
 
+impl Default for LocalAskStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LocalAskStore {
     pub fn new() -> Self {
         LocalAskStore {
@@ -351,6 +357,12 @@ impl LocalAskStore {
 
 pub struct MarketMetadataStore {
     market_by_id: HashMap<U256, MarketMetadata>,
+}
+
+impl Default for MarketMetadataStore {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MarketMetadataStore {

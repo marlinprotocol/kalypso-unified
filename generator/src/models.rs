@@ -39,7 +39,7 @@ impl InputPayload {
     pub fn get_plain_secrets(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         match self.secrets.clone().unwrap() {
             Secrets::PlainSecrets(data) => Ok(data),
-            Secrets::EncryptedSecrets(_) => return Err("Fetching Plain texts not supported".into()),
+            Secrets::EncryptedSecrets(_) => Err("Fetching Plain texts not supported".into()),
         }
     }
 
@@ -48,9 +48,9 @@ impl InputPayload {
         decryption_key: Vec<u8>,
     ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         match self.secrets.clone().unwrap() {
-            Secrets::PlainSecrets(_) => return Err("Can't decrypt the plain text".into()),
+            Secrets::PlainSecrets(_) => Err("Can't decrypt the plain text".into()),
             Secrets::EncryptedSecrets(data) => {
-                return kalypso_helper::secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
+                kalypso_helper::secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
                     &data.encrypted_data,
                     &data.acl,
                     &decryption_key,

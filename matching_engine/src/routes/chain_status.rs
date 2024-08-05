@@ -33,9 +33,9 @@ pub async fn gas_key_balance(balance: Data<Arc<Mutex<U256>>>) -> actix_web::Resu
             balance: Some(data),
         }))
     } else {
-        return Ok(HttpResponse::Ok().json(BalanceResponse {
+        Ok(HttpResponse::Ok().json(BalanceResponse {
             status: "less balance".into(),
             balance: Some(data),
-        }));
+        }))
     }
 }

@@ -293,6 +293,12 @@ pub struct GeneratorStore {
     address_index: HashMap<Address, Vec<U256>>, // to easily fetch all generators by address
 }
 
+impl Default for GeneratorStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GeneratorStore {
     pub fn new() -> Self {
         GeneratorStore {
@@ -662,6 +668,12 @@ impl GeneratorStore {
             }
         }
         GeneratorQueryResult::new(generator_result)
+    }
+}
+
+impl Default for KeyStore {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

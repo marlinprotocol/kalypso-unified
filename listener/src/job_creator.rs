@@ -446,7 +446,7 @@ impl JobCreator {
                         "Need to generate proof (polling) for ASK ID : {}",
                         event.ask_id
                     );
-                    let gen_ecies_private_key = generator.ecies_priv_key.clone();
+                    let gen_ecies_private_key = generator.ecies_priv_key;
 
                     let proof_market_place_clone_http = Arc::clone(&proof_marketplace_http);
                     let submitter_pmp_clone_http = Arc::clone(&submitter_pmp);

@@ -82,12 +82,12 @@ impl Prover for NonConfidentialProver {
 
     async fn verify_inputs_and_proof(
         &self,
-        proof: &Vec<u8>,
+        proof: &[u8],
     ) -> Result<ivs::models::VerifyInputAndProofResponse, Box<dyn Error>> {
         let input_and_proof_payload = ivs::models::VerifyInputsAndProof {
             public_input: Some(self.public.to_vec()),
             private_input: None,
-            proof: proof.clone(),
+            proof: proof.to_vec(),
         };
         post_request(
             &self.client,
