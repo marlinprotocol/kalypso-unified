@@ -398,6 +398,11 @@ impl JobCreator {
                 start_block + blocks_at_once - 1
             };
 
+            if start_block > end {
+                thread::sleep(Duration::from_millis(2000));
+                continue;
+            }
+
             log::info!(
                 "Searching for TASKs from Block {} to {}...",
                 start_block,
@@ -410,7 +415,14 @@ impl JobCreator {
                 .from_block(start_block)
                 .to_block(end);
 
-            let logs = client_http.provider().get_logs(&filter).await?;
+            let logs = match client_http.provider().get_logs(&filter).await {
+                Ok(data) => data,
+                Err(_) => {
+                    log::error!("Sleeping the thread for logs to avoid rate limit");
+                    thread::sleep(Duration::from_millis(2000));
+                    continue;
+                }
+            };
 
             for log in logs {
                 let event = proof_marketplace_http.decode_event::<pmp::TaskCreatedFilter>(
