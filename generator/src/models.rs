@@ -1,4 +1,3 @@
-use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
