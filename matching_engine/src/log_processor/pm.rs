@@ -88,7 +88,7 @@ pub async fn process_proof_market_place_logs(
                     secret_inputs,
                     acl,
                     matching_engine_key,
-                    ask_to_store.market_id,
+                    Some(ask_to_store.market_id),
                 );
 
                 if decrypted_secret_data.is_ok() {

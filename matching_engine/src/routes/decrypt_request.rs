@@ -100,7 +100,7 @@ pub async fn decrypt_request(
         &secret_data,
         &acl,
         &matching_engine_key.clone(),
-        market_id_u256,
+        Some(market_id_u256),
     )
     .expect("Failed to get decrypted inputs");
 

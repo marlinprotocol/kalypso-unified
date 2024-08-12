@@ -54,18 +54,10 @@ impl InputPayload {
                     &data.encrypted_data,
                     &data.acl,
                     &decryption_key,
-                    self.generate_random_u256(),
+                    None,
                 )
             }
         }
-    }
-
-    fn generate_random_u256(&self) -> U256 {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-        let mut random_bytes = [0u8; 32];
-        rng.fill(&mut random_bytes);
-        U256::from_big_endian(&random_bytes)
     }
 }
 

@@ -166,12 +166,13 @@ pub fn decrypt_data_with_ecies_and_aes(
     encrypted_data: &[u8],
     acl_data: &[u8],
     private_key: &[u8],
-    market_id: U256,
+    market_id: Option<U256>,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let decrypted_secret_key = decrypt(private_key, acl_data);
     match decrypted_secret_key {
         Ok(secret_key) => {
-            let decrypted_data = try_decrypt(encrypted_data, &secret_key, market_id).unwrap();
+            let decrypted_data =
+                try_decrypt(encrypted_data, &secret_key, market_id.unwrap()).unwrap();
 
             Ok(decrypted_data)
         }

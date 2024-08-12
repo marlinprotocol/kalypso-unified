@@ -93,7 +93,7 @@ pub async fn get_priv_input(
         &local_ask.unwrap().secret_data.clone().unwrap(),
         &local_ask.unwrap().secret_acl.clone().unwrap(),
         &matching_engine_key.clone(),
-        local_ask.unwrap().market_id,
+        Some(local_ask.unwrap().market_id),
     )
     .expect("Failed to get private inputs for the ask id");
 

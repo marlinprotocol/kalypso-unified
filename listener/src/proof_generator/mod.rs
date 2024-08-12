@@ -183,7 +183,7 @@ async fn fetch_decoded_secret(
             &encrypted_secret_input,
             &new_acl,
             ecies_private_key.unwrap().serialize().as_ref(),
-            market_id,
+            Some(market_id),
         );
 
         let result = result.unwrap();
