@@ -1,4 +1,5 @@
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
+use matching_engine::costs::CostStore;
 
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -17,11 +18,14 @@ pub async fn process_proof_market_place_logs(
     local_ask_store: &Arc<Mutex<LocalAskStore>>,
     generator_store: &Arc<Mutex<GeneratorStore>>,
     market_store: &Arc<Mutex<MarketMetadataStore>>,
+    cost_store: &Arc<Mutex<CostStore>>,
     matching_engine_key: &[u8],
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut local_ask_store = local_ask_store.lock().await;
     let mut generator_store = generator_store.lock().await;
     let mut market_store = market_store.lock().await;
+    let mut cost_store = cost_store.lock().await;
+
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");
@@ -58,25 +62,6 @@ pub async fn process_proof_market_place_logs(
                 generator: None,
                 invalid_secret_flag: false,
             };
-
-            // [matching_engine/src/log_processor/pm.rs:63:17] ask_to_store = LocalAsk {
-            //     ask_id: 220,
-            //     market_id: 6,
-            //     reward: 14500000000000000000,
-            //     expiry: 100050812875,
-            //     proving_time: 100000000000,
-            //     deadline: 0,
-            //     prover_refund_address: 0x2f3f64c69b2954ce2f85d1f92a4151bfc71c78ea,
-            //     prover_data: Bytes(0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000003f616c656f31726e3633366739346d783371716866376d37396e736e65336c6c7634647173323537303779687763726b393270306b7772633971653339327767000000000000000000000000000000000000000000000000000000000000000004337536340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000043175363400000000000000000000000000000000000000000000000000000000),
-            //     has_private_inputs: false,
-            //     secret_data: None,
-            //     secret_acl: None,
-            //     state: Some(
-            //         The ask was created,
-            //     ),
-            //     generator: None,
-            //     invalid_secret_flag: false,
-            // }
 
             if parsed_ask_created_log.has_private_inputs {
                 ask_to_store.secret_data = Some(parsed_ask_created_log.secret_data);
@@ -323,6 +308,8 @@ pub async fn process_proof_market_place_logs(
         {
             let secret_type = update_cost_per_byte_log.secret_type;
             let cost_per_byte = update_cost_per_byte_log.cost_per_input_bytes;
+
+            cost_store.upsert(secret_type, cost_per_byte);
 
             log::info!(
                 "Cost per input byte changed to {:?} for input {:?}",

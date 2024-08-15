@@ -9,6 +9,7 @@ use jobs::parser::LogParser;
 use jobs::server::MatchingEngineServer;
 use matching_engine::{
     ask::{LocalAskStore, MarketMetadataStore},
+    costs::CostStore,
     generator::{GeneratorStore, KeyStore},
 };
 
@@ -50,6 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let local_ask_store = LocalAskStore::new();
     let generator_list_store = GeneratorStore::new();
     let key_list_store = KeyStore::new();
+    let cost_store = CostStore::new();
     let market_list_store = MarketMetadataStore::new();
 
     // wrapping around is case to shared across threads
@@ -57,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shared_generator_store = Arc::new(Mutex::new(generator_list_store));
     let shared_market_store = Arc::new(Mutex::new(market_list_store));
     let shared_key_store = Arc::new(Mutex::new(key_list_store));
+    let shared_cost_store = Arc::new(Mutex::new(cost_store));
     let relayer_key_balance = Arc::new(Mutex::new(ethers::types::U256::zero()));
 
     let rpc_url = config.rpc_url;
@@ -179,6 +182,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         shared_generator_store,
         shared_market_store,
         shared_key_store,
+        shared_cost_store,
         chain_id,
     ));
 

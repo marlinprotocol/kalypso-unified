@@ -301,12 +301,6 @@ impl LocalAskStore {
         }
     }
 
-    // pub fn update_task_id(&mut self, ask_id: &U256, new_task_id: Option<U256>) {
-    //     if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
-    //         ask.task_id = new_task_id;
-    //     }
-    // }
-
     pub fn update_ask_generator(&mut self, ask_id: &U256, new_generator: Option<Address>) {
         if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
             ask.generator = new_generator;

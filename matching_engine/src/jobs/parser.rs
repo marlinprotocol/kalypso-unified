@@ -2,6 +2,7 @@ use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
+use matching_engine::costs::CostStore;
 use std::collections::HashMap;
 use std::ops::{Add, Sub};
 use std::{
@@ -47,6 +48,7 @@ pub struct LogParser {
     shared_generator_store: Arc<Mutex<GeneratorStore>>,
     shared_market_store: Arc<Mutex<MarketMetadataStore>>,
     shared_key_store: Arc<Mutex<KeyStore>>,
+    shared_cost_store: Arc<Mutex<CostStore>>,
     chain_id: String,
 }
 
@@ -67,6 +69,7 @@ impl LogParser {
         shared_generator_store: Arc<Mutex<GeneratorStore>>,
         shared_market_store: Arc<Mutex<MarketMetadataStore>>,
         shared_key_store: Arc<Mutex<KeyStore>>,
+        shared_cost_store: Arc<Mutex<CostStore>>,
         chain_id: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
@@ -88,6 +91,7 @@ impl LogParser {
             shared_generator_store,
             shared_market_store,
             shared_key_store,
+            shared_cost_store,
             chain_id,
         }
     }
@@ -159,6 +163,7 @@ impl LogParser {
                                     &self.shared_local_ask_store,
                                     &self.shared_generator_store,
                                     &self.shared_market_store,
+                                    &self.shared_cost_store,
                                     &self.matching_engine_key,
                                 )
                                 .await
