@@ -31,6 +31,7 @@ pub struct GenerateProofParams<'a> {
     pub start_block: &'a U64,
     pub end_block: &'a U64,
     pub markets: &'a HashMap<String, MarketDetails>,
+    pub slave_ecies_private_keys: &'a Vec<ecies::SecretKey>,
 }
 
 //Generating proof for the input
@@ -119,6 +120,7 @@ async fn fetch_decoded_secret(
         ecies_private_key,
         new_acl,
         markets,
+        slave_ecies_private_keys,
     } = generate_proof_params;
     let client = proof_market_place_contract_http.client();
     let list_of_ask: &Ask = &proof_market_place_contract_http
@@ -179,12 +181,27 @@ async fn fetch_decoded_secret(
         // Handling compressed secret inputs
         let encrypted_secret_input = parsed_ask_created_log.secret_data.to_vec();
 
-        let result = decrypt_data_with_ecies_and_aes(
+        let mut result = decrypt_data_with_ecies_and_aes(
             &encrypted_secret_input,
             &new_acl,
             ecies_private_key.unwrap().serialize().as_ref(),
             Some(market_id),
         );
+
+        if result.is_err() {
+            for slave_key in slave_ecies_private_keys {
+                result = decrypt_data_with_ecies_and_aes(
+                    &encrypted_secret_input,
+                    &new_acl,
+                    slave_key.serialize().as_ref(),
+                    Some(market_id),
+                );
+
+                if result.is_ok() {
+                    break;
+                }
+            }
+        }
 
         let result = result.unwrap();
         let mut decoder = ZlibDecoder::new(&result[..]);

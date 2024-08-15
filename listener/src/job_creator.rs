@@ -472,6 +472,7 @@ impl JobCreator {
 
                     tokio::spawn(async move {
                         log::warn!("Spin up new thread from proof generation calls");
+                        let binding = vec![]; // TODO: figure out way to fetch old keys from KMS
                         let generate_proof_args = GenerateProofParams {
                             ask_id: event.ask_id,
                             new_acl: event.new_acl,
@@ -480,6 +481,7 @@ impl JobCreator {
                             start_block: &runtime_start_block,
                             end_block: &latest_block,
                             markets: &markets_clone,
+                            slave_ecies_private_keys: binding.as_ref(),
                         };
 
                         let proof = match proof_generator::generate_proof(generate_proof_args).await
