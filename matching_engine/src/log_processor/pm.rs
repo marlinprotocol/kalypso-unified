@@ -20,6 +20,7 @@ pub async fn process_proof_market_place_logs(
     market_store: &Arc<Mutex<MarketMetadataStore>>,
     cost_store: &Arc<Mutex<CostStore>>,
     matching_engine_key: &[u8],
+    matchin_engine_slave_keys: &Vec<Vec<u8>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut local_ask_store = local_ask_store.lock().await;
     let mut generator_store = generator_store.lock().await;
@@ -69,12 +70,30 @@ pub async fn process_proof_market_place_logs(
                 let secret_inputs = &ask_to_store.clone().secret_data.unwrap();
                 let acl = &ask_to_store.clone().secret_acl.unwrap();
 
-                let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
-                    secret_inputs,
-                    acl,
-                    matching_engine_key,
-                    Some(ask_to_store.market_id),
-                );
+                let mut decrypted_secret_data =
+                    secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
+                        secret_inputs,
+                        acl,
+                        matching_engine_key,
+                        Some(ask_to_store.market_id),
+                    );
+
+                if decrypted_secret_data.is_err() {
+                    // try with slave keys
+                    for slave_key in matchin_engine_slave_keys {
+                        decrypted_secret_data =
+                            secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
+                                secret_inputs,
+                                acl,
+                                slave_key,
+                                Some(ask_to_store.market_id),
+                            );
+
+                        if decrypted_secret_data.is_ok() {
+                            break;
+                        }
+                    }
+                }
 
                 if decrypted_secret_data.is_ok() {
                     ask_to_store.invalid_secret_flag = true;

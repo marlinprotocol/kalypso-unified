@@ -178,6 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         generator_registry,
         entity_key_registry,
         matching_engine_key,
+        vec![], //TODO! fetch these slave keys using Oyster KMS
         shared_local_ask_store.clone(),
         shared_generator_store,
         shared_market_store,

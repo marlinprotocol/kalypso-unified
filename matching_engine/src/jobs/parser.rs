@@ -1,5 +1,6 @@
 use anyhow::Result;
 use ethers::prelude::*;
+use itertools::Itertools;
 use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
 use matching_engine::costs::CostStore;
@@ -44,6 +45,7 @@ pub struct LogParser {
     entity_registry: EntityRegistryInstance,
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
+    matching_engine_slave_keys: Vec<Vec<u8>>,
     shared_local_ask_store: Arc<Mutex<LocalAskStore>>,
     shared_generator_store: Arc<Mutex<GeneratorStore>>,
     shared_market_store: Arc<Mutex<MarketMetadataStore>>,
@@ -65,6 +67,7 @@ impl LogParser {
         generator_registry: GeneratorRegistryInstance,
         entity_registry: EntityRegistryInstance,
         matching_engine_key: String,
+        matching_engine_slave_keys: Vec<String>,
         shared_local_ask_store: Arc<Mutex<LocalAskStore>>,
         shared_generator_store: Arc<Mutex<GeneratorStore>>,
         shared_market_store: Arc<Mutex<MarketMetadataStore>>,
@@ -87,6 +90,10 @@ impl LogParser {
             entity_registry,
             provider_http,
             matching_engine_key: hex::decode(matching_engine_key).unwrap(),
+            matching_engine_slave_keys: matching_engine_slave_keys
+                .into_iter()
+                .map(|s| hex::decode(s).unwrap())
+                .collect_vec(),
             shared_local_ask_store,
             shared_generator_store,
             shared_market_store,
@@ -165,6 +172,7 @@ impl LogParser {
                                     &self.shared_market_store,
                                     &self.shared_cost_store,
                                     &self.matching_engine_key,
+                                    &self.matching_engine_slave_keys,
                                 )
                                 .await
                                 .unwrap();
