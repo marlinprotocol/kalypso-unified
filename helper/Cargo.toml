@@ -10,6 +10,7 @@ actix-web = "4.5.1"
 aes-gcm = "0.10.3"
 ecies = {version = "0.2.6", features = ["std"]}
 ethers = { version = "2", features = ["rustls"] }
+flate2 = "1.0.28"
 hex = "0.4.3"
 log = "0.4"
 openssl = { version = "0.10.57", features = ["vendored"] }

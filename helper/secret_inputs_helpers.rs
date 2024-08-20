@@ -53,6 +53,18 @@ pub fn decrypt_aes(encrypted_data: &[u8], secret_key: &[u8]) -> Result<Vec<u8>, 
     Ok(decrypted)
 }
 
+pub fn flatten(compressed_data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+    use flate2::read::ZlibDecoder;
+    use std::io::Read;
+
+    let mut decoder = ZlibDecoder::new(compressed_data);
+    let mut decoded_secret_input: Vec<u8> = Vec::new();
+
+    decoder.read_to_end(&mut decoded_secret_input)?;
+
+    Ok(decoded_secret_input)
+}
+
 #[allow(unused)]
 pub fn decrypt_aes_gcm(
     encrypted_data: &[u8],
