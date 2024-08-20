@@ -65,6 +65,7 @@ pub fn generate_check_encrypted_inputs_request<R>(
                 encrypted_secrets: "encrypted_secrets".into(),
                 me_decryption_url: "matching_engine_decryption_url".into(),
                 market_id: "market_id".into(),
+                public_inputs: Some(vec![1, 2, 3, 4]),
             }
         })),
         service_endpoint: "/api/checkEncryptedInputs".into(),

@@ -94,6 +94,7 @@ pub struct CheckInputResponse {
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct EncryptedInputPayload {
     pub acl: Vec<u8>,
+    pub public_inputs: Option<Vec<u8>>,
     pub encrypted_secrets: Vec<u8>,
     pub me_decryption_url: String,
     pub market_id: String,
