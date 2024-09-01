@@ -232,6 +232,28 @@ pub mod error {
                     },],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("ImageAlreadyInFamily"),
+                    ::std::vec![::ethers::core::abi::ethabi::AbiError {
+                        name: ::std::borrow::ToOwned::to_owned("ImageAlreadyInFamily",),
+                        inputs: ::std::vec![
+                            ::ethers::core::abi::ethabi::Param {
+                                name: ::std::borrow::ToOwned::to_owned("imageId"),
+                                kind: ::ethers::core::abi::ethabi::ParamType::FixedBytes(32usize,),
+                                internal_type: ::core::option::Option::Some(
+                                    ::std::borrow::ToOwned::to_owned("bytes32"),
+                                ),
+                            },
+                            ::ethers::core::abi::ethabi::Param {
+                                name: ::std::borrow::ToOwned::to_owned("familyId"),
+                                kind: ::ethers::core::abi::ethabi::ParamType::FixedBytes(32usize,),
+                                internal_type: ::core::option::Option::Some(
+                                    ::std::borrow::ToOwned::to_owned("bytes32"),
+                                ),
+                            },
+                        ],
+                    },],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("InactiveMarket"),
                     ::std::vec![::ethers::core::abi::ethabi::AbiError {
                         name: ::std::borrow::ToOwned::to_owned("InactiveMarket"),
@@ -562,12 +584,12 @@ pub mod error {
     pub static ERROR_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 ^\x93\xC1q1d`\x1D^Bo\xD8\xC3\xF0\xC7\x19\xCA\x93\x82\x0C\xDC\xC2\xC4\x8A\x03\x11\xB1\x80\xB9\x9Cm\x14dsolcC\0\x08\x14\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x96\xB1\xAD\xDEG\xFEULYh\xF5\xA6\xE3\xAC\xCCO\x0B\xA41\xA8\xA5P\x18]\xA5\x16\xDF\xDBg\xA4\xC3PdsolcC\0\x08\x14\x003";
     /// The bytecode of the contract.
     pub static ERROR_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 ^\x93\xC1q1d`\x1D^Bo\xD8\xC3\xF0\xC7\x19\xCA\x93\x82\x0C\xDC\xC2\xC4\x8A\x03\x11\xB1\x80\xB9\x9Cm\x14dsolcC\0\x08\x14\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x96\xB1\xAD\xDEG\xFEULYh\xF5\xA6\xE3\xAC\xCCO\x0B\xA41\xA8\xA5P\x18]\xA5\x16\xDF\xDBg\xA4\xC3PdsolcC\0\x08\x14\x003";
     /// The deployed bytecode of the contract.
     pub static ERROR_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
@@ -1030,6 +1052,27 @@ pub mod error {
     )]
     #[etherror(name = "GeneratorAlreadyExists", abi = "GeneratorAlreadyExists()")]
     pub struct GeneratorAlreadyExists;
+    ///Custom Error type `ImageAlreadyInFamily` with signature `ImageAlreadyInFamily(bytes32,bytes32)` and selector `0xc644d047`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthError,
+        ::ethers::contract::EthDisplay,
+        serde::Serialize,
+        serde::Deserialize,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+    )]
+    #[etherror(
+        name = "ImageAlreadyInFamily",
+        abi = "ImageAlreadyInFamily(bytes32,bytes32)"
+    )]
+    pub struct ImageAlreadyInFamily {
+        pub image_id: [u8; 32],
+        pub family_id: [u8; 32],
+    }
     ///Custom Error type `InactiveMarket` with signature `InactiveMarket()` and selector `0xbd2da74c`
     #[derive(
         Clone,
@@ -1665,6 +1708,7 @@ pub mod error {
         FailedAddingToFamily(FailedAddingToFamily),
         FailedWhitelistingImages(FailedWhitelistingImages),
         GeneratorAlreadyExists(GeneratorAlreadyExists),
+        ImageAlreadyInFamily(ImageAlreadyInFamily),
         InactiveMarket(InactiveMarket),
         IncorrectImageId(IncorrectImageId),
         InferredImageIdIsDifferent(InferredImageIdIsDifferent),
@@ -1816,6 +1860,11 @@ pub mod error {
                 <GeneratorAlreadyExists as ::ethers::core::abi::AbiDecode>::decode(data)
             {
                 return Ok(Self::GeneratorAlreadyExists(decoded));
+            }
+            if let Ok(decoded) =
+                <ImageAlreadyInFamily as ::ethers::core::abi::AbiDecode>::decode(data)
+            {
+                return Ok(Self::ImageAlreadyInFamily(decoded));
             }
             if let Ok(decoded) = <InactiveMarket as ::ethers::core::abi::AbiDecode>::decode(data) {
                 return Ok(Self::InactiveMarket(decoded));
@@ -2044,6 +2093,9 @@ pub mod error {
                 Self::GeneratorAlreadyExists(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
+                Self::ImageAlreadyInFamily(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
                 Self::InactiveMarket(element) => ::ethers::core::abi::AbiEncode::encode(element),
                 Self::IncorrectImageId(element) => ::ethers::core::abi::AbiEncode::encode(element),
                 Self::InferredImageIdIsDifferent(element) => {
@@ -2218,6 +2270,10 @@ pub mod error {
                 }
                 _ if selector
                     == <GeneratorAlreadyExists as ::ethers::contract::EthError>::selector() => {
+                    true
+                }
+                _ if selector
+                    == <ImageAlreadyInFamily as ::ethers::contract::EthError>::selector() => {
                     true
                 }
                 _ if selector
@@ -2399,6 +2455,7 @@ pub mod error {
                 Self::FailedAddingToFamily(element) => ::core::fmt::Display::fmt(element, f),
                 Self::FailedWhitelistingImages(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GeneratorAlreadyExists(element) => ::core::fmt::Display::fmt(element, f),
+                Self::ImageAlreadyInFamily(element) => ::core::fmt::Display::fmt(element, f),
                 Self::InactiveMarket(element) => ::core::fmt::Display::fmt(element, f),
                 Self::IncorrectImageId(element) => ::core::fmt::Display::fmt(element, f),
                 Self::InferredImageIdIsDifferent(element) => ::core::fmt::Display::fmt(element, f),
@@ -2568,6 +2625,11 @@ pub mod error {
     impl ::core::convert::From<GeneratorAlreadyExists> for ErrorErrors {
         fn from(value: GeneratorAlreadyExists) -> Self {
             Self::GeneratorAlreadyExists(value)
+        }
+    }
+    impl ::core::convert::From<ImageAlreadyInFamily> for ErrorErrors {
+        fn from(value: ImageAlreadyInFamily) -> Self {
+            Self::ImageAlreadyInFamily(value)
         }
     }
     impl ::core::convert::From<InactiveMarket> for ErrorErrors {

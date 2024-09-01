@@ -16,6 +16,7 @@ pub struct EnclaveImage {
     pub pcr1: ::ethers::core::types::Bytes,
     pub pcr2: ::ethers::core::types::Bytes,
 }
+
 ///`Attestation(bytes,bytes,bytes,bytes,uint256)`
 #[derive(
     Clone,

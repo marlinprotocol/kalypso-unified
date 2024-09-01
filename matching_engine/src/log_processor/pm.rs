@@ -231,6 +231,38 @@ pub async fn process_proof_market_place_logs(
             continue;
         }
 
+        if let Ok(prover_image_added_log) = proof_market_place
+            .decode_event::<pmp::AddExtraProverImageFilter>(
+                "AddExtraProverImage",
+                log.topics.clone(),
+                log.data.clone(),
+            )
+        {
+            log::info!(
+                "Added prover image: {} to marketplace: {}",
+                hex::encode(prover_image_added_log.image_id),
+                prover_image_added_log.market_id
+            );
+            log::warn!("Not indexing adding prover image to market right now");
+            continue;
+        }
+
+        if let Ok(prover_image_remove_log) = proof_market_place
+            .decode_event::<pmp::AddExtraIVSImageFilter>(
+                "AddExtraIVSImage",
+                log.topics.clone(),
+                log.data.clone(),
+            )
+        {
+            log::info!(
+                "Removed prover image: {} from marketplace: {}",
+                hex::encode(prover_image_remove_log.image_id),
+                prover_image_remove_log.market_id
+            );
+            log::warn!("Not indexing removing prover image from market right now");
+            continue;
+        }
+
         if let Ok(ask_cancelled_log) = proof_market_place.decode_event::<pmp::AskCancelledFilter>(
             "AskCancelled",
             log.topics.clone(),
