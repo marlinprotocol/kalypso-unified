@@ -1,6 +1,6 @@
+use crate::models::{BalanceResponse, GetLatestBlockNumberResponse, WelcomeResponse};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
-use matching_engine::models::{BalanceResponse, GetLatestBlockNumberResponse, WelcomeResponse};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
