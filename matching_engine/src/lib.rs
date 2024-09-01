@@ -135,7 +135,7 @@ impl MatchingEngine {
             entity_registry,
             start_block,
         };
-        
+
         Self::from_config(config)
     }
 
@@ -257,7 +257,7 @@ impl MatchingEngine {
         let server_handle = tokio::spawn(server.start_server());
         handles.push(server_handle);
 
-        let confirmations = 10; // ideally this should be more
+        let confirmations = 2; // ideally this should be more
         let block_range = 20000; // Number of blocks to fetch logs from at once
         let parser = Arc::new(LogParser::new(
             should_stop.clone(),
