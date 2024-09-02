@@ -19,36 +19,42 @@ pub async fn decrypt_request(
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
+    log::warn!("step1");
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id)
         .expect("Failed to recover signature");
+    log::warn!("step2");
 
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
     let ivs_pubkey_vec = hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key");
-
+    log::warn!("step3");
     if utility::public_key_to_address(&ivs_pubkey.clone()).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
         })));
     }
+    log::warn!("step4");
 
     let image_id_in_er = entity_key_registry
         .get_verified_key(signer)
         .call()
         .await
         .unwrap();
+    log::warn!("step5");
 
     let image_blacklisted = entity_key_registry
         .black_listed_images(image_id_in_er)
         .call()
         .await
         .unwrap();
+    log::warn!("step6");
 
     if image_blacklisted {
         return Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
             encrypted_data: "BlackListed".to_string(),
         }));
     }
+    log::warn!("step7");
 
     let market_id: String = _payload.market_id.clone();
     let market_id_u256: U256 = U256::from_dec_str(&market_id).expect("Failed to parse string");
@@ -59,6 +65,7 @@ pub async fn decrypt_request(
         .allow_only_verified_family(family_id, signer)
         .call()
         .await;
+    log::warn!("step8");
 
     match result {
         Ok(_) => {
@@ -70,6 +77,7 @@ pub async fn decrypt_request(
             })))
         }
     }
+    log::warn!("step9");
 
     // locks must be dropped..
     // let market_store = _market_store.lock().await;
@@ -103,13 +111,15 @@ pub async fn decrypt_request(
         Some(market_id_u256),
     )
     .expect("Failed to get decrypted inputs");
+    log::warn!("step10");
 
     let encrypted_ecies_data =
         secret_inputs_helpers::encrypt_ecies(&ivs_pubkey_vec, &decrypted_secret_data).unwrap();
-
+    log::warn!("step11");
     let serialized = hex::encode(encrypted_ecies_data);
 
-    Ok(HttpResponse::Ok().json(GetRequestResponse {
+    log::warn!("step12");
+    return Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrypted_data: serialized,
-    }))
+    }));
 }
