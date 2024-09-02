@@ -109,7 +109,7 @@ pub async fn decrypt_request(
 
     let serialized = hex::encode(encrypted_ecies_data);
 
-    Ok(HttpResponse::Ok().json(GetRequestResponse {
+    return Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrypted_data: serialized,
     }))
 }
