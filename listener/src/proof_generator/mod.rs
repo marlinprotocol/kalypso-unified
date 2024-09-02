@@ -141,6 +141,8 @@ async fn fetch_decoded_secret(
     let start_block = *start_block;
     let mut ask_log: Vec<ethers::core::types::Log> = vec![];
 
+    let retry_times = 0;
+    let mut max_retry_times = 20;
     let blocks_at_once = 9999;
     while start_block <= end_block {
         let begin = if end_block >= start_block + blocks_at_once {
@@ -157,13 +159,26 @@ async fn fetch_decoded_secret(
             .to_block(end_block)
             .topic1(ask_id);
 
-        let logs = client.get_logs(ask_event_filter).await?;
+        let logs = client.get_logs(ask_event_filter).await;
+        if logs.is_err() {
+            log::error!("Encoutering error while trying to fetch the inputs");
+            if retry_times >= max_retry_times {
+                log::error!("Max retries exhausted");
+                return Err("max retries for fetching the logs done".into());
+            } else {
+                log::warn!("Retrying fetching inputs in 2000ms");
+                thread::sleep(Duration::from_millis(2000));
+                continue;
+            }
+        }
+
+        let logs = logs.unwrap();
         log::info!("Logs found: {:?}", logs.len());
         if logs.len() == 1 {
             ask_log = logs;
             break;
         }
-        thread::sleep(Duration::from_millis(2000)); // to reduce calls and avoid rate limit (will be problem only for old requests, not new ones)
+
         end_block = begin - 1;
     }
 
