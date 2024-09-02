@@ -502,6 +502,7 @@ impl JobCreator {
                                     .send()
                                     .await
                                     .unwrap()
+                                    .confirmations(10)
                                     .await
                                     .unwrap()
                             }
@@ -519,6 +520,7 @@ impl JobCreator {
                                     .send()
                                     .await
                                     .unwrap()
+                                    .confirmations(10)
                                     .await
                                     .unwrap()
                             }
