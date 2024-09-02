@@ -19,6 +19,7 @@ pub async fn decrypt_request(
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
+    log::info!("Check decrypted request; step 1");
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id)
         .expect("Failed to recover signature");
