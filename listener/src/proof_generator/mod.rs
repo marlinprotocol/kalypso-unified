@@ -141,8 +141,8 @@ async fn fetch_decoded_secret(
     let start_block = *start_block;
     let mut ask_log: Vec<ethers::core::types::Log> = vec![];
 
-    let retry_times = 0;
-    let mut max_retry_times = 20;
+    let mut retry_times = 0;
+    let max_retry_times = 20;
     let blocks_at_once = 9999;
     while start_block <= end_block {
         let begin = if end_block >= start_block + blocks_at_once {
@@ -167,6 +167,7 @@ async fn fetch_decoded_secret(
                 return Err("max retries for fetching the logs done".into());
             } else {
                 log::warn!("Retrying fetching inputs in 2000ms");
+                retry_times += 1;
                 thread::sleep(Duration::from_millis(2000));
                 continue;
             }
