@@ -489,6 +489,7 @@ impl JobCreator {
                             Ok(proof) => proof,
                             Err(err) => {
                                 log::error!("Error generating proof for ask: {}", event.ask_id);
+                                log::error!("{}", err.to_string());
                                 return log::error!("{}", err);
                             }
                         };
