@@ -39,7 +39,7 @@ impl CleanupTool {
         }
     }
 
-    pub async fn ask_store_cleanup(self) -> anyhow::Result<()> {
+    pub async fn ask_store_cleanup(self, skip_relayer_balance_check: bool) -> anyhow::Result<()> {
         loop {
             thread::sleep(Duration::from_secs(30));
             if self.should_stop.load(Ordering::Acquire) {
@@ -47,18 +47,21 @@ impl CleanupTool {
                 break;
             }
 
-            let balance = match self
-                .proof_market_place
-                .client()
-                .get_balance(self.relayer_address, None)
-                .await
-            {
-                Ok(data) => data,
-                Err(_) => ethers::types::U256::zero(),
-            };
-            {
-                *self.relayer_address_balance.lock().await = balance;
+            if skip_relayer_balance_check {
+                let balance = match self
+                    .proof_market_place
+                    .client()
+                    .get_balance(self.relayer_address, None)
+                    .await
+                {
+                    Ok(data) => data,
+                    Err(_) => ethers::types::U256::zero(),
+                };
+                {
+                    *self.relayer_address_balance.lock().await = balance;
+                }
             }
+
             let mut ask_store = { self.ask_store.lock().await };
 
             // Removing the completed asks

@@ -294,7 +294,7 @@ impl MatchingEngine {
             relayer_key_balance,
         );
         let cleanup_handle = tokio::spawn(async move {
-            cleanup_tool.ask_store_cleanup().await.unwrap();
+            cleanup_tool.ask_store_cleanup(true).await.unwrap();
             Ok(())
         });
         handles.push(cleanup_handle);
