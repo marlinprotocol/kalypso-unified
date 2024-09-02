@@ -27,6 +27,8 @@ pub async fn decrypt_request(
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
     let ivs_pubkey_vec = hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key");
 
+    dbg!(hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key"));
+    dbg!(signer);
     if utility::public_key_to_address(&ivs_pubkey.clone()).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
