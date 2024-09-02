@@ -3,7 +3,7 @@ use aes_gcm::{
     aead::{Aead, Payload},
     Aes256Gcm, Key, Nonce,
 };
-use ecies::{decrypt, encrypt};
+use ecies::{decrypt, encrypt, PublicKey, SecretKey};
 use ethers::core::types::U256;
 use openssl::rand;
 use openssl::rand::rand_bytes;
@@ -209,6 +209,13 @@ pub fn u256_to_u8_vector(u256_num: U256) -> Vec<u8> {
     let first_non_zero_index = result.iter().position(|&x| x != 0).unwrap_or(result.len());
     result.drain(0..first_non_zero_index);
     result
+}
+
+pub fn get_uncompressed_ecies_pubkey(private_key: &[u8; 32]) -> Vec<u8> {
+    let sk = SecretKey::parse(private_key).unwrap();
+    let public_key = PublicKey::from_secret_key(&sk);
+    let public_key = public_key.serialize();
+    return public_key.into();
 }
 
 #[cfg(test)]
