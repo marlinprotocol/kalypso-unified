@@ -252,7 +252,6 @@ impl LogParser {
         log::debug!("Complete fetch available asks");
 
         if available_asks.is_none() {
-            thread::sleep(Duration::from_millis(60));
             return Ok(());
         }
 
@@ -405,7 +404,6 @@ impl LogParser {
             match task_list.len() {
                 0 => {
                     log::warn!("No Matches");
-                    thread::sleep(Duration::from_millis(60));
                 }
                 _ => {
                     let mut ask_ids = vec![];
@@ -498,11 +496,6 @@ impl LogParser {
             log::info!("Gracefully shutting down...");
             return Err("Stopped Match Making".into());
         }
-
-        // to avoid rate limit
-        thread::sleep(Duration::from_millis(600));
-        // timeout.join().unwrap();
-
         Ok(())
     }
 

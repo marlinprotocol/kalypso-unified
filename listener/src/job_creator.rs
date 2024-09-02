@@ -404,14 +404,12 @@ impl JobCreator {
             };
 
             let end = if start_block + blocks_at_once > latest_block {
-                thread::sleep(Duration::from_millis(2000)); // to reduce calls on eth_latestBlock
                 latest_block - 1
             } else {
                 start_block + blocks_at_once - 1
             };
 
             if start_block > end {
-                thread::sleep(Duration::from_millis(2000));
                 continue;
             }
 
