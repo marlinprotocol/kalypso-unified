@@ -487,7 +487,10 @@ impl JobCreator {
                         let proof = match proof_generator::generate_proof(generate_proof_args).await
                         {
                             Ok(proof) => proof,
-                            Err(err) => return log::error!("{}", err),
+                            Err(err) => {
+                                log::error!("Error generating proof for ask: {}", event.ask_id);
+                                return log::error!("{}", err);
+                            }
                         };
 
                         log::info!("{:?}", &proof);
