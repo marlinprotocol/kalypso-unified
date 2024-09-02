@@ -19,53 +19,63 @@ pub async fn decrypt_request(
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
+    log::info!("step1");
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id)
         .expect("Failed to recover signature");
+    log::info!("step2");
 
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
     let ivs_pubkey_vec = hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key");
+    log::info!("step3");
 
     if utility::public_key_to_address(&ivs_pubkey.clone()).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
         })));
     }
+    log::info!("step4");
 
     let image_id_in_er = entity_key_registry
         .get_verified_key(signer)
         .call()
         .await
         .unwrap();
+    log::info!("step5");
 
     let image_blacklisted = entity_key_registry
         .black_listed_images(image_id_in_er)
         .call()
         .await
         .unwrap();
+    log::info!("step6");
 
     if image_blacklisted {
         return Ok(HttpResponse::Unauthorized().json(GetRequestResponse {
             encrypted_data: "BlackListed".to_string(),
         }));
     }
+    log::info!("step7");
 
     let market_id: String = _payload.market_id.clone();
     let market_id_u256: U256 = U256::from_dec_str(&market_id).expect("Failed to parse string");
 
     let family_id = utility::ivs_family_id(&market_id);
+    log::info!("step8");
 
     let result = entity_key_registry
         .allow_only_verified_family(family_id, signer)
         .call()
         .await;
+    log::info!("step9");
 
     if result.is_err() {
         return Ok(HttpResponse::Unauthorized().json(json!({
             "status": "ImageNotInFamily"
-        })))
+        })));
     }
     println!("Image in family");
+    log::info!("step10");
 
     // locks must be dropped..
     // let market_store = _market_store.lock().await;
@@ -91,6 +101,7 @@ pub async fn decrypt_request(
 
     let secret_data = hex::decode(_payload.private_input.clone()).expect("invalid_data");
     let acl = hex::decode(_payload.acl.clone()).expect("invalid acl data");
+    log::info!("step11");
     let matching_engine_key = _matching_engine_key.lock().await;
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
         &secret_data,
@@ -99,13 +110,16 @@ pub async fn decrypt_request(
         Some(market_id_u256),
     )
     .expect("Failed to get decrypted inputs");
+    log::info!("step12");
 
     let encrypted_ecies_data =
         secret_inputs_helpers::encrypt_ecies(&ivs_pubkey_vec, &decrypted_secret_data).unwrap();
+    log::info!("step13");
 
     let serialized = hex::encode(encrypted_ecies_data);
 
+    log::info!("step14");
     return Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrypted_data: serialized,
-    }))
+    }));
 }
