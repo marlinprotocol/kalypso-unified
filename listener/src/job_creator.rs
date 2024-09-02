@@ -386,7 +386,7 @@ impl JobCreator {
             }
 
             if thread_count.load(Ordering::SeqCst) >= self.max_threads {
-                thread::sleep(Duration::from_millis(60));
+                thread::sleep(Duration::from_millis(1000));
                 log::warn!(
                     "Stopped proof generation as {} proof generations in progress",
                     self.max_threads
