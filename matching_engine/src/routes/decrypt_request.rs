@@ -97,8 +97,15 @@ pub async fn decrypt_request(
         &acl,
         &matching_engine_key.clone(),
         Some(market_id_u256),
-    )
-    .expect("Failed to get decrypted inputs");
+    );
+
+    if decrypted_secret_data.is_err() {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "status": "Cannot decrypt the data"
+        })));
+    }
+
+    let decrypted_secret_data = decrypted_secret_data.unwrap();
 
     let encrypted_ecies_data =
         secret_inputs_helpers::encrypt_ecies(&ivs_pubkey_vec, &decrypted_secret_data).unwrap();
