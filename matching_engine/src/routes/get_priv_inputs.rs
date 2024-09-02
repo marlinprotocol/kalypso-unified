@@ -80,7 +80,7 @@ pub async fn get_priv_input(
 
     match result {
         Ok(_) => {
-            println!("Image in family");
+            log::debug!("Image in family");
         }
         Err(_) => {
             return Ok(HttpResponse::Unauthorized().json(json!({

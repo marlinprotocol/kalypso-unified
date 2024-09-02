@@ -65,7 +65,7 @@ pub async fn decrypt_request(
             "status": "ImageNotInFamily"
         })));
     }
-    println!("Image in family");
+    log::debug!("Image in family");
 
     // locks must be dropped..
     // let market_store = _market_store.lock().await;
