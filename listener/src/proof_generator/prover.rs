@@ -32,11 +32,13 @@ pub trait Prover {
                     if data.is_input_and_proof_valid {
                         log::info!("Generated Proof is Valid: Rechecked with IVS");
                     } else {
-                        log::warn!("Generated Proof is Invalid: Rechecked with IVS");
+                        log::warn!(
+                            "Generated Proof is Invalid: after 2 round of checking with IVS"
+                        );
                     }
                 }
                 _ => {
-                    log::warn!("Generated Proof could not be verified against IVS");
+                    log::error!("Generated Proof could not be verified against IVS");
                 }
             }
             Ok(Proof::ValidProof(proof.proof.into()))

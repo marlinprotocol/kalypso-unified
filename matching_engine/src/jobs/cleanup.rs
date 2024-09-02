@@ -39,8 +39,15 @@ impl CleanupTool {
         }
     }
 
-    pub async fn ask_store_cleanup(self, skip_relayer_balance_check: bool) -> anyhow::Result<()> {
+    pub async fn ask_store_cleanup(
+        self,
+        skip_relayer_balance_check: bool,
+        pause_cleanup: bool,
+    ) -> anyhow::Result<()> {
         loop {
+            if pause_cleanup {
+                thread::sleep(Duration::from_secs(30));
+            }
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
