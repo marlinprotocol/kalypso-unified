@@ -19,7 +19,6 @@ pub async fn decrypt_request(
     _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
-    log::info!("Check decrypted request; step 1");
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.market_id)
         .expect("Failed to recover signature");
@@ -27,8 +26,6 @@ pub async fn decrypt_request(
     let ivs_pubkey: String = _payload.ivs_pubkey.clone();
     let ivs_pubkey_vec = hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key");
 
-    dbg!(hex::decode(ivs_pubkey.clone()).expect("invalid_ivs_key"));
-    dbg!(signer);
     if utility::public_key_to_address(&ivs_pubkey.clone()).unwrap() != signer {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid key ivs"
@@ -66,7 +63,7 @@ pub async fn decrypt_request(
     if result.is_err() {
         return Ok(HttpResponse::Unauthorized().json(json!({
             "status": "ImageNotInFamily"
-        })))
+        })));
     }
     println!("Image in family");
 
@@ -110,5 +107,5 @@ pub async fn decrypt_request(
 
     return Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrypted_data: serialized,
-    }))
+    }));
 }
