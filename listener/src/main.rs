@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .or_else(|_| fs::read_to_string(&alt_runtime_config_path))?;
     println!("{}", &file_content);
     let runtime_config: job_creator::RuntimeConfig = serde_json::from_str(&file_content)?;
-    let _ = job_creator::JobCreator::new(config, runtime_config, false)
+    let _ = job_creator::JobCreator::new(config, runtime_config, 1, false)
         .run()
         .await;
     Ok(())

@@ -62,17 +62,24 @@ pub struct JobCreator {
     runtime_config: RuntimeConfig,
     #[allow(unused)]
     log_storage: Option<Arc<Mutex<Vec<String>>>>,
+    max_threads: usize,
 }
 
 impl JobCreator {
-    pub fn new(config: Config, runtime_config: RuntimeConfig, enable_logging_server: bool) -> Self {
-        Self::initialize(config, runtime_config, enable_logging_server)
+    pub fn new(
+        config: Config,
+        runtime_config: RuntimeConfig,
+        max_threads: usize,
+        enable_logging_server: bool,
+    ) -> Self {
+        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
     }
 
     fn initialize(
         config: Config,
         runtime_config: RuntimeConfig,
         enable_logging_server: bool,
+        max_threads: usize,
     ) -> Self {
         if enable_logging_server {
             let log_storage = Arc::new(Mutex::new(Vec::new()));
@@ -86,12 +93,14 @@ impl JobCreator {
                 config,
                 runtime_config,
                 log_storage: Some(log_storage),
+                max_threads,
             }
         } else {
             Self {
                 config,
                 runtime_config,
                 log_storage: None,
+                max_threads,
             }
         }
     }
@@ -122,6 +131,7 @@ impl JobCreator {
         prover_gateway_url: String,
         ivs_url: String,
         enable_logging_server: bool,
+        max_threads: usize,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -161,7 +171,7 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config, enable_logging_server)
+        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -177,6 +187,7 @@ impl JobCreator {
         chain_id: u64,
         prover_port: String,
         enable_logging_server: bool,
+        max_threads: usize,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -216,13 +227,14 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config, enable_logging_server)
+        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
     }
 
     pub fn from_config_paths(
         generator_config_path: &str,
         runtime_config_path: &str,
         enable_logging_server: bool,
+        max_threads: usize,
     ) -> anyhow::Result<Self> {
         let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
@@ -234,6 +246,7 @@ impl JobCreator {
             config,
             runtime_config,
             enable_logging_server,
+            max_threads,
         ))
     }
 
@@ -365,7 +378,6 @@ impl JobCreator {
         });
 
         let thread_count = Arc::new(AtomicUsize::new(0));
-        let max_thread_count = 20;
 
         loop {
             if should_stop.load(Ordering::Acquire) {
@@ -373,11 +385,11 @@ impl JobCreator {
                 break;
             }
 
-            if thread_count.load(Ordering::SeqCst) >= max_thread_count {
+            if thread_count.load(Ordering::SeqCst) >= self.max_threads {
                 thread::sleep(Duration::from_millis(60));
                 log::warn!(
                     "Stopped proof generation as {} proof generations in progress",
-                    max_thread_count
+                    self.max_threads
                 );
                 continue;
             }
