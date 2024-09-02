@@ -256,6 +256,9 @@ impl LogParser {
         }
 
         let available_asks = available_asks.unwrap();
+        if available_asks.len() == 0 {
+            return Ok(());
+        }
         log::warn!("available asks: {}", available_asks.len());
 
         let mut task_list = vec![];
