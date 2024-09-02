@@ -4,7 +4,8 @@ use crate::{
     ask::{AskState, LocalAskStatus},
     generator::GeneratorState,
 };
-#[derive(Deserialize, Serialize)]
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct DecryptRequest {
     pub market_id: String,
     pub private_input: String,
