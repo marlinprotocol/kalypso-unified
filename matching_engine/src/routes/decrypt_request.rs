@@ -60,16 +60,12 @@ pub async fn decrypt_request(
         .call()
         .await;
 
-    match result {
-        Ok(_) => {
-            println!("Image in family");
-        }
-        Err(_) => {
-            return Ok(HttpResponse::Unauthorized().json(json!({
-                "status": "ImageNotInFamily"
-            })))
-        }
+    if result.is_err() {
+        return Ok(HttpResponse::Unauthorized().json(json!({
+            "status": "ImageNotInFamily"
+        })))
     }
+    println!("Image in family");
 
     // locks must be dropped..
     // let market_store = _market_store.lock().await;
