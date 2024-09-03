@@ -584,7 +584,7 @@ impl GeneratorStore {
                 .collect(),
             None => Vec::new(),
         };
-        dbg!(generators_market.clone());
+        log::debug!("{:?}", generators_market.clone());
         GeneratorQueryResult::new(generators_market)
     }
 
@@ -611,7 +611,7 @@ impl GeneratorStore {
                 let idle_compute = generator.declared_compute.sub(generator.compute_consumed);
                 let utilization = generator.intended_compute_util;
                 let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent && idle_compute.gt(&elem.compute_required_per_request) {
+                if utilization >= exponent && idle_compute.ge(&elem.compute_required_per_request) {
                     generator_result.push(
                         self.generator_markets
                             .get(&(elem.address, elem.market_id))
@@ -621,7 +621,7 @@ impl GeneratorStore {
             }
         }
 
-        dbg!(generator_result.clone());
+        log::debug!("{:?}", generator_result.clone());
         GeneratorQueryResult::new(generator_result)
     }
 
@@ -637,7 +637,7 @@ impl GeneratorStore {
                 let remaining_stake = generator.total_stake.sub(generator.stake_locked);
                 let utilization = generator.intended_stake_util;
                 let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent && remaining_stake.gt(&min_stake) {
+                if utilization >= exponent && remaining_stake.ge(&min_stake) {
                     generator_result.push(
                         self.generator_markets
                             .get(&(elem.address, elem.market_id))
@@ -646,8 +646,8 @@ impl GeneratorStore {
                 }
             }
         }
-        dbg!(min_stake);
-        dbg!(generator_result.clone());
+
+        log::debug!("{:?}", generator_result.clone());
         GeneratorQueryResult::new(generator_result)
     }
 
