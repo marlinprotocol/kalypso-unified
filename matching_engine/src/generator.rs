@@ -584,6 +584,7 @@ impl GeneratorStore {
                 .collect(),
             None => Vec::new(),
         };
+        dbg!(generators_market.clone());
         GeneratorQueryResult::new(generators_market)
     }
 
@@ -620,6 +621,7 @@ impl GeneratorStore {
             }
         }
 
+        dbg!(generator_result.clone());
         GeneratorQueryResult::new(generator_result)
     }
 
@@ -644,6 +646,8 @@ impl GeneratorStore {
                 }
             }
         }
+        dbg!(min_stake);
+        dbg!(generator_result.clone());
         GeneratorQueryResult::new(generator_result)
     }
 

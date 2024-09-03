@@ -260,7 +260,6 @@ impl LogParser {
             return Ok(());
         }
         log::warn!("available asks: {}", available_asks.len());
-        log::warn!("{:?}", available_asks);
 
         let mut task_list = vec![];
 
