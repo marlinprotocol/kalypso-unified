@@ -322,6 +322,7 @@ impl LogParser {
                         continue;
                     }
                 };
+                log::info!("ask state from contract: {}", ask_state);
                 let ask_state = ask::get_ask_state(ask_state);
                 log::info!("ask: {} -- {:?}", random_pending_ask.ask_id, ask_state);
                 if ask_state != ask::AskState::Create {
