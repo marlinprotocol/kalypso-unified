@@ -215,7 +215,6 @@ impl LogParser {
             }
             match self.create_match(end_block).await {
                 Ok(_) => {
-                    log::info!("Matching created succussfully");
                     continue;
                 }
                 Err(err) => {
