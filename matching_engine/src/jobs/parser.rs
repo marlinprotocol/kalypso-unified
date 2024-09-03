@@ -214,8 +214,15 @@ impl LogParser {
                 continue;
             }
             match self.create_match(end_block).await {
-                Ok(_) => continue,
-                Err(_) => break,
+                Ok(_) => {
+                    log::info!("Matching created succussfully");
+                    continue;
+                }
+                Err(err) => {
+                    log::error!("{}", err);
+                    log::error!("Match Creation Failed");
+                    break;
+                }
             }
         }
         Ok(())
