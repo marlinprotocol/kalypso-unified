@@ -322,7 +322,7 @@ impl LogParser {
                         continue;
                     }
                 };
-                log::info!("ask state from contract: {}", ask_state);
+
                 let ask_state = ask::get_ask_state(ask_state);
                 log::info!("ask: {} -- {:?}", random_pending_ask.ask_id, ask_state);
                 if ask_state != ask::AskState::Create {
@@ -457,9 +457,16 @@ impl LogParser {
                         .unwrap()
                         .with_chain_id(U64::from_dec_str(&self.chain_id).unwrap().as_u64());
 
-                    let signature = matching_engine_signer
+                    let signature = match matching_engine_signer
                         .sign_message(ethers::types::H256(digest))
-                        .await?;
+                        .await
+                    {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::error!("{}", err);
+                            break;
+                        }
+                    };
                     println!("Signature: {:?}", signature);
                     log::info!("Tx signed at {:?}", std::time::Instant::now());
 
@@ -480,7 +487,7 @@ impl LogParser {
                             log::error!("{}", err);
                             log::error!("failed sending the transaction");
                             thread::sleep(Duration::from_millis(5000));
-                            continue;
+                            break;
                         }
                     };
 
