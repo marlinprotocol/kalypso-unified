@@ -475,7 +475,8 @@ impl LogParser {
 
                     let batch_relay_tx = match batch_relay_tx_pending.send().await {
                         Ok(data) => data.confirmations(10),
-                        _ => {
+                        Err(err) => {
+                            log::error!("{}", err);
                             log::error!("failed sending the transaction");
                             thread::sleep(Duration::from_millis(5000));
                             continue;
