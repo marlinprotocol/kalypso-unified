@@ -217,11 +217,12 @@ impl LogParser {
             match self.create_match(end_block).await {
                 Ok(_) => {
                     log::info!("Completed match assignment once, retrying again");
+                    thread::sleep(Duration::from_millis(100));
                 }
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("Match Creation Failed, retyring in couple of seconds");
-                    thread::sleep(Duration::from_millis(10));
+                    thread::sleep(Duration::from_millis(1000));
                 }
             }
         }
