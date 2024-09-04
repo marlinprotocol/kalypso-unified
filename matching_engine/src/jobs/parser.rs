@@ -213,14 +213,15 @@ impl LogParser {
                 *self.start_block.lock().await = start_block;
                 continue;
             }
+
             match self.create_match(end_block).await {
                 Ok(_) => {
-                    continue;
+                    log::info!("Completed match assignment once, retrying again");
                 }
                 Err(err) => {
                     log::error!("{}", err);
-                    log::error!("Match Creation Failed");
-                    break;
+                    log::error!("Match Creation Failed, retyring in couple of seconds");
+                    thread::sleep(Duration::from_millis(10));
                 }
             }
         }
