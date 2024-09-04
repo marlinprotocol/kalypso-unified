@@ -104,6 +104,7 @@ impl LogParser {
     }
 
     pub async fn parse(&self) -> anyhow::Result<()> {
+        let mut matches_upto: Option<U64> = None;
         loop {
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
@@ -114,6 +115,16 @@ impl LogParser {
                 Ok(data) => data,
                 Err(_) => continue,
             };
+
+            if let Some(matches) = matches_upto.filter(|&m| m == end_block) {
+                log::warn!(
+                    "All matches made up to {}. Waiting for a few seconds",
+                    matches
+                );
+                thread::sleep(Duration::from_millis(1000));
+                continue;
+            }
+
             if start_block + self.confirmations <= end_block {
                 log::info!(
                     "Processing blocks from {:?} to {:?}",
@@ -214,17 +225,19 @@ impl LogParser {
                 continue;
             }
 
-            match self.create_match(end_block).await {
-                Ok(_) => {
-                    log::info!("Completed match assignment once, retrying again");
+            matches_upto = match self.create_match(end_block).await {
+                Ok(upto) => {
+                    log::info!("Completed match assignment upto: {}, retrying again", upto);
                     thread::sleep(Duration::from_millis(100));
+                    Some(upto)
                 }
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("Match Creation Failed, retyring in couple of seconds");
                     thread::sleep(Duration::from_millis(1000));
+                    None
                 }
-            }
+            };
         }
         Ok(())
     }
@@ -248,7 +261,7 @@ impl LogParser {
         Ok((start_block, end_block))
     }
 
-    async fn create_match(&self, end_block: U64) -> Result<(), Box<dyn std::error::Error>> {
+    async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let mut ask_store = { self.shared_local_ask_store.lock().await };
 
@@ -260,12 +273,12 @@ impl LogParser {
         log::debug!("Complete fetch available asks");
 
         if available_asks.is_none() {
-            return Ok(());
+            return Ok(end_block);
         }
 
         let available_asks = available_asks.unwrap();
         if available_asks.len() == 0 {
-            return Ok(());
+            return Ok(end_block);
         }
         log::warn!("available asks: {}", available_asks.len());
 
@@ -513,7 +526,7 @@ impl LogParser {
             log::info!("Gracefully shutting down...");
             return Err("Stopped Match Making".into());
         }
-        Ok(())
+        Ok(end_block)
     }
 
     async fn get_idle_generators(
