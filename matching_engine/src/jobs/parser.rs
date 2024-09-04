@@ -355,9 +355,10 @@ impl LogParser {
                 };
                 let generator_state = generator::get_generator_state(generator_state.0);
 
-                if generator_state != generator::GeneratorState::Joined
-                    && generator_state != generator::GeneratorState::Wip
-                {
+                if matches!(
+                    generator_state,
+                    generator::GeneratorState::Joined | generator::GeneratorState::Wip
+                ) {
                     log::warn!(
                         "Generator {:?}. {:?}",
                         idle_generator.address,
@@ -404,7 +405,7 @@ impl LogParser {
                 );
                 task_list.push((random_pending_ask, idle_generator.clone(), new_acl.clone()));
             } else {
-                log::debug!(
+                log::warn!(
                     "Can't find idle-generators for ask {:?}, market_id: {:?}",
                     random_pending_ask.ask_id,
                     random_pending_ask.market_id
@@ -488,11 +489,11 @@ impl LogParser {
                     log::debug!("Tx created at {:?}", std::time::Instant::now());
 
                     let batch_relay_tx = match batch_relay_tx_pending.send().await {
-                        Ok(data) => data.confirmations(5),
+                        Ok(data) => data.confirmations(10),
                         Err(err) => {
                             log::error!("{}", err);
                             log::error!("failed sending the transaction");
-                            thread::sleep(Duration::from_millis(5000));
+                            thread::sleep(Duration::from_millis(2000));
                             return Err("Failed creating matching".into());
                         }
                     };
@@ -504,8 +505,6 @@ impl LogParser {
                         ask_ids.clone().len(),
                         batch_relay_tx.transaction_hash
                     );
-
-                    log::info!("Tx mined at {:?}", std::time::Instant::now());
                 }
             }
         }
