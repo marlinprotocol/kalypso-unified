@@ -324,8 +324,7 @@ impl LogParser {
                             "Skipping ask {} because no status received from chain state",
                             random_pending_ask.ask_id
                         );
-                        thread::sleep(Duration::from_millis(5000));
-                        continue;
+                        return Err("No ask status received from chain".into());
                     }
                 };
 
@@ -349,8 +348,7 @@ impl LogParser {
                     Ok(data) => data,
                     _ => {
                         log::error!("Skipping ask {} because no generator {}-market-{} status received from chain state", random_pending_ask.ask_id, idle_generator.address, idle_generator.market_id);
-                        thread::sleep(Duration::from_millis(5000));
-                        continue;
+                        return Err("No generator status received from chain".into());
                     }
                 };
                 let generator_state = generator::get_generator_state(generator_state.0);
@@ -470,7 +468,7 @@ impl LogParser {
                         Ok(data) => data,
                         Err(err) => {
                             log::error!("{}", err);
-                            break;
+                            return Err("Failed generating signature".into());
                         }
                     };
                     println!("Signature: {:?}", signature);
@@ -493,7 +491,7 @@ impl LogParser {
                             log::error!("{}", err);
                             log::error!("failed sending the transaction");
                             thread::sleep(Duration::from_millis(5000));
-                            break;
+                            return Err("Failed creating matching".into());
                         }
                     };
 
