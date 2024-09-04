@@ -509,22 +509,34 @@ impl JobCreator {
                         let proof_transaction = match proof {
                             crate::proof_generator::prover::Proof::ValidProof(proof) => {
                                 log::info!("Submitting proof on-chain...");
-                                submitter_pmp_clone_http
+                                match submitter_pmp_clone_http
                                     .lock()
                                     .await
                                     .submit_proof(event.ask_id, proof)
                                     .send()
                                     .await
-                                    .unwrap()
-                                    .confirmations(10)
-                                    .await
-                                    .unwrap()
+                                {
+                                    Ok(submit_response) => match submit_response
+                                        .confirmations(10)
+                                        .await
+                                    {
+                                        Ok(confirmation) => confirmation,
+                                        Err(e) => {
+                                            log::error!("Error awaiting confirmations: {:?}", e);
+                                            None
+                                        }
+                                    },
+                                    Err(e) => {
+                                        log::error!("Error submitting proof: {:?}", e);
+                                        None
+                                    }
+                                }
                             }
                             crate::proof_generator::prover::Proof::InvalidProof(
                                 invalid_proof_signature,
                             ) => {
                                 log::info!("Submitting signature on-chain...");
-                                submitter_pmp_clone_http
+                                match submitter_pmp_clone_http
                                     .lock()
                                     .await
                                     .submit_proof_for_invalid_inputs(
@@ -533,10 +545,25 @@ impl JobCreator {
                                     )
                                     .send()
                                     .await
-                                    .unwrap()
-                                    .confirmations(10)
-                                    .await
-                                    .unwrap()
+                                {
+                                    Ok(submit_response) => match submit_response
+                                        .confirmations(10)
+                                        .await
+                                    {
+                                        Ok(confirmation) => confirmation,
+                                        Err(e) => {
+                                            log::error!("Error awaiting confirmations: {:?}", e);
+                                            None
+                                        }
+                                    },
+                                    Err(e) => {
+                                        log::error!(
+                                            "Error submitting invalid proof signature: {:?}",
+                                            e
+                                        );
+                                        None
+                                    }
+                                }
                             }
                         };
 
