@@ -473,8 +473,8 @@ impl LogParser {
                             return Err("Failed generating signature".into());
                         }
                     };
-                    println!("Signature: {:?}", signature);
-                    log::info!("Tx signed at {:?}", std::time::Instant::now());
+                    log::debug!("Signature: {:?}", signature);
+                    log::debug!("Tx signed at {:?}", std::time::Instant::now());
 
                     // todo!("create and broad cast tx");
                     // // Assign batch task here
@@ -485,7 +485,7 @@ impl LogParser {
                         ethers::types::Bytes::from_str(&signature.to_string()).unwrap(),
                     );
 
-                    log::info!("Tx created at {:?}", std::time::Instant::now());
+                    log::debug!("Tx created at {:?}", std::time::Instant::now());
 
                     let batch_relay_tx = match batch_relay_tx_pending.send().await {
                         Ok(data) => data.confirmations(5),
