@@ -488,7 +488,7 @@ impl LogParser {
                     log::info!("Tx created at {:?}", std::time::Instant::now());
 
                     let batch_relay_tx = match batch_relay_tx_pending.send().await {
-                        Ok(data) => data.confirmations(30),
+                        Ok(data) => data.confirmations(5),
                         Err(err) => {
                             log::error!("{}", err);
                             log::error!("failed sending the transaction");
