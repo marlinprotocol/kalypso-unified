@@ -227,7 +227,7 @@ impl LogParser {
 
             matches_upto = match self.create_match(end_block).await {
                 Ok(upto) => {
-                    log::info!("Completed match assignment upto: {}, retrying again", upto);
+                    log::info!("Completed match assignment upto: {}", upto);
                     thread::sleep(Duration::from_millis(100));
                     Some(upto)
                 }
