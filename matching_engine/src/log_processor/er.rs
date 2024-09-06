@@ -100,15 +100,7 @@ pub async fn process_entity_key_registry_logs(
 
             // Now, `extended_pub_key` is a 65-byte vector with `04` prepended.
             let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into().unwrap();
-
             let public_key = ecies::PublicKey::parse(pub_key_array);
-            // let generator_in_all_markets = generator_store.get_all_by_address(&user);
-            // log::info!("All generators: {:?}", generator_in_all_markets.len());
-            // // Collect the data first
-            // let generators_to_update: Vec<_> = generator_in_all_markets
-            //     .iter()
-            //     .map(|generator| (generator.address, generator.market_id))
-            //     .collect();
 
             match public_key {
                 Ok(generator_public_key) => {

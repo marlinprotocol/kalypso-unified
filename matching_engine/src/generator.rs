@@ -205,85 +205,6 @@ pub fn random_generator_selection(
     }
 }
 
-#[allow(unused)]
-pub fn weighted_generator_selection(
-    vec: Vec<GeneratorInfoPerMarket>,
-) -> Option<GeneratorInfoPerMarket> {
-    let mut rng = rand::thread_rng();
-    let mut generator = vec[0].clone();
-
-    match vec.len() {
-        1 => (),
-        2 => {
-            let mut weights = [0.4, 0.6];
-            let mut tmp = 0.0;
-            for weight in &mut weights[0..2] {
-                tmp += *weight;
-                *weight = tmp;
-            }
-
-            let selector = rng.gen_range(0.0..1.0);
-            for i in 0..2 {
-                if selector < weights[i] {
-                    generator = vec[i].clone();
-                    break;
-                }
-            }
-        }
-        3 => {
-            let mut weights = [0.2, 0.5, 0.3];
-            let mut tmp = 0.0;
-            for weight in &mut weights[0..3] {
-                tmp += *weight;
-                *weight = tmp;
-            }
-
-            let selector = rng.gen_range(0.0..1.0);
-            for i in 0..3 {
-                if selector < weights[i] {
-                    generator = vec[i].clone();
-                    break;
-                }
-            }
-        }
-        4 => {
-            let mut weights = [0.1, 0.3, 0.4, 0.2];
-            let mut tmp = 0.0;
-            for weight in &mut weights[0..4] {
-                tmp += *weight;
-                *weight = tmp;
-            }
-
-            let selector = rng.gen_range(0.0..1.0);
-            for i in 0..4 {
-                if selector < weights[i] {
-                    generator = vec[i].clone();
-                    break;
-                }
-            }
-        }
-        5 => {
-            let mut weights = [0.1, 0.3, 0.2, 0.1, 0.3];
-            let mut tmp = 0.0;
-            for weight in &mut weights[0..5] {
-                tmp += *weight;
-                *weight = tmp;
-            }
-
-            let selector = rng.gen_range(0.0..1.0);
-            for i in 0..5 {
-                if selector < weights[i] {
-                    generator = vec[i].clone();
-                    break;
-                }
-            }
-        }
-        _ => log::error!("Invalid length of generators"),
-    }
-
-    Some(generator)
-}
-
 #[derive(Debug, Clone)]
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
@@ -315,7 +236,9 @@ impl GeneratorStore {
 
     pub fn insert(&mut self, generator: Generator) {
         let address = generator.address;
-        self.generators.insert(address, generator);
+        if !self.generators.contains_key(&generator.address) {
+            self.generators.insert(address, generator);
+        }
     }
 
     pub fn insert_markets(&mut self, generator_market: GeneratorInfoPerMarket) {
@@ -510,8 +433,7 @@ impl GeneratorStore {
         }
     }
 
-    #[allow(unused)]
-    pub fn get_all_by_address(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
+    pub fn get_all_markets_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
                 .iter()
@@ -526,6 +448,7 @@ impl GeneratorStore {
     }
 }
 
+#[derive(Clone)]
 pub struct GeneratorQueryResult<'a> {
     generator_markets: Vec<&'a GeneratorInfoPerMarket>,
 }
@@ -704,5 +627,228 @@ impl KeyStore {
         if let Some(key) = self.keys.get_mut(&(*address, value)) {
             key.ecies_pub_key = new_pub_key;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        idle_generator_selector, Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore,
+    };
+    use ethers::{
+        core::rand::{self, seq::SliceRandom},
+        types::{Address, H160, U256},
+    };
+
+    #[test]
+    fn test_insert_remove_generators() {
+        let mut generator_store = GeneratorStore::new();
+
+        let generator1 = Generator {
+            address: Address::random(),
+            reward_address: Address::random(),
+            total_stake: U256::from_dec_str("123123").unwrap(),
+            sum_of_compute_allocations: U256::from_dec_str("12312312").unwrap(),
+            compute_consumed: U256::from_dec_str("12312").unwrap(),
+            stake_locked: U256::from_dec_str("12312").unwrap(),
+            active_market_places: U256::from_dec_str("12").unwrap(),
+            declared_compute: U256::from_dec_str("123123").unwrap(),
+            intended_stake_util: U256::from_dec_str("123123").unwrap(),
+            intended_compute_util: U256::from_dec_str("123123").unwrap(),
+            generator_data: None,
+        };
+
+        generator_store.insert(generator1.clone());
+
+        let generator = generator_store.get_by_address(&generator1.clone().address);
+        assert_eq!(generator.is_some(), true);
+        assert_eq!(generator.unwrap().reward_address, generator1.reward_address);
+    }
+
+    #[test]
+    fn test_stake_and_compute() {
+        let mut generator_store = create_new_store_with_generators(2);
+        let random_generator = get_random_generator(&generator_store);
+
+        // Perform your stake and compute operations on `generator`
+        assert_eq!(
+            random_generator.total_stake,
+            U256::from_dec_str("100").unwrap()
+        );
+        assert_eq!(
+            random_generator.sum_of_compute_allocations,
+            U256::from_dec_str("100").unwrap()
+        );
+
+        generator_store
+            .add_extra_compute(&random_generator.address, U256::from_dec_str("1").unwrap());
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .declared_compute,
+            U256::from_dec_str("101").unwrap()
+        );
+
+        generator_store.remove_compute(&random_generator.address, U256::from_dec_str("2").unwrap());
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .declared_compute,
+            U256::from_dec_str("99").unwrap()
+        );
+
+        generator_store
+            .add_extra_stake(&random_generator.address, &U256::from_dec_str("5").unwrap());
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .total_stake,
+            U256::from_dec_str("105").unwrap()
+        );
+
+        generator_store.remove_stake(
+            &random_generator.address,
+            &U256::from_dec_str("15").unwrap(),
+        );
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .total_stake,
+            U256::from_dec_str("90").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_markets() {
+        let mut generator_store = create_new_store_with_generators(4);
+        let random_generator = get_random_generator(&generator_store);
+
+        let random_generator_info_per_market = get_random_market_info_for_generator(
+            &random_generator.address,
+            random_generator.total_stake.clone(),
+            "1".into(),
+        );
+        generator_store.insert_markets(random_generator_info_per_market);
+
+        let generator_info_per_market = generator_store.get_by_address_and_market(
+            &random_generator.address,
+            &U256::from_dec_str("1").unwrap(),
+        );
+
+        assert_eq!(generator_info_per_market.is_some(), true);
+        assert_eq!(
+            generator_info_per_market.unwrap().address,
+            random_generator.address
+        );
+
+        assert_eq!(
+            generator_store
+                .get_all_markets_generator(&random_generator.address)
+                .len(),
+            1
+        );
+
+        generator_store.remove_by_address_and_market(
+            &random_generator.address,
+            &U256::from_dec_str("1").unwrap(),
+        );
+
+        let generator_info_per_market = generator_store.get_by_address_and_market(
+            &random_generator.address,
+            &U256::from_dec_str("1").unwrap(),
+        );
+
+        assert_eq!(generator_info_per_market.is_none(), true);
+    }
+
+    #[test]
+    fn test_matches() {
+        let mut generator_store = create_new_store_with_generators(4);
+
+        let all_generators = { generator_store.clone().all_generators_address() };
+        for generator in all_generators {
+            let generator = generator_store.get_by_address(&generator).unwrap();
+            let random_generator_info_per_market = get_random_market_info_for_generator(
+                &generator.address,
+                generator.total_stake.clone(),
+                "1".into(),
+            );
+            generator_store.insert_markets(random_generator_info_per_market);
+        }
+
+        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
+
+        assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
+
+        let idle_generators = idle_generator_selector(
+            all_generator_per_market_query
+                .clone()
+                .filter_by_market_id(U256::from_dec_str("1").unwrap())
+                .result(),
+        );
+
+        assert_eq!(idle_generators.len(), 4);
+    }
+
+    fn get_random_market_info_for_generator(
+        generator: &H160,
+        total_stake: U256,
+        market_id: String,
+    ) -> GeneratorInfoPerMarket {
+        GeneratorInfoPerMarket {
+            address: generator.clone(),
+            market_id: U256::from_dec_str(&market_id).unwrap(),
+            total_stake,
+            compute_required_per_request: U256::from_dec_str("1").unwrap(),
+            proof_generation_cost: U256::from_dec_str("5").unwrap(),
+            proposed_time: U256::from_dec_str("10").unwrap(),
+            active_requests: U256::from_dec_str("0").unwrap(),
+            proofs_submitted: U256::from_dec_str("0").unwrap(),
+            state: Some(GeneratorState::Joined),
+        }
+    }
+
+    fn get_random_generator(generator_store: &GeneratorStore) -> Generator {
+        let all_generator_addresses = generator_store.clone().all_generators_address();
+        let random_generator = all_generator_addresses
+            .choose(&mut rand::thread_rng())
+            .unwrap();
+        generator_store
+            .get_by_address(random_generator)
+            .unwrap()
+            .clone()
+    }
+
+    // helpers in tests.
+    fn create_new_store_with_generators(n: usize) -> GeneratorStore {
+        let mut generator_store = GeneratorStore::new();
+
+        for _ in 0..n {
+            let generator = Generator {
+                address: Address::random(),
+                reward_address: Address::random(),
+                total_stake: U256::from_dec_str("100").unwrap(),
+                sum_of_compute_allocations: U256::from_dec_str("100").unwrap(),
+                compute_consumed: U256::from_dec_str("0").unwrap(),
+                stake_locked: U256::from_dec_str("0").unwrap(),
+                active_market_places: U256::from_dec_str("0").unwrap(),
+                declared_compute: U256::from_dec_str("100").unwrap(),
+                intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),
+                intended_compute_util: U256::from_dec_str("1000000000000000000").unwrap(),
+                generator_data: None,
+            };
+
+            generator_store.insert(generator);
+        }
+
+        generator_store
     }
 }
