@@ -68,12 +68,12 @@ pub mod safe_erc20 {
     pub static SAFEERC20_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xF77$d\x03\xF6B\xDB\x0E\xBC8z\xE59g\xE2\xB4\x8A\xC5\xEF\xF8\xC1\xE6\x88\x8B\xEBO\x86\x81\xE9?1dsolcC\0\x08\x14\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xFC<\x92\x9B|\x87\xA6{\x95\xD6f\xCD\x96L\x83\xF7\xD8\xD7PO3\xFF\xF3\x17\x9D\xC9\xC0\x80\xF7\xEC\xE6\x88dsolcC\0\x08\x18\x003";
     /// The bytecode of the contract.
     pub static SAFEERC20_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xF77$d\x03\xF6B\xDB\x0E\xBC8z\xE59g\xE2\xB4\x8A\xC5\xEF\xF8\xC1\xE6\x88\x8B\xEBO\x86\x81\xE9?1dsolcC\0\x08\x14\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xFC<\x92\x9B|\x87\xA6{\x95\xD6f\xCD\x96L\x83\xF7\xD8\xD7PO3\xFF\xF3\x17\x9D\xC9\xC0\x80\xF7\xEC\xE6\x88dsolcC\0\x08\x18\x003";
     /// The deployed bytecode of the contract.
     pub static SAFEERC20_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);

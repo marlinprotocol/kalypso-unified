@@ -25,12 +25,12 @@ pub mod pairing {
     pub static PAIRING_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`#`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`\x16W\xFE[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 O\xFA\x14\xC6\x8E\xCBj\xD1\xF4\x01B\xE2\xE8A;\xFCV\x18\x91\xCC+\x99f\xCE^\x99I\xF885\xF2\x1CdsolcC\0\x06\x0C\x003";
+    const __BYTECODE: &[u8] = b"`V`#`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`\x16W\xFE[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x95\xA0\xFE\xDC\x93\xA0V\xE9+\xF3\xF5\x92\xBE\xC3\xA6x\xB4\xDB\xDC\xF6G\x8F9\x93=\xBD\x18\xD2\x8F\xE5\xFBzdsolcC\0\x06\x0C\x003";
     /// The bytecode of the contract.
     pub static PAIRING_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 O\xFA\x14\xC6\x8E\xCBj\xD1\xF4\x01B\xE2\xE8A;\xFCV\x18\x91\xCC+\x99f\xCE^\x99I\xF885\xF2\x1CdsolcC\0\x06\x0C\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x95\xA0\xFE\xDC\x93\xA0V\xE9+\xF3\xF5\x92\xBE\xC3\xA6x\xB4\xDB\xDC\xF6G\x8F9\x93=\xBD\x18\xD2\x8F\xE5\xFBzdsolcC\0\x06\x0C\x003";
     /// The deployed bytecode of the contract.
     pub static PAIRING_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);

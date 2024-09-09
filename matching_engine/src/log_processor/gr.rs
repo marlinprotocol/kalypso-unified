@@ -416,6 +416,16 @@ pub async fn process_generator_registry_logs(
             continue;
         }
 
+        if let Ok(stake_slash_logs) = genertor_registry
+            .decode_event::<bindings::generator_registry::StakeSlashedFilter>(
+            "StakeSlashed",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!("Stake Slashed: {:?}", stake_slash_logs);
+            continue;
+        }
+
         log::warn!("unhandled log in generator registry {:?}", log);
         return Err("Unhandled log in generator registry".into());
     }
