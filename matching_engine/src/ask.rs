@@ -327,7 +327,7 @@ impl LocalAskStore {
     }
 
     pub fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof> {
-        self.proofs.get(ask_id).map(|proof| proof.clone())
+        self.proofs.get(ask_id).cloned()
     }
 
     pub fn get_by_market_id(&self, market_id: &U256) -> AskQueryResult {
