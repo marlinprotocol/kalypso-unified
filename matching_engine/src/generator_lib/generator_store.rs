@@ -6,6 +6,7 @@ use tokio::sync::MutexGuard;
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
+use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
 
@@ -52,6 +53,7 @@ impl Default for GeneratorStore {
     }
 }
 
+// create, update the generator store
 impl GeneratorStore {
     pub fn new() -> Self {
         GeneratorStore {
@@ -268,48 +270,7 @@ impl GeneratorStore {
     }
 }
 
-#[derive(Clone)]
-pub struct GeneratorQueryResult<'a> {
-    generator_markets: Vec<&'a GeneratorInfoPerMarket>,
-}
-
-impl<'a> GeneratorQueryResult<'a> {
-    // Initialize with a collection of generators
-    pub fn new(generator_markets: Vec<&'a GeneratorInfoPerMarket>) -> Self {
-        Self { generator_markets }
-    }
-
-    // Filter by reward
-    pub fn filter_by_reward(mut self, task_reward: U256) -> Self {
-        log::debug!("Filter by reward");
-        self.generator_markets
-            .retain(|&gen| gen.proof_generation_cost.lt(&task_reward));
-        self
-    }
-
-    // Filter by market ID
-    pub fn filter_by_market_id(mut self, market_id: U256) -> Self {
-        log::debug!("Filter by market id");
-        self.generator_markets
-            .retain(|&gen| gen.market_id == market_id);
-        self
-    }
-
-    // Filter by state
-    #[allow(unused)]
-    pub fn filter_by_state(mut self, state: GeneratorState) -> Self {
-        self.generator_markets
-            .retain(|&gen| gen.state == Some(state));
-        self
-    }
-
-    // Final getter to consume the object and retrieve the filtered generators
-    pub fn result(self) -> Vec<&'a GeneratorInfoPerMarket> {
-        self.generator_markets
-    }
-}
-
-// Adding query methods to the `GeneratorStore`
+// add methods to generate the query
 impl GeneratorStore {
     #[allow(unused)]
     pub fn query(&self) -> GeneratorQueryResult {
@@ -341,7 +302,10 @@ impl GeneratorStore {
         };
         GeneratorQueryResult::new(generators)
     }
+}
 
+// more complex queries, but not a good way to do
+impl GeneratorStore {
     pub fn filter_by_has_idle_compute(
         &self,
         generator_query: GeneratorQueryResult,
@@ -411,5 +375,228 @@ impl GeneratorStore {
             }
         }
         GeneratorQueryResult::new(generator_result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::generator_lib::generator_helper::idle_generator_selector;
+
+    use super::{Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore};
+    use ethers::{
+        core::rand::{self, seq::SliceRandom},
+        types::{Address, H160, U256},
+    };
+
+    #[test]
+    fn test_insert_remove_generators() {
+        let mut generator_store = GeneratorStore::new();
+
+        let generator1 = Generator {
+            address: Address::random(),
+            reward_address: Address::random(),
+            total_stake: U256::from_dec_str("123123").unwrap(),
+            sum_of_compute_allocations: U256::from_dec_str("12312312").unwrap(),
+            compute_consumed: U256::from_dec_str("12312").unwrap(),
+            stake_locked: U256::from_dec_str("12312").unwrap(),
+            active_market_places: U256::from_dec_str("12").unwrap(),
+            declared_compute: U256::from_dec_str("123123").unwrap(),
+            intended_stake_util: U256::from_dec_str("123123").unwrap(),
+            intended_compute_util: U256::from_dec_str("123123").unwrap(),
+            generator_data: None,
+        };
+
+        generator_store.insert(generator1.clone());
+
+        let generator = generator_store.get_by_address(&generator1.clone().address);
+        assert_eq!(generator.is_some(), true);
+        assert_eq!(generator.unwrap().reward_address, generator1.reward_address);
+    }
+
+    #[test]
+    fn test_stake_and_compute() {
+        let mut generator_store = create_new_store_with_generators(2);
+        let random_generator = get_random_generator(&generator_store);
+
+        // Perform your stake and compute operations on `generator`
+        assert_eq!(
+            random_generator.total_stake,
+            U256::from_dec_str("100").unwrap()
+        );
+        assert_eq!(
+            random_generator.sum_of_compute_allocations,
+            U256::from_dec_str("100").unwrap()
+        );
+
+        generator_store
+            .add_extra_compute(&random_generator.address, U256::from_dec_str("1").unwrap());
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .declared_compute,
+            U256::from_dec_str("101").unwrap()
+        );
+
+        generator_store.remove_compute(&random_generator.address, U256::from_dec_str("2").unwrap());
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .declared_compute,
+            U256::from_dec_str("99").unwrap()
+        );
+
+        generator_store
+            .add_extra_stake(&random_generator.address, &U256::from_dec_str("5").unwrap());
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .total_stake,
+            U256::from_dec_str("105").unwrap()
+        );
+
+        generator_store.remove_stake(
+            &random_generator.address,
+            &U256::from_dec_str("15").unwrap(),
+        );
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .total_stake,
+            U256::from_dec_str("90").unwrap()
+        );
+    }
+
+    #[test]
+    fn test_markets() {
+        let mut generator_store = create_new_store_with_generators(4);
+        let random_generator = get_random_generator(&generator_store);
+
+        let random_generator_info_per_market = get_random_market_info_for_generator(
+            &random_generator.address,
+            random_generator.total_stake.clone(),
+            "1".into(),
+        );
+        generator_store.insert_markets(random_generator_info_per_market);
+
+        let generator_info_per_market = generator_store.get_by_address_and_market(
+            &random_generator.address,
+            &U256::from_dec_str("1").unwrap(),
+        );
+
+        assert_eq!(generator_info_per_market.is_some(), true);
+        assert_eq!(
+            generator_info_per_market.unwrap().address,
+            random_generator.address
+        );
+
+        assert_eq!(
+            generator_store
+                .get_all_markets_generator(&random_generator.address)
+                .len(),
+            1
+        );
+
+        generator_store.remove_by_address_and_market(
+            &random_generator.address,
+            &U256::from_dec_str("1").unwrap(),
+        );
+
+        let generator_info_per_market = generator_store.get_by_address_and_market(
+            &random_generator.address,
+            &U256::from_dec_str("1").unwrap(),
+        );
+
+        assert_eq!(generator_info_per_market.is_none(), true);
+    }
+
+    #[test]
+    fn test_matches() {
+        let mut generator_store = create_new_store_with_generators(4);
+
+        let all_generators = { generator_store.clone().all_generators_address() };
+        for generator in all_generators {
+            let generator = generator_store.get_by_address(&generator).unwrap();
+            let random_generator_info_per_market = get_random_market_info_for_generator(
+                &generator.address,
+                generator.total_stake.clone(),
+                "1".into(),
+            );
+            generator_store.insert_markets(random_generator_info_per_market);
+        }
+
+        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
+
+        assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
+
+        let idle_generators: Vec<GeneratorInfoPerMarket> = idle_generator_selector(
+            all_generator_per_market_query
+                .clone()
+                .filter_by_market_id(U256::from_dec_str("1").unwrap())
+                .result(),
+        );
+
+        assert_eq!(idle_generators.len(), 4);
+    }
+
+    fn get_random_market_info_for_generator(
+        generator: &H160,
+        total_stake: U256,
+        market_id: String,
+    ) -> GeneratorInfoPerMarket {
+        GeneratorInfoPerMarket {
+            address: generator.clone(),
+            market_id: U256::from_dec_str(&market_id).unwrap(),
+            total_stake,
+            compute_required_per_request: U256::from_dec_str("1").unwrap(),
+            proof_generation_cost: U256::from_dec_str("5").unwrap(),
+            proposed_time: U256::from_dec_str("10").unwrap(),
+            active_requests: U256::from_dec_str("0").unwrap(),
+            proofs_submitted: U256::from_dec_str("0").unwrap(),
+            state: Some(GeneratorState::Joined),
+        }
+    }
+
+    fn get_random_generator(generator_store: &GeneratorStore) -> Generator {
+        let all_generator_addresses = generator_store.clone().all_generators_address();
+        let random_generator = all_generator_addresses
+            .choose(&mut rand::thread_rng())
+            .unwrap();
+        generator_store
+            .get_by_address(random_generator)
+            .unwrap()
+            .clone()
+    }
+
+    // helpers in tests.
+    fn create_new_store_with_generators(n: usize) -> GeneratorStore {
+        let mut generator_store = GeneratorStore::new();
+
+        for _ in 0..n {
+            let generator = Generator {
+                address: Address::random(),
+                reward_address: Address::random(),
+                total_stake: U256::from_dec_str("100").unwrap(),
+                sum_of_compute_allocations: U256::from_dec_str("100").unwrap(),
+                compute_consumed: U256::from_dec_str("0").unwrap(),
+                stake_locked: U256::from_dec_str("0").unwrap(),
+                active_market_places: U256::from_dec_str("0").unwrap(),
+                declared_compute: U256::from_dec_str("100").unwrap(),
+                intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),
+                intended_compute_util: U256::from_dec_str("1000000000000000000").unwrap(),
+                generator_data: None,
+            };
+
+            generator_store.insert(generator);
+        }
+
+        generator_store
     }
 }
