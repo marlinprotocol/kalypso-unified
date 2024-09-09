@@ -254,14 +254,41 @@ impl GeneratorStore {
         }
     }
 
-    #[allow(unused)]
-    pub fn get_all_markets_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
+    fn get_all_markets_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
                 .iter()
                 .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)))
                 .collect(),
             None => Vec::new(),
+        }
+    }
+
+    pub fn pause_assignments_across_all_markets(&mut self, address: &Address) {
+        // Collect the market IDs to be updated first, avoiding an immutable borrow later
+        let all_market_ids: Vec<U256> = self
+            .get_all_markets_generator(address)
+            .iter()
+            .map(|single_market| single_market.market_id.clone()) // Collect U256 (market_id)
+            .collect();
+
+        // Now process them with mutable access
+        for market_id in all_market_ids {
+            self.update_state(address, &market_id, GeneratorState::PendingConfirmation);
+        }
+    }
+
+    pub fn resume_assignments_accross_all_markets(&mut self, address: &Address) {
+        // Collect the market IDs to be updated first, avoiding an immutable borrow later
+        let all_market_ids: Vec<U256> = self
+            .get_all_markets_generator(address)
+            .iter()
+            .map(|single_market| single_market.market_id.clone()) // Collect U256 (market_id)
+            .collect();
+
+        // Now process them with mutable access
+        for market_id in all_market_ids {
+            self.update_state(address, &market_id, GeneratorState::Joined);
         }
     }
 

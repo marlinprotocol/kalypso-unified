@@ -242,6 +242,7 @@ pub async fn process_generator_registry_logs(
             let address = request_stake_decrease_log.generator;
             let new_utilization = request_stake_decrease_log.intended_utilization;
 
+            generator_store.pause_assignments_across_all_markets(&address);
             generator_store.update_intended_stake_util(&address, new_utilization);
             continue;
         }
@@ -261,6 +262,7 @@ pub async fn process_generator_registry_logs(
             let amount = remove_stake_log.amount;
 
             generator_store.remove_stake(&address, &amount);
+            generator_store.resume_assignments_accross_all_markets(&address);
             generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
 
             continue;
@@ -299,6 +301,7 @@ pub async fn process_generator_registry_logs(
             let address = request_compute_decrease_log.generator;
             let new_utilization = request_compute_decrease_log.intended_utilization;
 
+            generator_store.pause_assignments_across_all_markets(&address);
             generator_store.update_intended_compute_util(&address, new_utilization);
             continue;
         }
@@ -319,6 +322,7 @@ pub async fn process_generator_registry_logs(
             let compute = decrease_compute_log.compute;
 
             generator_store.remove_compute(&address, compute);
+            generator_store.resume_assignments_accross_all_markets(&address);
             generator_store.update_intended_compute_util(&address, 1000000000000000000_i64.into());
             continue;
         }
