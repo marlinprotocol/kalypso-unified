@@ -94,3 +94,22 @@ pub fn generate_verify_inputs_and_proof_request<R>(
         info,
     }
 }
+
+pub fn generate_signed_inputs_and_proof_request<R>(
+    verify_input_and_secret_payload: Option<models::SignInputsAndProofForNonConfidentialInput>,
+    expected_status_code: StatusCode,
+    info: String,
+) -> Request<models::SignInputsAndProofForNonConfidentialInput, R> {
+    Request {
+        request_type: RequestType::POST(verify_input_and_secret_payload.unwrap_or_else(|| {
+            models::SignInputsAndProofForNonConfidentialInput {
+                proof: "proof".into(),
+                public_input: "public_inputs".into(),
+            }
+        })),
+        service_endpoint: "/api/signInputsAndProofForNonConfidnetialInputs".into(),
+        _marker: std::marker::PhantomData::<R>,
+        expected_status_code,
+        info,
+    }
+}

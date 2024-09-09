@@ -178,6 +178,13 @@ async fn test_ivs_services(ivs_url: &String) -> Result<(), Box<dyn Error>> {
                 .await,
                 StatusCode::OK, "Should be able to verify inputs and generated proof".into()
             )),
+            Box::new(ivs::generate_signed_inputs_and_proof_request::<
+                generator::models::GenerateProofResponse
+            >(
+                create_payload(
+                "./integration_checks/ivsCustomData/8_sign_inputs_and_proof_payload.json",
+            )
+            .await, StatusCode::OK, "Should be able to sign proofs".into()))
         ],
     };
     ivs_service_checker.check_all_services().await;

@@ -111,3 +111,9 @@ pub struct VerifyInputsAndProof {
 pub struct VerifyInputAndProofResponse {
     pub is_input_and_proof_valid: bool,
 }
+
+#[derive(Serialize, Debug, Deserialize, Clone)]
+pub struct SignInputsAndProofForNonConfidentialInput {
+    pub public_input: Vec<u8>,
+    pub proof: Vec<u8>,
+}

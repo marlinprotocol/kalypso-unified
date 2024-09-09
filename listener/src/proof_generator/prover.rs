@@ -33,7 +33,7 @@ pub trait Prover {
                         log::info!("Generated Proof is Valid: Rechecked with IVS");
                     } else {
                         log::warn!(
-                            "Generated Proof is Invalid: after 2 round of checking with IVS"
+                            "Generated Proof is Invalid: After second round of checking with IVS"
                         );
                     }
                 }

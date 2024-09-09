@@ -30,22 +30,16 @@ pub async fn get_ask_proof_by_ask_id(
     let proof = local_ask_store.get_proof_by_ask_id(&ask_id_u256);
 
     match proof {
-        Some(proof) => {
-            match proof {
-                Proof::ValidProof(valid_proof) => {
-                    Ok(HttpResponse::Ok().json(GetProofResponse {
-                        status: "Found".into(),
-                        proof: valid_proof.to_vec(),
-                    }))
-                }
-            }
-        }
-        _ => {
-            Ok(HttpResponse::NotFound().json(GetProofResponse {
-                status: "Not Found".into(),
-                proof: vec![],
-            }))
-        }
+        Some(proof) => match proof {
+            Proof::ValidProof(valid_proof) => Ok(HttpResponse::Ok().json(GetProofResponse {
+                status: "Found".into(),
+                proof: valid_proof.to_vec(),
+            })),
+        },
+        _ => Ok(HttpResponse::NotFound().json(GetProofResponse {
+            status: "Not Found".into(),
+            proof: vec![],
+        })),
     }
 }
 
