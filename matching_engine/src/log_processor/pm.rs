@@ -12,6 +12,7 @@ use bindings::proof_marketplace as pmp;
 
 use super::constants;
 
+#[allow(clippy::too_many_arguments)]
 pub async fn process_proof_market_place_logs(
     logs: Vec<Log>,
     proof_market_place: pmp::ProofMarketplace<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
