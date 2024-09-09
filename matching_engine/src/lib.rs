@@ -115,6 +115,7 @@ impl MatchingEngine {
         Self { config }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         rpc_url: String,
         chain_id: String,
