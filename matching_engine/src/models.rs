@@ -45,6 +45,12 @@ pub struct GetAskStatusResponse {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct GetProofResponse {
+    pub status: String,
+    pub proof: Vec<u8>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct MarketInfo {
     pub market_id: String,
 }

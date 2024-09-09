@@ -300,7 +300,9 @@ impl GeneratorStore {
 impl GeneratorStore {
     #[allow(unused)]
     pub fn get_available_compute(&self, address: Address) -> Option<U256> {
-        self.generators.get(&address).map(|generator| generator.declared_compute.sub(generator.compute_consumed))
+        self.generators
+            .get(&address)
+            .map(|generator| generator.declared_compute.sub(generator.compute_consumed))
     }
 }
 

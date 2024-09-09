@@ -163,6 +163,7 @@ pub async fn process_proof_market_place_logs(
             log::debug!("{:?}", parsed_proof_created_log);
 
             let ask_id = parsed_proof_created_log.ask_id;
+            let proof = parsed_proof_created_log.proof;
 
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
@@ -175,6 +176,7 @@ pub async fn process_proof_market_place_logs(
                 generator_state::GeneratorState::Joined,
             );
 
+            local_ask_store.store_valid_proof(&ask_id, proof);
             generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
 
             continue;

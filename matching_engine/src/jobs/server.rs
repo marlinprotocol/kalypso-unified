@@ -77,6 +77,10 @@ impl MatchingEngineServer {
                     web::post().to(routes::ask_status::get_ask_status_askid),
                 ) // Provide specific ask status
                 .route(
+                    "/getProof",
+                    web::post().to(routes::ask_status::get_ask_proof_by_ask_id),
+                ) // Provide specific ask status
+                .route(
                     "/getPrivInput",
                     web::post().to(routes::get_priv_inputs::get_priv_input),
                 ) // provide private inputs for a specific ask

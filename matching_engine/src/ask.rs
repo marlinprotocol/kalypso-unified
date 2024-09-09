@@ -93,10 +93,16 @@ pub struct LocalAskStatus {
     pub invalid_secret: usize,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum Proof {
+    ValidProof(Bytes),
+    // latter we may need to store the invalid input attestations here
+}
 pub struct LocalAskStore {
     asks_by_id: HashMap<U256, LocalAsk>,
     market_id_index: HashMap<U256, Vec<LocalAsk>>,
     state_index: HashMap<AskState, Vec<LocalAsk>>,
+    proofs: HashMap<U256, Proof>,
 }
 
 pub struct AskQueryResult {
@@ -254,6 +260,7 @@ impl LocalAskStore {
             asks_by_id: HashMap::new(),
             market_id_index: HashMap::new(),
             state_index: HashMap::new(),
+            proofs: HashMap::new(),
         }
     }
 
@@ -310,6 +317,19 @@ impl LocalAskStore {
     pub fn update_ask_acl(&mut self, ask_id: &U256, new_acl: Option<Bytes>) {
         if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
             ask.secret_acl = new_acl;
+        }
+    }
+
+    pub fn store_valid_proof(&mut self, ask_id: &U256, proof: Bytes) {
+        if let Some(_) = self.asks_by_id.get_mut(ask_id) {
+            self.proofs.insert(ask_id.clone(), Proof::ValidProof(proof));
+        }
+    }
+
+    pub fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof> {
+        match self.proofs.get(ask_id) {
+            Some(proof) => Some(proof.clone()),
+            _ => None,
         }
     }
 
