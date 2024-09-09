@@ -33,15 +33,15 @@ pub async fn get_ask_proof_by_ask_id(
         Some(proof) => {
             match proof {
                 Proof::ValidProof(valid_proof) => {
-                    return Ok(HttpResponse::Ok().json(GetProofResponse {
+                    Ok(HttpResponse::Ok().json(GetProofResponse {
                         status: "Found".into(),
                         proof: valid_proof.to_vec(),
                     }))
                 }
-            };
+            }
         }
         _ => {
-            return Ok(HttpResponse::NotFound().json(GetProofResponse {
+            Ok(HttpResponse::NotFound().json(GetProofResponse {
                 status: "Not Found".into(),
                 proof: vec![],
             }))

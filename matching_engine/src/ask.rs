@@ -321,16 +321,13 @@ impl LocalAskStore {
     }
 
     pub fn store_valid_proof(&mut self, ask_id: &U256, proof: Bytes) {
-        if let Some(_) = self.asks_by_id.get_mut(ask_id) {
-            self.proofs.insert(ask_id.clone(), Proof::ValidProof(proof));
+        if self.asks_by_id.get_mut(ask_id).is_some() {
+            self.proofs.insert(*ask_id, Proof::ValidProof(proof));
         }
     }
 
     pub fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof> {
-        match self.proofs.get(ask_id) {
-            Some(proof) => Some(proof.clone()),
-            _ => None,
-        }
+        self.proofs.get(ask_id).map(|proof| proof.clone())
     }
 
     pub fn get_by_market_id(&self, market_id: &U256) -> AskQueryResult {
