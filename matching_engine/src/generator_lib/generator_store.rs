@@ -325,9 +325,7 @@ impl GeneratorStore {
         for elem in generator_array {
             if let Some(generator) = self.generators.get(&elem.address) {
                 let idle_compute = generator.declared_compute.sub(generator.compute_consumed);
-                let utilization = generator.intended_compute_util;
-                let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent && idle_compute.gt(&elem.compute_required_per_request) {
+                if idle_compute.ge(&elem.compute_required_per_request) {
                     generator_result.push(
                         self.generator_markets
                             .get(&(elem.address, elem.market_id))
@@ -350,9 +348,7 @@ impl GeneratorStore {
         for elem in generator_array {
             if let Some(generator) = self.generators.get(&elem.address) {
                 let remaining_stake = generator.total_stake.sub(generator.stake_locked);
-                let utilization = generator.intended_stake_util;
-                let exponent: U256 = 1000000000000000000_i64.into();
-                if utilization >= exponent && remaining_stake.gt(&min_stake) {
+                if remaining_stake.ge(&min_stake) {
                     generator_result.push(
                         self.generator_markets
                             .get(&(elem.address, elem.market_id))
@@ -563,12 +559,31 @@ mod tests {
             let available_compute = generator_store
                 .get_available_compute(idle_generator.address)
                 .unwrap();
-            dbg!(available_compute);
             assert_eq!(available_compute, U256::zero());
         }
 
         let all_generator_per_market_query = generator_store
             .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+
+        assert_eq!(all_generator_per_market_query.clone().result().len(), 0);
+    }
+
+    #[test]
+    fn test_matches_2() {
+        let mut generator_store = create_new_store_with_generators(4);
+
+        let all_generators = { generator_store.clone().all_generators_address() };
+        for generator in all_generators {
+            let generator = generator_store.get_by_address(&generator).unwrap();
+            let random_generator_info_per_market = get_random_market_info_for_generator(
+                &generator.address,
+                generator.total_stake.clone(),
+                "1".into(),
+            );
+            generator_store.insert_markets(random_generator_info_per_market);
+        }
+
+        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
 
@@ -579,7 +594,66 @@ mod tests {
                 .result(),
         );
 
-        assert_eq!(idle_generators.len(), 0);
+        assert_eq!(idle_generators.len(), 4);
+
+        generator_store.update_on_compute_locked(
+            &idle_generators[0].address,
+            U256::from_dec_str("100").unwrap(),
+        );
+        let available_compute = generator_store
+            .get_available_compute(idle_generators[0].address)
+            .unwrap();
+        assert_eq!(available_compute, U256::zero());
+
+        let all_generator_per_market_query = generator_store
+            .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+
+        assert_eq!(all_generator_per_market_query.clone().result().len(), 3);
+    }
+
+    #[test]
+    fn test_matches_3() {
+        let mut generator_store = create_new_store_with_generators(4);
+
+        let all_generators = { generator_store.clone().all_generators_address() };
+        for generator in all_generators {
+            let generator = generator_store.get_by_address(&generator).unwrap();
+            let random_generator_info_per_market = get_random_market_info_for_generator(
+                &generator.address,
+                generator.total_stake.clone(),
+                "1".into(),
+            );
+            generator_store.insert_markets(random_generator_info_per_market);
+        }
+
+        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
+
+        assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
+
+        let idle_generators: Vec<GeneratorInfoPerMarket> = idle_generator_selector(
+            all_generator_per_market_query
+                .clone()
+                .filter_by_market_id(U256::from_dec_str("1").unwrap())
+                .result(),
+        );
+
+        assert_eq!(idle_generators.len(), 4);
+
+        generator_store.update_on_compute_locked(
+            &idle_generators[0].address,
+            U256::from_dec_str("99").unwrap(),
+        );
+        let available_compute = generator_store
+            .get_available_compute(idle_generators[0].address)
+            .unwrap();
+        assert_eq!(available_compute, U256::one());
+
+        let all_generator_per_market_query = generator_store
+            .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+
+        let idle_generators = all_generator_per_market_query.clone().result();
+        dbg!(&idle_generators);
+        assert_eq!(idle_generators.len(), 4);
     }
 
     fn get_random_market_info_for_generator(
