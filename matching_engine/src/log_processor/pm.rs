@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::ask::*;
-use crate::generator::*;
+use crate::generator_lib::*;
 use kalypso_helper::secret_inputs_helpers;
 
 use bindings::proof_marketplace as pmp;
@@ -16,7 +16,7 @@ pub async fn process_proof_market_place_logs(
     logs: Vec<Log>,
     proof_market_place: pmp::ProofMarketplace<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     local_ask_store: &Arc<Mutex<LocalAskStore>>,
-    generator_store: &Arc<Mutex<GeneratorStore>>,
+    generator_store: &Arc<Mutex<generator_store::GeneratorStore>>,
     market_store: &Arc<Mutex<MarketMetadataStore>>,
     cost_store: &Arc<Mutex<CostStore>>,
     matching_engine_key: &[u8],
@@ -145,7 +145,7 @@ pub async fn process_proof_market_place_logs(
             generator_store.update_state(
                 &ask_data.3,
                 &ask_data.0.market_id,
-                GeneratorState::Joined,
+                generator_state::GeneratorState::Joined,
             );
             generator_store.update_on_assigned_task(&ask_data.3, &ask_data.0.market_id);
 
@@ -171,7 +171,7 @@ pub async fn process_proof_market_place_logs(
             generator_store.update_state(
                 &generator_address,
                 &ask_data.0.market_id,
-                GeneratorState::Joined,
+                generator_state::GeneratorState::Joined,
             );
 
             generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
@@ -282,7 +282,7 @@ pub async fn process_proof_market_place_logs(
             generator_store.update_state(
                 &generator_address,
                 &ask_data.0.market_id,
-                GeneratorState::Joined,
+                generator_state::GeneratorState::Joined,
             );
 
             log::debug!("Proof not Generated: update on slashing penalty");
@@ -313,7 +313,7 @@ pub async fn process_proof_market_place_logs(
             generator_store.update_state(
                 &generator_address,
                 &ask_data.0.market_id,
-                GeneratorState::Joined,
+                generator_state::GeneratorState::Joined,
             );
 
             generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);

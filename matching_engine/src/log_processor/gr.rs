@@ -2,7 +2,7 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::generator::*;
+use crate::generator_lib::*;
 use crate::log_processor::constants;
 
 pub async fn process_generator_registry_logs(
@@ -10,7 +10,7 @@ pub async fn process_generator_registry_logs(
     genertor_registry: bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    generator_store: &Arc<Mutex<GeneratorStore>>,
+    generator_store: &Arc<Mutex<generator_store::GeneratorStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut generator_store = generator_store.lock().await;
     for log in &logs {
@@ -42,7 +42,7 @@ pub async fn process_generator_registry_logs(
                 .await
                 .unwrap();
 
-            let generator = Generator {
+            let generator = generator_store::Generator {
                 address,
                 reward_address: generator_data.0,
                 total_stake: stake,
@@ -136,7 +136,7 @@ pub async fn process_generator_registry_logs(
                 .unwrap()
                 .total_stake;
 
-            let generator_market = GeneratorInfoPerMarket {
+            let generator_market = generator_store::GeneratorInfoPerMarket {
                 address: parsed_joined_market_place_log.generator,
                 market_id: parsed_joined_market_place_log.market_id,
                 total_stake,
@@ -145,7 +145,7 @@ pub async fn process_generator_registry_logs(
                 proposed_time: generator_market_data.3,
                 active_requests: 0.into(),
                 proofs_submitted: 0.into(),
-                state: Some(GeneratorState::Joined),
+                state: Some(generator_state::GeneratorState::Joined),
             };
             generator_store.insert_markets(generator_market);
             continue;
@@ -168,7 +168,11 @@ pub async fn process_generator_registry_logs(
             let address = parsed_requested_for_exit_log.generator;
             let market_id = parsed_requested_for_exit_log.market_id;
 
-            generator_store.update_state(&address, &market_id, GeneratorState::RequestedForExit);
+            generator_store.update_state(
+                &address,
+                &market_id,
+                generator_state::GeneratorState::RequestedForExit,
+            );
             continue;
         }
 

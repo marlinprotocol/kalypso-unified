@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ask::{AskState, LocalAskStatus},
-    generator::GeneratorState,
+    generator_lib::generator_state::GeneratorState,
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

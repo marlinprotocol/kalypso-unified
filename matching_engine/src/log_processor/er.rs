@@ -1,4 +1,4 @@
-use crate::generator::*;
+use crate::generator_lib::*;
 use crate::log_processor::constants;
 use ecies;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
@@ -10,7 +10,7 @@ pub async fn process_entity_key_registry_logs(
     entity_key_registry: bindings::entity_key_registry::EntityKeyRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    key_store: &Arc<Mutex<KeyStore>>,
+    key_store: &Arc<Mutex<key_store::KeyStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut key_store = key_store.lock().await;
     for log in &logs {
@@ -118,7 +118,7 @@ pub async fn process_entity_key_registry_logs(
                             );
                         }
                         None => {
-                            let key = Key {
+                            let key = key_store::Key {
                                 address: user,
                                 key_index,
                                 ecies_pub_key: Some((*pub_key_array).into()),
@@ -135,7 +135,7 @@ pub async fn process_entity_key_registry_logs(
                             key_store.update_pub_key(&user, key_index, None);
                         }
                         None => {
-                            let key = Key {
+                            let key = key_store::Key {
                                 address: user,
                                 key_index,
                                 ecies_pub_key: None,

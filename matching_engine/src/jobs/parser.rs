@@ -1,4 +1,5 @@
 use crate::costs::CostStore;
+use crate::generator_lib::{generator_state, generator_store};
 use anyhow::Result;
 use ethers::prelude::*;
 use itertools::Itertools;
@@ -20,7 +21,10 @@ use tokio::sync::Mutex;
 use crate::log_processor;
 use crate::{
     ask::{self, LocalAsk, LocalAskStore, MarketMetadataStore},
-    generator::{self, GeneratorState, GeneratorStore, KeyStore},
+    generator_lib::{
+        generator_helper, generator_state::GeneratorState, generator_store::GeneratorStore,
+        key_store::KeyStore,
+    },
 };
 
 type EntityRegistryInstance = bindings::entity_key_registry::EntityKeyRegistry<
@@ -302,7 +306,7 @@ impl LogParser {
                 let mut generator_store = { self.shared_generator_store.lock().await };
                 let key_store = { self.shared_key_store.lock().await };
                 let idle_generator =
-                    generator::random_generator_selection(idle_generators).unwrap();
+                    generator_helper::random_generator_selection(idle_generators).unwrap();
 
                 let mut new_acl = Bytes::from_str("0x").unwrap().to_vec();
 
@@ -366,11 +370,11 @@ impl LogParser {
                         return Err("No generator status received from chain".into());
                     }
                 };
-                let generator_state = generator::get_generator_state(generator_state.0);
+                let generator_state = generator_state::get_generator_state(generator_state.0);
 
                 if matches!(
                     generator_state,
-                    generator::GeneratorState::Joined | generator::GeneratorState::Wip
+                    generator_state::GeneratorState::Joined | generator_state::GeneratorState::Wip
                 ) {
                     log::warn!(
                         "Generator {:?}. {:?}",
@@ -536,7 +540,7 @@ impl LogParser {
         market_store: &Arc<Mutex<MarketMetadataStore>>,
         key_store: &Arc<Mutex<KeyStore>>,
         task_reward: U256,
-    ) -> Vec<generator::GeneratorInfoPerMarket> {
+    ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
         let generator_store = generator_store.lock().await;
         let market_metadata_store = market_store.lock().await;
@@ -574,7 +578,7 @@ impl LogParser {
 
             let generators = generator_query.result();
 
-            generator::idle_generator_selector(generators)
+            generator_helper::idle_generator_selector(generators)
         };
         idle_generators
     }

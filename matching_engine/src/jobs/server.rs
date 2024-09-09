@@ -13,7 +13,7 @@ use crate::middlewares;
 use crate::routes;
 use crate::{
     ask::{LocalAskStore, MarketMetadataStore},
-    generator::GeneratorStore,
+    generator_lib::generator_store::GeneratorStore,
 };
 
 type EntityRegistryInstance = Arc<

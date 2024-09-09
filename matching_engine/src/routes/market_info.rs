@@ -1,5 +1,5 @@
 use crate::ask::*;
-use crate::generator::GeneratorStore;
+use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::{
     AskInfoToSend, GeneratorInfo, GeneratorsInfoForMarket, MarketInfo, MarketInfoResponse,
 };

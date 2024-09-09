@@ -1,6 +1,6 @@
 pub mod ask;
 pub mod costs;
-pub mod generator;
+pub mod generator_lib;
 pub mod middlewares;
 pub mod models;
 pub mod utility;
@@ -12,7 +12,7 @@ mod routes;
 use ask::{LocalAskStore, MarketMetadataStore};
 use costs::CostStore;
 use ethers::prelude::*;
-use generator::{GeneratorStore, KeyStore};
+use generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
 use jobs::{cleanup::CleanupTool, parser::LogParser, server::MatchingEngineServer};
 use models::{GetAskStatus, MarketInfo};
 use reqwest::StatusCode;
