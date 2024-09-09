@@ -270,6 +270,16 @@ impl GeneratorStore {
     }
 }
 
+impl GeneratorStore {
+    #[allow(unused)]
+    pub fn get_available_compute(&self, address: Address) -> Option<U256> {
+        match self.generators.get(&address) {
+            Some(generator) => Some(generator.declared_compute.sub(generator.compute_consumed)),
+            None => None,
+        }
+    }
+}
+
 // add methods to generate the query
 impl GeneratorStore {
     #[allow(unused)]
@@ -544,6 +554,32 @@ mod tests {
         );
 
         assert_eq!(idle_generators.len(), 4);
+
+        for idle_generator in idle_generators {
+            generator_store.update_on_compute_locked(
+                &idle_generator.address,
+                U256::from_dec_str("100").unwrap(),
+            );
+            let available_compute = generator_store
+                .get_available_compute(idle_generator.address)
+                .unwrap();
+            dbg!(available_compute);
+            assert_eq!(available_compute, U256::zero());
+        }
+
+        let all_generator_per_market_query = generator_store
+            .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+
+        assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
+
+        let idle_generators: Vec<GeneratorInfoPerMarket> = idle_generator_selector(
+            all_generator_per_market_query
+                .clone()
+                .filter_by_market_id(U256::from_dec_str("1").unwrap())
+                .result(),
+        );
+
+        assert_eq!(idle_generators.len(), 0);
     }
 
     fn get_random_market_info_for_generator(
