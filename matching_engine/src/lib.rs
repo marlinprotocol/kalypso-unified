@@ -1,10 +1,10 @@
 pub mod ask;
 pub mod costs;
-pub mod generator_lib;
 pub mod middlewares;
 pub mod models;
 pub mod utility;
 
+mod generator_lib;
 mod jobs;
 mod log_processor;
 mod routes;

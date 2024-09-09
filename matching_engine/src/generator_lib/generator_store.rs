@@ -252,6 +252,7 @@ impl GeneratorStore {
         }
     }
 
+    #[allow(unused)]
     pub fn get_all_markets_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
