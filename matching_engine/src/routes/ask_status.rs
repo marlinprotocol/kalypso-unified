@@ -38,12 +38,6 @@ pub async fn get_ask_proof_by_ask_id(
                         proof: valid_proof.to_vec(),
                     }))
                 }
-                _ => {
-                    return Ok(HttpResponse::NotFound().json(GetProofResponse {
-                        status: "Not Found".into(),
-                        proof: vec![],
-                    }))
-                }
             };
         }
         _ => {
