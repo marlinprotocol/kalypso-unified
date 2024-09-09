@@ -377,59 +377,46 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_on_assigned_task(
-        &mut self,
-        address: &Address,
-        market_id: &U256,
-        slashing_penalty: U256,
-    ) {
+    pub fn update_on_assigned_task(&mut self, address: &Address, market_id: &U256) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.add_assign(U256::one());
-
-            if let Some(generator) = self.generators.get_mut(address) {
-                generator
-                    .compute_consumed
-                    .add_assign(generator_market.compute_required_per_request);
-                generator.stake_locked.add_assign(slashing_penalty);
-            }
         }
     }
 
-    pub fn update_on_submit_proof(
-        &mut self,
-        address: &Address,
-        market_id: &U256,
-        slashing_penalty: U256,
-    ) {
+    pub fn update_on_submit_proof(&mut self, address: &Address, market_id: &U256) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.sub_assign(U256::one());
             generator_market.proofs_submitted.add_assign(U256::one());
-
-            if let Some(generator) = self.generators.get_mut(address) {
-                generator
-                    .compute_consumed
-                    .sub_assign(generator_market.compute_required_per_request);
-                generator.stake_locked.sub_assign(slashing_penalty);
-            }
         }
     }
 
-    pub fn update_on_slashing(
-        &mut self,
-        address: &Address,
-        market_id: &U256,
-        slashing_penalty: U256,
-    ) {
+    pub fn update_on_slashing(&mut self, address: &Address, market_id: &U256) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.sub_assign(U256::one());
+        }
+    }
 
-            if let Some(generator) = self.generators.get_mut(address) {
-                generator
-                    .compute_consumed
-                    .sub_assign(generator_market.compute_required_per_request);
-                generator.stake_locked.sub_assign(slashing_penalty);
-                generator.total_stake.sub_assign(slashing_penalty);
-            }
+    pub fn update_on_stake_locked(&mut self, address: &Address, stake_locked: U256) {
+        if let Some(generator) = self.generators.get_mut(address) {
+            generator.stake_locked.add_assign(stake_locked);
+        }
+    }
+
+    pub fn update_on_stake_released(&mut self, address: &Address, stake_released: U256) {
+        if let Some(generator) = self.generators.get_mut(address) {
+            generator.stake_locked.sub_assign(stake_released);
+        }
+    }
+
+    pub fn update_on_compute_locked(&mut self, address: &Address, compute_locked: U256) {
+        if let Some(generator) = self.generators.get_mut(address) {
+            generator.compute_consumed.add_assign(compute_locked);
+        }
+    }
+
+    pub fn update_on_compute_released(&mut self, address: &Address, compute_released: U256) {
+        if let Some(generator) = self.generators.get_mut(address) {
+            generator.compute_consumed.sub_assign(compute_released);
         }
     }
 

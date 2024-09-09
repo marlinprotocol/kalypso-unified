@@ -147,15 +147,7 @@ pub async fn process_proof_market_place_logs(
                 &ask_data.0.market_id,
                 GeneratorState::Joined,
             );
-
-            let slashing_penalty = market_store
-                .get_slashing_penalty_by_market_id(&ask_data.0.market_id)
-                .unwrap();
-            generator_store.update_on_assigned_task(
-                &ask_data.3,
-                &ask_data.0.market_id,
-                slashing_penalty,
-            );
+            generator_store.update_on_assigned_task(&ask_data.3, &ask_data.0.market_id);
 
             continue;
         }
@@ -182,14 +174,7 @@ pub async fn process_proof_market_place_logs(
                 GeneratorState::Joined,
             );
 
-            let slashing_penalty = market_store
-                .get_slashing_penalty_by_market_id(&ask_data.0.market_id)
-                .unwrap();
-            generator_store.update_on_submit_proof(
-                &generator_address,
-                &ask_data.0.market_id,
-                slashing_penalty,
-            );
+            generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
 
             continue;
         }
@@ -301,14 +286,7 @@ pub async fn process_proof_market_place_logs(
             );
 
             log::debug!("Proof not Generated: update on slashing penalty");
-            let slashing_penalty = market_store
-                .get_slashing_penalty_by_market_id(&ask_data.0.market_id)
-                .unwrap();
-            generator_store.update_on_slashing(
-                &generator_address,
-                &ask_data.0.market_id,
-                slashing_penalty,
-            );
+            generator_store.update_on_slashing(&generator_address, &ask_data.0.market_id);
 
             log::warn!("Complete Proof not Generated");
             continue;
@@ -338,14 +316,7 @@ pub async fn process_proof_market_place_logs(
                 GeneratorState::Joined,
             );
 
-            let slashing_penalty = market_store
-                .get_slashing_penalty_by_market_id(&ask_data.0.market_id)
-                .unwrap();
-            generator_store.update_on_submit_proof(
-                &generator_address,
-                &ask_data.0.market_id,
-                slashing_penalty,
-            );
+            generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
             log::warn!("Complete invalid input proof submitted");
             continue;
         }

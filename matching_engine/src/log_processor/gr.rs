@@ -383,6 +383,10 @@ pub async fn process_generator_registry_logs(
             log.data.clone(),
         ) {
             log::warn!("Stake Lock Imposed: {:?}", stake_lock_logs);
+            let address = stake_lock_logs.generator;
+            let stake_locked = stake_lock_logs.stake;
+
+            generator_store.update_on_stake_locked(&address, stake_locked);
             continue;
         }
 
@@ -393,6 +397,9 @@ pub async fn process_generator_registry_logs(
             log.data.clone(),
         ) {
             log::warn!("Compute Lock Imposed: {:?}", compute_lock_logs);
+            let address = compute_lock_logs.generator;
+            let compute_locked = compute_lock_logs.compute;
+            generator_store.update_on_compute_locked(&address, compute_locked);
             continue;
         }
 
@@ -403,6 +410,9 @@ pub async fn process_generator_registry_logs(
             log.data.clone(),
         ) {
             log::warn!("Stake Lock Released: {:?}", stake_lock_logs);
+            let address = stake_lock_logs.generator;
+            let stake_released = stake_lock_logs.stake;
+            generator_store.update_on_stake_released(&address, stake_released);
             continue;
         }
 
@@ -413,6 +423,9 @@ pub async fn process_generator_registry_logs(
             log.data.clone(),
         ) {
             log::warn!("Compute Lock Released: {:?}", compute_lock_logs);
+            let address = compute_lock_logs.generator;
+            let compute_released = compute_lock_logs.compute;
+            generator_store.update_on_compute_released(&address, compute_released);
             continue;
         }
 
@@ -423,6 +436,10 @@ pub async fn process_generator_registry_logs(
             log.data.clone(),
         ) {
             log::warn!("Stake Slashed: {:?}", stake_slash_logs);
+            let address = stake_slash_logs.generator;
+            let stake_slashed = stake_slash_logs.stake;
+
+            generator_store.remove_stake(&address, &stake_slashed);
             continue;
         }
 
