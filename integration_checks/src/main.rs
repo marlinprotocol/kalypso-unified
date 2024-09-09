@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .about("A CLI tool that takes checks whether kalypso executables are built correctly")
         .arg(arg!([url] "Sets the URL to use").required(true))
         .arg(
-            arg!([type] "Sets the type (prover or ivs)")
+            arg!([type] "Sets the type (matching_engine, prover or ivs)")
                 .required(true)
                 .value_parser(parse_tool_type),
         )
