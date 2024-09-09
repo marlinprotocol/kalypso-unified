@@ -277,7 +277,7 @@ impl LogParser {
         }
 
         let available_asks = available_asks.unwrap();
-        if available_asks.len() == 0 {
+        if available_asks.is_empty() {
             return Ok(end_block);
         }
         log::warn!("available asks: {}", available_asks.len());

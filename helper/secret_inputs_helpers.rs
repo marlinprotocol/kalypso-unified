@@ -215,7 +215,7 @@ pub fn get_uncompressed_ecies_pubkey(private_key: &[u8; 32]) -> Vec<u8> {
     let sk = SecretKey::parse(private_key).unwrap();
     let public_key = PublicKey::from_secret_key(&sk);
     let public_key = public_key.serialize();
-    return public_key.into();
+    public_key.into()
 }
 
 #[cfg(test)]

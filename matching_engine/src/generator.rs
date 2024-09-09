@@ -648,7 +648,7 @@ mod tests {
         generator_store.insert(generator1.clone());
 
         let generator = generator_store.get_by_address(&generator1.clone().address);
-        assert_eq!(generator.is_some(), true);
+        assert!(generator.is_some());
         assert_eq!(generator.unwrap().reward_address, generator1.reward_address);
     }
 
@@ -720,7 +720,7 @@ mod tests {
 
         let random_generator_info_per_market = get_random_market_info_for_generator(
             &random_generator.address,
-            random_generator.total_stake.clone(),
+            random_generator.total_stake,
             "1".into(),
         );
         generator_store.insert_markets(random_generator_info_per_market);
@@ -730,7 +730,7 @@ mod tests {
             &U256::from_dec_str("1").unwrap(),
         );
 
-        assert_eq!(generator_info_per_market.is_some(), true);
+        assert!(generator_info_per_market.is_some());
         assert_eq!(
             generator_info_per_market.unwrap().address,
             random_generator.address
@@ -753,7 +753,7 @@ mod tests {
             &U256::from_dec_str("1").unwrap(),
         );
 
-        assert_eq!(generator_info_per_market.is_none(), true);
+        assert!(generator_info_per_market.is_none());
     }
 
     #[test]
@@ -765,7 +765,7 @@ mod tests {
             let generator = generator_store.get_by_address(&generator).unwrap();
             let random_generator_info_per_market = get_random_market_info_for_generator(
                 &generator.address,
-                generator.total_stake.clone(),
+                generator.total_stake,
                 "1".into(),
             );
             generator_store.insert_markets(random_generator_info_per_market);
@@ -791,7 +791,7 @@ mod tests {
         market_id: String,
     ) -> GeneratorInfoPerMarket {
         GeneratorInfoPerMarket {
-            address: generator.clone(),
+            address: *generator,
             market_id: U256::from_dec_str(&market_id).unwrap(),
             total_stake,
             compute_required_per_request: U256::from_dec_str("1").unwrap(),
