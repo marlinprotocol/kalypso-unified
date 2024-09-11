@@ -230,8 +230,6 @@ impl LogParser {
 
                 start_block = end_block + 1;
                 *self.start_block.lock().await = start_block;
-                // to avoid rate limit
-                thread::sleep(Duration::from_secs(4));
                 continue;
             }
 
