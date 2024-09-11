@@ -117,7 +117,11 @@ impl LogParser {
 
             let (mut start_block, end_block) = match self.get_start_end_block().await {
                 Ok(data) => data,
-                Err(_) => continue,
+                Err(_) => {
+                    log::warn!("Could fetch start_block and end_block, pausing ME");
+                    thread::sleep(Duration::from_secs(5));
+                    continue
+                },
             };
 
             if let Some(matches) = matches_upto.filter(|&m| m == end_block) {
@@ -125,7 +129,7 @@ impl LogParser {
                     "All matches made up to {}. Waiting for a few seconds",
                     matches
                 );
-                thread::sleep(Duration::from_millis(1000));
+                thread::sleep(Duration::from_secs(5));
                 continue;
             }
 
@@ -153,7 +157,7 @@ impl LogParser {
                     Ok(data) => data,
                     _ => {
                         log::error!("Sleeping the thread for logs to avoid rate limit");
-                        thread::sleep(Duration::from_millis(5000));
+                        thread::sleep(Duration::from_secs(5));
                         continue;
                     }
                 };
