@@ -504,7 +504,10 @@ impl LogParser {
                         generator_store.filter_by_available_stake(
                             generator_store.filter_by_has_idle_compute(
                                 generator_store
-                                    .query_by_state(GeneratorState::Joined)
+                                    .query_by_states(vec![
+                                        GeneratorState::Joined,
+                                        GeneratorState::Wip,
+                                    ])
                                     .filter_by_market_id(random_pending_ask.market_id)
                                     .filter_by_reward(task_reward),
                             ),
@@ -516,7 +519,7 @@ impl LogParser {
                     generator_store.filter_by_available_stake(
                         generator_store.filter_by_has_idle_compute(
                             generator_store
-                                .query_by_state(GeneratorState::Joined)
+                                .query_by_states(vec![GeneratorState::Joined, GeneratorState::Wip])
                                 .filter_by_market_id(random_pending_ask.market_id)
                                 .filter_by_reward(task_reward),
                         ),

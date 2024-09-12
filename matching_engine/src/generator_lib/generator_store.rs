@@ -313,17 +313,25 @@ impl GeneratorStore {
         GeneratorQueryResult::new(self.generator_markets.values().collect())
     }
 
-    pub fn query_by_state(&self, state: GeneratorState) -> GeneratorQueryResult {
-        log::debug!("Check query by state");
-        let generators_market = match self.state_index.get(&state) {
-            Some(pairs) => pairs
-                .iter()
-                .filter_map(|&(address, market_id)| {
-                    self.generator_markets.get(&(address, market_id))
-                })
-                .collect(),
-            None => Vec::new(),
-        };
+    pub fn query_by_states(&self, states: Vec<GeneratorState>) -> GeneratorQueryResult {
+        log::debug!("Check query by states");
+
+        let mut generators_market = Vec::new();
+
+        // Iterate over each state in the slice
+        for state in states {
+            if let Some(pairs) = self.state_index.get(&state) {
+                for &(address, market_id) in pairs {
+                    if let Some(generator_market) =
+                        self.generator_markets.get(&(address, market_id))
+                    {
+                        // Clone the generator market so that we have an owned value
+                        generators_market.push(generator_market);
+                    }
+                }
+            }
+        }
+
         GeneratorQueryResult::new(generators_market)
     }
 
@@ -564,7 +572,8 @@ mod tests {
             generator_store.insert_markets(random_generator_info_per_market);
         }
 
-        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
+        let all_generator_per_market_query =
+            generator_store.query_by_states(vec![GeneratorState::Joined]);
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
 
@@ -588,8 +597,9 @@ mod tests {
             assert_eq!(available_compute, U256::zero());
         }
 
-        let all_generator_per_market_query = generator_store
-            .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+        let all_generator_per_market_query = generator_store.filter_by_has_idle_compute(
+            generator_store.query_by_states(vec![GeneratorState::Joined]),
+        );
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 0);
     }
@@ -609,7 +619,8 @@ mod tests {
             generator_store.insert_markets(random_generator_info_per_market);
         }
 
-        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
+        let all_generator_per_market_query =
+            generator_store.query_by_states(vec![GeneratorState::Joined]);
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
 
@@ -631,8 +642,9 @@ mod tests {
             .unwrap();
         assert_eq!(available_compute, U256::zero());
 
-        let all_generator_per_market_query = generator_store
-            .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+        let all_generator_per_market_query = generator_store.filter_by_has_idle_compute(
+            generator_store.query_by_states(vec![GeneratorState::Joined]),
+        );
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 3);
     }
@@ -652,7 +664,8 @@ mod tests {
             generator_store.insert_markets(random_generator_info_per_market);
         }
 
-        let all_generator_per_market_query = generator_store.query_by_state(GeneratorState::Joined);
+        let all_generator_per_market_query =
+            generator_store.query_by_states(vec![GeneratorState::Joined]);
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
 
@@ -674,8 +687,9 @@ mod tests {
             .unwrap();
         assert_eq!(available_compute, U256::one());
 
-        let all_generator_per_market_query = generator_store
-            .filter_by_has_idle_compute(generator_store.query_by_state(GeneratorState::Joined));
+        let all_generator_per_market_query = generator_store.filter_by_has_idle_compute(
+            generator_store.query_by_states(vec![GeneratorState::Joined]),
+        );
 
         let idle_generators = all_generator_per_market_query.clone().result();
         dbg!(&idle_generators);
