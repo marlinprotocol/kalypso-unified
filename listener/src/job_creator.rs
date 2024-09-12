@@ -487,8 +487,8 @@ impl JobCreator {
                     let semaphore = Arc::new(Semaphore::new(1)); // to ensure that one transaction is submitted at a time.
                     tokio::spawn(async move {
                         let semaphore = semaphore.clone();
-                        log::warn!("Spin up new thread from proof generation calls");
-                        let binding = vec![]; // TODO: figure out way to fetch old keys from KMS
+                        log::info!("Spin up new thread from proof generation calls");
+                        let binding = vec![]; // TODO: figure out way to fetch old keys from KMS, not in scope now
                         let generate_proof_args = GenerateProofParams {
                             ask_id: event.ask_id,
                             new_acl: event.new_acl,
@@ -502,8 +502,12 @@ impl JobCreator {
 
                         let proof = match proof_generator::generate_proof(generate_proof_args).await
                         {
-                            Ok(proof) => proof,
+                            Ok(proof) => {
+                                thread_count_clone.fetch_sub(1, Ordering::SeqCst);
+                                proof
+                            },
                             Err(err) => {
+                                thread_count_clone.fetch_sub(1, Ordering::SeqCst);
                                 log::error!("Error generating proof for ask: {}", event.ask_id);
                                 log::error!("{}", err.to_string());
                                 return log::error!("{}", err);
@@ -597,8 +601,6 @@ impl JobCreator {
                                 );
                             }
                         }
-
-                        thread_count_clone.fetch_sub(1, Ordering::SeqCst);
                         // code inside thread ends here
                     });
                 }
