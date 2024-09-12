@@ -386,19 +386,20 @@ impl JobCreator {
             }
 
             if thread_count.load(Ordering::SeqCst) >= self.max_threads {
-                thread::sleep(Duration::from_millis(1000));
                 log::warn!(
                     "Stopped proof generation as {} proof generations in progress",
                     self.max_threads
                 );
+                thread::sleep(Duration::from_secs(2));
                 continue;
             }
 
             let latest_block = match provider_http.get_block_number().await {
                 Ok(data) => data,
                 Err(err) => {
+                    log::error!("Error fetching latest block number, pausing the listener");
                     log::error!("{}", err);
-                    thread::sleep(Duration::from_millis(1000));
+                    thread::sleep(Duration::from_secs(4));
                     continue;
                 }
             };
@@ -427,9 +428,10 @@ impl JobCreator {
 
             let logs = match client_http.provider().get_logs(&filter).await {
                 Ok(data) => data,
-                Err(_) => {
-                    log::error!("Sleeping the thread for logs to avoid rate limit");
-                    thread::sleep(Duration::from_millis(2000));
+                Err(err) => {
+                    log::error!("Error fetching logs for proof generation");
+                    log::error!("{}", err);
+                    thread::sleep(Duration::from_secs(4));
                     continue;
                 }
             };

@@ -120,14 +120,14 @@ impl LogParser {
                 Err(_) => {
                     log::warn!("Could fetch start_block and end_block, pausing ME");
                     thread::sleep(Duration::from_secs(5));
-                    continue
-                },
+                    continue;
+                }
             };
 
-            if let Some(matches) = matches_upto.filter(|&m| m == end_block) {
+            if let Some(matches_upto) = matches_upto.filter(|&m| m == end_block) {
                 log::warn!(
                     "All matches made up to {}. Waiting for a few seconds",
-                    matches
+                    matches_upto
                 );
                 thread::sleep(Duration::from_secs(5));
                 continue;
@@ -155,8 +155,9 @@ impl LogParser {
 
                 let logs = match self.provider_http.get_logs(&filter).await {
                     Ok(data) => data,
-                    _ => {
-                        log::error!("Sleeping the thread for logs to avoid rate limit");
+                    Err(err) => {
+                        log::error!("Error fetching logs, sleeping the thread to avoid rate limit");
+                        log::error!("{}", err);
                         thread::sleep(Duration::from_secs(5));
                         continue;
                     }
@@ -236,13 +237,12 @@ impl LogParser {
             matches_upto = match self.create_match(end_block).await {
                 Ok(upto) => {
                     log::info!("Completed match assignment upto: {}", upto);
-                    thread::sleep(Duration::from_millis(100));
                     Some(upto)
                 }
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("Match Creation Failed, retyring in couple of seconds");
-                    thread::sleep(Duration::from_millis(1000));
+                    thread::sleep(Duration::from_secs(4));
                     None
                 }
             };
@@ -253,9 +253,10 @@ impl LogParser {
     async fn get_start_end_block(&self) -> Result<(U64, U64), Box<dyn std::error::Error>> {
         let latest_block = match self.provider_http.get_block_number().await {
             Ok(data) => data,
-            _ => {
-                log::error!("Sleeping the thread for latest block fetch to avoid rate limit");
-                thread::sleep(Duration::from_millis(5000));
+            Err(err) => {
+                log::error!("Failed fetching the latest block, sleeping to avoid rate limit");
+                log::error!("{}", err);
+                thread::sleep(Duration::from_secs(5));
                 return Err("Failed fetching latest block number".into());
             }
         };
@@ -514,7 +515,7 @@ impl LogParser {
                         Err(err) => {
                             log::error!("{}", err);
                             log::error!("failed sending the transaction");
-                            thread::sleep(Duration::from_millis(2000));
+                            thread::sleep(Duration::from_secs(2));
                             return Err("Failed creating matching".into());
                         }
                     };
