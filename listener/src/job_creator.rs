@@ -14,6 +14,8 @@ use std::{
     time::Duration,
 };
 
+use tokio::sync::Semaphore;
+
 use crate::proof_generator::GenerateProofParams;
 use crate::{ask, generator_store, proof_generator};
 use warp::Filter;
@@ -482,7 +484,9 @@ impl JobCreator {
                     thread_count.fetch_add(1, Ordering::SeqCst);
                     let thread_count_clone = Arc::clone(&thread_count);
 
+                    let semaphore = Arc::new(Semaphore::new(1)); // to ensure that one transaction is submitted at a time.
                     tokio::spawn(async move {
+                        let semaphore = semaphore.clone();
                         log::warn!("Spin up new thread from proof generation calls");
                         let binding = vec![]; // TODO: figure out way to fetch old keys from KMS
                         let generate_proof_args = GenerateProofParams {
@@ -507,6 +511,12 @@ impl JobCreator {
                         };
 
                         log::info!("{:?}", &proof);
+
+                        // Acquire the semaphore permit only before proof submission to prevent nonce conflicts
+                        let permit = semaphore
+                            .acquire()
+                            .await
+                            .expect("Failed to acquire semaphore");
 
                         let proof_transaction = match proof {
                             crate::proof_generator::prover::Proof::ValidProof(proof) => {
@@ -568,6 +578,9 @@ impl JobCreator {
                                 }
                             }
                         };
+
+                        // Release the semaphore after the proof has been submitted
+                        drop(permit);
 
                         match proof_transaction {
                             Some(tx_data) => {
