@@ -311,9 +311,7 @@ impl LogParser {
                 let idle_generator =
                     generator_helper::random_generator_selection(idle_generators).unwrap();
 
-                let mut new_acl = Bytes::from_str("0x").unwrap().to_vec();
-
-                if random_pending_ask.has_private_inputs {
+                let new_acl = if random_pending_ask.has_private_inputs {
                     let acl_data = random_pending_ask.secret_acl.clone().unwrap();
 
                     let cipher = secret_inputs_helpers::decrypt_ecies(
@@ -328,11 +326,13 @@ impl LogParser {
                         .clone()
                         .unwrap()
                         .to_vec();
-                    new_acl = secret_inputs_helpers::encrypt_ecies(
+                    secret_inputs_helpers::encrypt_ecies(
                         &generator_ecies_pub_key,
                         cipher.as_slice(),
-                    )?;
-                }
+                    )?
+                } else {
+                    Bytes::from_str("0x").unwrap().to_vec()
+                };
 
                 // state confirmation
                 let ask_state = match self
@@ -341,7 +341,8 @@ impl LogParser {
                     .await
                 {
                     Ok(data) => data,
-                    _ => {
+                    Err(err) => {
+                        log::error!("{}", err);
                         log::error!(
                             "Skipping ask {} because no status received from chain state",
                             random_pending_ask.ask_id
@@ -369,7 +370,7 @@ impl LogParser {
                     // provider_http.get_block_number().await.unwrap()
                     std::time::Instant::now()
                 );
-                task_list.push((random_pending_ask, idle_generator.clone(), new_acl.clone()));
+                task_list.push((random_pending_ask, idle_generator, new_acl));
             } else {
                 log::warn!(
                     "Can't find idle-generators for ask {:?}, market_id: {:?}",

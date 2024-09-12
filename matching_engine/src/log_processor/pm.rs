@@ -165,11 +165,6 @@ pub async fn process_proof_market_place_logs(
 
             local_ask_store.modify_state(&ask_id, AskState::Complete);
             let generator_address = ask_data.3;
-            generator_store.update_state(
-                &generator_address,
-                &ask_data.0.market_id,
-                generator_state::GeneratorState::Joined,
-            );
 
             local_ask_store.store_valid_proof(&ask_id, proof);
             generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
@@ -277,11 +272,6 @@ pub async fn process_proof_market_place_logs(
 
             log::debug!("Proof not Generated: update generator state");
             let generator_address = ask_data.3;
-            generator_store.update_state(
-                &generator_address,
-                &ask_data.0.market_id,
-                generator_state::GeneratorState::Joined,
-            );
 
             log::debug!("Proof not Generated: update on slashing penalty");
             generator_store.update_on_slashing(&generator_address, &ask_data.0.market_id);
@@ -308,11 +298,6 @@ pub async fn process_proof_market_place_logs(
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
 
             let generator_address = ask_data.3;
-            generator_store.update_state(
-                &generator_address,
-                &ask_data.0.market_id,
-                generator_state::GeneratorState::Joined,
-            );
 
             generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
             log::warn!("Complete invalid input proof submitted");
