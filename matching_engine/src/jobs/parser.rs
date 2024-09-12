@@ -1,12 +1,11 @@
 use crate::costs::CostStore;
-use crate::generator_lib::{generator_state, generator_store};
+use crate::generator_lib::generator_store;
 use anyhow::Result;
 use ethers::prelude::*;
 use itertools::Itertools;
 use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
 use std::collections::HashMap;
-use std::ops::{Add, Sub};
 use std::{
     str::FromStr,
     sync::{
@@ -308,7 +307,6 @@ impl LogParser {
             log::debug!("Fetched idle generators");
 
             if !idle_generators.is_empty() {
-                let mut generator_store = { self.shared_generator_store.lock().await };
                 let key_store = { self.shared_key_store.lock().await };
                 let idle_generator =
                     generator_helper::random_generator_selection(idle_generators).unwrap();
@@ -362,60 +360,6 @@ impl LogParser {
                     );
                     ask_store.modify_state(&random_pending_ask.ask_id, ask_state);
                     continue;
-                }
-
-                let generator_state = match self
-                    .generator_registry
-                    .get_generator_state(idle_generator.address, idle_generator.market_id)
-                    .await
-                {
-                    Ok(data) => data,
-                    _ => {
-                        log::error!("Skipping ask {} because no generator {}-market-{} status received from chain state", random_pending_ask.ask_id, idle_generator.address, idle_generator.market_id);
-                        return Err("No generator status received from chain".into());
-                    }
-                };
-                let generator_state = generator_state::get_generator_state(generator_state.0);
-
-                if matches!(
-                    generator_state,
-                    generator_state::GeneratorState::Joined | generator_state::GeneratorState::Wip
-                ) {
-                    log::warn!(
-                        "Generator {:?}. {:?}",
-                        idle_generator.address,
-                        generator_state
-                    );
-                    generator_store.update_state(
-                        &idle_generator.address,
-                        &idle_generator.market_id,
-                        generator_state,
-                    );
-                } else {
-                    let market_store = { self.shared_market_store.lock().await };
-                    let slashing_penalty = market_store
-                        .get_slashing_penalty_by_market_id(&idle_generator.market_id)
-                        .unwrap();
-                    let generator_global = generator_store
-                        .get_by_address(&idle_generator.address)
-                        .unwrap();
-                    let remaining_stake = generator_global
-                        .total_stake
-                        .sub(generator_global.stake_locked.add(slashing_penalty));
-                    let remaining_compute = generator_global.declared_compute.sub(
-                        generator_global
-                            .compute_consumed
-                            .add(idle_generator.compute_required_per_request),
-                    );
-                    if remaining_stake.lt(&slashing_penalty)
-                        || remaining_compute.lt(&idle_generator.compute_required_per_request)
-                    {
-                        generator_store.update_state(
-                            &idle_generator.address,
-                            &idle_generator.market_id,
-                            GeneratorState::PendingConfirmation,
-                        );
-                    }
                 }
 
                 log::info!(

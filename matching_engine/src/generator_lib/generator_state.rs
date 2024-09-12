@@ -25,6 +25,7 @@ impl std::fmt::Debug for GeneratorState {
     }
 }
 
+#[allow(unused)]
 pub fn get_generator_state(state: u8) -> GeneratorState {
     match state {
         0 => GeneratorState::Null,

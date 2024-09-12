@@ -143,11 +143,6 @@ pub async fn process_proof_market_place_logs(
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
 
             local_ask_store.modify_state(&ask_id, AskState::Assigned);
-            generator_store.update_state(
-                &ask_data.3,
-                &ask_data.0.market_id,
-                generator_state::GeneratorState::Joined,
-            );
             generator_store.update_on_assigned_task(&ask_data.3, &ask_data.0.market_id);
 
             continue;
