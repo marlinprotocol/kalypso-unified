@@ -474,8 +474,6 @@ impl JobCreator {
                     let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
                     tokio::spawn(async move {
-                        let proof_semaphore = proof_semaphore.clone();
-                        let transaction_semaphore = transaction_semaphore.clone();
                         log::info!("Spin up new thread from proof generation calls");
                         let binding = vec![]; // TODO: figure out way to fetch old keys from KMS, not in scope now
                         let generate_proof_args = GenerateProofParams {
