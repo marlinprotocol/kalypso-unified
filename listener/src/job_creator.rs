@@ -379,6 +379,9 @@ impl JobCreator {
             stop_handle.store(true, Ordering::Release);
         });
 
+        let proof_semaphore = Arc::new(Semaphore::new(self.max_threads)); // ensures that only `max_threads` number of proofs are flushed to generator
+        let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
+
         loop {
             if should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
@@ -426,9 +429,6 @@ impl JobCreator {
                     continue;
                 }
             };
-
-            let proof_semaphore = Arc::new(Semaphore::new(self.max_threads)); // ensures that only `max_threads` number of proofs are flushed to generator
-            let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
             for log in logs {
                 let event = proof_marketplace_http.decode_event::<pmp::TaskCreatedFilter>(
