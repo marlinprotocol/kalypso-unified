@@ -298,11 +298,16 @@ impl GeneratorStore {
 }
 
 impl GeneratorStore {
-    #[allow(unused)]
     pub fn get_available_compute(&self, address: Address) -> Option<U256> {
         self.generators
             .get(&address)
             .map(|generator| generator.declared_compute.sub(generator.compute_consumed))
+    }
+
+    pub fn get_available_stake(&self, address: Address) -> Option<U256> {
+        self.generators
+            .get(&address)
+            .map(|generator| generator.total_stake.sub(generator.stake_locked))
     }
 }
 

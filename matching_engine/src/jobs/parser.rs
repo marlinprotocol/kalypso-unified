@@ -6,6 +6,7 @@ use itertools::Itertools;
 use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
 use std::collections::HashMap;
+use std::ops::Sub;
 use std::{
     str::FromStr,
     sync::{
@@ -55,6 +56,7 @@ pub struct LogParser {
     shared_key_store: Arc<Mutex<KeyStore>>,
     shared_cost_store: Arc<Mutex<CostStore>>,
     chain_id: String,
+    max_tasks_size: usize,
 }
 
 impl LogParser {
@@ -103,6 +105,7 @@ impl LogParser {
             shared_key_store,
             shared_cost_store,
             chain_id,
+            max_tasks_size: 10, // TODO: dynamically adjust latter
         }
     }
 
@@ -292,8 +295,39 @@ impl LogParser {
 
         let mut task_list = vec![];
 
+        let all_generators = {
+            &self
+                .shared_generator_store
+                .lock()
+                .await
+                .clone()
+                .all_generators_address()
+        };
+        let mut cached_stake = {
+            let mut m = HashMap::new();
+            let temp_gs = &self.shared_generator_store.lock().await;
+            for _generator in all_generators {
+                let available_stake = temp_gs.get_available_stake(_generator.clone()).unwrap();
+                m.insert(_generator.clone(), available_stake);
+            }
+            m
+        };
+
+        let mut cached_compute = {
+            let mut m = HashMap::new();
+            let temp_gs = &self.shared_generator_store.lock().await;
+            for _generator in all_generators {
+                let available_compute = temp_gs.get_available_compute(_generator.clone()).unwrap();
+                m.insert(_generator.clone(), available_compute);
+            }
+            m
+        };
+
         for random_pending_ask in available_asks {
-            log::debug!("Trying to fetch idle generators");
+            log::info!(
+                "Finding matching generator for ask: {}",
+                random_pending_ask.ask_id
+            );
             let idle_generators = self
                 .get_idle_generators(
                     random_pending_ask.clone(),
@@ -306,175 +340,226 @@ impl LogParser {
             log::warn!("idle generators: {}", &idle_generators.len());
             log::debug!("Fetched idle generators");
 
-            if !idle_generators.is_empty() {
-                let key_store = { self.shared_key_store.lock().await };
-                let idle_generator =
-                    generator_helper::random_generator_selection(idle_generators).unwrap();
-
-                let new_acl = if random_pending_ask.has_private_inputs {
-                    let acl_data = random_pending_ask.secret_acl.clone().unwrap();
-
-                    let cipher = secret_inputs_helpers::decrypt_ecies(
-                        &self.matching_engine_key.to_vec(),
-                        &acl_data,
-                    )?;
-
-                    let generator_ecies_pub_key = key_store
-                        .get_by_address(&idle_generator.address, idle_generator.market_id.as_u64())
-                        .unwrap()
-                        .ecies_pub_key
-                        .clone()
-                        .unwrap()
-                        .to_vec();
-                    secret_inputs_helpers::encrypt_ecies(
-                        &generator_ecies_pub_key,
-                        cipher.as_slice(),
-                    )?
-                } else {
-                    Bytes::from_str("0x").unwrap().to_vec()
-                };
-
-                // state confirmation
-                let ask_state = match self
-                    .proof_marketplace
-                    .get_ask_state(random_pending_ask.ask_id)
-                    .await
-                {
-                    Ok(data) => data,
-                    Err(err) => {
-                        log::error!("{}", err);
-                        log::error!(
-                            "Skipping ask {} because no status received from chain state",
-                            random_pending_ask.ask_id
-                        );
-                        return Err("No ask status received from chain".into());
-                    }
-                };
-
-                let ask_state = ask::get_ask_state(ask_state);
-                log::info!("ask: {} -- {:?}", random_pending_ask.ask_id, ask_state);
-                if ask_state != ask::AskState::Create {
-                    log::warn!(
-                        "ask {:?}. {:?}. skipping it",
-                        random_pending_ask.ask_id,
-                        ask_state
-                    );
-                    ask_store.modify_state(&random_pending_ask.ask_id, ask_state);
-                    continue;
-                }
-
-                log::info!(
-                    "Assigned ask: {} to generator: {}, at {:?}",
-                    &random_pending_ask.ask_id,
-                    &idle_generator.address,
-                    // provider_http.get_block_number().await.unwrap()
-                    std::time::Instant::now()
-                );
-                task_list.push((random_pending_ask, idle_generator, new_acl));
-            } else {
+            if idle_generators.is_empty() {
                 log::warn!(
                     "Can't find idle-generators for ask {:?}, market_id: {:?}",
                     random_pending_ask.ask_id,
                     random_pending_ask.market_id
                 );
+                continue;
             }
 
-            match task_list.len() {
-                0 => {
-                    log::warn!("No Matches");
+            let key_store = { self.shared_key_store.lock().await };
+            let idle_generator =
+                generator_helper::random_generator_selection(idle_generators).unwrap();
+
+            if let Some(&cached_compute_value) = cached_compute.get(&idle_generator.address) {
+                log::info!(
+                    "Generator: {}, Compute available: {}, vs compute required: {}",
+                    idle_generator.address,
+                    cached_compute_value,
+                    idle_generator.compute_required_per_request
+                );
+                if idle_generator.compute_required_per_request > cached_compute_value {
+                    log::warn!(
+                        "Possible insuff compute if ask: {} is assigned, hence skipping",
+                        random_pending_ask.ask_id
+                    );
+                } else {
+                    cached_compute.insert(
+                        idle_generator.address,
+                        cached_compute_value.sub(idle_generator.compute_required_per_request),
+                    );
                 }
-                _ => {
-                    let mut ask_ids = vec![];
-                    let mut generators = vec![];
-                    let mut new_acls = vec![];
+            }
 
-                    for pending_task in task_list.clone() {
-                        let pending_ask = pending_task.0;
-                        let idle_generator = pending_task.1;
-                        let new_acl = pending_task.2;
-
-                        ask_ids.push(pending_ask.ask_id);
-                        generators.push(idle_generator.address);
-                        new_acls.push(ethers::types::Bytes::from(new_acl));
-                    }
-
-                    let values = vec![
-                        ethers::abi::Token::Array(
-                            ask_ids
-                                .clone()
-                                .into_iter()
-                                .map(ethers::abi::Token::Uint)
-                                .collect(),
-                        ),
-                        ethers::abi::Token::Array(
-                            generators
-                                .clone()
-                                .into_iter()
-                                .map(ethers::abi::Token::Address)
-                                .collect(),
-                        ),
-                        ethers::abi::Token::Array(
-                            new_acls
-                                .clone()
-                                .into_iter()
-                                .map(|v| ethers::abi::Token::Bytes(v.to_vec()))
-                                .collect(),
-                        ),
-                    ];
-
-                    let encoded = ethers::abi::encode(&values);
-                    let digest = ethers::utils::keccak256(encoded);
-
-                    let matching_engine_key = hex::encode(&self.matching_engine_key);
-                    let matching_engine_signer = matching_engine_key
-                        .parse::<LocalWallet>()
-                        .unwrap()
-                        .with_chain_id(U64::from_dec_str(&self.chain_id).unwrap().as_u64());
-
-                    let signature = match matching_engine_signer
-                        .sign_message(ethers::types::H256(digest))
+            if let Some(&cached_stake_value) = cached_stake.get(&idle_generator.address) {
+                let market_id = random_pending_ask.market_id;
+                let stash_required = {
+                    self.shared_market_store
+                        .lock()
                         .await
-                    {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::error!("{}", err);
-                            return Err("Failed generating signature".into());
-                        }
-                    };
-                    log::debug!("Signature: {:?}", signature);
-                    log::debug!("Tx signed at {:?}", std::time::Instant::now());
+                        .get_market_by_market_id(&market_id)
+                        .unwrap()
+                        .slashing_penalty
+                };
 
-                    // todo!("create and broad cast tx");
-                    // // Assign batch task here
-                    let batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
-                        ask_ids.clone(),
-                        generators.clone(),
-                        new_acls.clone(),
-                        ethers::types::Bytes::from_str(&signature.to_string()).unwrap(),
+                log::info!(
+                    "Generator: {}, Stask available: {}, vs stash required: {}",
+                    idle_generator.address,
+                    cached_stake_value,
+                    stash_required
+                );
+
+                if stash_required > cached_stake_value {
+                    log::warn!(
+                        "Possible insuff stash if ask: {} is assigned, hence skipping",
+                        random_pending_ask.ask_id
                     );
-
-                    log::debug!("Tx created at {:?}", std::time::Instant::now());
-
-                    let batch_relay_tx = match batch_relay_tx_pending.send().await {
-                        Ok(data) => data.confirmations(10),
-                        Err(err) => {
-                            log::error!("{}", err);
-                            log::error!("failed sending the transaction");
-                            thread::sleep(Duration::from_secs(2));
-                            return Err("Failed creating matching".into());
-                        }
-                    };
-
-                    let batch_relay_tx = batch_relay_tx.await.unwrap().unwrap();
-
-                    log::info!(
-                        "Relayed {:?} requests tx: {:?}",
-                        ask_ids.clone().len(),
-                        batch_relay_tx.transaction_hash
+                } else {
+                    cached_stake.insert(
+                        idle_generator.address,
+                        cached_stake_value.sub(stash_required),
                     );
                 }
+            }
+
+            let new_acl = if random_pending_ask.has_private_inputs {
+                let acl_data = random_pending_ask.secret_acl.clone().unwrap();
+
+                let cipher = secret_inputs_helpers::decrypt_ecies(
+                    &self.matching_engine_key.to_vec(),
+                    &acl_data,
+                )?;
+
+                let generator_ecies_pub_key = key_store
+                    .get_by_address(&idle_generator.address, idle_generator.market_id.as_u64())
+                    .unwrap()
+                    .ecies_pub_key
+                    .clone()
+                    .unwrap()
+                    .to_vec();
+                secret_inputs_helpers::encrypt_ecies(&generator_ecies_pub_key, cipher.as_slice())?
+            } else {
+                Bytes::from_str("0x").unwrap().to_vec()
+            };
+
+            // state confirmation
+            let ask_state = match self
+                .proof_marketplace
+                .get_ask_state(random_pending_ask.ask_id)
+                .await
+            {
+                Ok(data) => data,
+                Err(err) => {
+                    log::error!("{}", err);
+                    log::error!(
+                        "Skipping ask {} because no status received from chain state",
+                        random_pending_ask.ask_id
+                    );
+                    return Err("No ask status received from chain".into());
+                }
+            };
+
+            let ask_state = ask::get_ask_state(ask_state);
+            log::info!("ask: {} -- {:?}", random_pending_ask.ask_id, ask_state);
+            if ask_state != ask::AskState::Create {
+                log::warn!(
+                    "ask {:?}. {:?}. skipping it",
+                    random_pending_ask.ask_id,
+                    ask_state
+                );
+                ask_store.modify_state(&random_pending_ask.ask_id, ask_state);
+                continue;
+            }
+
+            log::info!(
+                "Assigned ask: {} to generator: {}, at {:?}",
+                &random_pending_ask.ask_id,
+                &idle_generator.address,
+                // provider_http.get_block_number().await.unwrap()
+                std::time::Instant::now()
+            );
+            task_list.push((random_pending_ask, idle_generator, new_acl));
+
+            if task_list.len() >= self.max_tasks_size {
+                break;
             }
         }
+
+        if task_list.len().eq(&0) {
+            log::warn!("No Matches");
+            return Ok(end_block);
+        }
+
+        let mut ask_ids = vec![];
+        let mut generators = vec![];
+        let mut new_acls = vec![];
+
+        for pending_task in task_list.clone() {
+            let pending_ask = pending_task.0;
+            let idle_generator = pending_task.1;
+            let new_acl = pending_task.2;
+
+            ask_ids.push(pending_ask.ask_id);
+            generators.push(idle_generator.address);
+            new_acls.push(ethers::types::Bytes::from(new_acl));
+        }
+
+        let values = vec![
+            ethers::abi::Token::Array(
+                ask_ids
+                    .clone()
+                    .into_iter()
+                    .map(ethers::abi::Token::Uint)
+                    .collect(),
+            ),
+            ethers::abi::Token::Array(
+                generators
+                    .clone()
+                    .into_iter()
+                    .map(ethers::abi::Token::Address)
+                    .collect(),
+            ),
+            ethers::abi::Token::Array(
+                new_acls
+                    .clone()
+                    .into_iter()
+                    .map(|v| ethers::abi::Token::Bytes(v.to_vec()))
+                    .collect(),
+            ),
+        ];
+
+        let encoded = ethers::abi::encode(&values);
+        let digest = ethers::utils::keccak256(encoded);
+
+        let matching_engine_key = hex::encode(&self.matching_engine_key);
+        let matching_engine_signer = matching_engine_key
+            .parse::<LocalWallet>()
+            .unwrap()
+            .with_chain_id(U64::from_dec_str(&self.chain_id).unwrap().as_u64());
+
+        let signature = match matching_engine_signer
+            .sign_message(ethers::types::H256(digest))
+            .await
+        {
+            Ok(data) => data,
+            Err(err) => {
+                log::error!("{}", err);
+                return Err("Failed generating signature".into());
+            }
+        };
+        log::debug!("Signature: {:?}", signature);
+        log::debug!("Tx signed at {:?}", std::time::Instant::now());
+
+        // todo!("create and broad cast tx");
+        // // Assign batch task here
+        let batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
+            ask_ids.clone(),
+            generators.clone(),
+            new_acls.clone(),
+            ethers::types::Bytes::from_str(&signature.to_string()).unwrap(),
+        );
+
+        log::debug!("Tx created at {:?}", std::time::Instant::now());
+
+        let batch_relay_tx = match batch_relay_tx_pending.send().await {
+            Ok(data) => data.confirmations(10),
+            Err(err) => {
+                log::error!("{}", err);
+                log::error!("failed sending the transaction");
+                thread::sleep(Duration::from_secs(2));
+                return Err("Failed creating matching".into());
+            }
+        };
+
+        let batch_relay_tx = batch_relay_tx.await.unwrap().unwrap();
+
+        log::info!(
+            "Relayed {:?} requests tx: {:?}",
+            ask_ids.clone().len(),
+            batch_relay_tx.transaction_hash
+        );
 
         if self.should_stop.load(Ordering::Acquire) {
             log::info!("Gracefully shutting down...");
