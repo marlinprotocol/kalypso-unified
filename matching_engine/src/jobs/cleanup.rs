@@ -42,12 +42,15 @@ impl CleanupTool {
     pub async fn ask_store_cleanup(
         self,
         skip_relayer_balance_check: bool,
-        pause_cleanup: bool,
+        slow_cleanup: bool,
     ) -> anyhow::Result<()> {
         loop {
-            if pause_cleanup {
+            if slow_cleanup {
                 thread::sleep(Duration::from_secs(30));
+            } else {
+                thread::sleep(Duration::from_secs(1));
             }
+
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
