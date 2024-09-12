@@ -230,8 +230,9 @@ async fn fetch_decoded_secret(
 
     let ask_secret_fetch_time = fetching_ask_secret_timer_start.elapsed().as_millis();
     log::info!(
-        "Took {} ms for fetching the secret inputs for the ask",
-        ask_secret_fetch_time
+        "Took {} ms for fetching the secret inputs for the ask: {}",
+        ask_secret_fetch_time,
+        ask_id
     );
 
     Ok((

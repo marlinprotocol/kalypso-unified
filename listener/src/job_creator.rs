@@ -427,6 +427,9 @@ impl JobCreator {
                 }
             };
 
+            let proof_semaphore = Arc::new(Semaphore::new(self.max_threads)); // ensures that only `max_threads` number of proofs are flushed to generator
+            let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
+
             for log in logs {
                 let event = proof_marketplace_http.decode_event::<pmp::TaskCreatedFilter>(
                     "TaskCreated",
@@ -470,15 +473,10 @@ impl JobCreator {
                     let markets_clone = Arc::clone(&markets);
                     // code inside thread starts here
 
-                    let proof_semaphore = Arc::new(Semaphore::new(self.max_threads)); // ensures that only `max_threads` number of proofs are flushed to generator
-                    let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
+                    let proof_semaphore = proof_semaphore.clone();
+                    let transaction_semaphore = transaction_semaphore.clone();
 
                     tokio::spawn(async move {
-                        let proof_permit = proof_semaphore
-                            .acquire()
-                            .await
-                            .expect("Failed to acquire proof semaphore");
-
                         log::info!(
                             "Spin up new thread from proof generation of ask: {}",
                             event.ask_id
@@ -494,6 +492,12 @@ impl JobCreator {
                             markets: &markets_clone,
                             slave_ecies_private_keys: binding.as_ref(),
                         };
+
+                        let proof_permit = proof_semaphore
+                            .acquire()
+                            .await
+                            .expect("Failed to acquire proof semaphore");
+
                         let proof = match proof_generator::generate_proof(generate_proof_args).await
                         {
                             Ok(proof) => {
