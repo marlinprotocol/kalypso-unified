@@ -474,7 +474,15 @@ impl JobCreator {
                     let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
                     tokio::spawn(async move {
-                        log::info!("Spin up new thread from proof generation calls");
+                        let proof_permit = proof_semaphore
+                            .acquire()
+                            .await
+                            .expect("Failed to acquire proof semaphore");
+
+                        log::info!(
+                            "Spin up new thread from proof generation of ask: {}",
+                            event.ask_id
+                        );
                         let binding = vec![]; // TODO: figure out way to fetch old keys from KMS, not in scope now
                         let generate_proof_args = GenerateProofParams {
                             ask_id: event.ask_id,
@@ -486,11 +494,6 @@ impl JobCreator {
                             markets: &markets_clone,
                             slave_ecies_private_keys: binding.as_ref(),
                         };
-
-                        let proof_permit = proof_semaphore
-                            .acquire()
-                            .await
-                            .expect("Failed to acquire proof semaphore");
                         let proof = match proof_generator::generate_proof(generate_proof_args).await
                         {
                             Ok(proof) => {
