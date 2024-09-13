@@ -407,10 +407,17 @@ impl LogParser {
             let new_acl = if random_pending_ask.has_private_inputs {
                 let acl_data = random_pending_ask.secret_acl.clone().unwrap();
 
-                let cipher = secret_inputs_helpers::decrypt_ecies(
+                let mut cipher = secret_inputs_helpers::decrypt_ecies(
                     &self.matching_engine_key.to_vec(),
                     &acl_data,
-                )?;
+                );
+
+                // one of the key will surely dipher it, or else the ask would already have been flagged
+                if cipher.is_err() {
+                    for slave_key in &self.matching_engine_slave_keys {
+                        cipher = secret_inputs_helpers::decrypt_ecies(&slave_key, &acl_data);
+                    }
+                }
 
                 let generator_ecies_pub_key = key_store
                     .get_by_address(&idle_generator.address, idle_generator.market_id.as_u64())
@@ -419,7 +426,7 @@ impl LogParser {
                     .clone()
                     .unwrap()
                     .to_vec();
-                secret_inputs_helpers::encrypt_ecies(&generator_ecies_pub_key, cipher.as_slice())?
+                secret_inputs_helpers::encrypt_ecies(&generator_ecies_pub_key, cipher?.as_slice())?
             } else {
                 Bytes::from_str("0x").unwrap().to_vec()
             };
