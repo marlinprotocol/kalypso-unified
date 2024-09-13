@@ -7,6 +7,7 @@ use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Provider};
 use ethers::signers::Wallet;
 use ethers::types::U64;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Mutex;
 
 use crate::middlewares;
@@ -32,6 +33,7 @@ pub struct MatchingEngineServer {
     shared_entity_key_registry: EntityRegistryInstance,
     shared_generator_data: Arc<Mutex<GeneratorStore>>,
     relayer_key_balance: Arc<Mutex<ethers::types::U256>>,
+    should_stop: Arc<AtomicBool>,
 }
 
 impl MatchingEngineServer {
@@ -43,6 +45,7 @@ impl MatchingEngineServer {
         shared_entity_key_registry: EntityRegistryInstance,
         shared_generator_data: Arc<Mutex<GeneratorStore>>,
         relayer_key_balance: Arc<Mutex<ethers::types::U256>>,
+        should_stop: Arc<AtomicBool>,
     ) -> Self {
         MatchingEngineServer {
             shared_market_data,
@@ -52,11 +55,12 @@ impl MatchingEngineServer {
             shared_entity_key_registry,
             shared_generator_data,
             relayer_key_balance,
+            should_stop,
         }
     }
 
-    pub async fn start_server(self) -> anyhow::Result<()> {
-        HttpServer::new(move || {
+    pub async fn start_server(self, port: u16, enable_ssc: bool) -> anyhow::Result<()> {
+        let server = HttpServer::new(move || {
             App::new()
                 .wrap(middlewares::ratelimiter::get_rate_limiter())
                 .app_data(Data::new(self.shared_market_data.clone()))
@@ -75,33 +79,62 @@ impl MatchingEngineServer {
                 .route(
                     "/getAskStatus",
                     web::post().to(routes::ask_status::get_ask_status_askid),
-                ) // Provide specific ask status
+                )
                 .route(
                     "/getProof",
                     web::post().to(routes::ask_status::get_ask_proof_by_ask_id),
-                ) // Provide specific ask status
+                )
                 .route(
                     "/getPrivInput",
                     web::post().to(routes::get_priv_inputs::get_priv_input),
-                ) // provide private inputs for a specific ask
+                )
                 .route(
                     "/decryptRequest",
                     web::post().to(routes::decrypt_request::decrypt_request),
-                ) // Return decrypted input
+                )
                 .route(
                     "/getLatestBlock",
-                    web::get().to(routes::chain_status::get_latest_block_number), // Returns the latest Block parsed so far
+                    web::get().to(routes::chain_status::get_latest_block_number),
                 )
                 .route(
                     "/marketInfo",
                     web::post().to(routes::market_info::market_info),
                 )
-        })
-        .bind("0.0.0.0:3000")
-        .unwrap()
-        .run()
-        .await
-        .unwrap();
+        });
+
+        if enable_ssc {
+            let tls_config = kalypso_helper::ssc::create_random_rustls_server_config();
+            // Error handling for TLS configuration
+            if let Err(err) = tls_config {
+                log::error!("Failed to create TLS config: {}", err);
+                self.should_stop.store(true, Ordering::Release);
+                return Err(anyhow::Error::from(err));
+            }
+
+            let tls_config = tls_config.unwrap();
+
+            // Bind the server using Rustls for HTTPS
+            let server = server.bind_rustls(format!("0.0.0.0:{}", port), tls_config);
+            if let Err(err) = server {
+                log::error!("Failed to bind server with Rustls: {}", err);
+                self.should_stop.store(true, Ordering::Release);
+                return Err(anyhow::Error::from(err));
+            }
+
+            // Run the server and await
+            server.unwrap().run().await?;
+        } else {
+            // Bind the server using plain HTTP
+            let server = server.bind(format!("0.0.0.0:{}", port));
+            if let Err(err) = server {
+                log::error!("Failed to bind server with HTTP: {}", err);
+                self.should_stop.store(true, Ordering::Release);
+                return Err(anyhow::Error::from(err));
+            }
+
+            // Run the server and await
+            server.unwrap().run().await?;
+        }
 
         Ok(())
     }

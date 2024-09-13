@@ -6,7 +6,7 @@ use openssl::x509::X509Name;
 
 pub struct CertInfo {
     pub cert_pem: Vec<u8>,
-    pub key_pem: Vec<u8>,
+    pub key_der: Vec<u8>, // Use DER format for Rustls
 }
 
 pub fn generate_self_signed_cert() -> CertInfo {
@@ -24,12 +24,11 @@ pub fn generate_self_signed_cert() -> CertInfo {
         .unwrap();
     let name = name_builder.build();
 
-    // Set certificate properties
     builder.set_subject_name(&name).unwrap();
     builder.set_issuer_name(&name).unwrap();
     builder.set_pubkey(&pkey).unwrap();
 
-    // Set certificate validity (from now to 365 days from now)
+    // Set certificate validity
     let now = openssl::asn1::Asn1Time::days_from_now(0).unwrap(); // Valid from now
     let expire = openssl::asn1::Asn1Time::days_from_now(365).unwrap(); // Valid for 1 year
     builder.set_not_before(&now).unwrap();
@@ -38,10 +37,40 @@ pub fn generate_self_signed_cert() -> CertInfo {
     // Sign the certificate with SHA-256
     builder.sign(&pkey, MessageDigest::sha256()).unwrap();
 
-    // Convert to PEM format
+    // Convert certificate and key to correct formats
     let cert = builder.build();
-    let cert_pem = cert.to_pem().unwrap();
-    let key_pem = pkey.private_key_to_pem_pkcs8().unwrap();
+    let cert_pem = cert.to_pem().unwrap(); // Certificate in PEM format
+    let key_der = pkey.private_key_to_der().unwrap(); // Private key in DER format
 
-    CertInfo { cert_pem, key_pem }
+    CertInfo { cert_pem, key_der }
+}
+
+use rustls::{Certificate, PrivateKey, ServerConfig};
+
+pub fn create_rustls_server_config(
+    cert_pem: Vec<u8>,
+    key_pem: Vec<u8>,
+) -> Result<ServerConfig, rustls::Error> {
+    let cert_chain = vec![Certificate(cert_pem)];
+    let private_key = PrivateKey(key_pem);
+
+    let config = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth()
+        .with_single_cert(cert_chain, private_key);
+
+    config
+}
+
+pub fn create_random_rustls_server_config() -> Result<ServerConfig, rustls::Error> {
+    let cert_info = generate_self_signed_cert();
+    let cert_chain = vec![Certificate(cert_info.cert_pem)];
+    let private_key = PrivateKey(cert_info.key_der);
+
+    let config = ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth()
+        .with_single_cert(cert_chain, private_key);
+
+    config
 }

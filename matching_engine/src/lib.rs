@@ -21,6 +21,7 @@ use service_check_helper::{Request, RequestType};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{str::FromStr, sync::Arc};
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 
 pub fn get_welcome_request<R>() -> Request<(), R> {
     Request {
@@ -108,11 +109,15 @@ pub struct MatchingEngineConfig {
 
 pub struct MatchingEngine {
     config: MatchingEngineConfig,
+    matching_engine_port: u16,
 }
 
 impl MatchingEngine {
     pub fn from_config(config: MatchingEngineConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            matching_engine_port: 3000,
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -234,16 +239,14 @@ impl MatchingEngine {
         let shared_matching_key_clone = Arc::clone(&shared_matching_key);
 
         let should_stop = Arc::new(AtomicBool::new(false));
-        let stop_handle = should_stop.clone();
+        let stop_handle_clone = should_stop.clone();
 
         let mut handles = vec![];
 
-        let ctrl_c_handle = tokio::spawn(async move {
+        tokio::spawn(async move {
             tokio::signal::ctrl_c().await.unwrap();
-            stop_handle.store(true, Ordering::Release);
-            Ok(())
+            stop_handle_clone.store(true, Ordering::Release);
         });
-        handles.push(ctrl_c_handle);
 
         let server = MatchingEngineServer::new(
             shared_market_data,
@@ -253,15 +256,26 @@ impl MatchingEngine {
             shared_entity_key_registry,
             shared_generator_data,
             relayer_key_balance.clone(),
+            should_stop.clone(),
         );
 
-        let server_handle = tokio::spawn(server.start_server());
+        let matching_engine_port = self.matching_engine_port.clone();
+
+        let server_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> =
+            tokio::spawn(async move {
+                let _ = server
+                    .start_server(matching_engine_port, false)
+                    .await
+                    .unwrap();
+                Ok(())
+            });
         handles.push(server_handle);
 
         let confirmations = 5; // ideally this should be more
         let block_range = 20000; // Number of blocks to fetch logs from at once
+        let should_stop_clone = should_stop.clone();
         let parser = Arc::new(LogParser::new(
-            should_stop.clone(),
+            should_stop_clone,
             rpc_url,
             relayer_signer.clone(),
             shared_parsed_block,

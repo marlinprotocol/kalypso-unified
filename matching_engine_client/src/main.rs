@@ -17,7 +17,7 @@ async fn main() -> std::io::Result<()> {
     let enclave_key = fs::read("/app/secp.sec").await?;
     let server = client::MatchingEngineClient::new(hex::encode(enclave_key), port);
 
-    server.start().await.unwrap();
+    server.start(false).await.unwrap();
 
     Ok(())
 }

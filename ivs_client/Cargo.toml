@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "4.3.0"
+actix-web = { version="4.3.0", features = ["rustls"] }
 actix-web-lab="0.20.2"
+anyhow = "1.0.86"
 dotenv = "0.15.0"
 ecies = {version = "0.2.6", features = ["std"]}
 env_logger = "0.11.3"

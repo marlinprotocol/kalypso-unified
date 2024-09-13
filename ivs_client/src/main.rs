@@ -10,7 +10,7 @@ use dotenv::dotenv;
 use std::env;
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
@@ -19,12 +19,43 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("PORT must be a valid number");
 
-    let server = HttpServer::new(move || App::new().configure(handler::routes))
-        .bind(("0.0.0.0", port))
-        .unwrap_or_else(|_| panic!("Can not bind to {}", &port))
-        .run();
+    let enable_ssc: bool = env::var("ENABLE_SSC")
+        .ok()
+        .map(|val| val == "true" || val == "1")
+        .unwrap_or(false);
 
-    log::info!("input-verifier-client started on port {}", port);
+    let server = HttpServer::new(move || App::new().configure(handler::routes));
 
-    server.await
+    if enable_ssc {
+        let tls_config = helper::ssc::create_random_rustls_server_config();
+        // Error handling for TLS configuration
+        if let Err(err) = tls_config {
+            log::error!("Failed to create TLS config: {}", err);
+            return Err(anyhow::Error::from(err));
+        }
+
+        let tls_config = tls_config.unwrap();
+
+        // Bind the server using Rustls for HTTPS
+        let server = server.bind_rustls(format!("0.0.0.0:{}", &port), tls_config);
+        if let Err(err) = server {
+            log::error!("Failed to bind server with Rustls: {}", err);
+            return Err(anyhow::Error::from(err));
+        }
+
+        // Run the server and await
+        server.unwrap().run().await?;
+    } else {
+        // Bind the server using plain HTTP
+        let server = server.bind(format!("0.0.0.0:{}", &port));
+        if let Err(err) = server {
+            log::error!("Failed to bind server with HTTP: {}", err);
+            return Err(anyhow::Error::from(err));
+        }
+
+        // Run the server and await
+        server.unwrap().run().await?;
+    }
+
+    Ok(())
 }
