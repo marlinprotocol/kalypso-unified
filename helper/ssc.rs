@@ -3,9 +3,13 @@ use openssl::pkey::PKey;
 use openssl::rsa::Rsa;
 use openssl::x509::X509Builder;
 use openssl::x509::X509Name;
-use rustls::{Certificate, PrivateKey};
 
-pub fn generate_self_signed_cert() -> (Vec<Certificate>, PrivateKey) {
+pub struct CertInfo {
+    pub cert_pem: Vec<u8>,
+    pub key_pem: Vec<u8>,
+}
+
+pub fn generate_self_signed_cert() -> CertInfo {
     // Generate RSA key
     let rsa = Rsa::generate(2048).unwrap();
     let pkey = PKey::from_rsa(rsa).unwrap();
@@ -39,9 +43,5 @@ pub fn generate_self_signed_cert() -> (Vec<Certificate>, PrivateKey) {
     let cert_pem = cert.to_pem().unwrap();
     let key_pem = pkey.private_key_to_pem_pkcs8().unwrap();
 
-    // Convert PEM to rustls types
-    let cert_chain = vec![Certificate(cert_pem)];
-    let private_key = PrivateKey(key_pem);
-
-    (cert_chain, private_key)
+    CertInfo { cert_pem, key_pem }
 }
