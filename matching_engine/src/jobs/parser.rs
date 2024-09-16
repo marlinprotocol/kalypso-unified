@@ -307,8 +307,8 @@ impl LogParser {
             let mut m = HashMap::new();
             let temp_gs = &self.shared_generator_store.lock().await;
             for _generator in all_generators {
-                let available_stake = temp_gs.get_available_stake(_generator.clone()).unwrap();
-                m.insert(_generator.clone(), available_stake);
+                let available_stake = temp_gs.get_available_stake(*_generator).unwrap();
+                m.insert(*_generator, available_stake);
             }
             m
         };
@@ -317,8 +317,8 @@ impl LogParser {
             let mut m = HashMap::new();
             let temp_gs = &self.shared_generator_store.lock().await;
             for _generator in all_generators {
-                let available_compute = temp_gs.get_available_compute(_generator.clone()).unwrap();
-                m.insert(_generator.clone(), available_compute);
+                let available_compute = temp_gs.get_available_compute(*_generator).unwrap();
+                m.insert(*_generator, available_compute);
             }
             m
         };
@@ -415,7 +415,7 @@ impl LogParser {
                 // one of the key will surely dipher it, or else the ask would already have been flagged
                 if cipher.is_err() {
                     for slave_key in &self.matching_engine_slave_keys {
-                        cipher = secret_inputs_helpers::decrypt_ecies(&slave_key, &acl_data);
+                        cipher = secret_inputs_helpers::decrypt_ecies(slave_key, &acl_data);
                     }
                 }
 

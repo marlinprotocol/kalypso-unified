@@ -259,11 +259,11 @@ impl MatchingEngine {
             should_stop.clone(),
         );
 
-        let matching_engine_port = self.matching_engine_port.clone();
+        let matching_engine_port = self.matching_engine_port;
 
         let server_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> =
             tokio::spawn(async move {
-                let _ = server
+                server
                     .start_server(matching_engine_port, false)
                     .await
                     .unwrap();

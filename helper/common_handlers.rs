@@ -80,11 +80,11 @@ impl SCHPayload {
         let response_address = Address::from_slice(&keccak256(response_pubkey_uncompressed)[12..]);
 
         if recovered_address == response_address {
-            return Ok(self.clone());
+            Ok(self.clone())
         } else {
-            return Err(anyhow::Error::msg(
+            Err(anyhow::Error::msg(
                 "Signature verification failed.".to_string(),
-            ));
+            ))
         }
     }
 

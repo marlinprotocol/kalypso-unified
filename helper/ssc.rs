@@ -54,12 +54,10 @@ pub fn create_rustls_server_config(
     let cert_chain = vec![Certificate(cert_pem)];
     let private_key = PrivateKey(key_pem);
 
-    let config = ServerConfig::builder()
+    ServerConfig::builder()
         .with_safe_defaults()
         .with_no_client_auth()
-        .with_single_cert(cert_chain, private_key);
-
-    config
+        .with_single_cert(cert_chain, private_key)
 }
 
 pub fn create_random_rustls_server_config() -> Result<ServerConfig, rustls::Error> {
@@ -67,10 +65,8 @@ pub fn create_random_rustls_server_config() -> Result<ServerConfig, rustls::Erro
     let cert_chain = vec![Certificate(cert_info.cert_pem)];
     let private_key = PrivateKey(cert_info.key_der);
 
-    let config = ServerConfig::builder()
+    ServerConfig::builder()
         .with_safe_defaults()
         .with_no_client_auth()
-        .with_single_cert(cert_chain, private_key);
-
-    config
+        .with_single_cert(cert_chain, private_key)
 }

@@ -37,6 +37,7 @@ pub struct MatchingEngineServer {
 }
 
 impl MatchingEngineServer {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         shared_market_data: Arc<Mutex<MarketMetadataStore>>,
         shared_local_ask_data: Arc<Mutex<LocalAskStore>>,
