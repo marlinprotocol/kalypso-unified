@@ -34,3 +34,6 @@ integration_checks/proverCustomData/*
 
 test.sh
 test_*.sh
+
+/app
+/app/*
