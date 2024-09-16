@@ -54,32 +54,20 @@ impl SCHPayload {
 
         let digest = keccak256(&encoded);
 
-        use ethers::types::Signature;
-        use std::convert::TryFrom;
-
         let signature = match Signature::try_from(&self.signature[..]) {
             Ok(data) => data,
             Err(e) => return Err(anyhow::Error::msg(e.to_string())),
         };
 
-        let recovered_address = match signature.recover(digest) {
+        let recovered_address = match signature.recover(ethers::utils::hash_message(digest)) {
             Ok(data) => data,
             Err(e) => return Err(anyhow::Error::msg(e.to_string())),
         };
 
-        use ethers::core::k256::elliptic_curve::sec1::ToEncodedPoint;
-        use ethers::core::k256::PublicKey as K256PublicKey;
+        let hash = keccak256(&response_key[1..]);
+        let expected_address = H160::from_slice(&hash[12..]).into();
 
-        let response_pubkey = match K256PublicKey::from_sec1_bytes(&response_key) {
-            Ok(data) => data,
-            Err(e) => return Err(anyhow::Error::msg(e.to_string())),
-        };
-
-        let response_pubkey_bytes = response_pubkey.to_encoded_point(false);
-        let response_pubkey_uncompressed = &response_pubkey_bytes.as_bytes()[1..];
-        let response_address = Address::from_slice(&keccak256(response_pubkey_uncompressed)[12..]);
-
-        if recovered_address == response_address {
+        if recovered_address == expected_address {
             Ok(self.clone())
         } else {
             Err(anyhow::Error::msg(
@@ -118,7 +106,7 @@ impl ToSchResponse for SCHPayload {
 
         let utf8_bytes = json_str.as_bytes().to_vec();
 
-        let encrypted_data = match encrypt_ecies(&utf8_bytes, &self.response_key) {
+        let encrypted_data = match encrypt_ecies(&self.response_key, &utf8_bytes) {
             Ok(data) => data,
             Err(e) => return Err(anyhow::Error::msg(e.to_string())),
         };
@@ -135,7 +123,7 @@ pub struct SignAddress {
     pub address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, Clone)]
 pub struct SignAttestation {
     #[validate(required(message = "attestation bytes were not provided in the JSON body"))]
     pub attestation: Option<String>,
@@ -194,7 +182,10 @@ async fn sign_address_encrypted(
 
     let json_input: SignAddress = match jsonbody.0.to_payload(&ecies_priv_key) {
         Ok(data) => data,
-        Err(e) => return response(&e.to_string(), StatusCode::BAD_REQUEST, None),
+        Err(e) => {
+            log::error!("{}", &e.to_string());
+            return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+        }
     };
 
     let signed_address = _sign_address(&json_input, &ecies_priv_key).await;
@@ -203,16 +194,19 @@ async fn sign_address_encrypted(
         let signed_address = signed_address.unwrap();
         let sch_response = match jsonbody.0.to_sch_response(signed_address) {
             Ok(data) => data,
-            Err(e) => return response(&e.to_string(), StatusCode::BAD_REQUEST, None),
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
         };
 
-        response(
+        return response(
             "Address signed",
             StatusCode::OK,
             Some(serde_json::to_value(&sch_response).unwrap()),
-        )
+        );
     } else {
-        response("Address signing failed", StatusCode::BAD_REQUEST, None)
+        return response("Address signing failed", StatusCode::BAD_REQUEST, None);
     }
 }
 
@@ -227,7 +221,6 @@ async fn _sign_address(body: &SignAddress, ecies_priv_key: &Vec<u8>) -> Option<V
     });
 
     Some(signature)
-    // response("Address signed", StatusCode::OK, )
 }
 
 // Sign Attestaion
@@ -247,18 +240,68 @@ async fn sign_attestation(
         );
     }
 
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
+
+    let signed_attestation = _sign_attestation(json_input, &ecies_priv_key).await;
+
+    if signed_attestation.is_some() {
+        return response("Attestation signed", StatusCode::OK, signed_attestation);
+    } else {
+        return response("Attestation signing failed", StatusCode::BAD_REQUEST, None);
+    }
+}
+
+// Sign Attestaion Encrypted
+#[post("/signAttestationEncrypted")]
+async fn sign_attestation_encrypted(
+    jsonbody: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
     let ecies_priv_key = {
         let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
+        key
     };
 
-    let signed = sign_attest(ecies_priv_key, jsonbody.0).await.unwrap();
+    let json_input: SignAttestation = match jsonbody.0.to_payload(&ecies_priv_key) {
+        Ok(data) => data,
+        Err(e) => {
+            log::error!("{}", &e.to_string());
+            return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+        }
+    };
+
+    let signed_attestation = _sign_attestation(&json_input, &ecies_priv_key).await;
+
+    if signed_attestation.is_some() {
+        let signed_attestation = signed_attestation.unwrap();
+        let sch_response = match jsonbody.0.to_sch_response(signed_attestation) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+
+        return response(
+            "Attestation signed",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
+    } else {
+        return response("Attestation signing failed", StatusCode::BAD_REQUEST, None);
+    }
+}
+
+async fn _sign_attestation(body: &SignAttestation, ecies_priv_key: &Vec<u8>) -> Option<Value> {
+    let ecies_priv_key = hex::encode(ecies_priv_key);
+    let signed = sign_attest(ecies_priv_key, body.clone()).await.unwrap();
     let signature = json!({
         "r": ethers::types::H256::from_uint(&signed.r),
         "s": ethers::types::H256::from_uint(&signed.s),
         "v": signed.v
     });
-    response("Attestation signed", StatusCode::OK, Some(signature))
+
+    Some(signature)
 }
 
 async fn sign_addy(

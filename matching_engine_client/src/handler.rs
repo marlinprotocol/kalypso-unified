@@ -424,6 +424,9 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(get_matching_engine_public_keys)
         .service(update_matching_engine_config)
         .service(helper::common_handlers::sign_address)
-        .service(helper::common_handlers::sign_attestation);
+        .service(helper::common_handlers::sign_attestation)
+        .service(helper::common_handlers::sign_address_encrypted)
+        .service(helper::common_handlers::sign_attestation_encrypted);
+
     conf.service(scope);
 }
