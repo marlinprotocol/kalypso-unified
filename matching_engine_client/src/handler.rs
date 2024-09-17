@@ -1,5 +1,6 @@
 use crate::handler_funcs::generate_config_setup::_generate_config_setup;
 use crate::handler_funcs::start_matching_engine::_start_matching_engine;
+use crate::handler_funcs::stop_matching_engine::_stop_matching_engine;
 use crate::handler_funcs::update_matching_engine_config::_update_matching_engine_config_setup;
 use crate::kalypso::{
     contract_validation, get_matching_engine_ecies_public_key, get_matching_engine_public_key,
@@ -84,25 +85,58 @@ async fn start_matching_engine_handler_encrypted(
 //Stop matching_engine
 #[post("/stopMatchingEngine")]
 async fn stop_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
-    let supervisord_response = match stop_matching_engine() {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in stopping the matching_engine",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !supervisord_response.status {
+    let result = _stop_matching_engine();
+
+    if result.is_ok() {
+        return response("Matching Engine stopped", StatusCode::OK, None);
+    } else {
         return response(
-            &supervisord_response.output,
-            StatusCode::INTERNAL_SERVER_ERROR,
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
             None,
         );
     }
-    response("Matching Engine stopped", StatusCode::OK, None)
+}
+
+#[post("/stopMatchingEngineEncrypted")]
+async fn stop_matching_engine_handler_encrypted(
+    _payload: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
+
+    // ensures that you client have received only signed messaged
+    let _: EmptyPayload = match _payload.0.to_payload(&ecies_priv_key) {
+        Ok(data) => data,
+        Err(e) => {
+            log::error!("{}", &e.to_string());
+            return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+        }
+    };
+
+    let result = _stop_matching_engine();
+
+    if result.is_ok() {
+        let result = result.unwrap();
+        let sch_response = match _payload.0.to_sch_response(result, ecies_priv_key).await {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+        return response(
+            "Matching Engine Stopped",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
+    } else {
+        return response(
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
+            None,
+        );
+    }
 }
 
 //Restart matching_engine
@@ -382,6 +416,7 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(start_matching_engine_handler)
         .service(start_matching_engine_handler_encrypted)
         .service(stop_matching_engine_handler)
+        .service(start_matching_engine_handler_encrypted)
         .service(restart_matching_engine_handler)
         .service(get_matching_engine_status_handler)
         .service(generate_config_setup)
