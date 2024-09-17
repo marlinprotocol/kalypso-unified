@@ -165,7 +165,7 @@ pub async fn generate_runtime_file(
 }
 
 pub async fn update_runtime_config_with_new_data(
-    json_input: &Json<UpdateRuntimeConfig>,
+    json_input: &UpdateRuntimeConfig,
     mut config_file: RuntimeConfigFile,
 ) -> Result<RuntimeConfigFile, Box<dyn std::error::Error>> {
     let config = &mut config_file.runtime_config;

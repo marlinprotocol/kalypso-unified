@@ -125,7 +125,7 @@ pub struct GetRsaPublicKeyRequest {
     pub generator_address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, Clone)]
 pub struct UpdateRuntimeConfig {
     #[validate(contains(pattern = "wss", message = "wss url is required"))]
     pub ws_url: Option<String>,
@@ -165,7 +165,7 @@ pub struct RemoveGenerator {
     pub address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, Clone)]
 pub struct UpdateGeneratorConfig {
     #[validate(
         contains(pattern = "0x", message = "The address should start with 0x"),

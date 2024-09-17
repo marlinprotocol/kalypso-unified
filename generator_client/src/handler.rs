@@ -1,11 +1,12 @@
 use std::io::ErrorKind;
 use std::sync::{Arc, Mutex};
 
+use crate::handler_funcs::generator_config_setup::_generator_config_setup;
+use crate::handler_funcs::update_generator_config::_update_generator_config;
+use crate::handler_funcs::update_runtime_config::_udpate_runtime_config;
 use crate::kalypso::{
-    add_new_generator, benchmark, contract_validation, generate_config_file, generate_runtime_file,
-    get_public_keys_for_a_generator, read_generator_config_file, read_runtime_config_file,
-    runtime_config_validation, update_generator_config_file, update_runtime_config_file,
-    update_runtime_config_with_new_data,
+    add_new_generator, benchmark, contract_validation, get_public_keys_for_a_generator,
+    read_generator_config_file, read_runtime_config_file, update_generator_config_file,
 };
 use crate::model::{
     AddNewGenerator, GeneratorConfigSetupRequestBody, GetGeneratorPublicKeys, RemoveGenerator,
@@ -15,6 +16,7 @@ use crate::supervisord::{get_program_status, start_program, stop_program};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{delete, get, post, put, web, Responder};
+use helper::common_handlers::{SCHPayload, ToPayload};
 use helper::response::response;
 use serde::Deserialize;
 use serde_json::Value;
@@ -260,106 +262,48 @@ async fn generate_config_setup(
             Some(Value::String(err.to_string())),
         );
     }
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
+    let result = _generator_config_setup(json_input, ecies_priv_key).await;
 
-    //Validating the generator config
-    let generator_config_body = json_input.0.generator_config.as_ref().unwrap();
-    if generator_config_body.len() > 1 {
+    if result.is_ok() {
+        response("Config done", StatusCode::OK, None)
+    } else {
         return response(
-            "Only one generator supported",
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
-    for generator in generator_config_body {
-        if generator.supported_markets.as_ref().unwrap().len() > 1 {
-            return response(
-                "Only one market is supported for every generator",
-                StatusCode::BAD_REQUEST,
-                None,
-            );
-        }
-        if let Err(err) = generator.validate() {
-            log::error!("{}", err);
-            return response(
-                "Invalid payload",
-                StatusCode::BAD_REQUEST,
-                Some(Value::String(err.to_string())),
-            );
-        }
-    }
+}
 
-    //Validating the runtime config
-    let runtime_config_body = json_input.0.runtime_config.as_ref().unwrap();
-    if let Err(err) = runtime_config_body.validate() {
-        log::error!("{}", err);
+// Generate config setup
+#[post("/generatorConfigSetupEncrypted")]
+async fn generate_config_setup_encrypted(
+    jsonbody: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    //Validating the main JSON body
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
+
+    let generate_config_setup_request_body: GeneratorConfigSetupRequestBody =
+        match jsonbody.0.to_payload(&ecies_priv_key) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+    let result = _generator_config_setup(&generate_config_setup_request_body, ecies_priv_key).await;
+
+    if result.is_ok() {
+        response("Config done", StatusCode::OK, None)
+    } else {
         return response(
-            "Invalid payload",
-            StatusCode::BAD_REQUEST,
-            Some(Value::String(err.to_string())),
-        );
-    }
-
-    let private_key = runtime_config_body.private_key.as_ref().unwrap();
-
-    let chain_id = runtime_config_body.chain_id.as_ref().unwrap();
-
-    let rpc_url = runtime_config_body.ws_url.as_ref().unwrap();
-
-    //Validating the runtime config to check if the runtime address has enough gas.
-    let validation_status = runtime_config_validation(private_key, rpc_url, chain_id).await;
-    let validation_status_result = match validation_status {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while validating the request",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !validation_status_result {
-        return response(
-            "Runtime private_key doesn't have enough balance, minimum balance required is 0.05ETH",
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
-
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
-    };
-
-    //Generating the generator config file
-    let generate_config_file = generate_config_file(generator_config_body, ecies_priv_key).await;
-    match generate_config_file {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in generator setup",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-
-    //Generating the runtime config file
-    let runtime_config_file = generate_runtime_file(runtime_config_body).await;
-    match runtime_config_file {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in runtime setup",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-
-    response("Config done", StatusCode::OK, None)
 }
 
 // Update runtime config
@@ -374,92 +318,49 @@ async fn update_runtime_config(jsonbody: web::Json<UpdateRuntimeConfig>) -> impl
             Some(Value::String(err.to_string())),
         );
     }
-    let config_file_call = read_runtime_config_file().await;
-    let config_file = match config_file_call {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while updating the generator config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
 
-    // Checking if the provided private_key has enough gas
-    let private_key = match &jsonbody.private_key {
-        Some(data) => data,
-        None => &config_file.runtime_config.private_key,
-    };
-    let chain_id = match &jsonbody.chain_id {
-        Some(data) => data,
-        None => &config_file.runtime_config.chain_id,
-    };
-    let ws_rpc_url = match &jsonbody.ws_url {
-        Some(data) => data,
-        None => &config_file.runtime_config.ws_url,
-    };
+    let result = _udpate_runtime_config(json_input.0.clone()).await;
 
-    let validation_status = runtime_config_validation(private_key, ws_rpc_url, chain_id).await;
-    let validation_status_result = match validation_status {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while updating the runtime config, Please make sure if you are providing a new RPC url it is a valid one.",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !validation_status_result {
+    if result.is_ok() {
+        response("Runtime config updated", StatusCode::OK, None)
+    } else {
         return response(
-            "Runtime private_key doesn't have enough balance, minimum balance required is 0.05ETH",
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
-
-    //Updating the runtime config file
-    let updated_runtime_config_data_call =
-        update_runtime_config_with_new_data(json_input, config_file).await;
-    let updated_runtime_config_data = match updated_runtime_config_data_call {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in updating the config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-
-    let update_config_file = update_runtime_config_file(updated_runtime_config_data).await;
-    match update_config_file {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            if e.kind() == ErrorKind::NotFound {
-                return response(
-                    "There was an issue in updating the config file, since the config file was not found",
-                    StatusCode::NOT_FOUND,
-                    None,
-                );
-            }
-            return response(
-                "There was an issue in updating the config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    }
-
-    response("Runtime config updated", StatusCode::OK, None)
 }
 
-// Update runtime config
+// Update runtime config encrypted
+#[put("/updateRuntimeConfigEncrypted")]
+async fn update_runtime_config_encrypted(
+    jsonbody: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
+
+    let update_runtime_config_request_body: UpdateRuntimeConfig =
+        match jsonbody.0.to_payload(&ecies_priv_key) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+    let result = _udpate_runtime_config(update_runtime_config_request_body.clone()).await;
+
+    if result.is_ok() {
+        response("Runtime config updated", StatusCode::OK, None)
+    } else {
+        return response(
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
+            None,
+        );
+    }
+}
+
 #[post("/addNewGenerator")]
 async fn add_new_generator_config(
     jsonbody: web::Json<AddNewGenerator>,
@@ -621,75 +522,47 @@ async fn update_generator_config(jsonbody: web::Json<UpdateGeneratorConfig>) -> 
         );
     }
 
-    if json_input.supported_markets.as_ref().unwrap().len() > 1 {
+    let result = _update_generator_config(&json_input).await;
+
+    if result.is_ok() {
+        response("Generator config updated", StatusCode::OK, None)
+    } else {
         return response(
-            "Only one market is supported for every generator",
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
+}
 
-    let config_file_call = read_generator_config_file().await;
-    let mut config_file = match config_file_call {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while updating the generator config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+// Update generator config Encrypted
+#[put("/updateGeneratorConfigEncrypted")]
+async fn update_generator_config_encrypted(
+    jsonbody: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
 
-    //Finding the generator to update
-    let generator_to_be_updated = json_input.address.as_ref().unwrap();
-    let finding_generator_index = config_file
-        .generator_config
-        .iter()
-        .position(|x| &x.address == generator_to_be_updated);
-
-    let generator_index = match finding_generator_index {
-        Some(data) => data,
-        None => {
-            return response(
-                "No generator found for the provided address",
-                StatusCode::NOT_FOUND,
-                None,
-            );
-        }
-    };
-
-    //Checking the input for changes
-    if let Some(new_supported_markets) = &json_input.supported_markets {
-        config_file.generator_config[generator_index].supported_markets =
-            new_supported_markets.to_vec()
-    }
-    if let Some(new_data) = &json_input.data {
-        config_file.generator_config[generator_index].data = new_data.to_string()
-    }
-
-    //Updating the config file
-    let update_config_file = update_generator_config_file(config_file).await;
-    match update_config_file {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            if e.kind() == ErrorKind::NotFound {
-                return response(
-                    "There was an issue in updating the config file, since the config file was not found",
-                    StatusCode::NOT_FOUND,
-                    None,
-                );
+    let update_generator_config_request_body: UpdateGeneratorConfig =
+        match jsonbody.0.to_payload(&ecies_priv_key) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
             }
-            return response(
-                "There was an issue in updating the config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
+        };
+
+    let result = _update_generator_config(&update_generator_config_request_body).await;
+
+    if result.is_ok() {
+        response("Generator config updated", StatusCode::OK, None)
+    } else {
+        return response(
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
+            None,
+        );
     }
-    response("Generator config updated", StatusCode::OK, None)
 }
 
 // Update generator config
@@ -835,13 +708,15 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(restart_program_handler)
         .service(get_program_status_handler)
         .service(generate_config_setup)
+        .service(generate_config_setup_encrypted)
         .service(update_runtime_config)
-        // .service(add_new_generator_config)
-        // .service(remove_generator_from_config)
+        .service(update_runtime_config_encrypted)
         .service(update_generator_config)
         .service(fetch_generator_public_keys)
         .service(benchmark_generator)
         .service(helper::common_handlers::sign_address)
-        .service(helper::common_handlers::sign_attestation);
+        .service(helper::common_handlers::sign_attestation)
+        .service(helper::common_handlers::sign_address_encrypted)
+        .service(helper::common_handlers::sign_attestation_encrypted);
     conf.service(scope);
 }

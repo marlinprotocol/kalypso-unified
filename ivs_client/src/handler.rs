@@ -182,6 +182,8 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(generate_config_setup)
         .service(fetch_input_verifier_public_keys)
         .service(helper::common_handlers::sign_address)
-        .service(helper::common_handlers::sign_attestation);
+        .service(helper::common_handlers::sign_attestation)
+        .service(helper::common_handlers::sign_address_encrypted)
+        .service(helper::common_handlers::sign_attestation_encrypted);
     conf.service(scope);
 }
