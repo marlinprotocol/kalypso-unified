@@ -1,7 +1,6 @@
 use std::str::FromStr;
 use std::sync::Arc;
 
-use actix_web::web::Json;
 use ecies::{PublicKey, SecretKey};
 use ethers::prelude::*;
 use ethers::providers::Provider;
@@ -114,7 +113,7 @@ pub async fn generate_matching_engine_config_file(
 }
 
 pub async fn update_matching_engine_config_with_new_data(
-    json_input: &Json<UpdateMatchingEngineConfig>,
+    json_input: &UpdateMatchingEngineConfig,
     mut config_file: MatchingEngineConfig,
 ) -> Result<MatchingEngineConfig, Box<dyn std::error::Error>> {
     let config = &mut config_file;

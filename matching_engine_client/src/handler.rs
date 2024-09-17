@@ -1,10 +1,7 @@
-use std::io::ErrorKind;
-
 use crate::handler_funcs::generate_config_setup::_generate_config_setup;
+use crate::handler_funcs::update_matching_engine_config::_update_matching_engine_config_setup;
 use crate::kalypso::{
     contract_validation, get_matching_engine_ecies_public_key, get_matching_engine_public_key,
-    matching_engine_config_validation, read_matching_engine_config_file,
-    update_matching_engine_config_file, update_matching_engine_config_with_new_data,
 };
 
 use crate::model::{
@@ -17,13 +14,17 @@ use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
 use helper::common_handlers::{SCHPayload, ToPayload};
 use helper::response::response;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use validator::Validate;
 
+#[derive(Deserialize, Serialize)]
+struct EmptyPayload {}
+
 // Start matching_engine
 #[post("/startMatchingEngine")]
-async fn start_matching_engine_handler() -> impl Responder {
+async fn start_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     //Smart contract checks
     let validation_status = contract_validation().await;
     let validation_status_result = match validation_status {
@@ -69,7 +70,7 @@ async fn start_matching_engine_handler() -> impl Responder {
 
 //Stop matching_engine
 #[post("/stopMatchingEngine")]
-async fn stop_matching_engine_handler() -> impl Responder {
+async fn stop_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     let supervisord_response = match stop_matching_engine() {
         Ok(data) => data,
         Err(e) => {
@@ -93,7 +94,7 @@ async fn stop_matching_engine_handler() -> impl Responder {
 
 //Restart matching_engine
 #[post("/restartMatchingEngine")]
-async fn restart_matching_engine_handler() -> impl Responder {
+async fn restart_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     //Smart contract checks
     let validation_status = contract_validation().await;
     let validation_status_result = match validation_status {
@@ -253,90 +254,48 @@ async fn update_matching_engine_config(
     jsonbody: web::Json<UpdateMatchingEngineConfig>,
 ) -> impl Responder {
     let json_input = &jsonbody;
-    let config_file_call = read_matching_engine_config_file().await;
-    let config_file = match config_file_call {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while updating the matching_engine config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
 
-    // Checking if the provided private_key has enough gas
-    let private_key = match &jsonbody.relayer_private_key {
-        Some(data) => data,
-        None => &config_file.relayer_private_key,
-    };
-    let chain_id = match &jsonbody.chain_id {
-        Some(data) => data,
-        None => &config_file.chain_id,
-    };
-    let rpc_url = match &jsonbody.rpc_url {
-        Some(data) => data,
-        None => &config_file.rpc_url,
-    };
+    let result = _update_matching_engine_config_setup(json_input).await;
 
-    let validation_status = matching_engine_config_validation(private_key, rpc_url, chain_id).await;
-    let validation_status_result = match validation_status {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while validating the request",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !validation_status_result {
+    if result.is_ok() {
+        response("Matching Engine config updated", StatusCode::OK, None)
+    } else {
         return response(
-            "Matching engine private_key doesn't have enough balance, minimum balance required is 0.05ETH",
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
+}
 
-    //Updating the matching_engine config file
-    let updated_matching_engine_config_data_call =
-        update_matching_engine_config_with_new_data(json_input, config_file).await;
-    let updated_matching_engine_config_data = match updated_matching_engine_config_data_call {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in updating the config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+// Update matching_engine config encrypted
+#[put("/updateMatchingEngineConfigEncrypted")]
+async fn update_matching_engine_config_encrypted(
+    jsonbody: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
 
-    let update_config_file =
-        update_matching_engine_config_file(updated_matching_engine_config_data).await;
-    match update_config_file {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            if e.kind() == ErrorKind::NotFound {
-                return response(
-                    "There was an issue in updating the config file, since the config file was not found",
-                    StatusCode::NOT_FOUND,
-                    None,
-                );
+    let update_matching_engine_config_json: UpdateMatchingEngineConfig =
+        match jsonbody.0.to_payload(&ecies_priv_key) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
             }
-            return response(
-                "There was an issue in updating the config file",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    }
+        };
 
-    response("Matching Engine config updated", StatusCode::OK, None)
+    let result = _update_matching_engine_config_setup(&update_matching_engine_config_json).await;
+
+    if result.is_ok() {
+        response("Matching Engine config updated", StatusCode::OK, None)
+    } else {
+        return response(
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
+            None,
+        );
+    }
 }
 
 // Get matching_engine status from the supervisord
