@@ -1,4 +1,4 @@
-use crate::kalypso::{generate_api_key, generate_ivs_config_file, get_public_keys_for_ivs};
+use crate::kalypso::{generate_ivs_config_file, get_public_keys_for_ivs};
 use crate::model::SupervisordResponse;
 use crate::supervisord::{get_ivs_status, start_ivs, stop_ivs};
 use actix_web::http::StatusCode;
@@ -6,31 +6,6 @@ use actix_web::{get, post, web, Responder};
 use helper::response::response;
 
 use serde_json::Value;
-
-// Generate API key
-#[post("/generateApiKey")]
-async fn generate_api_key_handler() -> impl Responder {
-    let api_key_response = match generate_api_key().await {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in generating the API key",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !api_key_response.status {
-        return response(&api_key_response.message, StatusCode::UNAUTHORIZED, None);
-    }
-
-    response(
-        &api_key_response.message,
-        StatusCode::OK,
-        Some(Value::String(api_key_response.api_key)),
-    )
-}
 
 // Start input verifier
 #[post("/startInputVerifier")]
@@ -200,7 +175,6 @@ async fn fetch_input_verifier_public_keys() -> impl Responder {
 // Routes
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
-        .service(generate_api_key_handler)
         .service(start_input_verifier_handler)
         .service(stop_input_verifier_handler)
         .service(restart_input_verifier_handler)

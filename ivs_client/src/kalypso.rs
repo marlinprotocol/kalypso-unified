@@ -6,78 +6,9 @@ use serde_bytes::ByteBuf;
 use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use uuid::Uuid;
 
-use crate::model::{
-    ApiGenerationResponse, ApiKeyFile, IvsConfig, IvsPublicKeys, VerifyApiResponse,
-};
+use crate::model::{IvsConfig, IvsPublicKeys};
 use helper::common_handlers::SignAttestation;
-
-//generating API key
-pub async fn generate_api_key() -> Result<ApiGenerationResponse, Box<dyn std::error::Error>> {
-    //Checking if the config folder is already generated, if not creating a new one
-    let folder_path = "../ivs_config";
-    if fs::metadata(&folder_path).await.is_ok() {
-        log::info!("ivs_config folder already exists!");
-    } else {
-        fs::create_dir(&folder_path)
-            .await
-            .expect("Unable to create new folder");
-    }
-
-    //Checking if the API key was already generated
-    if fs::metadata("../ivs_config/api_key.json").await.is_ok() {
-        log::info!("api_key.json already exists!");
-        return Ok(ApiGenerationResponse {
-            api_key: "".to_string(),
-            status: false,
-            message: "API was already generated. It cannot be generated again".to_string(),
-        });
-    }
-
-    let api_key = Uuid::new_v4();
-    let api_key_file = ApiKeyFile {
-        api_key: api_key.to_string(),
-    };
-    let json_string = serde_json::to_string(&api_key_file)?;
-    let mut file = File::create("../ivs_config/api_key.json").await?;
-    tokio::io::AsyncWriteExt::write_all(&mut file, json_string.as_bytes()).await?;
-    Ok(ApiGenerationResponse {
-        api_key: api_key.to_string(),
-        status: true,
-        message: "API key generated. Please save this API key somewhere safe, it cannot be generated again.".to_string(),
-    })
-}
-
-#[allow(unused)]
-pub async fn verify_api_key(
-    request_api_key: &str,
-) -> Result<VerifyApiResponse, Box<dyn std::error::Error>> {
-    //Checking if the API key was already generated
-    if fs::metadata("../ivs_config/api_key.json").await.is_err() {
-        return Ok(VerifyApiResponse {
-            status: false,
-            message: "api_key is not generated".to_string(),
-        });
-    }
-    let file = File::open("../ivs_config/api_key.json").await?;
-    let mut buf_reader = tokio::io::BufReader::new(file);
-
-    let mut content = String::new();
-    buf_reader.read_to_string(&mut content).await?;
-
-    let api_key_data: ApiKeyFile = serde_json::from_str(&content)?;
-    if api_key_data.api_key != request_api_key {
-        return Ok(VerifyApiResponse {
-            status: false,
-            message: "Authentication failed, wrong API key provided".to_string(),
-        });
-    }
-    Ok(VerifyApiResponse {
-        status: true,
-        message: "authenticated".to_string(),
-    })
-}
 
 // Get ECIES public key
 pub async fn get_public_keys_for_ivs() -> Result<IvsPublicKeys, Box<dyn std::error::Error>> {

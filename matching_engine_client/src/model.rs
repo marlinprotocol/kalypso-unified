@@ -11,12 +11,6 @@ pub struct ApiKeyFile {
     pub api_key: String,
 }
 
-pub struct ApiGenerationResponse {
-    pub api_key: String,
-    pub status: bool,
-    pub message: String,
-}
-
 pub struct VerifyApiResponse {
     #[allow(unused)]
     pub status: bool,

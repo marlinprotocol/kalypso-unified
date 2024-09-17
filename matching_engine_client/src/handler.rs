@@ -1,8 +1,8 @@
 use std::io::ErrorKind;
 
+use crate::handler_funcs::generate_config_setup::_generate_config_setup;
 use crate::kalypso::{
-    contract_validation, generate_api_key, generate_matching_engine_config_file,
-    get_matching_engine_ecies_public_key, get_matching_engine_public_key,
+    contract_validation, get_matching_engine_ecies_public_key, get_matching_engine_public_key,
     matching_engine_config_validation, read_matching_engine_config_file,
     update_matching_engine_config_file, update_matching_engine_config_with_new_data,
 };
@@ -15,35 +15,11 @@ use crate::supervisord::{get_matching_engine_status, start_matching_engine, stop
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
+use helper::common_handlers::{SCHPayload, ToPayload};
 use helper::response::response;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use validator::Validate;
-
-// Generate API key
-#[post("/generateApiKey")]
-async fn generate_api_key_handler() -> impl Responder {
-    let api_key_response = match generate_api_key().await {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in generating the API key",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !api_key_response.status {
-        return response(&api_key_response.message, StatusCode::UNAUTHORIZED, None);
-    }
-
-    response(
-        &api_key_response.message,
-        StatusCode::OK,
-        Some(Value::String(api_key_response.api_key)),
-    )
-}
 
 // Start matching_engine
 #[post("/startMatchingEngine")]
@@ -226,57 +202,49 @@ async fn generate_config_setup(
         );
     }
 
-    let private_key = matching_engine_config_body
-        .relayer_private_key
-        .as_ref()
-        .unwrap();
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
 
-    let chain_id = matching_engine_config_body.chain_id.as_ref().unwrap();
+    let result = _generate_config_setup(matching_engine_config_body, ecies_priv_key).await;
 
-    let rpc_url = matching_engine_config_body.rpc_url.as_ref().unwrap();
-
-    //Validating the matching_engine config to check if the matching_engine address has enough gas.
-    let validation_status = matching_engine_config_validation(private_key, rpc_url, chain_id).await;
-    let validation_status_result = match validation_status {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue while validating the request",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !validation_status_result {
+    if result.is_ok() {
+        return response("Config done", StatusCode::OK, None);
+    } else {
         return response(
-            "Matching engine private_key doesn't have enough balance, minimum balance required is 0.05ETH",
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
+}
 
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        hex::encode(key)
-    };
+// Generate config setup encrypted
+#[post("/matchingEngineConfigSetupEncrypted")]
+async fn generate_config_setup_encrypted(
+    jsonbody: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
 
-    //Generating the matching_engine config file
-    let matching_engine_config_file =
-        generate_matching_engine_config_file(matching_engine_config_body, ecies_priv_key).await;
-    match matching_engine_config_file {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in matching_engine setup",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
+    let matching_engine_config_body: MatchingEngineConfigSetupRequestBody =
+        match jsonbody.0.to_payload(&ecies_priv_key) {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
 
-    response("Config done", StatusCode::OK, None)
+    let result = _generate_config_setup(&matching_engine_config_body, ecies_priv_key).await;
+
+    if result.is_ok() {
+        return response("Config done", StatusCode::OK, None);
+    } else {
+        return response(
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
+            None,
+        );
+    }
 }
 
 // Update matching_engine config
@@ -415,12 +383,12 @@ async fn get_matching_engine_public_keys() -> impl Responder {
 // Routes
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
-        .service(generate_api_key_handler)
         .service(start_matching_engine_handler)
         .service(stop_matching_engine_handler)
         .service(restart_matching_engine_handler)
         .service(get_matching_engine_status_handler)
         .service(generate_config_setup)
+        .service(generate_config_setup_encrypted)
         .service(get_matching_engine_public_keys)
         .service(update_matching_engine_config)
         .service(helper::common_handlers::sign_address)

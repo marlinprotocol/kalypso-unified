@@ -7,6 +7,8 @@ use anyhow::Context;
 use ethers::abi::{encode, Token};
 use ethers::core::utils::keccak256;
 use ethers::prelude::*;
+use rand::rngs::OsRng;
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::str::FromStr;
@@ -93,14 +95,24 @@ impl SCHPayload {
 #[derive(Serialize, Debug, Clone, Deserialize)]
 pub struct SCHResponse {
     response: Vec<u8>,
+    salt: Vec<u8>,
+    signature: Vec<u8>,
 }
 
 pub trait ToSchResponse {
-    fn to_sch_response(&self, response_payload: Value) -> anyhow::Result<SCHResponse>;
+    fn to_sch_response(
+        &self,
+        response_payload: Value,
+        enclave_key: Vec<u8>,
+    ) -> impl std::future::Future<Output = anyhow::Result<SCHResponse>> + Send;
 }
 
 impl ToSchResponse for SCHPayload {
-    fn to_sch_response(&self, response_payload: Value) -> anyhow::Result<SCHResponse> {
+    async fn to_sch_response(
+        &self,
+        response_payload: Value,
+        enclave_key: Vec<u8>,
+    ) -> anyhow::Result<SCHResponse> {
         let json_str = serde_json::to_string(&response_payload)
             .context("Failed to serialize response payload to JSON")?;
 
@@ -111,8 +123,35 @@ impl ToSchResponse for SCHPayload {
             Err(e) => return Err(anyhow::Error::msg(e.to_string())),
         };
 
+        let salt = {
+            let mut salt = vec![0u8; 64];
+            OsRng.fill_bytes(&mut salt);
+            salt
+        };
+
+        let values = vec![
+            ethers::abi::Token::Bytes(encrypted_data.clone()),
+            ethers::abi::Token::Bytes(salt.clone()),
+        ];
+
+        let encoded = ethers::abi::encode(&values);
+        let digest = ethers::utils::keccak256(encoded);
+
+        let enclave_key = hex::encode(&enclave_key);
+        let enclave_signer = enclave_key.parse::<LocalWallet>().unwrap();
+
+        let signature = match enclave_signer
+            .sign_message(ethers::types::H256(digest))
+            .await
+        {
+            Ok(data) => data,
+            Err(e) => return Err(anyhow::Error::msg(e.to_string())),
+        };
+
         Ok(SCHResponse {
             response: encrypted_data,
+            salt,
+            signature: signature.to_vec(),
         })
     }
 }
@@ -175,10 +214,7 @@ async fn sign_address_encrypted(
     jsonbody: web::Json<SCHPayload>,
     ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
 ) -> impl Responder {
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        key
-    };
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
 
     let json_input: SignAddress = match jsonbody.0.to_payload(&ecies_priv_key) {
         Ok(data) => data,
@@ -192,7 +228,11 @@ async fn sign_address_encrypted(
 
     if signed_address.is_some() {
         let signed_address = signed_address.unwrap();
-        let sch_response = match jsonbody.0.to_sch_response(signed_address) {
+        let sch_response = match jsonbody
+            .0
+            .to_sch_response(signed_address, ecies_priv_key.clone())
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());
@@ -257,10 +297,7 @@ async fn sign_attestation_encrypted(
     jsonbody: web::Json<SCHPayload>,
     ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
 ) -> impl Responder {
-    let ecies_priv_key = {
-        let key = ecies_priv_key.lock().unwrap().clone();
-        key
-    };
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
 
     let json_input: SignAttestation = match jsonbody.0.to_payload(&ecies_priv_key) {
         Ok(data) => data,
@@ -274,7 +311,11 @@ async fn sign_attestation_encrypted(
 
     if signed_attestation.is_some() {
         let signed_attestation = signed_attestation.unwrap();
-        let sch_response = match jsonbody.0.to_sch_response(signed_attestation) {
+        let sch_response = match jsonbody
+            .0
+            .to_sch_response(signed_attestation, ecies_priv_key.clone())
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());

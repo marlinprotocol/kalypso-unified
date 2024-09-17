@@ -10,17 +10,6 @@ pub struct ApiKeyFile {
     pub api_key: String,
 }
 
-pub struct ApiGenerationResponse {
-    pub api_key: String,
-    pub status: bool,
-    pub message: String,
-}
-
-pub struct VerifyApiResponse {
-    pub status: bool,
-    pub message: String,
-}
-
 #[derive(Serialize, Debug, Deserialize)]
 pub struct IvsConfig {
     pub secp256k1_private_key: String,
