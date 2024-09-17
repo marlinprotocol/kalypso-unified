@@ -1,3 +1,5 @@
+use serde_json::{json, Value};
+
 use crate::{
     kalypso::{generate_matching_engine_config_file, matching_engine_config_validation},
     model::MatchingEngineConfigSetupRequestBody,
@@ -6,7 +8,7 @@ use crate::{
 pub async fn _generate_config_setup(
     matching_engine_config_body: &MatchingEngineConfigSetupRequestBody,
     ecies_priv_key: Vec<u8>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Value> {
     let chain_id = matching_engine_config_body.chain_id.as_ref().unwrap();
 
     let rpc_url = matching_engine_config_body.rpc_url.as_ref().unwrap();
@@ -37,5 +39,5 @@ pub async fn _generate_config_setup(
         Err(e) => return Err(anyhow::Error::msg(e.to_string())),
     };
 
-    Ok(())
+    Ok(json!({}))
 }

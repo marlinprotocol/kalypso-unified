@@ -12,7 +12,7 @@ use crate::supervisord::{get_matching_engine_status, start_matching_engine, stop
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
-use helper::common_handlers::{SCHPayload, ToPayload};
+use helper::common_handlers::{SCHPayload, ToPayload, ToSchResponse};
 use helper::response::response;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -235,10 +235,22 @@ async fn generate_config_setup_encrypted(
             }
         };
 
-    let result = _generate_config_setup(&matching_engine_config_body, ecies_priv_key).await;
+    let result = _generate_config_setup(&matching_engine_config_body, ecies_priv_key.clone()).await;
 
     if result.is_ok() {
-        return response("Config done", StatusCode::OK, None);
+        let result = result.unwrap();
+        let sch_response = match jsonbody.0.to_sch_response(result, ecies_priv_key).await {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+        return response(
+            "Config done",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
     } else {
         return response(
             result.unwrap_err().to_string().as_ref(),
@@ -288,7 +300,19 @@ async fn update_matching_engine_config_encrypted(
     let result = _update_matching_engine_config_setup(&update_matching_engine_config_json).await;
 
     if result.is_ok() {
-        response("Matching Engine config updated", StatusCode::OK, None)
+        let result = result.unwrap();
+        let sch_response = match jsonbody.0.to_sch_response(result, ecies_priv_key).await {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+        return response(
+            "Matching Engine config updated",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
     } else {
         return response(
             result.unwrap_err().to_string().as_ref(),
@@ -350,6 +374,7 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(generate_config_setup_encrypted)
         .service(get_matching_engine_public_keys)
         .service(update_matching_engine_config)
+        .service(update_matching_engine_config_encrypted)
         .service(helper::common_handlers::sign_address)
         .service(helper::common_handlers::sign_attestation)
         .service(helper::common_handlers::sign_address_encrypted)

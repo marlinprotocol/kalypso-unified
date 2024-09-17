@@ -1,3 +1,4 @@
+use serde_json::{json, Value};
 use validator::Validate;
 
 use crate::{
@@ -8,7 +9,7 @@ use crate::{
 pub async fn _generator_config_setup(
     json_input: &GeneratorConfigSetupRequestBody,
     ecies_priv_key: Vec<u8>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Value> {
     //Validating the generator config
     let generator_config_body = json_input.generator_config.as_ref().unwrap();
     if generator_config_body.len() > 1 {
@@ -89,5 +90,5 @@ pub async fn _generator_config_setup(
         }
     };
 
-    Ok(())
+    Ok(json!({}))
 }

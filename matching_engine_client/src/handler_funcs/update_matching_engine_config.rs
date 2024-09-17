@@ -1,3 +1,5 @@
+use serde_json::{json, Value};
+
 use crate::{
     kalypso::{
         matching_engine_config_validation, read_matching_engine_config_file,
@@ -8,7 +10,7 @@ use crate::{
 
 pub async fn _update_matching_engine_config_setup(
     jsonbody: &UpdateMatchingEngineConfig,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Value> {
     let config_file_call = read_matching_engine_config_file().await;
     let config_file = match config_file_call {
         Ok(data) => data,
@@ -54,5 +56,5 @@ pub async fn _update_matching_engine_config_setup(
         Err(e) => return Err(anyhow::Error::msg(e.to_string())),
     }
 
-    Ok(())
+    Ok(json!({}))
 }

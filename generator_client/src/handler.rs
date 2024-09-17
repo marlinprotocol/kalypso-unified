@@ -16,7 +16,7 @@ use crate::supervisord::{get_program_status, start_program, stop_program};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{delete, get, post, put, web, Responder};
-use helper::common_handlers::{SCHPayload, ToPayload};
+use helper::common_handlers::{SCHPayload, ToPayload, ToSchResponse};
 use helper::response::response;
 use serde::Deserialize;
 use serde_json::Value;
@@ -293,10 +293,23 @@ async fn generate_config_setup_encrypted(
                 return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
             }
         };
-    let result = _generator_config_setup(&generate_config_setup_request_body, ecies_priv_key).await;
+    let result =
+        _generator_config_setup(&generate_config_setup_request_body, ecies_priv_key.clone()).await;
 
     if result.is_ok() {
-        response("Config done", StatusCode::OK, None)
+        let result = result.unwrap();
+        let sch_response = match jsonbody.0.to_sch_response(result, ecies_priv_key).await {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+        return response(
+            "Config done",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
     } else {
         return response(
             result.unwrap_err().to_string().as_ref(),
@@ -351,7 +364,20 @@ async fn update_runtime_config_encrypted(
     let result = _udpate_runtime_config(update_runtime_config_request_body.clone()).await;
 
     if result.is_ok() {
-        response("Runtime config updated", StatusCode::OK, None)
+        let result = result.unwrap();
+        let sch_response = match jsonbody.0.to_sch_response(result, ecies_priv_key).await {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
+
+        return response(
+            "Runtime config updated",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
     } else {
         return response(
             result.unwrap_err().to_string().as_ref(),

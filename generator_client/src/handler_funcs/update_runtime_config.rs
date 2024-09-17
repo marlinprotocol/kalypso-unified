@@ -1,3 +1,5 @@
+use serde_json::{json, Value};
+
 use crate::{
     kalypso::{
         read_runtime_config_file, runtime_config_validation, update_runtime_config_file,
@@ -7,7 +9,7 @@ use crate::{
 };
 use std::io::ErrorKind;
 
-pub async fn _udpate_runtime_config(jsonbody: UpdateRuntimeConfig) -> anyhow::Result<()> {
+pub async fn _udpate_runtime_config(jsonbody: UpdateRuntimeConfig) -> anyhow::Result<Value> {
     let config_file_call = read_runtime_config_file().await;
     let config_file = match config_file_call {
         Ok(data) => data,
@@ -75,5 +77,5 @@ pub async fn _udpate_runtime_config(jsonbody: UpdateRuntimeConfig) -> anyhow::Re
         }
     }
 
-    Ok(())
+    Ok(json!({}))
 }
