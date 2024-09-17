@@ -1,4 +1,5 @@
 use crate::handler_funcs::generate_config_setup::_generate_config_setup;
+use crate::handler_funcs::start_matching_engine::_start_matching_engine;
 use crate::handler_funcs::update_matching_engine_config::_update_matching_engine_config_setup;
 use crate::kalypso::{
     contract_validation, get_matching_engine_ecies_public_key, get_matching_engine_public_key,
@@ -25,47 +26,59 @@ struct EmptyPayload {}
 // Start matching_engine
 #[post("/startMatchingEngine")]
 async fn start_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
-    //Smart contract checks
-    let validation_status = contract_validation().await;
-    let validation_status_result = match validation_status {
-        Ok(data) => data,
-        Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an issue in validating",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
-        }
-    };
-    if !validation_status_result.status {
+    let result = _start_matching_engine().await;
+
+    if result.is_ok() {
+        return response("Matching Engine started", StatusCode::OK, None);
+    } else {
         return response(
-            &validation_status_result.message,
+            result.unwrap_err().to_string().as_ref(),
             StatusCode::BAD_REQUEST,
             None,
         );
     }
+}
 
-    //Starting the matching_engine with supervisord ctl
-    let supervisord_response = match start_matching_engine() {
+// Start matching_engine
+#[post("/startMatchingEngineEncrypted")]
+async fn start_matching_engine_handler_encrypted(
+    _payload: web::Json<SCHPayload>,
+    ecies_priv_key: Data<Arc<Mutex<Vec<u8>>>>,
+) -> impl Responder {
+    let ecies_priv_key = { ecies_priv_key.lock().unwrap().clone() };
+
+    // ensures that you client have received only signed messaged
+    let _: EmptyPayload = match _payload.0.to_payload(&ecies_priv_key) {
         Ok(data) => data,
         Err(e) => {
-            log::error!("{}", e);
-            return response(
-                "There was an error in starting the matching_engine",
-                StatusCode::INTERNAL_SERVER_ERROR,
-                None,
-            );
+            log::error!("{}", &e.to_string());
+            return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
         }
     };
-    if !supervisord_response.status {
+
+    let result = _start_matching_engine().await;
+
+    if result.is_ok() {
+        let result = result.unwrap();
+        let sch_response = match _payload.0.to_sch_response(result, ecies_priv_key).await {
+            Ok(data) => data,
+            Err(e) => {
+                log::error!("{}", &e.to_string());
+                return response(&e.to_string(), StatusCode::BAD_REQUEST, None);
+            }
+        };
         return response(
-            &supervisord_response.output,
-            StatusCode::INTERNAL_SERVER_ERROR,
+            "Matching Engine started",
+            StatusCode::OK,
+            Some(serde_json::to_value(&sch_response).unwrap()),
+        );
+    } else {
+        return response(
+            result.unwrap_err().to_string().as_ref(),
+            StatusCode::BAD_REQUEST,
             None,
         );
     }
-    response("Matching Engine started", StatusCode::OK, None)
 }
 
 //Stop matching_engine
@@ -367,6 +380,7 @@ async fn get_matching_engine_public_keys() -> impl Responder {
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
         .service(start_matching_engine_handler)
+        .service(start_matching_engine_handler_encrypted)
         .service(stop_matching_engine_handler)
         .service(restart_matching_engine_handler)
         .service(get_matching_engine_status_handler)
