@@ -13,6 +13,7 @@ use std::{
     thread,
     time::Duration,
 };
+use uuid::Uuid;
 
 use tokio::sync::Semaphore;
 
@@ -86,10 +87,14 @@ impl JobCreator {
         enable_logging_server: bool,
         max_threads: usize,
     ) -> Self {
+        let service_name = Uuid::new_v4().to_string();
         let shared_latest_block = Arc::new(tokio::sync::Mutex::new(U64::zero()));
         let should_stop = Arc::new(AtomicBool::new(false));
-        let health_check_service =
-            ListenerHealthCheckServer::new(shared_latest_block.clone(), should_stop.clone());
+        let health_check_service = ListenerHealthCheckServer::new(
+            service_name,
+            shared_latest_block.clone(),
+            should_stop.clone(),
+        );
 
         tokio::spawn(health_check_service.start_server(9999, false));
 

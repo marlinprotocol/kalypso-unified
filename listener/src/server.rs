@@ -10,14 +10,20 @@ use tokio::sync::Mutex;
 
 pub struct ListenerHealthCheckServer {
     shared_latest_block: Arc<Mutex<U64>>,
+    service_name: Arc<Mutex<String>>,
     should_stop: Arc<AtomicBool>,
 }
 
 impl ListenerHealthCheckServer {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(shared_latest_block: Arc<Mutex<U64>>, should_stop: Arc<AtomicBool>) -> Self {
+    pub fn new(
+        service_name: String,
+        shared_latest_block: Arc<Mutex<U64>>,
+        should_stop: Arc<AtomicBool>,
+    ) -> Self {
         ListenerHealthCheckServer {
             shared_latest_block,
+            service_name: Arc::new(Mutex::new(service_name)),
             should_stop,
         }
     }
@@ -27,6 +33,7 @@ impl ListenerHealthCheckServer {
             App::new()
                 .wrap(kalypso_helper::middlewares::ratelimiter::get_rate_limiter())
                 .app_data(Data::new(self.shared_latest_block.clone()))
+                .app_data(Data::new(self.service_name.clone()))
                 .route("/getLatestBlock", web::get().to(get_latest_block_number))
         });
 
@@ -70,15 +77,19 @@ impl ListenerHealthCheckServer {
 
 async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
+    service_name: Data<Arc<Mutex<String>>>,
 ) -> actix_web::Result<HttpResponse> {
     let latest_parsed_block = _shared_parsed_block.lock().await;
+    let service_name = service_name.lock().await;
 
     #[derive(Serialize, Debug, Clone)]
     struct GetLatestBlockNumberResponse {
+        pub service_name: String,
         pub block_number: String,
     }
 
     Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {
+        service_name: service_name.to_string(),
         block_number: latest_parsed_block.to_string(),
     }))
 }
