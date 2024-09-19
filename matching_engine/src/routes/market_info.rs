@@ -35,7 +35,7 @@ pub async fn market_stats(
         let result = local_ask_store.get_proof_count(&market_id_u256);
         if result.is_none() {
             Some(0)
-        }else{
+        } else {
             result
         }
     };
