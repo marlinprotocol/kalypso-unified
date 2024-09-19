@@ -100,6 +100,10 @@ impl MatchingEngineServer {
                     "/marketInfo",
                     web::post().to(routes::market_info::market_info),
                 )
+                .route(
+                    "/marketStats/{marketId}",
+                    web::get().to(routes::market_info::market_stats),
+                )
         });
 
         if enable_ssc {

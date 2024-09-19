@@ -2,6 +2,7 @@ use crate::ask::*;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::{
     AskInfoToSend, GeneratorInfo, GeneratorsInfoForMarket, MarketInfo, MarketInfoResponse,
+    MarketStatsResponse,
 };
 use actix_web::web;
 use actix_web::web::Data;
@@ -9,6 +10,73 @@ use actix_web::HttpResponse;
 use ethers::core::types::U256;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
+pub async fn market_stats(
+    market_id: web::Path<String>,
+    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+    _generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+) -> actix_web::Result<HttpResponse> {
+    let market_id = market_id.into_inner();
+    let market_id_u256 = U256::from_dec_str(&market_id);
+
+    if market_id_u256.is_err() {
+        return Ok(HttpResponse::BadRequest().json(MarketStatsResponse {
+            market_info: "invalid market id".into(),
+            generator_count: None,
+            proofs_generated: None,
+            proofs_pending: None,
+        }));
+    }
+
+    let market_id_u256 = market_id_u256.unwrap();
+
+    let proofs_generated = {
+        let local_ask_store = { _local_ask_store.lock().await };
+        let asks = local_ask_store.get_by_state(AskState::Complete).result();
+        if asks.is_none() {
+            None
+        } else {
+            let asks: Vec<LocalAsk> = asks
+                .unwrap()
+                .into_iter()
+                .filter(|a| a.market_id.eq(&market_id_u256))
+                .collect();
+            Some(asks.len())
+        }
+    };
+
+    let proofs_pending = {
+        let local_ask_store = { _local_ask_store.lock().await };
+        let asks = local_ask_store.get_by_state(AskState::Create).result();
+        if asks.is_none() {
+            None
+        } else {
+            let asks: Vec<LocalAsk> = asks
+                .unwrap()
+                .into_iter()
+                .filter(|a| a.market_id.eq(&market_id_u256))
+                .collect();
+            Some(asks.len())
+        }
+    };
+
+    let generator_count = {
+        let generator_store = _generator_store.lock().await;
+        let generators = generator_store.get_all_by_market_id(&market_id_u256);
+        if generators.is_none() {
+            None
+        } else {
+            Some(generators.unwrap().len())
+        }
+    };
+
+    return Ok(HttpResponse::Ok().json(MarketStatsResponse {
+        market_info: market_id,
+        generator_count,
+        proofs_generated,
+        proofs_pending,
+    }));
+}
 
 pub async fn market_info(
     _payload: web::Json<MarketInfo>,

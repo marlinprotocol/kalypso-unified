@@ -309,6 +309,19 @@ impl GeneratorStore {
             .get(&address)
             .map(|generator| generator.total_stake.sub(generator.stake_locked))
     }
+
+    pub fn get_all_by_market_id(&self, market_id: &U256) -> Option<Vec<GeneratorInfoPerMarket>> {
+        let all_generators = self.clone().all_generators_address();
+        let mut generator_for_given_market = vec![];
+        for generator in all_generators {
+            let generator_info_per_market = self.get_by_address_and_market(&generator, &market_id);
+            if generator_info_per_market.is_some() {
+                generator_for_given_market.push(generator_info_per_market.unwrap().clone());
+            }
+        }
+
+        Some(generator_for_given_market)
+    }
 }
 
 // add methods to generate the query

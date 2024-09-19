@@ -103,3 +103,11 @@ pub struct BalanceResponse {
     pub balance: Option<ethers::types::U256>,
     pub status: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct MarketStatsResponse {
+    pub market_info: String,
+    pub generator_count: Option<usize>,
+    pub proofs_generated: Option<usize>,
+    pub proofs_pending: Option<usize>,
+}
