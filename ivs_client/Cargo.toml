@@ -12,7 +12,7 @@ anyhow = "1.0.86"
 dotenv = "0.15.0"
 ecies = {version = "0.2.6", features = ["std"]}
 env_logger = "0.11.3"
-ethers = {version = "2.0.8", features = ["abigen", "ws", "rustls"] }
+ethers = {version = "2", features = ["abigen", "ws", "rustls"] }
 futures-util = "0.3"
 helper = {path = "../helper", package = "helper"}
 hex = "0.4"

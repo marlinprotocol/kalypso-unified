@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bindings = { path = "../bindings", package = "foundry-contracts" }
-ethers ={version = "2.0.10", features = ["abigen", "ws", "rustls"] }
+ethers ={version = "2", features = ["abigen", "ws", "rustls"] }
 generator_models = { path = "../generator", package = "generator" }
 kalypso_helper = { path = "../helper", package = "helper" } 
 rand = "0.8"
