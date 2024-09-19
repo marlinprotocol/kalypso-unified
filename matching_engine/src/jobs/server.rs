@@ -10,7 +10,6 @@ use ethers::types::U64;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Mutex;
 
-use crate::middlewares;
 use crate::routes;
 use crate::{
     ask::{LocalAskStore, MarketMetadataStore},
@@ -63,7 +62,7 @@ impl MatchingEngineServer {
     pub async fn start_server(self, port: u16, enable_ssc: bool) -> anyhow::Result<()> {
         let server = HttpServer::new(move || {
             App::new()
-                .wrap(middlewares::ratelimiter::get_rate_limiter())
+                .wrap(kalypso_helper::middlewares::ratelimiter::get_rate_limiter())
                 .app_data(Data::new(self.shared_market_data.clone()))
                 .app_data(Data::new(self.shared_local_ask_data.clone()))
                 .app_data(Data::new(self.shared_parsed_block.clone()))

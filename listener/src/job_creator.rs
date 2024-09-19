@@ -17,6 +17,7 @@ use std::{
 use tokio::sync::Semaphore;
 
 use crate::proof_generator::GenerateProofParams;
+use crate::server::ListenerHealthCheckServer;
 use crate::{ask, generator_store, proof_generator};
 use warp::Filter;
 
@@ -65,6 +66,8 @@ pub struct JobCreator {
     #[allow(unused)]
     log_storage: Option<Arc<Mutex<Vec<String>>>>,
     max_threads: usize,
+    shared_latest_block: Arc<tokio::sync::Mutex<U64>>,
+    should_stop: Arc<AtomicBool>,
 }
 
 impl JobCreator {
@@ -83,6 +86,13 @@ impl JobCreator {
         enable_logging_server: bool,
         max_threads: usize,
     ) -> Self {
+        let shared_latest_block = Arc::new(tokio::sync::Mutex::new(U64::zero()));
+        let should_stop = Arc::new(AtomicBool::new(false));
+        let health_check_service =
+            ListenerHealthCheckServer::new(shared_latest_block.clone(), should_stop.clone());
+
+        tokio::spawn(health_check_service.start_server(9999, false));
+
         if enable_logging_server {
             let log_storage = Arc::new(Mutex::new(Vec::new()));
             let storage_clone = log_storage.clone();
@@ -96,6 +106,8 @@ impl JobCreator {
                 runtime_config,
                 log_storage: Some(log_storage),
                 max_threads,
+                shared_latest_block,
+                should_stop,
             }
         } else {
             Self {
@@ -103,6 +115,8 @@ impl JobCreator {
                 runtime_config,
                 log_storage: None,
                 max_threads,
+                shared_latest_block,
+                should_stop,
             }
         }
     }
@@ -372,8 +386,7 @@ impl JobCreator {
 
         let blocks_at_once = 10000;
 
-        let should_stop = Arc::new(AtomicBool::new(false));
-        let stop_handle = should_stop.clone();
+        let stop_handle = self.should_stop.clone();
         tokio::spawn(async move {
             tokio::signal::ctrl_c().await.unwrap();
             stop_handle.store(true, Ordering::Release);
@@ -383,7 +396,7 @@ impl JobCreator {
         let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
         loop {
-            if should_stop.load(Ordering::Acquire) {
+            if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
             }
@@ -605,6 +618,10 @@ impl JobCreator {
             }
 
             start_block = end + 1;
+
+            {
+                *self.shared_latest_block.lock().await = start_block
+            }
         }
         Ok(())
     }
