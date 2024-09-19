@@ -39,7 +39,7 @@ pub async fn market_stats(
         let local_ask_store = { _local_ask_store.lock().await };
         let asks = local_ask_store.get_by_state(AskState::Create).result();
         if asks.is_none() {
-            None
+            Some(0)
         } else {
             let asks: Vec<LocalAsk> = asks
                 .unwrap()
@@ -54,7 +54,7 @@ pub async fn market_stats(
         let generator_store = _generator_store.lock().await;
         let generators = generator_store.get_all_by_market_id(&market_id_u256);
         if generators.is_none() {
-            None
+            Some(0)
         } else {
             Some(generators.unwrap().len())
         }
