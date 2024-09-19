@@ -103,6 +103,7 @@ pub struct LocalAskStore {
     market_id_index: HashMap<U256, Vec<LocalAsk>>,
     state_index: HashMap<AskState, Vec<LocalAsk>>,
     proofs: HashMap<U256, Proof>,
+    proof_counter: HashMap<U256, usize>,
 }
 
 pub struct AskQueryResult {
@@ -261,6 +262,7 @@ impl LocalAskStore {
             market_id_index: HashMap::new(),
             state_index: HashMap::new(),
             proofs: HashMap::new(),
+            proof_counter: HashMap::new(),
         }
     }
 
@@ -321,8 +323,27 @@ impl LocalAskStore {
     }
 
     pub fn store_valid_proof(&mut self, ask_id: &U256, proof: Bytes) {
-        if self.asks_by_id.get_mut(ask_id).is_some() {
-            self.proofs.insert(*ask_id, Proof::ValidProof(proof));
+        match self.asks_by_id.get_mut(ask_id) {
+            Some(ask_data) => {
+                self.proofs.insert(*ask_id, Proof::ValidProof(proof));
+                let existing_proofs = self.proof_counter.get(&ask_data.market_id);
+                if existing_proofs.is_none() {
+                    self.proof_counter.insert(ask_data.market_id, 0);
+                } else {
+                    let tmp = existing_proofs.unwrap() + 1;
+                    self.proof_counter.insert(ask_data.market_id, tmp);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn get_proof_count(&self, market_id: &U256) -> Option<usize> {
+        let result = self.proof_counter.get(market_id);
+        if result.is_none() {
+            None
+        } else {
+            Some(result.unwrap().clone())
         }
     }
 

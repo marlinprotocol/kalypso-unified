@@ -32,17 +32,7 @@ pub async fn market_stats(
 
     let proofs_generated = {
         let local_ask_store = { _local_ask_store.lock().await };
-        let asks = local_ask_store.get_by_state(AskState::Complete).result();
-        if asks.is_none() {
-            None
-        } else {
-            let asks: Vec<LocalAsk> = asks
-                .unwrap()
-                .into_iter()
-                .filter(|a| a.market_id.eq(&market_id_u256))
-                .collect();
-            Some(asks.len())
-        }
+        local_ask_store.get_proof_count(&market_id_u256)
     };
 
     let proofs_pending = {
