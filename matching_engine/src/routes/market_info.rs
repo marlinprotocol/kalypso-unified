@@ -32,7 +32,12 @@ pub async fn market_stats(
 
     let proofs_generated = {
         let local_ask_store = { _local_ask_store.lock().await };
-        local_ask_store.get_proof_count(&market_id_u256)
+        let result = local_ask_store.get_proof_count(&market_id_u256);
+        if result.is_none() {
+            Some(0)
+        }else{
+            result
+        }
     };
 
     let proofs_pending = {
