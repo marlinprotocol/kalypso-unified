@@ -541,13 +541,17 @@ impl JobCreator {
                         let proof_transaction = match proof {
                             crate::proof_generator::prover::Proof::ValidProof(proof) => {
                                 log::info!("Submitting proof on-chain...");
-                                match submitter_pmp_clone_http
+
+                                let mut tx = submitter_pmp_clone_http
                                     .lock()
                                     .await
-                                    .submit_proof(event.ask_id, proof)
-                                    .send()
-                                    .await
-                                {
+                                    .submit_proof(event.ask_id, proof);
+
+                                if cfg!(feature = "force_transactions") {
+                                    tx = tx.gas(10_000_000);
+                                }
+
+                                match tx.clone().send().await {
                                     Ok(submit_response) => match submit_response
                                         .confirmations(10)
                                         .await
@@ -568,16 +572,19 @@ impl JobCreator {
                                 invalid_proof_signature,
                             ) => {
                                 log::info!("Submitting signature on-chain...");
-                                match submitter_pmp_clone_http
+                                let mut tx = submitter_pmp_clone_http
                                     .lock()
                                     .await
                                     .submit_proof_for_invalid_inputs(
                                         event.ask_id,
                                         invalid_proof_signature,
-                                    )
-                                    .send()
-                                    .await
-                                {
+                                    );
+
+                                if cfg!(feature = "force_transactions") {
+                                    tx = tx.gas(10_000_000);
+                                }
+
+                                match tx.clone().send().await {
                                     Ok(submit_response) => match submit_response
                                         .confirmations(10)
                                         .await

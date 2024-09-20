@@ -27,3 +27,7 @@ tokio = { version = "1.16.1", features = ["full"] }
 toml = "0.8.2"
 uuid= {version = "1.4.1", features = ["v4","fast-rng","macro-diagnostics"]}
 warp = "0.3"
+
+[features]
+default = []
+force_transactions = []
