@@ -110,4 +110,5 @@ pub struct MarketStatsResponse {
     pub generator_count: Option<usize>,
     pub proofs_generated: Option<usize>,
     pub proofs_pending: Option<usize>,
+    pub proofs_in_progress: Option<usize>,
 }
