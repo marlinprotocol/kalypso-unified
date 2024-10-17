@@ -107,7 +107,7 @@ pub fn generate_signed_inputs_and_proof_request<R>(
                 public_input: "public_inputs".into(),
             }
         })),
-        service_endpoint: "/api/signInputsAndProofForNonConfidnetialInputs".into(),
+        service_endpoint: "/api/signInputsAndProofForNonConfidentialInputs".into(),
         _marker: std::marker::PhantomData::<R>,
         expected_status_code,
         info,
