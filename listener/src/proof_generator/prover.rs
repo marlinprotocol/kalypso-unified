@@ -30,11 +30,10 @@ pub trait Prover {
             match check_proof {
                 Ok(data) => {
                     if data.is_input_and_proof_valid {
-                        log::info!("Generated Proof is Valid: Rechecked with IVS");
+                        log::info!("is_input_and_proof_valid");
                     } else {
-                        log::warn!(
-                            "Generated Proof is Invalid: After second round of checking with IVS"
-                        );
+                        log::error!("is_input_and_proof_is_invalid");
+                        log::warn!("invalid proofs will be rejected in future");
                     }
                 }
                 _ => {

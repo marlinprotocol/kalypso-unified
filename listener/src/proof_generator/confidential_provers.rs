@@ -143,10 +143,7 @@ impl ConfidentialProver {
             ask_id,
             public,
             secrets,
-            client: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(10))
-                .build()
-                .unwrap(),
+            client: reqwest::Client::new(),
         }
     }
 
