@@ -1,5 +1,6 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -114,7 +115,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_expiry(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.sort_by(|a, b| a.expiry.cmp(&b.expiry));
+            asks.par_sort_by(|a, b| a.expiry.cmp(&b.expiry));
         }
         self
     }
@@ -125,7 +126,7 @@ impl AskQueryResult {
 
     pub fn sort_by_ask_id(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
+            asks.par_sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
         }
         self
     }
@@ -133,9 +134,9 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_market_id(self, market_id: U256) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
-                .filter(|ask| ask.market_id == market_id)
-                .collect::<Vec<_>>()
+            asks.into_par_iter() // Parallel iterator over asks
+                .filter(|ask| ask.market_id == market_id) // Filter by market_id
+                .collect::<Vec<_>>() // Collect filtered results
         });
         AskQueryResult { asks: filtered }
     }
@@ -143,7 +144,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_proving_time(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.sort_by(|a, b| a.proving_time.cmp(&b.proving_time));
+            asks.par_sort_by(|a, b| a.proving_time.cmp(&b.proving_time));
         }
         self
     }
@@ -151,7 +152,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_reward(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.sort_by(|a, b| a.reward.cmp(&b.reward));
+            asks.par_sort_by(|a, b| a.reward.cmp(&b.reward));
         }
         self
     }
@@ -159,7 +160,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_deadline(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.sort_by(|a, b| a.deadline.cmp(&b.deadline));
+            asks.par_sort_by(|a, b| a.deadline.cmp(&b.deadline));
         }
         self
     }
@@ -167,7 +168,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_has_private_inputs(self, value: bool) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| ask.has_private_inputs == value)
                 .collect::<Vec<_>>()
         });
@@ -176,7 +177,7 @@ impl AskQueryResult {
 
     pub fn filter_by_flag(self, value: bool) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| ask.invalid_secret_flag == value)
                 .collect::<Vec<_>>()
         });
@@ -197,7 +198,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_expiry(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| Self::compare(ask.expiry, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -207,7 +208,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_proving_time(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| Self::compare(ask.proving_time, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -217,7 +218,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_reward(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| Self::compare(ask.reward, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -227,7 +228,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_deadline(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| Self::compare(ask.deadline, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -237,7 +238,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_prover_refund_address(self, address: Address) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_iter()
+            asks.into_par_iter()
                 .filter(|ask| ask.prover_refund_address == address)
                 .collect::<Vec<_>>()
         });

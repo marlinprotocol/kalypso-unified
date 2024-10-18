@@ -15,7 +15,22 @@ pub fn random_generator_selection(
     }
 }
 
-pub fn idle_generator_selector(
+pub fn select_idle_generators(
+    generators: Vec<&GeneratorInfoPerMarket>,
+) -> Vec<GeneratorInfoPerMarket> {
+    let mut to_return = vec![];
+    for generator in generators {
+        to_return.push(generator.clone());
+    }
+
+    to_return
+}
+
+#[deprecated(
+    note = "This function is deprecated because of performance issue. Use `select_idle_generators` instead"
+)]
+#[allow(dead_code)]
+fn idle_generator_selector(
     generators: Vec<&GeneratorInfoPerMarket>,
 ) -> Vec<GeneratorInfoPerMarket> {
     // sort generators based on total stake

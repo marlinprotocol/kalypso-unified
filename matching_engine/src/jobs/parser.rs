@@ -2,9 +2,9 @@ use crate::costs::CostStore;
 use crate::generator_lib::generator_store;
 use anyhow::Result;
 use ethers::prelude::*;
-use itertools::Itertools;
 use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::ops::Sub;
 use std::{
@@ -96,9 +96,9 @@ impl LogParser {
             provider_http,
             matching_engine_key: hex::decode(matching_engine_key).unwrap(),
             matching_engine_slave_keys: matching_engine_slave_keys
-                .into_iter()
+                .into_par_iter()
                 .map(|s| hex::decode(s).unwrap())
-                .collect_vec(),
+                .collect(),
             shared_local_ask_store,
             shared_generator_store,
             shared_market_store,
@@ -497,21 +497,21 @@ impl LogParser {
             ethers::abi::Token::Array(
                 ask_ids
                     .clone()
-                    .into_iter()
+                    .into_par_iter()
                     .map(ethers::abi::Token::Uint)
                     .collect(),
             ),
             ethers::abi::Token::Array(
                 generators
                     .clone()
-                    .into_iter()
+                    .into_par_iter()
                     .map(ethers::abi::Token::Address)
                     .collect(),
             ),
             ethers::abi::Token::Array(
                 new_acls
                     .clone()
-                    .into_iter()
+                    .into_par_iter()
                     .map(|v| ethers::abi::Token::Bytes(v.to_vec()))
                     .collect(),
             ),
@@ -593,37 +593,37 @@ impl LogParser {
         let idle_generators = {
             let generator_query = {
                 if random_pending_ask.has_private_inputs {
+                    let generator_query = generator_store
+                        .query_by_market_id(&random_pending_ask.market_id)
+                        .filter_by_state(vec![GeneratorState::Joined, GeneratorState::Wip])
+                        .filter_by_reward(task_reward);
+
+                    let generator_with_idle_compute =
+                        generator_store.filter_by_has_idle_compute(generator_query);
+
+                    let generator_with_available_stake = generator_store
+                        .filter_by_available_stake(generator_with_idle_compute, slashing_penalty);
                     generator_store.filter_by_has_private_inputs_support(
-                        generator_store.filter_by_available_stake(
-                            generator_store.filter_by_has_idle_compute(
-                                generator_store
-                                    .query_by_states(vec![
-                                        GeneratorState::Joined,
-                                        GeneratorState::Wip,
-                                    ])
-                                    .filter_by_market_id(random_pending_ask.market_id)
-                                    .filter_by_reward(task_reward),
-                            ),
-                            slashing_penalty,
-                        ),
+                        generator_with_available_stake,
                         key_store,
                     )
                 } else {
-                    generator_store.filter_by_available_stake(
-                        generator_store.filter_by_has_idle_compute(
-                            generator_store
-                                .query_by_states(vec![GeneratorState::Joined, GeneratorState::Wip])
-                                .filter_by_market_id(random_pending_ask.market_id)
-                                .filter_by_reward(task_reward),
-                        ),
-                        slashing_penalty,
-                    )
+                    let generator_query = generator_store
+                        .query_by_market_id(&random_pending_ask.market_id)
+                        .filter_by_state(vec![GeneratorState::Joined, GeneratorState::Wip])
+                        .filter_by_reward(task_reward);
+
+                    let generator_with_idle_compute =
+                        generator_store.filter_by_has_idle_compute(generator_query);
+
+                    generator_store
+                        .filter_by_available_stake(generator_with_idle_compute, slashing_penalty)
                 }
             };
 
             let generators = generator_query.result();
 
-            generator_helper::idle_generator_selector(generators)
+            generator_helper::select_idle_generators(generators)
         };
         idle_generators
     }

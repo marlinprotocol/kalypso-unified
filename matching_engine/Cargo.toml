@@ -19,11 +19,11 @@ flate2 = "1.0.28"
 futures-util = "0.3.28"
 hex = "0.4.3"
 im = "15.1.0"
-itertools = "0.13.0"
 kalypso_helper = {path = "../helper", package = "helper"}
 lazy_static = "1.4.0"
 libzeropool-zkbob = "1.3.0"
 log = "0.4"
+rayon = "1.10.0"
 reqwest = { version = "0.12.4", features = ["json"] }
 secp256k1 = "0.29.0"
 serde = "1.0.178"

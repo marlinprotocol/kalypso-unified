@@ -1,5 +1,6 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::sync::MutexGuard;
 
@@ -16,7 +17,7 @@ pub struct GeneratorStore {
     generators: HashMap<Address, Generator>,
     generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>,
     state_index: HashMap<GeneratorState, Vec<(Address, U256)>>,
-    address_index: HashMap<Address, Vec<U256>>, // to easily fetch all generators by address
+    address_index: HashMap<Address, Vec<U256>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
@@ -65,7 +66,10 @@ impl GeneratorStore {
     }
 
     pub fn all_generators_address(self) -> Vec<Address> {
-        self.generators.keys().cloned().collect()
+        self.generators
+            .par_iter()
+            .map(|(address, _)| address.clone())
+            .collect()
     }
 
     pub fn insert(&mut self, generator: Generator) {
@@ -257,7 +261,7 @@ impl GeneratorStore {
     fn get_all_markets_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
-                .iter()
+                .par_iter()
                 .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)))
                 .collect(),
             None => Vec::new(),
@@ -268,7 +272,7 @@ impl GeneratorStore {
         // Collect the market IDs to be updated first, avoiding an immutable borrow later
         let all_market_ids: Vec<U256> = self
             .get_all_markets_generator(address)
-            .iter()
+            .par_iter()
             .map(|single_market| single_market.market_id) // Collect U256 (market_id)
             .collect();
 
@@ -282,7 +286,7 @@ impl GeneratorStore {
         // Collect the market IDs to be updated first, avoiding an immutable borrow later
         let all_market_ids: Vec<U256> = self
             .get_all_markets_generator(address)
-            .iter()
+            .par_iter()
             .map(|single_market| single_market.market_id) // Collect U256 (market_id)
             .collect();
 
@@ -331,24 +335,42 @@ impl GeneratorStore {
         GeneratorQueryResult::new(self.generator_markets.values().collect())
     }
 
+    pub fn query_by_market_id(&self, market_id: &U256) -> GeneratorQueryResult {
+        log::debug!("Check query by market id");
+
+        let generator_markets: Vec<&GeneratorInfoPerMarket> = self
+            .generator_markets
+            .par_iter() // Parallel iterator over the generator_markets HashMap
+            .filter_map(|((_, gen_market_id), generator_info)| {
+                // Check if the market_id matches
+                if gen_market_id == market_id {
+                    Some(generator_info)
+                } else {
+                    None
+                }
+            })
+            .collect(); // Collect matching generator markets into a Vec
+
+        GeneratorQueryResult::new(generator_markets)
+    }
+
+    #[allow(unused)]
     pub fn query_by_states(&self, states: Vec<GeneratorState>) -> GeneratorQueryResult {
         log::debug!("Check query by states");
 
-        let mut generators_market = Vec::new();
-
-        // Iterate over each state in the slice
-        for state in states {
-            if let Some(pairs) = self.state_index.get(&state) {
-                for &(address, market_id) in pairs {
-                    if let Some(generator_market) =
-                        self.generator_markets.get(&(address, market_id))
-                    {
-                        // Clone the generator market so that we have an owned value
-                        generators_market.push(generator_market);
-                    }
-                }
-            }
-        }
+        let generators_market: Vec<&GeneratorInfoPerMarket> = states
+            .into_par_iter() // Convert the Vec<GeneratorState> to a parallel iterator
+            .filter_map(|state| {
+                // For each state, get the associated pairs
+                self.state_index.get(&state)
+            })
+            .flat_map(|pairs| {
+                // For each pair, iterate in parallel and get the generator markets
+                pairs.into_par_iter().filter_map(|&(address, market_id)| {
+                    self.generator_markets.get(&(address, market_id))
+                })
+            })
+            .collect();
 
         GeneratorQueryResult::new(generators_market)
     }
@@ -357,7 +379,7 @@ impl GeneratorStore {
     pub fn query_by_address(&self, address: Address) -> GeneratorQueryResult {
         let generators = match self.address_index.get(&address) {
             Some(market_ids) => market_ids
-                .iter()
+                .par_iter()
                 .filter_map(|m_id| self.generator_markets.get(&(address, *m_id)))
                 .collect(),
             None => Vec::new(),
@@ -373,19 +395,27 @@ impl GeneratorStore {
         generator_query: GeneratorQueryResult,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
-        let mut generator_result = vec![];
-        for elem in generator_array {
-            if let Some(generator) = self.generators.get(&elem.address) {
-                let idle_compute = generator.declared_compute.sub(generator.compute_consumed);
-                if idle_compute.ge(&elem.compute_required_per_request) {
-                    generator_result.push(
-                        self.generator_markets
-                            .get(&(elem.address, elem.market_id))
-                            .unwrap(),
-                    );
+
+        // Use rayon's parallel iterator to process in parallel
+        let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
+            .into_par_iter() // Convert to a parallel iterator
+            .filter_map(|elem| {
+                // Try to get the generator from the store
+                if let Some(generator) = self.generators.get(&elem.address) {
+                    let idle_compute = generator.declared_compute.sub(generator.compute_consumed);
+
+                    // Check if the idle compute is greater than or equal to the required compute
+                    if idle_compute.ge(&elem.compute_required_per_request) {
+                        // If so, retrieve the generator market and return it
+                        self.generator_markets.get(&(elem.address, elem.market_id))
+                    } else {
+                        None // Otherwise, filter it out
+                    }
+                } else {
+                    None // If generator doesn't exist, filter it out
                 }
-            }
-        }
+            })
+            .collect(); // Collect the results into a Vec
 
         GeneratorQueryResult::new(generator_result)
     }
@@ -396,19 +426,28 @@ impl GeneratorStore {
         min_stake: U256,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
-        let mut generator_result = vec![];
-        for elem in generator_array {
-            if let Some(generator) = self.generators.get(&elem.address) {
-                let remaining_stake = generator.total_stake.sub(generator.stake_locked);
-                if remaining_stake.ge(&min_stake) {
-                    generator_result.push(
-                        self.generator_markets
-                            .get(&(elem.address, elem.market_id))
-                            .unwrap(),
-                    );
+
+        // Use rayon's parallel iterator to process in parallel
+        let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
+            .into_par_iter() // Convert the array to a parallel iterator
+            .filter_map(|elem| {
+                // Try to get the generator from the store
+                if let Some(generator) = self.generators.get(&elem.address) {
+                    let remaining_stake = generator.total_stake.sub(generator.stake_locked);
+
+                    // Check if the remaining stake is greater than or equal to the minimum stake
+                    if remaining_stake.ge(&min_stake) {
+                        // If so, retrieve the generator market and return it
+                        self.generator_markets.get(&(elem.address, elem.market_id))
+                    } else {
+                        None // Otherwise, filter it out
+                    }
+                } else {
+                    None // If generator doesn't exist, filter it out
                 }
-            }
-        }
+            })
+            .collect(); // Collect the results into a Vec
+
         GeneratorQueryResult::new(generator_result)
     }
 
@@ -418,33 +457,41 @@ impl GeneratorStore {
         key_store: MutexGuard<'_, KeyStore>,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
-        let mut generator_result = vec![];
-        for elem in generator_array {
-            if let Some(generator) = self.generators.get(&elem.address) {
-                let ecies_pub_key =
-                    key_store.get_by_address(&generator.address, elem.market_id.as_u64());
-                if ecies_pub_key.is_some() {
-                    generator_result.push(
-                        self.generator_markets
-                            .get(&(elem.address, elem.market_id))
-                            .unwrap(),
-                    );
+
+        // Use rayon's parallel iterator to process in parallel
+        let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
+            .into_par_iter() // Convert to a parallel iterator
+            .filter_map(|elem| {
+                // Try to get the generator from the store
+                if let Some(generator) = self.generators.get(&elem.address) {
+                    // Lock the key store and check for ECIES public key
+                    let ecies_pub_key =
+                        key_store.get_by_address(&generator.address, elem.market_id.as_u64());
+                    if ecies_pub_key.is_some() {
+                        // If the key exists, retrieve the generator market
+                        return self.generator_markets.get(&(elem.address, elem.market_id));
+                    }
                 }
-            }
-        }
+                None // If no generator or no ECIES public key, filter it out
+            })
+            .collect(); // Collect the results into a Vec
+
         GeneratorQueryResult::new(generator_result)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::generator_lib::generator_helper::idle_generator_selector;
+    use crate::generator_lib::generator_helper::select_idle_generators;
 
     use super::{Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore};
     use ethers::{
         core::rand::{self, seq::SliceRandom},
         types::{Address, H160, U256},
     };
+
+    use rand::Rng;
+    use std::time::Instant;
 
     #[test]
     fn test_insert_remove_generators() {
@@ -473,7 +520,7 @@ mod tests {
 
     #[test]
     fn test_stake_and_compute() {
-        let mut generator_store = create_new_store_with_generators(2);
+        let mut generator_store = create_new_store_with_generators(2, None, None, None);
         let random_generator = get_random_generator(&generator_store);
 
         // Perform your stake and compute operations on `generator`
@@ -534,7 +581,7 @@ mod tests {
 
     #[test]
     fn test_markets() {
-        let mut generator_store = create_new_store_with_generators(4);
+        let mut generator_store = create_new_store_with_generators(4, None, None, None);
         let random_generator = get_random_generator(&generator_store);
 
         let random_generator_info_per_market = get_random_market_info_for_generator(
@@ -577,7 +624,7 @@ mod tests {
 
     #[test]
     fn test_matches() {
-        let mut generator_store = create_new_store_with_generators(4);
+        let mut generator_store = create_new_store_with_generators(4, None, None, None);
 
         let all_generators = { generator_store.clone().all_generators_address() };
         for generator in all_generators {
@@ -595,7 +642,7 @@ mod tests {
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
 
-        let idle_generators: Vec<GeneratorInfoPerMarket> = idle_generator_selector(
+        let idle_generators: Vec<GeneratorInfoPerMarket> = select_idle_generators(
             all_generator_per_market_query
                 .clone()
                 .filter_by_market_id(U256::from_dec_str("1").unwrap())
@@ -624,7 +671,7 @@ mod tests {
 
     #[test]
     fn test_matches_2() {
-        let mut generator_store = create_new_store_with_generators(4);
+        let mut generator_store = create_new_store_with_generators(4, None, None, None);
 
         let all_generators = { generator_store.clone().all_generators_address() };
         for generator in all_generators {
@@ -642,7 +689,7 @@ mod tests {
 
         assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
 
-        let idle_generators: Vec<GeneratorInfoPerMarket> = idle_generator_selector(
+        let idle_generators: Vec<GeneratorInfoPerMarket> = select_idle_generators(
             all_generator_per_market_query
                 .clone()
                 .filter_by_market_id(U256::from_dec_str("1").unwrap())
@@ -669,7 +716,9 @@ mod tests {
 
     #[test]
     fn test_matches_3() {
-        let mut generator_store = create_new_store_with_generators(4);
+        let generator_count = 4;
+        let mut generator_store =
+            create_new_store_with_generators(generator_count, None, None, None);
 
         let all_generators = { generator_store.clone().all_generators_address() };
         for generator in all_generators {
@@ -685,16 +734,19 @@ mod tests {
         let all_generator_per_market_query =
             generator_store.query_by_states(vec![GeneratorState::Joined]);
 
-        assert_eq!(all_generator_per_market_query.clone().result().len(), 4);
+        assert_eq!(
+            all_generator_per_market_query.clone().result().len(),
+            generator_count
+        );
 
-        let idle_generators: Vec<GeneratorInfoPerMarket> = idle_generator_selector(
+        let idle_generators: Vec<GeneratorInfoPerMarket> = select_idle_generators(
             all_generator_per_market_query
                 .clone()
                 .filter_by_market_id(U256::from_dec_str("1").unwrap())
                 .result(),
         );
 
-        assert_eq!(idle_generators.len(), 4);
+        assert_eq!(idle_generators.len(), generator_count);
 
         generator_store.update_on_compute_locked(
             &idle_generators[0].address,
@@ -710,8 +762,96 @@ mod tests {
         );
 
         let idle_generators = all_generator_per_market_query.clone().result();
-        dbg!(&idle_generators);
         assert_eq!(idle_generators.len(), 4);
+    }
+
+    #[test]
+    fn test_matches_stress() {
+        let generator_count = 1000;
+        let markets: Vec<String> = (0..1000)
+            .flat_map(|index| vec![index.to_string()])
+            .collect();
+
+        let mut generator_store = create_new_store_with_generators(
+            generator_count,
+            Some("10000000000000".into()),
+            Some("10000000000000".into()),
+            Some("10000000000000".into()),
+        );
+
+        let all_generators = { generator_store.clone().all_generators_address() };
+        for generator in all_generators {
+            for market in markets.clone() {
+                // First borrow: get the generator by address
+                let generator = generator_store.get_by_address(&generator).unwrap();
+
+                // Now drop the immutable borrow by extracting necessary info
+                let random_generator_info_per_market = get_random_market_info_for_generator(
+                    &generator.address,
+                    generator.total_stake,
+                    market,
+                );
+
+                // Second borrow: insert markets
+                generator_store.insert_markets(random_generator_info_per_market);
+            }
+        }
+
+        assert_eq!(
+            generator_store
+                .query_by_states(vec![GeneratorState::Joined])
+                .result()
+                .len(),
+            generator_count * markets.len()
+        );
+
+        assert_eq!(
+            generator_store
+                .query_by_states(vec![GeneratorState::Joined])
+                .filter_by_market_id(U256::one())
+                .result()
+                .len(),
+            generator_count
+        );
+
+        let compute_locked_on_request = "1".into();
+        let stake_locked_on_request = "1".into();
+        let total_requests: usize = 16 * 10 * 2; //16 tps, 10 assignments per tx, 2 times
+
+        let start_time = Instant::now();
+        for _ in 0..total_requests {
+            // Clone the result to avoid holding a reference while mutating generator_store
+            let mut rng = rand::thread_rng();
+            let random_market = &markets[rng.gen_range(0..markets.len())];
+            let idle_generators: Vec<GeneratorInfoPerMarket> = select_idle_generators(
+                generator_store
+                    .query_by_market_id(&U256::from_dec_str(random_market).unwrap())
+                    .filter_by_state(vec![GeneratorState::Joined, GeneratorState::Wip])
+                    .result(),
+            );
+
+            assert_eq!(idle_generators.len(), generator_count);
+
+            for idle_generator in idle_generators {
+                // Mutable borrow happens here, but no immutable borrow exists at the same time
+                generator_store.update_on_compute_locked(
+                    &idle_generator.address,
+                    U256::from_dec_str(compute_locked_on_request).unwrap(),
+                );
+                generator_store.update_on_stake_locked(
+                    &idle_generator.address,
+                    U256::from_dec_str(stake_locked_on_request).unwrap(),
+                );
+            }
+        }
+        let duration = start_time.elapsed();
+        println!(
+            "Stress Test Matching, Requests: {}, Generators x Markets  = {} x {}, Took: {:?}",
+            total_requests,
+            generator_count,
+            markets.len(),
+            duration
+        );
     }
 
     fn get_random_market_info_for_generator(
@@ -744,19 +884,29 @@ mod tests {
     }
 
     // helpers in tests.
-    fn create_new_store_with_generators(n: usize) -> GeneratorStore {
+    fn create_new_store_with_generators(
+        n: usize,
+        default_total_stake: Option<String>,
+        default_sum_of_compute_allocations: Option<String>,
+        default_declared_compute: Option<String>,
+    ) -> GeneratorStore {
         let mut generator_store = GeneratorStore::new();
+        let default_total_stake = default_total_stake.unwrap_or_else(|| "100".into());
+        let default_sum_of_compute_allocations =
+            default_sum_of_compute_allocations.unwrap_or_else(|| "100".into());
+        let default_declared_compute = default_declared_compute.unwrap_or_else(|| "100".into());
 
         for _ in 0..n {
             let generator = Generator {
                 address: Address::random(),
                 reward_address: Address::random(),
-                total_stake: U256::from_dec_str("100").unwrap(),
-                sum_of_compute_allocations: U256::from_dec_str("100").unwrap(),
+                total_stake: U256::from_dec_str(&default_total_stake).unwrap(),
+                sum_of_compute_allocations: U256::from_dec_str(&default_sum_of_compute_allocations)
+                    .unwrap(),
                 compute_consumed: U256::from_dec_str("0").unwrap(),
                 stake_locked: U256::from_dec_str("0").unwrap(),
                 active_market_places: U256::from_dec_str("0").unwrap(),
-                declared_compute: U256::from_dec_str("100").unwrap(),
+                declared_compute: U256::from_dec_str(&default_declared_compute).unwrap(),
                 intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),
                 intended_compute_util: U256::from_dec_str("1000000000000000000").unwrap(),
                 generator_data: None,
