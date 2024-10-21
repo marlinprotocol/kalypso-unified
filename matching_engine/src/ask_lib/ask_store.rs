@@ -302,10 +302,6 @@ impl LocalAskStore {
         }
     }
 
-    #[deprecated(
-        since = "1.0.0",
-        note = "Warning: get_by_ask_state_except_complete is poorly written. Remove it when sql migration happens"
-    )]
     pub fn get_by_ask_state_except_complete(&self, state: AskState) -> AskQueryResult {
         if state == AskState::Complete {
             return AskQueryResult { asks: None };

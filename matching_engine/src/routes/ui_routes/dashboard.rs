@@ -7,7 +7,6 @@ use crate::{
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::types::U256;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -70,7 +69,7 @@ pub async fn get_dashboard(
 
             let all_market_meta_data = local_market_store.get_all_markets();
             let markets = all_market_meta_data
-                .into_par_iter()
+                .into_iter()
                 .map(|meta| {
                     let market_id = meta.market_id; // Assuming `market_id` is part of `MarketMetadata`
 
@@ -93,7 +92,7 @@ pub async fn get_dashboard(
                 let result = local_ask_store.get_recent_completed_proofs(20);
 
                 result
-                    .into_par_iter()
+                    .into_iter()
                     .map(|ask_request| {
                         let market_id = ask_request.market_id; // Assuming `market_id` is part of `MarketMetadata`
 

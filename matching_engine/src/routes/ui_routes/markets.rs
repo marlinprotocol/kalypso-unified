@@ -4,7 +4,6 @@ use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataSt
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::types::U256;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -62,7 +61,7 @@ pub async fn market_info(
 
             let all_market_meta_data = local_market_store.get_all_markets();
             let markets = all_market_meta_data
-                .into_par_iter()
+                .into_iter()
                 .map(|meta| Market {
                     market_id: meta.market_id.to_string(),
                     name: None,

@@ -6,7 +6,6 @@ use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
 
 use ethers::types::U256;
-use rayon::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::Duration;
@@ -61,7 +60,7 @@ pub async fn get_generators_all(
             let local_generator_store = _local_generator_store.lock().await;
             let all_generators = local_generator_store.all_generators_address();
             let result = all_generators
-                .into_par_iter()
+                .into_iter()
                 .map(|generator_address| {
                     let operator_data = local_generator_store
                         .get_by_address(&generator_address)
@@ -78,7 +77,7 @@ pub async fn get_generators_all(
                         }],
                         markets: all_markets_of_generator
                             .clone()
-                            .into_par_iter()
+                            .into_iter()
                             .map(|info_per_market| Market {
                                 name: info_per_market.market_id.to_string(),
                                 token: vec!["POND".into()],
@@ -91,21 +90,21 @@ pub async fn get_generators_all(
                             .to_string(),
                         proofs_generated: all_markets_of_generator
                             .clone()
-                            .into_par_iter()
+                            .into_iter()
                             .map(|info| info.proofs_submitted)
-                            .reduce(U256::zero, |a, x| a + x)
+                            .fold(U256::zero(), |a, x| a + x)
                             .to_string(),
                         proofs_missed: all_markets_of_generator
                             .clone()
-                            .into_par_iter()
+                            .into_iter()
                             .map(|info| info.proofs_slashed)
-                            .reduce(U256::zero, |a, x| a + x)
+                            .fold(U256::zero(), |a, x| a + x)
                             .to_string(),
                         pending_proofs: all_markets_of_generator
                             .clone()
-                            .into_par_iter()
+                            .into_iter()
                             .map(|info| info.active_requests)
-                            .reduce(U256::zero, |a, x| a + x)
+                            .fold(U256::zero(), |a, x| a + x)
                             .to_string(),
                         current_stake: vec![TokenAmount {
                             token: "POND".into(),

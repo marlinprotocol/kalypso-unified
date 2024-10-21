@@ -9,7 +9,6 @@ use ethers::types::Address;
 use ethers::types::U256;
 use im::HashMap;
 use once_cell::sync::Lazy;
-use rayon::prelude::*;
 use serde::Deserialize;
 use serde::Serialize;
 use std::future::Future;
@@ -212,9 +211,9 @@ pub async fn single_generator(
                     reward_address: address_to_string(&generator_data.reward_address),
                     active_jobs: all_markets_of_generator
                         .clone()
-                        .into_par_iter()
+                        .into_iter()
                         .map(|info| info.active_requests)
-                        .reduce(U256::zero, |a, x| a + x)
+                        .fold(U256::zero(), |a, x| a + x)
                         .to_string(),
                     no_of_markets: all_markets_of_generator.len().to_string(),
                     total_earnings: local_generator_store
@@ -234,7 +233,7 @@ pub async fn single_generator(
                     }],
                     markets: all_markets_of_generator
                         .clone()
-                        .into_par_iter()
+                        .into_iter()
                         .map(|info| Market {
                             name: None,
                             id: info.market_id.to_string(),
@@ -244,21 +243,21 @@ pub async fn single_generator(
                                 .to_string(),
                             proofs_missed: all_markets_of_generator
                                 .clone()
-                                .into_par_iter()
+                                .into_iter()
                                 .map(|info| info.proofs_slashed)
-                                .reduce(U256::zero, |a, x| a + x)
+                                .fold(U256::zero(), |a, x| a + x)
                                 .to_string(),
                             slashing_penalties_incured: all_markets_of_generator
                                 .clone()
-                                .into_par_iter()
+                                .into_iter()
                                 .map(|info| info.proofs_slashed)
-                                .reduce(U256::zero, |a, x| a + x)
+                                .fold(U256::zero(), |a, x| a + x)
                                 .to_string(),
                             pending_proofs: all_markets_of_generator
                                 .clone()
-                                .into_par_iter()
+                                .into_iter()
                                 .map(|info| info.active_requests)
-                                .reduce(U256::zero, |a, x| a + x)
+                                .fold(U256::zero(), |a, x| a + x)
                                 .to_string(),
                             min_hardware_requirement: MinHardware {
                                 instance_type: "todo".into(),
@@ -270,21 +269,21 @@ pub async fn single_generator(
                         .get_by_ask_state_except_complete(AskState::Assigned)
                         .result()
                         .map(|mut asks| {
-                            asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                            asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
                             let local_asks = asks
-                                .into_par_iter()
+                                .into_iter()
                                 .filter(|ask| match &ask.generator {
                                     Some(addr) => addr == &generator_id,
                                     None => false,
                                 })
                                 .collect::<Vec<LocalAsk>>()
-                                .into_par_iter()
+                                .into_iter()
                                 .skip(query.query.active_jobs_skip.unwrap_or_default())
                                 .take(query.query.active_jobs.unwrap_or_default())
                                 .collect::<Vec<LocalAsk>>();
 
                             local_asks
-                                .into_par_iter()
+                                .into_iter()
                                 .map(|a| Job {
                                     market: MarketInfo {
                                         name: None,
@@ -307,7 +306,7 @@ pub async fn single_generator(
                             query.query.completed_jobs_skip.unwrap_or_default(),
                             query.query.completed_jobs.unwrap_or_default(),
                         )
-                        .into_par_iter()
+                        .into_iter()
                         .map(|ask| Job {
                             market: MarketInfo {
                                 name: None,
@@ -324,7 +323,7 @@ pub async fn single_generator(
                         .collect::<Vec<Job>>(),
                     slashing_history: local_generator_store
                         .get_slashing_records(&generator_id)
-                        .into_par_iter()
+                        .into_iter()
                         .map(|record| Slash {
                             timestamp: record.expected_time.to_string(),
                             market: MarketInfo {
