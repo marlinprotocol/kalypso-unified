@@ -1,5 +1,7 @@
-pub mod ask;
+pub mod ask_lib;
 pub mod costs;
+pub mod counters;
+pub mod market_metadata;
 pub mod models;
 pub mod utility;
 
@@ -8,7 +10,9 @@ mod jobs;
 mod log_processor;
 mod routes;
 
-use ask::{LocalAskStore, MarketMetadataStore};
+use ask_lib::ask_store::LocalAskStore;
+use market_metadata::MarketMetadataStore;
+
 use costs::CostStore;
 use ethers::prelude::*;
 use generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
@@ -287,7 +291,7 @@ impl MatchingEngine {
             vec![], //TODO! fetch these slave keys using Oyster KMS
             shared_local_ask_store.clone(),
             shared_generator_store,
-            shared_market_store,
+            shared_market_store.clone(),
             shared_key_store,
             shared_cost_store,
             chain_id,
@@ -302,6 +306,7 @@ impl MatchingEngine {
 
         let cleanup_tool = CleanupTool::new(
             should_stop,
+            shared_market_store,
             shared_local_ask_store,
             proof_marketplace,
             relayer_signer.address(),

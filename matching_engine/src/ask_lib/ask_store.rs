@@ -4,95 +4,12 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[allow(unused)]
-pub enum Comparison {
-    Equal,
-    LessThan,
-    GreaterThan,
-    LessThanOrEqual,
-    GreaterThanOrEqual,
-}
+use crate::counters::counters::GenericCounters;
 
-#[derive(Default, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash)]
-pub enum AskState {
-    #[default]
-    Null,
-    Create,
-    UnAssigned,
-    Assigned,
-    Complete,
-    DeadlineCrossed,
-    // added latter and not in contract
-    InvalidSecret,
-}
-
-impl std::fmt::Debug for AskState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let value_str = match self {
-            AskState::Null => "This is a Null state",
-            AskState::Create => "The ask was created",
-            AskState::UnAssigned => "The ask is unassignable (likely because of expiry)",
-            AskState::Assigned => "The ask is assigned",
-            AskState::Complete => "The ask is complete",
-            AskState::DeadlineCrossed => "The ask deadline has been crossed",
-            AskState::InvalidSecret => "The secret for the ask is invalid",
-        };
-        write!(f, "{}", value_str)
-    }
-}
-
-pub fn get_ask_state(state: u8) -> AskState {
-    match state {
-        0 => AskState::Null,
-        1 => AskState::Create,
-        2 => AskState::UnAssigned,
-        3 => AskState::Assigned,
-        4 => AskState::Complete,
-        5 => AskState::DeadlineCrossed,
-        // added latter and not in contract
-        6 => AskState::InvalidSecret,
-        _ => AskState::Null,
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
-pub struct MarketMetadata {
-    pub market_id: U256,
-    pub verifier: Address,
-    pub prover_image_id: [u8; 32],
-    pub slashing_penalty: U256,
-    pub activation_block: U256,
-    pub ivs_image_id: [u8; 32],
-    pub metadata: Bytes,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
-pub struct LocalAsk {
-    pub ask_id: U256,
-    pub market_id: U256,
-    pub reward: U256,
-    pub expiry: U256,
-    pub proving_time: U256,
-    pub deadline: U256,
-    pub prover_refund_address: Address,
-    pub prover_data: Bytes,
-    pub has_private_inputs: bool,
-    pub secret_data: Option<Bytes>,
-    pub secret_acl: Option<Bytes>,
-    pub state: Option<AskState>,
-    pub generator: Option<Address>,
-    pub invalid_secret_flag: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LocalAskStatus {
-    pub created: usize,
-    pub unassigned: usize,
-    pub assigned: usize,
-    pub completed: usize,
-    pub deadline_crossed: usize,
-    pub invalid_secret: usize,
-}
+use super::{
+    ask::LocalAsk,
+    ask_status::{AskState, Comparison, LocalAskStatus},
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Proof {
@@ -104,7 +21,12 @@ pub struct LocalAskStore {
     market_id_index: HashMap<U256, Vec<LocalAsk>>,
     state_index: HashMap<AskState, Vec<LocalAsk>>,
     proofs: HashMap<U256, Proof>,
-    proof_counter: HashMap<U256, usize>,
+    proof_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
+    request_counter_by_requestors: GenericCounters<U256, Address>, // Count by Address(i.e requestor), Also sub-count by U256(i.e marketId)
+    proving_time_taken: HashMap<U256, U256>,
+    proving_cost_taken: HashMap<U256, U256>,
+    proof_transaction: HashMap<U256, String>,
+    failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
 }
 
 pub struct AskQueryResult {
@@ -124,14 +46,19 @@ impl AskQueryResult {
         self.asks
     }
 
-    pub fn sort_by_ask_id(mut self) -> Self {
+    pub fn sort_by_ask_id(mut self, asc: bool) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
+            if asc {
+                // Sort in ascending order
+                asks.par_sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
+            } else {
+                // Sort in descending order
+                asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+            }
         }
         self
     }
 
-    #[allow(unused)]
     pub fn filter_by_market_id(self, market_id: U256) -> Self {
         let filtered = self.asks.map(|asks| {
             asks.into_par_iter() // Parallel iterator over asks
@@ -139,14 +66,6 @@ impl AskQueryResult {
                 .collect::<Vec<_>>() // Collect filtered results
         });
         AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
-    pub fn sort_by_proving_time(mut self) -> Self {
-        if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.proving_time.cmp(&b.proving_time));
-        }
-        self
     }
 
     #[allow(unused)]
@@ -206,16 +125,6 @@ impl AskQueryResult {
     }
 
     #[allow(unused)]
-    pub fn filter_by_proving_time(self, value: U256, comparison: Comparison) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| Self::compare(ask.proving_time, value, &comparison))
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
     pub fn filter_by_reward(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
             asks.into_par_iter()
@@ -263,12 +172,19 @@ impl LocalAskStore {
             market_id_index: HashMap::new(),
             state_index: HashMap::new(),
             proofs: HashMap::new(),
-            proof_counter: HashMap::new(),
+            proof_counter_by_market: GenericCounters::new(),
+            request_counter_by_requestors: GenericCounters::new(),
+            proving_cost_taken: HashMap::new(),
+            proving_time_taken: HashMap::new(),
+            proof_transaction: HashMap::new(),
+            failed_request_counter_by_market: GenericCounters::new(),
         }
     }
 
     pub fn insert(&mut self, ask: LocalAsk) {
         self.asks_by_id.insert(ask.ask_id, ask.clone());
+        self.request_counter_by_requestors
+            .insert(ask.market_id, ask.prover_refund_address);
 
         self.market_id_index
             .entry(ask.market_id)
@@ -280,17 +196,10 @@ impl LocalAskStore {
         }
     }
 
-    #[allow(unused)]
-    pub fn remove_by_ask_id(&mut self, ask_id: &U256) {
+    pub fn remove_ask_from_market_index_only(&mut self, ask_id: &U256) {
         if let Some(ask) = self.asks_by_id.remove(ask_id) {
             if let Some(vec) = self.market_id_index.get_mut(&ask.market_id) {
                 vec.retain(|a| a.ask_id != *ask_id);
-            }
-
-            if let Some(state) = ask.state {
-                if let Some(vec) = self.state_index.get_mut(&state) {
-                    vec.retain(|a| a.ask_id != *ask_id);
-                }
             }
         }
     }
@@ -323,29 +232,46 @@ impl LocalAskStore {
         }
     }
 
-    pub fn store_valid_proof(&mut self, ask_id: &U256, proof: Bytes) {
+    pub fn store_valid_proof(
+        &mut self,
+        ask_id: &U256,
+        proof: Bytes,
+        proof_time: U256,
+        proof_cost: U256,
+        proof_transaction: String,
+    ) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
                 self.proofs.insert(*ask_id, Proof::ValidProof(proof));
-                let existing_proofs = self.proof_counter.get(&ask_data.market_id);
-                if existing_proofs.is_none() {
-                    self.proof_counter.insert(ask_data.market_id, 0);
-                } else {
-                    let tmp = existing_proofs.unwrap() + 1;
-                    self.proof_counter.insert(ask_data.market_id, tmp);
-                }
+                self.proof_counter_by_market
+                    .insert(ask_data.market_id, ask_data.ask_id);
+                self.proving_time_taken.insert(*ask_id, proof_time);
+                self.proving_cost_taken.insert(*ask_id, proof_cost);
+                self.proof_transaction.insert(*ask_id, proof_transaction);
             }
             _ => {}
         }
     }
 
-    pub fn get_proof_count(&self, market_id: &U256) -> Option<usize> {
-        let result = self.proof_counter.get(market_id);
-        if result.is_none() {
-            None
-        } else {
-            Some(result.unwrap().clone())
+    pub fn note_invalid_proof(&mut self, ask_id: &U256) {
+        match self.asks_by_id.get_mut(ask_id) {
+            Some(ask_data) => {
+                self.failed_request_counter_by_market
+                    .insert(ask_data.market_id, ask_data.ask_id);
+            }
+            _ => {}
         }
+    }
+
+    pub fn get_proving_time(&self, ask_id: &U256) -> Option<U256> {
+        self.proving_time_taken.get(ask_id).cloned()
+    }
+    pub fn get_proving_cost(&self, ask_id: &U256) -> Option<U256> {
+        self.proving_cost_taken.get(ask_id).cloned()
+    }
+
+    pub fn get_proof_transaction(&self, ask_id: &U256) -> Option<String> {
+        self.proof_transaction.get(ask_id).cloned()
     }
 
     pub fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof> {
@@ -361,6 +287,21 @@ impl LocalAskStore {
     pub fn get_by_state(&self, state: AskState) -> AskQueryResult {
         AskQueryResult {
             asks: self.state_index.get(&state).cloned(),
+        }
+    }
+
+    pub fn get_by_state_limit(&self, state: AskState, n: usize) -> AskQueryResult {
+        AskQueryResult {
+            asks: self
+                .state_index
+                .get(&state) // Get the collection for the state
+                .cloned() // Clone it to maintain ownership
+                .map(|mut asks| {
+                    // Sort by askid in descending order
+                    asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                    // Limit the result to the first n items
+                    asks.into_par_iter().take(n).collect()
+                }),
         }
     }
 
@@ -388,59 +329,34 @@ impl LocalAskStore {
     }
 }
 
-pub struct MarketMetadataStore {
-    market_by_id: HashMap<U256, MarketMetadata>,
-}
+impl LocalAskStore {
+    // Get the total number of unique requestors across all markets
+    pub fn total_requestor_count(&self) -> usize {
+        self.request_counter_by_requestors.total_count()
+    }
 
-impl Default for MarketMetadataStore {
-    fn default() -> Self {
-        Self::new()
+    // Get the number of requestors for a specific market
+    pub fn total_requestors_by_market_count(&self, market_id: &U256) -> usize {
+        self.request_counter_by_requestors.key_count(market_id)
     }
 }
 
-impl MarketMetadataStore {
-    pub fn new() -> Self {
-        MarketMetadataStore {
-            market_by_id: HashMap::new(),
-        }
+impl LocalAskStore {
+    pub fn get_proof_count(&self, market_id: &U256) -> usize {
+        self.proof_counter_by_market.key_count(market_id)
     }
 
-    pub fn insert(&mut self, market: MarketMetadata) {
-        self.market_by_id.insert(market.market_id, market.clone());
+    pub fn get_total_proof_count(&self) -> usize {
+        self.proof_counter_by_market.total_count()
+    }
+}
+
+impl LocalAskStore {
+    pub fn get_failed_request_count_by_market_id(&self, market_id: &U256) -> usize {
+        self.failed_request_counter_by_market.key_count(market_id)
     }
 
-    #[allow(unused)]
-    pub fn remove_by_market_id(&mut self, market_id: &U256) {
-        self.market_by_id.remove(market_id);
-    }
-
-    #[allow(unused)]
-    pub fn get_market_by_market_id(&self, market_id: &U256) -> Option<&MarketMetadata> {
-        self.market_by_id.get(market_id)
-    }
-
-    pub fn get_slashing_penalty_by_market_id(&self, market_id: &U256) -> Option<U256> {
-        self.market_by_id
-            .get(market_id)
-            .map(|metadata| metadata.slashing_penalty)
-    }
-
-    #[allow(unused)]
-    pub fn decode_market_verification_url_by_id(&self, market_id: &U256) -> Option<String> {
-        let market_metadata = &self.market_by_id.get(market_id).unwrap().metadata;
-
-        let metadata_str = market_metadata.to_string();
-        let metadata_trim: Vec<_> = metadata_str.split('x').collect();
-        let market_metadata_decoded = hex::decode(metadata_trim[1]).unwrap();
-        let metadata_bytes: Bytes = market_metadata_decoded.into();
-
-        let received_url = String::from_utf8(metadata_bytes.0.to_vec());
-        match received_url {
-            Ok(url) => {
-                log::debug!("URL: {:?}", url.to_owned());
-                Some(url.to_owned())
-            }
-            Err(_) => None,
-        }
+    pub fn get_failed_request_count(&self) -> usize {
+        self.failed_request_counter_by_market.total_count()
     }
 }

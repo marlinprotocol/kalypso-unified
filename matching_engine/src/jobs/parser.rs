@@ -1,5 +1,8 @@
+use crate::ask_lib::ask_status::{get_ask_state, AskState};
+use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
 use crate::generator_lib::generator_store;
+use crate::market_metadata::MarketMetadataStore;
 use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
@@ -20,7 +23,7 @@ use tokio::sync::Mutex;
 
 use crate::log_processor;
 use crate::{
-    ask::{self, LocalAsk, LocalAskStore, MarketMetadataStore},
+    ask_lib::ask::LocalAsk,
     generator_lib::{
         generator_helper, generator_state::GeneratorState, generator_store::GeneratorStore,
         key_store::KeyStore,
@@ -278,7 +281,7 @@ impl LogParser {
 
         log::debug!("Trying to fetch available asks");
         let available_asks = ask_store
-            .get_by_state(ask::AskState::Create)
+            .get_by_state(AskState::Create)
             .filter_by_flag(true)
             .result();
         log::debug!("Complete fetch available asks");
@@ -448,9 +451,9 @@ impl LogParser {
                 }
             };
 
-            let ask_state = ask::get_ask_state(ask_state);
+            let ask_state = get_ask_state(ask_state);
             log::info!("ask: {} -- {:?}", random_pending_ask.ask_id, ask_state);
-            if ask_state != ask::AskState::Create {
+            if ask_state != AskState::Create {
                 log::warn!(
                     "ask {:?}. {:?}. skipping it",
                     random_pending_ask.ask_id,

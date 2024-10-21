@@ -1,6 +1,7 @@
 use super::EntityRegistryInstance;
 use super::GetRequestResponse;
-use crate::ask::*;
+use crate::ask_lib::ask::LocalAsk;
+use crate::ask_lib::ask_store::LocalAskStore;
 use crate::utility;
 use actix_web::web;
 use actix_web::web::Data;

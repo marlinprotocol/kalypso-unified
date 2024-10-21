@@ -18,6 +18,21 @@ pub struct GeneratorStore {
     generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>,
     state_index: HashMap<GeneratorState, Vec<(Address, U256)>>,
     address_index: HashMap<Address, Vec<U256>>,
+    earnings: HashMap<Address, U256>, // address to usdc earning
+    earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // address to market to usdc earning
+    slashings: HashMap<Address, U256>,
+    slashings_per_market: HashMap<Address, HashMap<U256, U256>>,
+    slashing_records: HashMap<Address, Vec<SlashingRecord>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
+pub struct SlashingRecord {
+    pub ask_id: U256,
+    pub market_id: U256,
+    pub slashing_tx: String,
+    pub price_offered: U256,
+    pub expected_time: U256,
+    pub slashing_penalty: U256,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
@@ -30,6 +45,7 @@ pub struct GeneratorInfoPerMarket {
     pub proposed_time: U256,
     pub active_requests: U256,
     pub proofs_submitted: U256,
+    pub proofs_slashed: U256,
     pub state: Option<GeneratorState>,
 }
 
@@ -62,10 +78,15 @@ impl GeneratorStore {
             generator_markets: HashMap::new(),
             state_index: HashMap::new(),
             address_index: HashMap::new(),
+            earnings: HashMap::new(),
+            earnings_per_market: HashMap::new(),
+            slashings: HashMap::new(),
+            slashings_per_market: HashMap::new(),
+            slashing_records: HashMap::new(),
         }
     }
 
-    pub fn all_generators_address(self) -> Vec<Address> {
+    pub fn all_generators_address(&self) -> Vec<Address> {
         self.generators
             .par_iter()
             .map(|(address, _)| address.clone())
@@ -221,17 +242,55 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_on_submit_proof(&mut self, address: &Address, market_id: &U256) {
+    pub fn update_on_submit_proof(&mut self, address: &Address, market_id: &U256, earning: &U256) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.sub_assign(U256::one());
             generator_market.proofs_submitted.add_assign(U256::one());
         }
+
+        // Update the total earnings for the address
+        self.earnings
+            .entry(*address)
+            .and_modify(|e| *e = e.saturating_add(*earning))
+            .or_insert(*earning);
+
+        // Update the earnings for the specific market
+        self.earnings_per_market
+            .entry(*address)
+            .or_insert_with(HashMap::new)
+            .entry(*market_id)
+            .and_modify(|e| *e = e.saturating_add(*earning))
+            .or_insert(*earning);
     }
 
-    pub fn update_on_slashing(&mut self, address: &Address, market_id: &U256) {
+    pub fn update_on_slashing(
+        &mut self,
+        address: &Address,
+        market_id: &U256,
+        slashing: &U256,
+        slashing_record: SlashingRecord,
+    ) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.sub_assign(U256::one());
+            generator_market.proofs_slashed.add_assign(U256::one());
         }
+
+        self.slashings
+            .entry(*address)
+            .and_modify(|e| *e = e.saturating_add(*slashing))
+            .or_insert(*slashing);
+
+        self.slashings_per_market
+            .entry(*address)
+            .or_insert_with(HashMap::new)
+            .entry(*market_id)
+            .and_modify(|e| *e = e.saturating_add(*slashing))
+            .or_insert(*slashing);
+
+        self.slashing_records
+            .entry(*address)
+            .or_insert_with(Vec::new)
+            .push(slashing_record);
     }
 
     pub fn update_on_stake_locked(&mut self, address: &Address, stake_locked: U256) {
@@ -258,7 +317,7 @@ impl GeneratorStore {
         }
     }
 
-    fn get_all_markets_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
+    pub fn get_all_markets_of_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
                 .par_iter()
@@ -271,7 +330,7 @@ impl GeneratorStore {
     pub fn pause_assignments_across_all_markets(&mut self, address: &Address) {
         // Collect the market IDs to be updated first, avoiding an immutable borrow later
         let all_market_ids: Vec<U256> = self
-            .get_all_markets_generator(address)
+            .get_all_markets_of_generator(address)
             .par_iter()
             .map(|single_market| single_market.market_id) // Collect U256 (market_id)
             .collect();
@@ -285,7 +344,7 @@ impl GeneratorStore {
     pub fn resume_assignments_accross_all_markets(&mut self, address: &Address) {
         // Collect the market IDs to be updated first, avoiding an immutable borrow later
         let all_market_ids: Vec<U256> = self
-            .get_all_markets_generator(address)
+            .get_all_markets_of_generator(address)
             .par_iter()
             .map(|single_market| single_market.market_id) // Collect U256 (market_id)
             .collect();
@@ -480,6 +539,42 @@ impl GeneratorStore {
     }
 }
 
+impl GeneratorStore {
+    // Get total earnings for a specific address
+    pub fn get_total_earning(&self, address: &Address) -> Option<U256> {
+        self.earnings.get(address).cloned()
+    }
+
+    // Get earnings for a specific address and market
+    #[allow(unused)]
+    pub fn get_earning_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
+        self.earnings_per_market
+            .get(address)
+            .and_then(|market_earnings| market_earnings.get(market_id).cloned())
+    }
+
+    pub fn get_total_slashing(&self, address: &Address) -> Option<U256> {
+        self.slashings.get(address).cloned()
+    }
+
+    // Get earnings for a specific address and market
+    #[allow(unused)]
+    pub fn get_slashing_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
+        self.slashings_per_market
+            .get(address)
+            .and_then(|market_earnings| market_earnings.get(market_id).cloned())
+    }
+
+    pub fn get_slashing_records(&self, address: &Address) -> Vec<SlashingRecord> {
+        let data = self.slashing_records.get(address);
+        if data.is_none() {
+            return vec![];
+        } else {
+            return data.unwrap().clone();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::generator_lib::generator_helper::select_idle_generators;
@@ -604,7 +699,7 @@ mod tests {
 
         assert_eq!(
             generator_store
-                .get_all_markets_generator(&random_generator.address)
+                .get_all_markets_of_generator(&random_generator.address)
                 .len(),
             1
         );
@@ -868,6 +963,7 @@ mod tests {
             proposed_time: U256::from_dec_str("10").unwrap(),
             active_requests: U256::from_dec_str("0").unwrap(),
             proofs_submitted: U256::from_dec_str("0").unwrap(),
+            proofs_slashed: U256::from_dec_str("0").unwrap(),
             state: Some(GeneratorState::Joined),
         }
     }

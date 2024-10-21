@@ -1,4 +1,6 @@
-use crate::ask::*;
+use crate::ask_lib::ask::LocalAsk;
+use crate::ask_lib::ask_status::AskState;
+use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::{
     AskInfoToSend, GeneratorInfo, GeneratorsInfoForMarket, MarketInfo, MarketInfoResponse,
@@ -34,12 +36,7 @@ pub async fn market_stats(
 
     let proofs_generated = {
         let local_ask_store = { _local_ask_store.lock().await };
-        let result = local_ask_store.get_proof_count(&market_id_u256);
-        if result.is_none() {
-            Some(0)
-        } else {
-            result
-        }
+        Some(local_ask_store.get_proof_count(&market_id_u256))
     };
 
     let proofs_pending = {
@@ -113,7 +110,7 @@ pub async fn market_info(
         let local_ask_store = { _local_ask_store.lock().await };
         let asks = local_ask_store
             .get_by_market_id(&market_id_u256)
-            .sort_by_ask_id()
+            .sort_by_ask_id(true)
             .result();
 
         if asks.is_none() {
@@ -127,7 +124,9 @@ pub async fn market_info(
                     market_id: ask.market_id,
                     reward: ask.reward,
                     expiry: ask.expiry,
-                    proving_time: ask.proving_time,
+                    proving_time: local_ask_store
+                        .get_proving_time(&ask.ask_id)
+                        .unwrap_or_else(|| U256::zero()),
                     deadline: ask.deadline,
                     has_private_inputs: ask.has_private_inputs,
                     state: ask.state,

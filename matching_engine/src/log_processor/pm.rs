@@ -1,11 +1,16 @@
+use crate::ask_lib::ask::LocalAsk;
+use crate::ask_lib::ask_status::AskState;
+use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
+use crate::utility::tx_to_string;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
+use generator_store::SlashingRecord;
 
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::ask::*;
 use crate::generator_lib::*;
+use crate::market_metadata::*;
 use kalypso_helper::secret_inputs_helpers;
 
 use bindings::proof_marketplace as pmp;
@@ -53,7 +58,6 @@ pub async fn process_proof_market_place_logs(
                 market_id: ask_data.0.market_id,
                 reward: ask_data.0.reward,
                 expiry: ask_data.0.expiry,
-                proving_time: ask_data.0.time_taken_for_proof_generation,
                 deadline: ask_data.0.deadline,
                 prover_refund_address: ask_data.0.refund_address,
                 prover_data: ask_data.0.prover_data,
@@ -165,10 +169,33 @@ pub async fn process_proof_market_place_logs(
 
             local_ask_store.modify_state(&ask_id, AskState::Complete);
             let generator_address = ask_data.3;
+            let proof_generator_cost = generator_store
+                .get_by_address_and_market(&generator_address, &ask_data.0.market_id)
+                .map_or(U256::from(0), |generator_info| {
+                    generator_info.proof_generation_cost.clone()
+                });
 
-            local_ask_store.store_valid_proof(&ask_id, proof);
-            generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
+            let proof_submitted_on: U256 = log.block_number.unwrap().as_u64().into();
+            let proof_time = proof_submitted_on.saturating_sub(ask_data.0.deadline);
 
+            local_ask_store.store_valid_proof(
+                &ask_id,
+                proof,
+                proof_time,
+                proof_generator_cost,
+                tx_to_string(&log.transaction_hash.unwrap()),
+            );
+            generator_store.update_on_submit_proof(
+                &generator_address,
+                &ask_data.0.market_id,
+                &proof_generator_cost,
+            );
+
+            market_store.note_proof_submission_stats(
+                &ask_data.0.market_id,
+                proof_time,
+                proof_generator_cost,
+            );
             continue;
         }
 
@@ -266,6 +293,7 @@ pub async fn process_proof_market_place_logs(
             );
 
             local_ask_store.modify_state(&ask_id, AskState::Complete);
+            local_ask_store.note_invalid_proof(&ask_id);
 
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
@@ -273,8 +301,24 @@ pub async fn process_proof_market_place_logs(
             log::debug!("Proof not Generated: update generator state");
             let generator_address = ask_data.3;
 
+            let market_data = market_store.get_market_by_market_id(&ask_data.0.market_id);
             log::debug!("Proof not Generated: update on slashing penalty");
-            generator_store.update_on_slashing(&generator_address, &ask_data.0.market_id);
+
+            let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
+
+            generator_store.update_on_slashing(
+                &generator_address,
+                &ask_data.0.market_id,
+                &market_data.unwrap().slashing_penalty,
+                SlashingRecord {
+                    ask_id,
+                    market_id: ask.market_id,
+                    slashing_tx: tx_to_string(&log.transaction_hash.unwrap()),
+                    price_offered: ask.reward,
+                    expected_time: ask.deadline,
+                    slashing_penalty: market_data.unwrap().slashing_penalty,
+                },
+            );
 
             log::warn!("Complete Proof not Generated");
             continue;
@@ -299,7 +343,17 @@ pub async fn process_proof_market_place_logs(
 
             let generator_address = ask_data.3;
 
-            generator_store.update_on_submit_proof(&generator_address, &ask_data.0.market_id);
+            let proof_generator_cost = generator_store
+                .get_by_address_and_market(&generator_address, &ask_data.0.market_id)
+                .map_or(U256::from(0), |generator_info| {
+                    generator_info.proof_generation_cost.clone()
+                });
+
+            generator_store.update_on_submit_proof(
+                &generator_address,
+                &ask_data.0.market_id,
+                &proof_generator_cost,
+            );
             log::warn!("Complete invalid input proof submitted");
             continue;
         }

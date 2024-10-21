@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Data;
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer};
 use ethers::core::k256::ecdsa::SigningKey;
 use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Provider};
@@ -10,11 +10,9 @@ use ethers::types::U64;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Mutex;
 
-use crate::routes;
-use crate::{
-    ask::{LocalAskStore, MarketMetadataStore},
-    generator_lib::generator_store::GeneratorStore,
-};
+use crate::market_metadata::MarketMetadataStore;
+use crate::routes::{get_root_scope, ui_scope};
+use crate::{ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore};
 
 type EntityRegistryInstance = Arc<
     Mutex<
@@ -70,40 +68,8 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_entity_key_registry.clone()))
                 .app_data(Data::new(self.shared_generator_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
-                .route("/welcome", web::get().to(routes::chain_status::welcome))
-                .route("/getStatus", web::get().to(routes::ask_status::get_status))
-                .route(
-                    "/getKeyBalance",
-                    web::get().to(routes::chain_status::gas_key_balance),
-                )
-                .route(
-                    "/getAskStatus",
-                    web::post().to(routes::ask_status::get_ask_status_askid),
-                )
-                .route(
-                    "/getProof",
-                    web::post().to(routes::ask_status::get_ask_proof_by_ask_id),
-                )
-                .route(
-                    "/getPrivInput",
-                    web::post().to(routes::get_priv_inputs::get_priv_input),
-                )
-                .route(
-                    "/decryptRequest",
-                    web::post().to(routes::decrypt_request::decrypt_request),
-                )
-                .route(
-                    "/getLatestBlock",
-                    web::get().to(routes::chain_status::get_latest_block_number),
-                )
-                .route(
-                    "/marketInfo",
-                    web::post().to(routes::market_info::market_info),
-                )
-                .route(
-                    "/marketStats/{marketId}",
-                    web::get().to(routes::market_info::market_stats),
-                )
+                .service(ui_scope())
+                .service(get_root_scope())
         });
 
         if enable_ssc {

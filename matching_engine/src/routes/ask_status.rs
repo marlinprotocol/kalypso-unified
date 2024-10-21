@@ -1,5 +1,8 @@
 use crate::{
-    ask::*,
+    ask_lib::{
+        ask_status::AskState,
+        ask_store::{LocalAskStore, Proof},
+    },
     models::{GetAskStatus, GetAskStatusResponse, GetProofResponse, GetStatusResponse},
 };
 use actix_web::web;

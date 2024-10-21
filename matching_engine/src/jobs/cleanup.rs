@@ -9,12 +9,16 @@ use std::{
 };
 use tokio::sync::Mutex;
 
-use crate::ask::{self, LocalAskStore};
+use crate::{
+    ask_lib::{ask_status::AskState, ask_store::LocalAskStore},
+    market_metadata::MarketMetadataStore,
+};
 
 use super::ProofMarketplaceInstance;
 
 pub struct CleanupTool {
     should_stop: Arc<AtomicBool>,
+    market_meta_store: Arc<Mutex<MarketMetadataStore>>,
     ask_store: Arc<Mutex<LocalAskStore>>,
     #[allow(unused)]
     proof_market_place: ProofMarketplaceInstance, // will be used latter for more finely cleaning up services,
@@ -25,6 +29,7 @@ pub struct CleanupTool {
 impl CleanupTool {
     pub fn new(
         should_stop: Arc<AtomicBool>,
+        market_meta_store: Arc<Mutex<MarketMetadataStore>>,
         ask_store: Arc<Mutex<LocalAskStore>>,
         proof_market_place: ProofMarketplaceInstance,
         relayer_address: Address,
@@ -32,6 +37,7 @@ impl CleanupTool {
     ) -> Self {
         CleanupTool {
             should_stop,
+            market_meta_store,
             ask_store,
             proof_market_place,
             relayer_address,
@@ -73,13 +79,19 @@ impl CleanupTool {
 
             let mut ask_store = { self.ask_store.lock().await };
 
-            // Removing the completed asks
-            let completed_asks = ask_store.get_by_state(ask::AskState::Complete).result();
+            let market_meta_store = { self.market_meta_store.lock().await };
+            let all_markets = market_meta_store.get_all_markets();
 
-            if completed_asks.is_some() {
-                for elem in completed_asks.unwrap() {
-                    log::info!("Removed Completed ask:{}", &elem.ask_id);
-                    ask_store.remove_by_ask_id(&elem.ask_id);
+            for market in all_markets {
+                if let Some(asks) = ask_store.get_by_market_id(&market.market_id).result() {
+                    for ask in asks {
+                        if let Some(state) = ask.state {
+                            if state == AskState::Complete {
+                                log::info!("Removed Completed ask:{}", &ask.ask_id);
+                                ask_store.remove_ask_from_market_index_only(&ask.ask_id);
+                            }
+                        }
+                    }
                 }
             }
         }

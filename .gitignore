@@ -25,6 +25,7 @@ Cargo.lock
 generator_config*.json
 runtime_config*.json
 matching_engine_config*.json
+matching_engine_config/
 
 integration_checks/ivsCustomData
 integration_checks/ivsCustomData/*

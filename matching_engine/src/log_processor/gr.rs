@@ -145,6 +145,7 @@ pub async fn process_generator_registry_logs(
                 proposed_time: generator_market_data.3,
                 active_requests: 0.into(),
                 proofs_submitted: 0.into(),
+                proofs_slashed: 0.into(),
                 state: Some(generator_state::GeneratorState::Joined),
             };
             generator_store.insert_markets(generator_market);

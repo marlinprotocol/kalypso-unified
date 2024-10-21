@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ask::{AskState, LocalAskStatus},
+    ask_lib::ask_status::{AskState, LocalAskStatus},
     generator_lib::generator_state::GeneratorState,
 };
 
