@@ -7,6 +7,7 @@ use ethers::providers::Provider;
 use ethers::signers::Wallet;
 use serde::Serialize;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::Mutex;
 
 mod ask_status;
@@ -33,6 +34,10 @@ pub struct GetRequestResponse {
 
 pub fn ui_scope() -> actix_web::Scope {
     web::scope("/ui")
+        .wrap(kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
+            Duration::from_secs(1),
+            25,
+        ))
         .route("/welcome", web::get().to(ui_routes::welcome::welcome))
         .route(
             "/dashboard",
@@ -51,6 +56,10 @@ pub fn ui_scope() -> actix_web::Scope {
 
 pub fn get_root_scope() -> actix_web::Scope {
     web::scope("") // Empty string scope means "/" path
+        .wrap(kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
+            Duration::from_secs(10),
+            10,
+        ))
         .route("/welcome", web::get().to(chain_status::welcome))
         .route("/getStatus", web::get().to(ask_status::get_status))
         .route(

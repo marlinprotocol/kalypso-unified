@@ -6,7 +6,10 @@ use actix_web::dev::ServiceRequest;
 use std::future::Ready;
 use std::time::Duration;
 
-pub fn get_rate_limiter() -> RateLimiter<
+pub fn get_rate_limiter(
+    duration: Duration,
+    max_request_in_durantion: u64,
+) -> RateLimiter<
     InMemoryBackend,
     SimpleOutput,
     impl Fn(&ServiceRequest) -> Ready<Result<SimpleInput, actix_web::Error>> + 'static,
