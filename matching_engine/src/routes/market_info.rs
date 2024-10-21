@@ -10,7 +10,6 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
-use rayon::prelude::*;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -49,7 +48,7 @@ pub async fn market_stats(
         } else {
             let asks: Vec<LocalAsk> = asks
                 .unwrap()
-                .into_par_iter()
+                .into_iter()
                 .filter(|a| a.market_id.eq(&market_id_u256))
                 .collect();
             Some(asks.len())
@@ -66,7 +65,7 @@ pub async fn market_stats(
         } else {
             let asks: Vec<LocalAsk> = asks
                 .unwrap()
-                .into_par_iter()
+                .into_iter()
                 .filter(|a| a.market_id.eq(&market_id_u256))
                 .collect();
             Some(asks.len())
@@ -171,9 +170,9 @@ pub async fn market_info(
         Some(GeneratorsInfoForMarket { count, generators })
     };
 
-    Ok(HttpResponse::Ok().json(MarketInfoResponse {
+    return Ok(HttpResponse::Ok().json(MarketInfoResponse {
         market_info: market_id,
         asks,
         generator_info,
-    }))
+    }));
 }

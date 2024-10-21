@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::Mutex;
 
 use crate::market_metadata::MarketMetadataStore;
-use crate::routes::{get_root_scope, ui_scope};
+use crate::routes::{get_core_scope, get_stats_scope, ui_scope};
 use crate::{ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore};
 
 type EntityRegistryInstance = Arc<
@@ -69,7 +69,8 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_generator_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
                 .service(ui_scope())
-                .service(get_root_scope())
+                .service(get_stats_scope())
+                .service(get_core_scope())
         });
 
         if enable_ssc {

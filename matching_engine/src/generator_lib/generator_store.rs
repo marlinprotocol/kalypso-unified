@@ -1,6 +1,5 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::sync::MutexGuard;
 
@@ -88,7 +87,7 @@ impl GeneratorStore {
 
     pub fn all_generators_address(&self) -> Vec<Address> {
         self.generators
-            .par_iter()
+            .iter()
             .map(|(address, _)| address.clone())
             .collect()
     }
@@ -320,7 +319,7 @@ impl GeneratorStore {
     pub fn get_all_markets_of_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
-                .par_iter()
+                .iter()
                 .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)))
                 .collect(),
             None => Vec::new(),
@@ -331,7 +330,7 @@ impl GeneratorStore {
         // Collect the market IDs to be updated first, avoiding an immutable borrow later
         let all_market_ids: Vec<U256> = self
             .get_all_markets_of_generator(address)
-            .par_iter()
+            .iter()
             .map(|single_market| single_market.market_id) // Collect U256 (market_id)
             .collect();
 
@@ -345,7 +344,7 @@ impl GeneratorStore {
         // Collect the market IDs to be updated first, avoiding an immutable borrow later
         let all_market_ids: Vec<U256> = self
             .get_all_markets_of_generator(address)
-            .par_iter()
+            .iter()
             .map(|single_market| single_market.market_id) // Collect U256 (market_id)
             .collect();
 
@@ -399,7 +398,7 @@ impl GeneratorStore {
 
         let generator_markets: Vec<&GeneratorInfoPerMarket> = self
             .generator_markets
-            .par_iter() // Parallel iterator over the generator_markets HashMap
+            .iter() // Parallel iterator over the generator_markets HashMap
             .filter_map(|((_, gen_market_id), generator_info)| {
                 // Check if the market_id matches
                 if gen_market_id == market_id {
@@ -418,14 +417,14 @@ impl GeneratorStore {
         log::debug!("Check query by states");
 
         let generators_market: Vec<&GeneratorInfoPerMarket> = states
-            .into_par_iter() // Convert the Vec<GeneratorState> to a parallel iterator
+            .into_iter() // Convert the Vec<GeneratorState> to a parallel iterator
             .filter_map(|state| {
                 // For each state, get the associated pairs
                 self.state_index.get(&state)
             })
             .flat_map(|pairs| {
                 // For each pair, iterate in parallel and get the generator markets
-                pairs.into_par_iter().filter_map(|&(address, market_id)| {
+                pairs.into_iter().filter_map(|&(address, market_id)| {
                     self.generator_markets.get(&(address, market_id))
                 })
             })
@@ -438,7 +437,7 @@ impl GeneratorStore {
     pub fn query_by_address(&self, address: Address) -> GeneratorQueryResult {
         let generators = match self.address_index.get(&address) {
             Some(market_ids) => market_ids
-                .par_iter()
+                .iter()
                 .filter_map(|m_id| self.generator_markets.get(&(address, *m_id)))
                 .collect(),
             None => Vec::new(),
@@ -457,7 +456,7 @@ impl GeneratorStore {
 
         // Use rayon's parallel iterator to process in parallel
         let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
-            .into_par_iter() // Convert to a parallel iterator
+            .into_iter() // Convert to a parallel iterator
             .filter_map(|elem| {
                 // Try to get the generator from the store
                 if let Some(generator) = self.generators.get(&elem.address) {
@@ -488,7 +487,7 @@ impl GeneratorStore {
 
         // Use rayon's parallel iterator to process in parallel
         let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
-            .into_par_iter() // Convert the array to a parallel iterator
+            .into_iter() // Convert the array to a parallel iterator
             .filter_map(|elem| {
                 // Try to get the generator from the store
                 if let Some(generator) = self.generators.get(&elem.address) {
@@ -519,7 +518,7 @@ impl GeneratorStore {
 
         // Use rayon's parallel iterator to process in parallel
         let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
-            .into_par_iter() // Convert to a parallel iterator
+            .into_iter() // Convert to a parallel iterator
             .filter_map(|elem| {
                 // Try to get the generator from the store
                 if let Some(generator) = self.generators.get(&elem.address) {

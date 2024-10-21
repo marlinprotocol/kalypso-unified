@@ -17,15 +17,14 @@ impl<T: Clone> CachedResponse<T> {
     }
 
     // Get cached data or recompute it if the cache is outdated
-    pub async fn get_or_recompute<F, Fut>(&mut self, timeout: Duration, compute: F) -> T
+    pub async fn get_or_recompute<Fut>(&mut self, timeout: Duration, compute: Fut) -> T
     where
-        F: FnOnce() -> Fut,
         Fut: Future<Output = T>,
     {
         // Check if the data needs to be recomputed
         if self.data.is_none() || self.last_update.elapsed() > timeout {
             // Await the asynchronous compute function
-            let new_data = compute().await;
+            let new_data = compute.await;
             self.data = Some(new_data.clone());
             self.last_update = Instant::now();
         }

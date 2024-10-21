@@ -28,10 +28,10 @@ pub async fn process_proof_market_place_logs(
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut local_ask_store = local_ask_store.lock().await;
-    let mut generator_store = generator_store.lock().await;
-    let mut market_store = market_store.lock().await;
-    let mut cost_store = cost_store.lock().await;
+    let mut local_ask_store = { local_ask_store.lock().await };
+    let mut generator_store = { generator_store.lock().await };
+    let mut market_store = { market_store.lock().await };
+    let mut cost_store = { cost_store.lock().await };
 
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
@@ -107,13 +107,13 @@ pub async fn process_proof_market_place_logs(
                         parsed_ask_created_log.ask_id
                     );
                 } else {
-                    ask_to_store.state = Some(AskState::InvalidSecret);
+                    ask_to_store.state = Some(AskState::InvalidSecret).to_owned();
                     log::error!(
                         "Stored ask with AskId {:?} to store but flagged = false",
                         parsed_ask_created_log.ask_id
                     );
                 }
-                local_ask_store.insert(ask_to_store);
+                local_ask_store.insert(ask_to_store.to_owned());
             } else {
                 ask_to_store.invalid_secret_flag = true;
                 // repeated, try to modify if-else logic and work!..
@@ -122,7 +122,7 @@ pub async fn process_proof_market_place_logs(
                     parsed_ask_created_log.ask_id,
                     &ask_to_store.market_id
                 );
-                local_ask_store.insert(ask_to_store);
+                local_ask_store.insert(ask_to_store.to_owned());
             }
             continue;
         }

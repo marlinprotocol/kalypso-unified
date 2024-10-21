@@ -34,15 +34,19 @@ pub async fn get_ask_proof_by_ask_id(
 
     match proof {
         Some(proof) => match proof {
-            Proof::ValidProof(valid_proof) => Ok(HttpResponse::Ok().json(GetProofResponse {
-                status: "Found".into(),
-                proof: valid_proof.to_vec(),
-            })),
+            Proof::ValidProof(valid_proof) => {
+                return Ok(HttpResponse::Ok().json(GetProofResponse {
+                    status: "Found".into(),
+                    proof: valid_proof.to_vec(),
+                }))
+            }
         },
-        _ => Ok(HttpResponse::NotFound().json(GetProofResponse {
-            status: "Not Found".into(),
-            proof: vec![],
-        })),
+        _ => {
+            return Ok(HttpResponse::NotFound().json(GetProofResponse {
+                status: "Not Found".into(),
+                proof: vec![],
+            }))
+        }
     }
 }
 
@@ -82,7 +86,7 @@ pub async fn get_ask_status_askid(
         AskState::InvalidSecret => "InvalidSecret",
     };
 
-    Ok(HttpResponse::Ok().json(GetAskStatusResponse {
+    return Ok(HttpResponse::Ok().json(GetAskStatusResponse {
         state: ask_state.to_owned(),
-    }))
+    }));
 }

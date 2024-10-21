@@ -52,50 +52,59 @@ pub async fn market_info(
     _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    let response = MARKET_RESPONSE
-        .lock()
-        .await
-        .get_or_recompute(Duration::from_secs(5), || async {
-            let local_market_store = _local_market_store.lock().await;
-            let local_ask_store = _local_ask_store.lock().await;
-
-            let all_market_meta_data = local_market_store.get_all_markets();
-            let markets = all_market_meta_data
-                .into_iter()
-                .map(|meta| Market {
-                    market_id: meta.market_id.to_string(),
-                    name: None,
-                    hardware_requirement: MinHardware {
-                        instance_type: "todo".into(),
-                        vcpus: 1234,
-                    },
-                    total_proofs_generated: local_ask_store.get_proof_count(&meta.market_id),
-                    requests_in_progress: local_ask_store
-                        .get_by_ask_state_except_complete(AskState::Assigned)
-                        .filter_by_market_id(meta.market_id)
-                        .get_count(),
-                    median_time_per_proof: local_market_store
-                        .get_median_proof_time_market_wise(&meta.market_id)
-                        .to_string(),
-                    median_cost_per_proof: local_market_store
-                        .get_median_proof_cost_market_wise(&meta.market_id)
-                        .to_string(),
-                    failed_requests: local_ask_store
-                        .get_failed_request_count_by_market_id(&meta.market_id)
-                        .to_string(),
-                    total_earnings: local_market_store
-                        .get_earnings(&meta.market_id)
-                        .unwrap_or(U256::zero())
-                        .to_string(),
-                    slashing_penalty: vec![TokenAmount {
-                        token: "POND".to_string(),
-                        amount: meta.slashing_penalty.to_string(),
-                    }],
-                    status: true,
-                })
-                .collect::<Vec<Market>>();
-            MarketResponse { result: markets }
-        })
+    let mut cache_lock = MARKET_RESPONSE.lock().await;
+    let response = cache_lock
+        .get_or_recompute(
+            Duration::from_secs(5),
+            recompute_market_response(_local_market_store.clone(), _local_ask_store.clone()),
+        )
         .await;
+
     Ok(HttpResponse::Ok().json(response))
+}
+
+async fn recompute_market_response(
+    _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
+    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+) -> MarketResponse {
+    let local_market_store = _local_market_store.lock().await;
+    let local_ask_store = _local_ask_store.lock().await;
+
+    let all_market_meta_data = local_market_store.get_all_markets();
+    let markets = all_market_meta_data
+        .into_iter()
+        .map(|meta| Market {
+            market_id: meta.market_id.to_string(),
+            name: None,
+            hardware_requirement: MinHardware {
+                instance_type: "todo".into(),
+                vcpus: 1234,
+            },
+            total_proofs_generated: local_ask_store.get_proof_count(&meta.market_id),
+            requests_in_progress: local_ask_store
+                .get_by_ask_state_except_complete(AskState::Assigned)
+                .filter_by_market_id(meta.market_id)
+                .get_count(),
+            median_time_per_proof: local_market_store
+                .get_median_proof_time_market_wise(&meta.market_id)
+                .to_string(),
+            median_cost_per_proof: local_market_store
+                .get_median_proof_cost_market_wise(&meta.market_id)
+                .to_string(),
+            failed_requests: local_ask_store
+                .get_failed_request_count_by_market_id(&meta.market_id)
+                .to_string(),
+            total_earnings: local_market_store
+                .get_earnings(&meta.market_id)
+                .unwrap_or(U256::zero())
+                .to_string(),
+            slashing_penalty: vec![TokenAmount {
+                token: "POND".to_string(),
+                amount: meta.slashing_penalty.to_string(),
+            }],
+            status: true,
+        })
+        .collect::<Vec<Market>>();
+
+    MarketResponse { result: markets }
 }

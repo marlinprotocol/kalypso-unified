@@ -12,7 +12,7 @@ pub async fn process_entity_key_registry_logs(
     >,
     key_store: &Arc<Mutex<key_store::KeyStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut key_store = key_store.lock().await;
+    let mut key_store = { key_store.lock().await };
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");

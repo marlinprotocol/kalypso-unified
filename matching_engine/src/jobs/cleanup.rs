@@ -48,7 +48,7 @@ impl CleanupTool {
             if slow_cleanup {
                 thread::sleep(Duration::from_secs(30));
             } else {
-                thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_secs(2));
             }
 
             if self.should_stop.load(Ordering::Acquire) {
@@ -67,20 +67,28 @@ impl CleanupTool {
                     Err(_) => ethers::types::U256::zero(),
                 };
                 {
-                    *self.relayer_address_balance.lock().await = balance;
+                    let mut relayer_balance_lock = self.relayer_address_balance.lock().await;
+                    *relayer_balance_lock = balance;
+
+                    // Explicitly drop the lock after updating the balance
+                    drop(relayer_balance_lock);
                 }
             }
 
-            let mut ask_store = { self.ask_store.lock().await };
+            {
+                let mut ask_store = { self.ask_store.lock().await };
 
-            // Removing the completed asks
-            let completed_asks = ask_store.get_cleanup_asks().result();
+                // Removing the completed asks
+                let completed_asks = ask_store.get_cleanup_asks().result();
 
-            if completed_asks.is_some() {
-                for elem in completed_asks.unwrap() {
-                    log::info!("Removed Completed ask:{}", &elem.ask_id);
-                    ask_store.remove_ask_only_if_completed(&elem.ask_id);
+                if completed_asks.is_some() {
+                    for elem in completed_asks.unwrap() {
+                        log::info!("Removed Completed ask:{}", &elem.ask_id);
+                        ask_store.remove_ask_only_if_completed(&elem.ask_id);
+                    }
                 }
+
+                drop(ask_store);
             }
         }
 

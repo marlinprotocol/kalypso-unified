@@ -1,6 +1,5 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -32,12 +31,12 @@ impl Default for MarketMetadataStore {
 
 impl MarketMetadataStore {
     pub fn count_markets(&self) -> usize {
-        self.market_by_id.par_iter().count()
+        self.market_by_id.iter().count()
     }
 
     pub fn get_all_markets(&self) -> Vec<MarketMetadata> {
         self.market_by_id
-            .par_iter() // Parallel iteration over the hash map
+            .iter()
             .map(|(_, market_metadata)| market_metadata.clone()) // Extract and clone the MarketMetadata
             .collect() // Collect into a Vec
     }

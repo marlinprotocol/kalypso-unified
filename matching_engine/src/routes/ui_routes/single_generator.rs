@@ -122,13 +122,12 @@ impl CachedSingleGeneratorData {
         }
     }
 
-    pub async fn get_or_compute<F, Fut>(
+    pub async fn get_or_compute<Fut>(
         &mut self,
         query: GeneratorQuery,
-        compute: F,
+        compute: Fut,
     ) -> Option<GeneratorResponse>
     where
-        F: FnOnce() -> Fut,
         Fut: Future<Output = Option<GeneratorResponse>>,
     {
         // Check if the query is already in the cache
@@ -155,7 +154,6 @@ static SINGLE_GENERATOR_RESPONSE: Lazy<Mutex<CachedSingleGeneratorData>> =
     Lazy::new(|| Mutex::new(CachedSingleGeneratorData::new()));
 
 pub async fn single_generator(
-    // _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
     _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
     path: web::Path<(String,)>,
@@ -170,179 +168,29 @@ pub async fn single_generator(
         }
     };
 
-    let active_jobs_skip = query.active_jobs_skip.unwrap_or(0);
-    let active_jobs = query.active_jobs.unwrap_or(0);
-    let completed_jobs_skip = query.completed_jobs_skip.unwrap_or(0);
-    let completed_jobs = query.completed_jobs.unwrap_or(0);
-    let slashing_history_skip = query.slashing_history_skip.unwrap_or(0);
-    let slashing_history = query.slashing_history.unwrap_or(0);
-
-    let query = GeneratorQuery {
+    let generator_query = GeneratorQuery {
         generator: generator_id,
         query: QueryParams {
-            active_jobs_skip: Some(active_jobs_skip),
-            active_jobs: Some(active_jobs),
-            completed_jobs_skip: Some(completed_jobs_skip),
-            completed_jobs: Some(completed_jobs),
-            slashing_history_skip: Some(slashing_history_skip),
-            slashing_history: Some(slashing_history),
+            active_jobs_skip: query.active_jobs_skip,
+            active_jobs: query.active_jobs,
+            completed_jobs_skip: query.completed_jobs_skip,
+            completed_jobs: query.completed_jobs,
+            slashing_history_skip: query.slashing_history_skip,
+            slashing_history: query.slashing_history,
         },
     };
 
-    let response = SINGLE_GENERATOR_RESPONSE
-        .lock()
-        .await
-        .get_or_compute(query, || async {
-            let local_generator_store = _local_generator_store.lock().await;
-            let local_ask_store = _local_ask_store.lock().await;
-            let generator_data = local_generator_store.get_by_address(&generator_id);
-            if generator_data.is_none() {
-                None
-            } else {
-                let generator_data = generator_data.unwrap();
-                let all_markets_of_generator =
-                    local_generator_store.get_all_markets_of_generator(&generator_id);
-
-                Some(GeneratorResponse {
-                    operator: Operator {
-                        name: Some("todo".into()),
-                        address: address_to_string(&generator_id),
-                    },
-                    reward_address: address_to_string(&generator_data.reward_address),
-                    active_jobs: all_markets_of_generator
-                        .clone()
-                        .into_iter()
-                        .map(|info| info.active_requests)
-                        .fold(U256::zero(), |a, x| a + x)
-                        .to_string(),
-                    no_of_markets: all_markets_of_generator.len().to_string(),
-                    total_earnings: local_generator_store
-                        .get_total_earning(&generator_id)
-                        .unwrap_or_default()
-                        .to_string(),
-                    total_slashed: vec![TokenAmount {
-                        amount: local_generator_store
-                            .get_total_slashing(&generator_id)
-                            .unwrap_or_default()
-                            .to_string(),
-                        token: "POND".into(),
-                    }],
-                    total_delegations: vec![TokenAmount {
-                        token: "POND".into(),
-                        amount: generator_data.total_stake.to_string(),
-                    }],
-                    markets: all_markets_of_generator
-                        .clone()
-                        .into_iter()
-                        .map(|info| Market {
-                            name: None,
-                            id: info.market_id.to_string(),
-                            earnings_to_date: local_generator_store
-                                .get_earning_per_market(&generator_id, &info.market_id)
-                                .unwrap_or_default()
-                                .to_string(),
-                            proofs_missed: all_markets_of_generator
-                                .clone()
-                                .into_iter()
-                                .map(|info| info.proofs_slashed)
-                                .fold(U256::zero(), |a, x| a + x)
-                                .to_string(),
-                            slashing_penalties_incured: all_markets_of_generator
-                                .clone()
-                                .into_iter()
-                                .map(|info| info.proofs_slashed)
-                                .fold(U256::zero(), |a, x| a + x)
-                                .to_string(),
-                            pending_proofs: all_markets_of_generator
-                                .clone()
-                                .into_iter()
-                                .map(|info| info.active_requests)
-                                .fold(U256::zero(), |a, x| a + x)
-                                .to_string(),
-                            min_hardware_requirement: MinHardware {
-                                instance_type: "todo".into(),
-                                vcpus: 1234,
-                            },
-                        })
-                        .collect(),
-                    active_jobs_list: local_ask_store
-                        .get_by_ask_state_except_complete(AskState::Assigned)
-                        .result()
-                        .map(|mut asks| {
-                            asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
-                            let local_asks = asks
-                                .into_iter()
-                                .filter(|ask| match &ask.generator {
-                                    Some(addr) => addr == &generator_id,
-                                    None => false,
-                                })
-                                .collect::<Vec<LocalAsk>>()
-                                .into_iter()
-                                .skip(query.query.active_jobs_skip.unwrap_or_default())
-                                .take(query.query.active_jobs.unwrap_or_default())
-                                .collect::<Vec<LocalAsk>>();
-
-                            local_asks
-                                .into_iter()
-                                .map(|a| Job {
-                                    market: MarketInfo {
-                                        name: None,
-                                        id: a.market_id.to_string(),
-                                        token: "POND".to_string(),
-                                    },
-                                    requestor: address_to_string(&a.prover_refund_address),
-                                    inputs: bytes_to_string(&a.prover_data),
-                                    deadline: a.deadline.to_string(),
-                                    cost: a.reward.to_string(),
-                                    time_taken_for_proof_generation: None,
-                                    proof: None,
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_default(),
-                    completed_jobs_list: local_ask_store
-                        .get_completed_proof_of_generator(
-                            &generator_id,
-                            query.query.completed_jobs_skip.unwrap_or_default(),
-                            query.query.completed_jobs.unwrap_or_default(),
-                        )
-                        .into_iter()
-                        .map(|ask| Job {
-                            market: MarketInfo {
-                                name: None,
-                                id: ask.market_id.to_string(),
-                                token: "POND".to_string(),
-                            },
-                            requestor: address_to_string(&ask.prover_refund_address),
-                            inputs: bytes_to_string(&ask.prover_data),
-                            deadline: ask.deadline.to_string(),
-                            cost: ask.reward.to_string(),
-                            time_taken_for_proof_generation: None,
-                            proof: None,
-                        })
-                        .collect::<Vec<Job>>(),
-                    slashing_history: local_generator_store
-                        .get_slashing_records(&generator_id)
-                        .into_iter()
-                        .map(|record| Slash {
-                            timestamp: record.expected_time.to_string(),
-                            market: MarketInfo {
-                                name: None,
-                                id: record.market_id.to_string(),
-                                token: "POND".into(),
-                            },
-                            request: record.slashing_tx,
-                            price_offered: record.price_offered.to_string(),
-                            expected_time: record.expected_time.to_string(),
-                            slashing_penalty: TokenAmount {
-                                token: "POND".into(),
-                                amount: record.slashing_penalty.to_string(),
-                            },
-                        })
-                        .collect(),
-                })
-            }
-        })
+    let mut cache_lock = SINGLE_GENERATOR_RESPONSE.lock().await;
+    let response = cache_lock
+        .get_or_compute(
+            generator_query,
+            recompute_single_generator_response(
+                generator_id,
+                generator_query,
+                _local_ask_store.clone(),
+                _local_generator_store.clone(),
+            ),
+        )
         .await;
 
     if response.is_none() {
@@ -350,6 +198,164 @@ pub async fn single_generator(
             status: "Generator Data Not Found".into(),
         }));
     } else {
-        Ok(HttpResponse::Ok().json(response))
+        return Ok(HttpResponse::Ok().json(response));
     }
+}
+
+async fn recompute_single_generator_response(
+    generator_id: Address,
+    query: GeneratorQuery,
+    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+) -> Option<GeneratorResponse> {
+    let local_generator_store = _local_generator_store.lock().await;
+    let local_ask_store = _local_ask_store.lock().await;
+    let generator_data = local_generator_store.get_by_address(&generator_id);
+
+    if generator_data.is_none() {
+        return None;
+    }
+
+    let generator_data = generator_data.unwrap();
+    let all_markets_of_generator =
+        local_generator_store.get_all_markets_of_generator(&generator_id);
+
+    Some(GeneratorResponse {
+        operator: Operator {
+            name: Some("todo".into()),
+            address: address_to_string(&generator_id),
+        },
+        reward_address: address_to_string(&generator_data.reward_address),
+        active_jobs: all_markets_of_generator
+            .clone()
+            .into_iter()
+            .map(|info| info.active_requests)
+            .fold(U256::zero(), |a, x| a + x)
+            .to_string(),
+        no_of_markets: all_markets_of_generator.len().to_string(),
+        total_earnings: local_generator_store
+            .get_total_earning(&generator_id)
+            .unwrap_or_default()
+            .to_string(),
+        total_slashed: vec![TokenAmount {
+            amount: local_generator_store
+                .get_total_slashing(&generator_id)
+                .unwrap_or_default()
+                .to_string(),
+            token: "POND".into(),
+        }],
+        total_delegations: vec![TokenAmount {
+            token: "POND".into(),
+            amount: generator_data.total_stake.to_string(),
+        }],
+        markets: all_markets_of_generator
+            .clone()
+            .into_iter()
+            .map(|info| Market {
+                name: None,
+                id: info.market_id.to_string(),
+                earnings_to_date: local_generator_store
+                    .get_earning_per_market(&generator_id, &info.market_id)
+                    .unwrap_or_default()
+                    .to_string(),
+                proofs_missed: all_markets_of_generator
+                    .clone()
+                    .into_iter()
+                    .map(|info| info.proofs_slashed)
+                    .fold(U256::zero(), |a, x| a + x)
+                    .to_string(),
+                slashing_penalties_incured: all_markets_of_generator
+                    .clone()
+                    .into_iter()
+                    .map(|info| info.proofs_slashed)
+                    .fold(U256::zero(), |a, x| a + x)
+                    .to_string(),
+                pending_proofs: all_markets_of_generator
+                    .clone()
+                    .into_iter()
+                    .map(|info| info.active_requests)
+                    .fold(U256::zero(), |a, x| a + x)
+                    .to_string(),
+                min_hardware_requirement: MinHardware {
+                    instance_type: "todo".into(),
+                    vcpus: 1234,
+                },
+            })
+            .collect(),
+        active_jobs_list: local_ask_store
+            .get_by_ask_state_except_complete(AskState::Assigned)
+            .result()
+            .map(|mut asks| {
+                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                let local_asks = asks
+                    .into_iter()
+                    .filter(|ask| match &ask.generator {
+                        Some(addr) => addr == &generator_id,
+                        None => false,
+                    })
+                    .collect::<Vec<LocalAsk>>()
+                    .into_iter()
+                    .skip(query.query.active_jobs_skip.unwrap_or_default())
+                    .take(query.query.active_jobs.unwrap_or_default())
+                    .collect::<Vec<LocalAsk>>();
+
+                local_asks
+                    .into_iter()
+                    .map(|a| Job {
+                        market: MarketInfo {
+                            name: None,
+                            id: a.market_id.to_string(),
+                            token: "POND".to_string(),
+                        },
+                        requestor: address_to_string(&a.prover_refund_address),
+                        inputs: bytes_to_string(&a.prover_data),
+                        deadline: a.deadline.to_string(),
+                        cost: a.reward.to_string(),
+                        time_taken_for_proof_generation: None,
+                        proof: None,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        completed_jobs_list: local_ask_store
+            .get_completed_proof_of_generator(
+                &generator_id,
+                query.query.completed_jobs_skip.unwrap_or_default(),
+                query.query.completed_jobs.unwrap_or_default(),
+            )
+            .into_iter()
+            .map(|ask| Job {
+                market: MarketInfo {
+                    name: None,
+                    id: ask.market_id.to_string(),
+                    token: "POND".to_string(),
+                },
+                requestor: address_to_string(&ask.prover_refund_address),
+                inputs: bytes_to_string(&ask.prover_data),
+                deadline: ask.deadline.to_string(),
+                cost: ask.reward.to_string(),
+                time_taken_for_proof_generation: None,
+                proof: None,
+            })
+            .collect::<Vec<Job>>(),
+        slashing_history: local_generator_store
+            .get_slashing_records(&generator_id)
+            .into_iter()
+            .map(|record| Slash {
+                timestamp: record.expected_time.to_string(),
+                market: MarketInfo {
+                    name: None,
+                    id: record.market_id.to_string(),
+                    token: "POND".into(),
+                },
+                request: record.slashing_tx,
+                price_offered: record.price_offered.to_string(),
+                expected_time: record.expected_time.to_string(),
+                slashing_penalty: TokenAmount {
+                    token: "POND".into(),
+                    amount: record.slashing_penalty.to_string(),
+                },
+            })
+            .collect(),
+    })
 }

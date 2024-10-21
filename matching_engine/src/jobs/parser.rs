@@ -7,7 +7,6 @@ use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
-use rayon::prelude::*;
 use std::collections::HashMap;
 use std::ops::Sub;
 use std::{
@@ -99,7 +98,7 @@ impl LogParser {
             provider_http,
             matching_engine_key: hex::decode(matching_engine_key).unwrap(),
             matching_engine_slave_keys: matching_engine_slave_keys
-                .into_par_iter()
+                .into_iter()
                 .map(|s| hex::decode(s).unwrap())
                 .collect(),
             shared_local_ask_store,
@@ -500,21 +499,21 @@ impl LogParser {
             ethers::abi::Token::Array(
                 ask_ids
                     .clone()
-                    .into_par_iter()
+                    .into_iter()
                     .map(ethers::abi::Token::Uint)
                     .collect(),
             ),
             ethers::abi::Token::Array(
                 generators
                     .clone()
-                    .into_par_iter()
+                    .into_iter()
                     .map(ethers::abi::Token::Address)
                     .collect(),
             ),
             ethers::abi::Token::Array(
                 new_acls
                     .clone()
-                    .into_par_iter()
+                    .into_iter()
                     .map(|v| ethers::abi::Token::Bytes(v.to_vec()))
                     .collect(),
             ),

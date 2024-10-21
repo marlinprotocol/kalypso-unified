@@ -49,8 +49,8 @@ pub fn ui_scope() -> actix_web::Scope {
         .route("/markets", web::get().to(ui_routes::markets::market_info))
 }
 
-pub fn get_root_scope() -> actix_web::Scope {
-    web::scope("") // Empty string scope means "/" path
+pub fn get_stats_scope() -> actix_web::Scope {
+    web::scope("/stats")
         .route("/welcome", web::get().to(chain_status::welcome))
         .route("/getStatus", web::get().to(ask_status::get_status))
         .route(
@@ -70,10 +70,6 @@ pub fn get_root_scope() -> actix_web::Scope {
             web::post().to(get_priv_inputs::get_priv_input),
         )
         .route(
-            "/decryptRequest",
-            web::post().to(decrypt_request::decrypt_request),
-        )
-        .route(
             "/getLatestBlock",
             web::get().to(chain_status::get_latest_block_number),
         )
@@ -82,4 +78,11 @@ pub fn get_root_scope() -> actix_web::Scope {
             "/marketStats/{marketId}",
             web::get().to(market_info::market_stats),
         )
+}
+
+pub fn get_core_scope() -> actix_web::Scope {
+    web::scope("/app").route(
+        "/decryptRequest",
+        web::post().to(decrypt_request::decrypt_request),
+    )
 }

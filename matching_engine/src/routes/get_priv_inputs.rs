@@ -103,7 +103,7 @@ pub async fn get_priv_input(
 
     let serialized = serde_json::to_string(&encrypted_ecies_data).unwrap();
 
-    Ok(HttpResponse::Ok().json(GetRequestResponse {
+    return Ok(HttpResponse::Ok().json(GetRequestResponse {
         encrypted_data: serialized,
-    }))
+    }));
 }

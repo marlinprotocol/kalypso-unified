@@ -12,7 +12,7 @@ pub async fn process_generator_registry_logs(
     >,
     generator_store: &Arc<Mutex<generator_store::GeneratorStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut generator_store = generator_store.lock().await;
+    let mut generator_store = { generator_store.lock().await };
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");

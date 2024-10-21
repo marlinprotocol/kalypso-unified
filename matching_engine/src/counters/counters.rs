@@ -1,5 +1,4 @@
 use im::HashSet;
-use rayon::prelude::*;
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -69,7 +68,7 @@ where
     #[allow(unused)]
     pub fn get_keys_by_value(&self, value: &TValue) -> Vec<TKey> {
         self.key_wise
-            .par_iter()
+            .iter()
             .filter_map(|(key, values)| {
                 if values.contains(value) {
                     Some(key.clone())

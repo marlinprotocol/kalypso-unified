@@ -1,6 +1,5 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -38,7 +37,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_expiry(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.expiry.cmp(&b.expiry));
+            asks.sort_by(|a, b| a.expiry.cmp(&b.expiry));
         }
         self
     }
@@ -51,10 +50,10 @@ impl AskQueryResult {
         if let Some(ref mut asks) = self.asks {
             if asc {
                 // Sort in ascending order
-                asks.par_sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
+                asks.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
             } else {
                 // Sort in descending order
-                asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
             }
         }
         self
@@ -62,7 +61,7 @@ impl AskQueryResult {
 
     pub fn filter_by_market_id(self, market_id: U256) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter() // Parallel iterator over asks
+            asks.into_iter() // Parallel iterator over asks
                 .filter(|ask| ask.market_id == market_id) // Filter by market_id
                 .collect::<Vec<_>>() // Collect filtered results
         });
@@ -72,7 +71,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_reward(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.reward.cmp(&b.reward));
+            asks.sort_by(|a, b| a.reward.cmp(&b.reward));
         }
         self
     }
@@ -80,7 +79,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn sort_by_deadline(mut self) -> Self {
         if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.deadline.cmp(&b.deadline));
+            asks.sort_by(|a, b| a.deadline.cmp(&b.deadline));
         }
         self
     }
@@ -88,7 +87,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_has_private_inputs(self, value: bool) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
+            asks.into_iter()
                 .filter(|ask| ask.has_private_inputs == value)
                 .collect::<Vec<_>>()
         });
@@ -97,7 +96,7 @@ impl AskQueryResult {
 
     pub fn filter_by_flag(self, value: bool) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
+            asks.into_iter()
                 .filter(|ask| ask.invalid_secret_flag == value)
                 .collect::<Vec<_>>()
         });
@@ -118,7 +117,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_expiry(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
+            asks.into_iter()
                 .filter(|ask| Self::compare(ask.expiry, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -128,7 +127,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_reward(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
+            asks.into_iter()
                 .filter(|ask| Self::compare(ask.reward, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -138,7 +137,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_deadline(self, value: U256, comparison: Comparison) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
+            asks.into_iter()
                 .filter(|ask| Self::compare(ask.deadline, value, &comparison))
                 .collect::<Vec<_>>()
         });
@@ -148,7 +147,7 @@ impl AskQueryResult {
     #[allow(unused)]
     pub fn filter_by_prover_refund_address(self, address: Address) -> Self {
         let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
+            asks.into_iter()
                 .filter(|ask| ask.prover_refund_address == address)
                 .collect::<Vec<_>>()
         });
