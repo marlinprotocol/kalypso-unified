@@ -54,7 +54,7 @@ impl CleanupTool {
             if slow_cleanup {
                 thread::sleep(Duration::from_secs(30));
             } else {
-                thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_secs(10));
             }
 
             if self.should_stop.load(Ordering::Acquire) {
