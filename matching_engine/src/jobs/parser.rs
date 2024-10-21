@@ -281,7 +281,7 @@ impl LogParser {
 
         log::debug!("Trying to fetch available asks");
         let available_asks = ask_store
-            .get_by_state(AskState::Create)
+            .get_by_ask_state_except_complete(AskState::Create)
             .filter_by_flag(true)
             .result();
         log::debug!("Complete fetch available asks");

@@ -267,7 +267,7 @@ pub async fn single_generator(
                         })
                         .collect(),
                     active_jobs_list: local_ask_store
-                        .get_by_state(AskState::Assigned)
+                        .get_by_ask_state_except_complete(AskState::Assigned)
                         .result()
                         .map(|mut asks| {
                             asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
@@ -302,40 +302,26 @@ pub async fn single_generator(
                         })
                         .unwrap_or_default(),
                     completed_jobs_list: local_ask_store
-                        .get_by_state(AskState::Complete)
-                        .result()
-                        .map(|mut asks| {
-                            asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
-                            let local_asks = asks
-                                .into_par_iter()
-                                .filter(|ask| match &ask.generator {
-                                    Some(addr) => addr == &generator_id,
-                                    None => false,
-                                })
-                                .collect::<Vec<LocalAsk>>()
-                                .into_par_iter()
-                                .skip(query.query.active_jobs_skip.unwrap_or_default())
-                                .take(query.query.active_jobs.unwrap_or_default())
-                                .collect::<Vec<LocalAsk>>();
-
-                            local_asks
-                                .into_par_iter()
-                                .map(|a| Job {
-                                    market: MarketInfo {
-                                        name: None,
-                                        id: a.market_id.to_string(),
-                                        token: "POND".to_string(),
-                                    },
-                                    requestor: address_to_string(&a.prover_refund_address),
-                                    inputs: bytes_to_string(&a.prover_data),
-                                    deadline: a.deadline.to_string(),
-                                    cost: a.reward.to_string(),
-                                    time_taken_for_proof_generation: None,
-                                    proof: None,
-                                })
-                                .collect()
+                        .get_completed_proof_of_generator(
+                            &generator_id,
+                            query.query.completed_jobs_skip.unwrap_or_default(),
+                            query.query.completed_jobs.unwrap_or_default(),
+                        )
+                        .into_par_iter()
+                        .map(|ask| Job {
+                            market: MarketInfo {
+                                name: None,
+                                id: ask.market_id.to_string(),
+                                token: "POND".to_string(),
+                            },
+                            requestor: address_to_string(&ask.prover_refund_address),
+                            inputs: bytes_to_string(&ask.prover_data),
+                            deadline: ask.deadline.to_string(),
+                            cost: ask.reward.to_string(),
+                            time_taken_for_proof_generation: None,
+                            proof: None,
                         })
-                        .unwrap_or_default(),
+                        .collect::<Vec<Job>>(),
                     slashing_history: local_generator_store
                         .get_slashing_records(&generator_id)
                         .into_par_iter()

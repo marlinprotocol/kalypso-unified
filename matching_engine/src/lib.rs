@@ -306,7 +306,6 @@ impl MatchingEngine {
 
         let cleanup_tool = CleanupTool::new(
             should_stop,
-            shared_market_store,
             shared_local_ask_store,
             proof_marketplace,
             relayer_signer.address(),

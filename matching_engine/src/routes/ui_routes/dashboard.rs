@@ -90,56 +90,48 @@ pub async fn get_dashboard(
                 .collect::<Vec<Market>>();
 
             let recent_proofs = {
-                let result = local_ask_store
-                    .get_by_state_limit(crate::ask_lib::ask_status::AskState::Complete, 100)
-                    .sort_by_ask_id(false)
-                    .result();
+                let result = local_ask_store.get_recent_completed_proofs(20);
 
-                if result.is_none() {
-                    vec![]
-                } else {
-                    let result = result.unwrap();
-                    result
-                        .into_par_iter()
-                        .map(|ask_request| {
-                            let market_id = ask_request.market_id; // Assuming `market_id` is part of `MarketMetadata`
+                result
+                    .into_par_iter()
+                    .map(|ask_request| {
+                        let market_id = ask_request.market_id; // Assuming `market_id` is part of `MarketMetadata`
 
-                            let median_time =
-                                local_market_store.get_median_proof_time_market_wise(&market_id);
+                        let median_time =
+                            local_market_store.get_median_proof_time_market_wise(&market_id);
 
-                            let median_cost =
-                                local_market_store.get_median_proof_cost_market_wise(&market_id);
+                        let median_cost =
+                            local_market_store.get_median_proof_cost_market_wise(&market_id);
 
-                            let market = Market {
-                                name: market_id.to_string(),
-                                token: "USDC".into(),
-                                median_time: median_time.to_string(),
-                                median_cost: median_cost.to_string(),
-                            };
+                        let market = Market {
+                            name: market_id.to_string(),
+                            token: "USDC".into(),
+                            median_time: median_time.to_string(),
+                            median_cost: median_cost.to_string(),
+                        };
 
-                            RecentProof {
-                                market,
-                                requestor: address_to_string(&ask_request.prover_refund_address),
-                                inputs: bytes_to_string(&ask_request.prover_data),
-                                generator: Generator {
-                                    name: None,
-                                    address: address_to_string(&ask_request.generator.unwrap()),
-                                },
-                                time: local_ask_store
-                                    .get_proving_time(&ask_request.ask_id)
-                                    .unwrap_or_else(|| U256::zero())
-                                    .to_string(),
-                                cost: local_ask_store
-                                    .get_proving_cost(&ask_request.ask_id)
-                                    .unwrap_or_else(|| U256::zero())
-                                    .to_string(),
-                                proof_link: local_ask_store
-                                    .get_proof_transaction(&ask_request.ask_id)
-                                    .unwrap_or_default(),
-                            }
-                        })
-                        .collect::<Vec<RecentProof>>()
-                }
+                        RecentProof {
+                            market,
+                            requestor: address_to_string(&ask_request.prover_refund_address),
+                            inputs: bytes_to_string(&ask_request.prover_data),
+                            generator: Generator {
+                                name: None,
+                                address: address_to_string(&ask_request.generator.unwrap()),
+                            },
+                            time: local_ask_store
+                                .get_proving_time(&ask_request.ask_id)
+                                .unwrap_or_else(|| U256::zero())
+                                .to_string(),
+                            cost: local_ask_store
+                                .get_proving_cost(&ask_request.ask_id)
+                                .unwrap_or_else(|| U256::zero())
+                                .to_string(),
+                            proof_link: local_ask_store
+                                .get_proof_transaction(&ask_request.ask_id)
+                                .unwrap_or_default(),
+                        }
+                    })
+                    .collect::<Vec<RecentProof>>()
             };
 
             DashboardResponse {

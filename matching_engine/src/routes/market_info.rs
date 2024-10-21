@@ -41,7 +41,9 @@ pub async fn market_stats(
 
     let proofs_pending = {
         let local_ask_store = { _local_ask_store.lock().await };
-        let asks = local_ask_store.get_by_state(AskState::Create).result();
+        let asks = local_ask_store
+            .get_by_ask_state_except_complete(AskState::Create)
+            .result();
         if asks.is_none() {
             Some(0)
         } else {
@@ -56,7 +58,9 @@ pub async fn market_stats(
 
     let proofs_in_progress = {
         let local_ask_store = { _local_ask_store.lock().await };
-        let asks = local_ask_store.get_by_state(AskState::Assigned).result();
+        let asks = local_ask_store
+            .get_by_ask_state_except_complete(AskState::Assigned)
+            .result();
         if asks.is_none() {
             Some(0)
         } else {

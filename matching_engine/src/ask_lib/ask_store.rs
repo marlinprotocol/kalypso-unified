@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use crate::counters::counters::GenericCounters;
 
 use super::{
-    ask::LocalAsk,
+    ask::{CompletedProofs, LocalAsk},
     ask_status::{AskState, Comparison, LocalAskStatus},
 };
 
@@ -27,6 +27,7 @@ pub struct LocalAskStore {
     proving_cost_taken: HashMap<U256, U256>,
     proof_transaction: HashMap<U256, String>,
     failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
+    completed_proofs: CompletedProofs,
 }
 
 pub struct AskQueryResult {
@@ -178,6 +179,7 @@ impl LocalAskStore {
             proving_time_taken: HashMap::new(),
             proof_transaction: HashMap::new(),
             failed_request_counter_by_market: GenericCounters::new(),
+            completed_proofs: CompletedProofs::new(),
         }
     }
 
@@ -196,11 +198,27 @@ impl LocalAskStore {
         }
     }
 
-    pub fn remove_ask_from_market_index_only(&mut self, ask_id: &U256) {
+    pub fn remove_ask_only_if_completed(&mut self, ask_id: &U256) {
         if let Some(ask) = self.asks_by_id.remove(ask_id) {
+            // Check if the ask's state is Some and Complete, else return early
+            if ask.state != Some(AskState::Complete) {
+                return;
+            }
+
+            // Remove from market_id_index if it exists
             if let Some(vec) = self.market_id_index.get_mut(&ask.market_id) {
                 vec.retain(|a| a.ask_id != *ask_id);
             }
+
+            // Remove from state_index if it exists
+            if let Some(state) = ask.state {
+                if let Some(vec) = self.state_index.get_mut(&state) {
+                    vec.retain(|a| a.ask_id != *ask_id);
+                }
+            }
+
+            // Insert the completed ask into the HashSet
+            self.completed_proofs.insert(ask);
         }
     }
 
@@ -284,24 +302,22 @@ impl LocalAskStore {
         }
     }
 
-    pub fn get_by_state(&self, state: AskState) -> AskQueryResult {
+    #[deprecated(
+        since = "1.0.0",
+        note = "Warning: get_by_ask_state_except_complete is poorly written. Remove it when sql migration happens"
+    )]
+    pub fn get_by_ask_state_except_complete(&self, state: AskState) -> AskQueryResult {
+        if state == AskState::Complete {
+            return AskQueryResult { asks: None };
+        }
         AskQueryResult {
             asks: self.state_index.get(&state).cloned(),
         }
     }
 
-    pub fn get_by_state_limit(&self, state: AskState, n: usize) -> AskQueryResult {
+    pub fn get_cleanup_asks(&self) -> AskQueryResult {
         AskQueryResult {
-            asks: self
-                .state_index
-                .get(&state) // Get the collection for the state
-                .cloned() // Clone it to maintain ownership
-                .map(|mut asks| {
-                    // Sort by askid in descending order
-                    asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
-                    // Limit the result to the first n items
-                    asks.into_par_iter().take(n).collect()
-                }),
+            asks: self.state_index.get(&AskState::Complete).cloned(),
         }
     }
 
@@ -311,12 +327,22 @@ impl LocalAskStore {
     }
 
     pub fn get_ask_status(&self) -> LocalAskStatus {
-        let created = self.get_by_state(AskState::Create).get_count();
-        let unassigned = self.get_by_state(AskState::UnAssigned).get_count();
-        let assigned = self.get_by_state(AskState::Assigned).get_count();
-        let completed = self.get_by_state(AskState::Complete).get_count();
-        let deadline_crossed = self.get_by_state(AskState::DeadlineCrossed).get_count();
-        let invalid_secret = self.get_by_state(AskState::InvalidSecret).get_count();
+        let created = self
+            .get_by_ask_state_except_complete(AskState::Create)
+            .get_count();
+        let unassigned = self
+            .get_by_ask_state_except_complete(AskState::UnAssigned)
+            .get_count();
+        let assigned = self
+            .get_by_ask_state_except_complete(AskState::Assigned)
+            .get_count();
+        let completed = self.completed_proofs.total_proofs();
+        let deadline_crossed = self
+            .get_by_ask_state_except_complete(AskState::DeadlineCrossed)
+            .get_count();
+        let invalid_secret = self
+            .get_by_ask_state_except_complete(AskState::InvalidSecret)
+            .get_count();
 
         LocalAskStatus {
             created,
@@ -358,5 +384,34 @@ impl LocalAskStore {
 
     pub fn get_failed_request_count(&self) -> usize {
         self.failed_request_counter_by_market.total_count()
+    }
+}
+
+impl LocalAskStore {
+    pub fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk> {
+        self.completed_proofs.get_recent_completed_proofs(n)
+    }
+
+    pub fn get_completed_proof_of_generator(
+        &self,
+        generator: &Address,
+        skip: usize,
+        count: usize,
+    ) -> Vec<LocalAsk> {
+        if let Some(generator_proofs) = self
+            .completed_proofs
+            .get_all_proofs_for_generator(generator)
+        {
+            // Skip the specified number of results and take 'count' results
+            generator_proofs
+                .iter()
+                .skip(skip) // Skip the first 'skip' elements
+                .take(count) // Take the next 'count' elements
+                .cloned() // Clone the elements since we're returning Vec<LocalAsk>
+                .collect()
+        } else {
+            // If no proofs exist for this generator, return an empty vector
+            Vec::new()
+        }
     }
 }

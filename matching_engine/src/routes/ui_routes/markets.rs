@@ -72,7 +72,7 @@ pub async fn market_info(
                     },
                     total_proofs_generated: local_ask_store.get_proof_count(&meta.market_id),
                     requests_in_progress: local_ask_store
-                        .get_by_state(AskState::Assigned)
+                        .get_by_ask_state_except_complete(AskState::Assigned)
                         .filter_by_market_id(meta.market_id)
                         .get_count(),
                     median_time_per_proof: local_market_store
