@@ -10,6 +10,7 @@ use ethers::types::U256;
 use serde::Deserialize;
 use serde::Serialize;
 use tokio::sync::RwLock;
+use tokio::sync::RwLockReadGuard;
 
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
@@ -130,17 +131,39 @@ pub async fn single_generator(
         },
     };
 
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let local_generator_store = {
+        match _local_generator_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     // Step 1: Recompute the response every time
     let new_response = recompute_single_generator_response(
         generator_id,
         generator_query,
-        _local_ask_store.clone(),
-        _local_generator_store.clone(),
+        local_ask_store,
+        local_generator_store,
     )
     .await;
 
     if new_response.is_none() {
-        return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
+        return Ok(HttpResponse::NotFound().json(WelcomeResponse {
             status: "Generator Data Not Found".into(),
         }));
     }
@@ -149,14 +172,12 @@ pub async fn single_generator(
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_single_generator_response(
+async fn recompute_single_generator_response<'a>(
     generator_id: Address,
     query: GeneratorQuery,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
+    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
 ) -> Option<GeneratorResponse> {
-    let local_generator_store = _local_generator_store.read().await;
-    let local_ask_store = _local_ask_store.read().await;
     let generator_data = local_generator_store.get_by_address(&generator_id);
 
     if generator_data.is_none() {
@@ -243,7 +264,7 @@ async fn recompute_single_generator_response(
                     .collect::<Vec<LocalAsk>>()
                     .into_iter()
                     .skip(query.query.active_jobs_skip.unwrap_or_default())
-                    .take(query.query.active_jobs.unwrap_or_default())
+                    .take(query.query.active_jobs.unwrap_or_else(|| 10))
                     .collect::<Vec<LocalAsk>>();
 
                 local_asks
@@ -268,7 +289,7 @@ async fn recompute_single_generator_response(
             .get_completed_proof_of_generator(
                 &generator_id,
                 query.query.completed_jobs_skip.unwrap_or_default(),
-                query.query.completed_jobs.unwrap_or_default(),
+                query.query.completed_jobs.unwrap_or_else(|| 10),
             )
             .into_iter()
             .map(|ask| Job {

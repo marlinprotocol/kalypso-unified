@@ -91,7 +91,10 @@ pub async fn decrypt_request(
 
     let secret_data = hex::decode(_payload.private_input.clone()).expect("invalid_data");
     let acl = hex::decode(_payload.acl.clone()).expect("invalid acl data");
-    let matching_engine_key = _matching_engine_key.read().await;
+    let matching_engine_key = match _matching_engine_key.try_read() {
+        Ok(data) => data,
+        _ => return Ok(HttpResponse::Locked().json(json!({"status": "Resource Busy"}))),
+    };
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
         &secret_data,
         &acl,

@@ -28,8 +28,6 @@ pub async fn process_proof_market_place_logs(
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut local_ask_store = { local_ask_store.write().await };
-
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");
@@ -44,6 +42,7 @@ pub async fn process_proof_market_place_logs(
             )
         {
             log::debug!("{:?}", parsed_ask_created_log);
+            let mut local_ask_store = { local_ask_store.write().await };
             let ask_data: (pmp::Ask, _, _, _) = proof_market_place
                 .list_of_ask(parsed_ask_created_log.ask_id)
                 .call()
@@ -81,7 +80,6 @@ pub async fn process_proof_market_place_logs(
                     );
 
                 if decrypted_secret_data.is_err() {
-                    // try with slave keys
                     for slave_key in matchin_engine_slave_keys {
                         decrypted_secret_data =
                             secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
@@ -113,7 +111,6 @@ pub async fn process_proof_market_place_logs(
                 local_ask_store.insert(ask_to_store.to_owned());
             } else {
                 ask_to_store.invalid_secret_flag = true;
-                // repeated, try to modify if-else logic and work!..
                 log::info!(
                     "Stored {:?} ask to store, Market: {}",
                     parsed_ask_created_log.ask_id,
@@ -132,6 +129,7 @@ pub async fn process_proof_market_place_logs(
             )
         {
             log::debug!("{:?}", parsed_task_created_log);
+            let mut local_ask_store = { local_ask_store.write().await };
 
             let ask_id = parsed_task_created_log.ask_id;
             let generator = parsed_task_created_log.generator;
@@ -160,6 +158,7 @@ pub async fn process_proof_market_place_logs(
             )
         {
             log::debug!("{:?}", parsed_proof_created_log);
+            let mut local_ask_store = { local_ask_store.write().await };
 
             let ask_id = parsed_proof_created_log.ask_id;
             let proof = parsed_proof_created_log.proof;
@@ -280,6 +279,7 @@ pub async fn process_proof_market_place_logs(
             log.data.clone(),
         ) {
             log::debug!("Ask has been cancelled {:?}", ask_cancelled_log.ask_id);
+            let mut local_ask_store = { local_ask_store.write().await };
             local_ask_store.modify_state(&ask_cancelled_log.ask_id, AskState::Complete);
             continue;
         }
@@ -297,6 +297,7 @@ pub async fn process_proof_market_place_logs(
                 "Ask's proof not generated {:?}. Generator is likely slashed",
                 ask_id
             );
+            let mut local_ask_store = { local_ask_store.write().await };
 
             local_ask_store.modify_state(&ask_id, AskState::Complete);
             local_ask_store.note_invalid_proof(&ask_id);
@@ -348,6 +349,8 @@ pub async fn process_proof_market_place_logs(
                 "Ask's inputs were wrong {:?}. Submiting proof of invalid input",
                 ask_id
             );
+            let mut local_ask_store = { local_ask_store.write().await };
+
             local_ask_store.modify_state(&ask_id, AskState::Complete);
 
             let ask_data: (pmp::Ask, u8, H160, H160) =

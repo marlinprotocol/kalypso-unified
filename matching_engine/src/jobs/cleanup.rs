@@ -20,6 +20,7 @@ pub struct CleanupTool {
     proof_market_place: ProofMarketplaceInstance, // will be used latter for more finely cleaning up services,
     relayer_address: Address,
     relayer_address_balance: Arc<RwLock<ethers::types::U256>>,
+    gas_key_check_iter: usize,
 }
 
 impl CleanupTool {
@@ -36,19 +37,22 @@ impl CleanupTool {
             proof_market_place,
             relayer_address,
             relayer_address_balance,
+            gas_key_check_iter: 500,
         }
     }
 
     pub async fn start_cleanup(
         self,
-        skip_relayer_balance_check: bool,
-        slow_cleanup: bool,
+        check_gas_key_balance: bool,
+        fast_clean: bool,
     ) -> anyhow::Result<()> {
+        let mut iter = 0 as usize;
         loop {
-            if slow_cleanup {
-                thread::sleep(Duration::from_secs(30));
+            if fast_clean {
+                log::debug!("fast cleanup initiated");
+                thread::sleep(Duration::from_secs(4));
             } else {
-                thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_secs(60));
             }
 
             if self.should_stop.load(Ordering::Acquire) {
@@ -56,28 +60,57 @@ impl CleanupTool {
                 break;
             }
 
-            if skip_relayer_balance_check {
+            iter += 1;
+            if check_gas_key_balance && iter >= self.gas_key_check_iter {
+                log::debug!("Checking gas key balance");
                 let balance = match self
                     .proof_market_place
                     .client()
                     .get_balance(self.relayer_address, None)
                     .await
                 {
-                    Ok(data) => data,
-                    Err(_) => ethers::types::U256::zero(),
+                    Ok(data) => {
+                        log::debug!("gas key balance: {}", data);
+                        data
+                    }
+                    Err(_) => {
+                        log::error!("Failed fetching gas key balance");
+                        ethers::types::U256::zero()
+                    }
                 };
                 {
                     *self.relayer_address_balance.write().await = balance;
                 }
+                iter = 0;
             }
 
-            if let Some(completed_asks) = self.ask_store.read().await.get_cleanup_asks().result() {
-                if completed_asks.len() > 0 {
-                    let mut ask_store = self.ask_store.write().await;
-                    for elem in completed_asks {
-                        log::info!("Removed Completed ask: {}", &elem.ask_id);
-                        ask_store.remove_ask_only_if_completed(&elem.ask_id);
+            match self.ask_store.try_read() {
+                Ok(store) => {
+                    let completed_asks = store.get_cleanup_asks().result();
+                    if completed_asks.is_none() {
+                        continue;
                     }
+                    let completed_asks = completed_asks.unwrap();
+                    if !completed_asks.is_empty() {
+                        match self.ask_store.try_write() {
+                            Ok(mut ask_store) => {
+                                for elem in completed_asks {
+                                    log::info!("Removed Completed ask: {}", &elem.ask_id);
+                                    ask_store.remove_ask_only_if_completed(&elem.ask_id);
+                                }
+                            }
+                            Err(_) => {
+                                log::error!("Failed to acquire write lock on ask_store, skipping this iteration");
+                                continue;
+                            }
+                        }
+                    }
+                }
+                Err(_) => {
+                    log::debug!(
+                        "Failed to acquire read lock on ask_store, skipping this iteration"
+                    );
+                    continue;
                 }
             }
         }

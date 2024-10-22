@@ -1,5 +1,6 @@
 use super::cache::CachedResponse;
 use crate::generator_lib::generator_store::GeneratorStore;
+use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use ethers::types::U256;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -54,34 +55,50 @@ pub async fn get_generators_all(
     // Step 1: Check if there's a cached response (lock for reading)
 
     if let Some(response) = GENERATOR_RESPONSE
-        .read()
-        .await
+        .try_read()
+        .unwrap()
         .get_if_valid(Duration::from_secs(5))
     {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
 
+    let local_generator_store = {
+        match _local_generator_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     // Step 2: If the cache is invalid, recompute the response
-    let new_response = recompute_generator_response(_local_generator_store).await;
+    let new_response = recompute_generator_response(local_generator_store).await;
 
     {
-        let mut cache_lock = GENERATOR_RESPONSE.write().await;
         // Store the newly computed response in the cache
-        cache_lock.store(new_response.clone());
+        match GENERATOR_RESPONSE.try_write() {
+            Ok(mut cache_write_lock) => {
+                cache_write_lock.store(new_response.clone());
+            }
+            _ => {
+                log::warn!("Failed Caching generator response");
+            }
+        };
     }
 
     // Return the newly computed response
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_generator_response(
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+async fn recompute_generator_response<'a>(
+    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
 ) -> GeneratorResponse {
     // Step 1: Acquire the lock and extract all necessary data
     let generator_details = {
-        let store = _local_generator_store.read().await;
-        let all_generators = { store.all_generators_address().to_owned() };
+        let all_generators = { local_generator_store.all_generators_address().to_owned() };
 
         // Prepare a vector to hold generator details
         let mut generator_details = Vec::with_capacity(all_generators.len());
@@ -91,16 +108,16 @@ async fn recompute_generator_response(
             let generator_address = generator_address.clone();
 
             // Retrieve and clone operator_data
-            if let Some(operator_data) = store.get_by_address(&generator_address) {
+            if let Some(operator_data) = local_generator_store.get_by_address(&generator_address) {
                 // Retrieve and clone all_markets_of_generator
-                let all_markets_of_generator = store
+                let all_markets_of_generator = local_generator_store
                     .get_all_markets_of_generator(&generator_address)
                     .iter()
                     .cloned()
                     .collect::<Vec<_>>(); // Ensure deep cloning
 
                 // Retrieve and clone total_earning
-                let total_earning = store
+                let total_earning = local_generator_store
                     .get_total_earning(&generator_address)
                     .unwrap_or_else(|| U256::zero())
                     .clone();

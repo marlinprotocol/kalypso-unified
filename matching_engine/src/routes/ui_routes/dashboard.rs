@@ -1,4 +1,5 @@
 use super::cache::CachedResponse;
+use crate::models::WelcomeResponse;
 use crate::utility::{address_to_string, bytes_to_string};
 use crate::{
     ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
@@ -9,7 +10,7 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -60,51 +61,86 @@ pub async fn get_dashboard(
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     if let Some(response) = DASHBOARD_RESPONSE
-        .read()
-        .await
-        .get_if_valid(Duration::from_secs(5))
+        .try_read()
+        .unwrap()
+        .get_if_valid(Duration::from_secs(10))
     {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
 
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let local_market_store = {
+        match _local_market_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let local_generator_store = {
+        match _local_generator_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     // Step 2: If the cache is invalid, recompute the response (write lock)
-    let new_response = recompute_dashboard_response(
-        _local_market_store,
-        _local_ask_store,
-        _local_generator_store,
-    )
-    .await;
+    let new_response =
+        recompute_dashboard_response(local_market_store, local_ask_store, local_generator_store)
+            .await;
 
     {
-        let mut cache_write_lock = DASHBOARD_RESPONSE.write().await;
         // Store the newly computed response in the cache
-        cache_write_lock.store(new_response.clone());
+        match DASHBOARD_RESPONSE.try_write() {
+            Ok(mut cache_write_lock) => {
+                cache_write_lock.store(new_response.clone());
+            }
+            _ => {
+                log::warn!("Failed Caching Dashboard response");
+            }
+        };
     }
 
     // Return the newly computed response
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_dashboard_response(
-    local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
-    local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+async fn recompute_dashboard_response<'a>(
+    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
+    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
+    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
 ) -> DashboardResponse {
     // Step 1: Retrieve all market metadata and count of markets
     let (all_markets, count_markets, market_median_map) = {
-        let store = local_market_store.read().await;
-        let all_markets = store.get_all_markets().clone(); // Clone to release the lock early
-        let count_markets = store.count_markets();
+        let all_markets = local_market_store.get_all_markets().clone(); // Clone to release the lock early
+        let count_markets = local_market_store.count_markets();
 
         // Create a map of market_id to (median_time, median_cost)
         let mut market_median_map = std::collections::HashMap::new();
         for meta in &all_markets {
             let market_id = &meta.market_id;
-            let median_time = store
+            let median_time = local_market_store
                 .get_median_proof_time_market_wise(market_id)
                 .to_string();
-            let median_cost = store
+            let median_cost = local_market_store
                 .get_median_proof_cost_market_wise(market_id)
                 .to_string();
             market_median_map.insert(market_id.clone(), (median_time, median_cost));
@@ -138,9 +174,8 @@ async fn recompute_dashboard_response(
 
     // Step 3: Retrieve recent completed proofs and total proof count
     let (recent_completed_proofs, total_proof_count) = {
-        let store = local_ask_store.read().await;
-        let recent_completed_proofs = store.get_recent_completed_proofs(20).clone(); // Clone to release the lock
-        let total_proof_count = store.get_total_proof_count();
+        let recent_completed_proofs = local_ask_store.get_recent_completed_proofs(20).clone(); // Clone to release the lock
+        let total_proof_count = local_ask_store.get_total_proof_count();
         (recent_completed_proofs, total_proof_count)
     };
 
@@ -164,17 +199,16 @@ async fn recompute_dashboard_response(
 
         // Retrieve proof details
         let (time, cost, proof_link) = {
-            let store = local_ask_store.read().await;
             (
-                store
+                local_ask_store
                     .get_proving_time(&ask_request.ask_id)
                     .unwrap_or(U256::zero())
                     .to_string(),
-                store
+                local_ask_store
                     .get_proving_cost(&ask_request.ask_id)
                     .unwrap_or(U256::zero())
                     .to_string(),
-                store
+                local_ask_store
                     .get_proof_transaction(&ask_request.ask_id)
                     .unwrap_or_default(),
             )
@@ -203,10 +237,7 @@ async fn recompute_dashboard_response(
     }
 
     // Step 5: Retrieve the count of registered generators
-    let registered_generators = {
-        let store = local_generator_store.read().await;
-        store.all_generators_address().len()
-    };
+    let registered_generators = { local_generator_store.all_generators_address().len() };
 
     // Step 6: Assemble the final `DashboardResponse`
     DashboardResponse {

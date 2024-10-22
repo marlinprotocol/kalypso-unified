@@ -1,12 +1,13 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
+use crate::models::WelcomeResponse;
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -55,31 +56,59 @@ pub async fn total_market_info(
     // Step 1: Check if there's a cached response (lock for reading)
 
     if let Some(response) = MARKET_RESPONSE
-        .read()
-        .await
+        .try_read()
+        .unwrap()
         .get_if_valid(Duration::from_secs(5))
     {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
 
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let local_market_store = {
+        match _local_market_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     // Step 2: If the cache is invalid, recompute the response
-    let new_response = recompute_market_response(_local_market_store, _local_ask_store).await;
+    let new_response = recompute_market_response(local_market_store, local_ask_store).await;
 
     {
-        let mut cache_lock = MARKET_RESPONSE.write().await;
         // Store the newly computed response in the cache
-        cache_lock.store(new_response.clone());
+        match MARKET_RESPONSE.try_write() {
+            Ok(mut cache_write_lock) => {
+                cache_write_lock.store(new_response.clone());
+            }
+            _ => {
+                log::warn!("Failed Caching market response");
+            }
+        };
     }
     // Return the newly computed response
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_market_response(
-    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+async fn recompute_market_response<'a>(
+    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
+    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
 ) -> MarketResponse {
-    log::info!("Starting recompute_market_response");
+    log::debug!("Starting recompute_market_response");
 
     // Step 1: Acquire both locks and extract all necessary data within a scoped block
     let (
@@ -92,14 +121,8 @@ async fn recompute_market_response(
         total_earnings_map,
         slashing_penalty_map,
     ) = {
-        // Scoped block to limit the duration of the locks
-        let market_store = _local_market_store.read().await;
-        log::warn!("market_store read available");
-        let ask_store = _local_ask_store.read().await;
-        log::warn!("ask_store read available");
-
         // Extract all market metadata
-        let all_markets_meta = market_store.get_all_markets().to_owned(); // Clone to own the data
+        let all_markets_meta = local_market_store.get_all_markets().to_owned(); // Clone to own the data
 
         // Initialize HashMaps to store extracted data for quick lookup
         let mut proof_counts_map = std::collections::HashMap::new();
@@ -115,39 +138,39 @@ async fn recompute_market_response(
             let market_id = &meta.market_id;
 
             // Extract total_proofs_generated
-            let total_proofs = ask_store.get_proof_count(market_id);
+            let total_proofs = local_ask_store.get_proof_count(market_id);
             proof_counts_map.insert(market_id.clone(), total_proofs.to_string());
 
             // Extract requests_in_progress
-            let requests_in_progress = ask_store
+            let requests_in_progress = local_ask_store
                 .get_by_ask_state_except_complete(AskState::Assigned)
                 .filter_by_market_id(market_id.clone())
                 .get_count();
             requests_in_progress_map.insert(market_id.clone(), requests_in_progress);
 
             // Extract median_time_per_proof
-            let median_time = market_store
+            let median_time = local_market_store
                 .get_median_proof_time_market_wise(market_id)
                 .to_owned()
                 .to_string();
             median_time_map.insert(market_id.clone(), median_time);
 
             // Extract median_cost_per_proof
-            let median_cost = market_store
+            let median_cost = local_market_store
                 .get_median_proof_cost_market_wise(market_id)
                 .to_owned()
                 .to_string();
             median_cost_map.insert(market_id.clone(), median_cost);
 
             // Extract failed_requests
-            let failed_requests = ask_store
+            let failed_requests = local_ask_store
                 .get_failed_request_count_by_market_id(market_id)
                 .to_owned()
                 .to_string();
             failed_requests_map.insert(market_id.clone(), failed_requests);
 
             // Extract total_earnings
-            let total_earnings = market_store
+            let total_earnings = local_market_store
                 .get_earnings(market_id)
                 .to_owned()
                 .unwrap_or(U256::zero())
@@ -224,7 +247,7 @@ async fn recompute_market_response(
         markets.push(market);
     }
 
-    log::info!("Finished processing market data");
+    log::debug!("Finished processing market data");
 
     MarketResponse { result: markets }
 }

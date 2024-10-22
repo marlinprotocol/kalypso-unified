@@ -12,7 +12,6 @@ pub async fn process_entity_key_registry_logs(
     >,
     key_store: &Arc<RwLock<key_store::KeyStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut key_store = { key_store.write().await };
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");
@@ -86,6 +85,7 @@ pub async fn process_entity_key_registry_logs(
             log.clone().data,
         ) {
             log::debug!("{:?}", parsed_update_key_log);
+            let mut key_store = { key_store.write().await };
             let user = parsed_update_key_log.user;
             let key_index = parsed_update_key_log.key_index.as_u64();
 
@@ -156,6 +156,7 @@ pub async fn process_entity_key_registry_logs(
             log.data.clone(),
         ) {
             log::debug!("{:?}", parsed_remove_key_log);
+            let mut key_store = { key_store.write().await };
             let user = parsed_remove_key_log.user;
             let key_index = parsed_remove_key_log.key_index.as_u64();
 

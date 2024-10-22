@@ -4,7 +4,7 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::{
     AskInfoToSend, GeneratorInfo, GeneratorsInfoForMarket, MarketInfo, MarketInfoResponse,
-    MarketStatsResponse,
+    MarketStatsResponse, WelcomeResponse,
 };
 use actix_web::web;
 use actix_web::web::Data;
@@ -18,6 +18,28 @@ pub async fn market_stats(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let local_generator_store = {
+        match _generator_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     let market_id = market_id.into_inner();
     let market_id_u256 = U256::from_dec_str(&market_id);
 
@@ -33,13 +55,9 @@ pub async fn market_stats(
 
     let market_id_u256 = market_id_u256.unwrap();
 
-    let proofs_generated = {
-        let local_ask_store = { _local_ask_store.read().await };
-        Some(local_ask_store.get_proof_count(&market_id_u256))
-    };
+    let proofs_generated = { Some(local_ask_store.get_proof_count(&market_id_u256)) };
 
     let proofs_pending = {
-        let local_ask_store = { _local_ask_store.read().await };
         let asks = local_ask_store
             .get_by_ask_state_except_complete(AskState::Create)
             .result();
@@ -56,7 +74,6 @@ pub async fn market_stats(
     };
 
     let proofs_in_progress = {
-        let local_ask_store = { _local_ask_store.read().await };
         let asks = local_ask_store
             .get_by_ask_state_except_complete(AskState::Assigned)
             .result();
@@ -73,8 +90,7 @@ pub async fn market_stats(
     };
 
     let generator_count = {
-        let generator_store = _generator_store.read().await;
-        let generators = generator_store.get_all_by_market_id(&market_id_u256);
+        let generators = local_generator_store.get_all_by_market_id(&market_id_u256);
         if generators.is_none() {
             Some(0)
         } else {
@@ -96,6 +112,28 @@ pub async fn market_info(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let local_generator_store = {
+        match _generator_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     let market_id: String = _payload.market_id.clone();
     let market_id_u256 = U256::from_dec_str(&market_id);
 
@@ -110,7 +148,6 @@ pub async fn market_info(
     let market_id_u256 = market_id_u256.unwrap();
 
     let asks = {
-        let local_ask_store = { _local_ask_store.read().await };
         let asks = local_ask_store
             .get_by_market_id(&market_id_u256)
             .sort_by_ask_id(true)
@@ -142,16 +179,15 @@ pub async fn market_info(
     };
 
     let generator_info = {
-        let generator_store = { _generator_store.read().await };
-        let all_generators = generator_store.clone().all_generators_address();
+        let all_generators = local_generator_store.all_generators_address();
 
         let mut count = 0;
         let mut generators = vec![];
         for generator in all_generators {
             if let Some(generator_info) =
-                generator_store.get_by_address_and_market(&generator, &market_id_u256)
+                local_generator_store.get_by_address_and_market(&generator, &market_id_u256)
             {
-                let generator_data = { generator_store.get_by_address(&generator).unwrap() };
+                let generator_data = { local_generator_store.get_by_address(&generator).unwrap() };
                 count += 1;
                 generators.push(GeneratorInfo {
                     generator_address: generator,

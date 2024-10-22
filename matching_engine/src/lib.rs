@@ -312,7 +312,7 @@ impl MatchingEngine {
             relayer_key_balance,
         );
         let cleanup_handle = tokio::spawn(async move {
-            match cleanup_tool.start_cleanup(true, false).await {
+            match cleanup_tool.start_cleanup(true, true).await {
                 _ => Ok(()),
             }
         });

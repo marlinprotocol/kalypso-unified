@@ -1,6 +1,7 @@
 use super::EntityRegistryInstance;
 use super::GetRequestResponse;
 use crate::ask_lib::ask_store::LocalAskStore;
+use crate::models::WelcomeResponse;
 use crate::utility;
 use actix_web::web;
 use actix_web::web::Data;
@@ -26,7 +27,17 @@ pub async fn get_priv_input(
     _matching_engine_key: Data<Arc<RwLock<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
-    let local_ask_store = { _local_ask_store.read().await };
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
@@ -43,7 +54,10 @@ pub async fn get_priv_input(
         })));
     }
 
-    let matching_engine_key = _matching_engine_key.read().await;
+    let matching_engine_key = match _matching_engine_key.try_read() {
+        Ok(data) => data,
+        _ => return Ok(HttpResponse::Locked().json(json!({"status": "resource locked"}))),
+    };
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.ask_id)
         .expect("Failed to recover signature");

@@ -9,7 +9,16 @@ use ethers::{core::types::U64, types::U256};
 pub async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<RwLock<U64>>>,
 ) -> actix_web::Result<HttpResponse> {
-    let latest_parsed_block = _shared_parsed_block.read().await;
+    let latest_parsed_block = {
+        match _shared_parsed_block.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
 
     return Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {
         block_number: latest_parsed_block.to_string(),
@@ -23,9 +32,17 @@ pub async fn welcome() -> actix_web::Result<HttpResponse> {
 }
 
 pub async fn gas_key_balance(balance: Data<Arc<RwLock<U256>>>) -> actix_web::Result<HttpResponse> {
-    let threshold = U256::from_dec_str("10000000").unwrap();
-
-    let data = { *balance.read().await };
+    let threshold = U256::from_dec_str("10000000000000").unwrap();
+    let data = {
+        match balance.try_read() {
+            Ok(data) => *data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
 
     if data > threshold {
         return Ok(HttpResponse::Ok().json(BalanceResponse {
@@ -33,7 +50,7 @@ pub async fn gas_key_balance(balance: Data<Arc<RwLock<U256>>>) -> actix_web::Res
             balance: Some(data),
         }));
     } else {
-        return Ok(HttpResponse::Ok().json(BalanceResponse {
+        return Ok(HttpResponse::ExpectationFailed().json(BalanceResponse {
             status: "less balance".into(),
             balance: Some(data),
         }));

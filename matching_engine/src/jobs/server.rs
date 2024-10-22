@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
@@ -7,6 +8,7 @@ use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Provider};
 use ethers::signers::Wallet;
 use ethers::types::U64;
+use kalypso_helper::middlewares::request_limiter::ConcurrencyLimiter;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 
@@ -59,8 +61,25 @@ impl MatchingEngineServer {
 
     pub async fn start_server(self, port: u16, enable_ssc: bool) -> anyhow::Result<()> {
         let server = HttpServer::new(move || {
+            let ui_request_concurrency = ConcurrencyLimiter::new(2);
+            let ui_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
+                Duration::from_secs(1),
+                10 as u64,
+            );
+
+            let stats_request_concurrency = ConcurrencyLimiter::new(2);
+            let stats_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
+                Duration::from_secs(1),
+                10 as u64,
+            );
+
+            let core_request_concurrency = ConcurrencyLimiter::new(10);
+            let core_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
+                Duration::from_secs(1),
+                10 as u64,
+            );
+
             App::new()
-                .wrap(kalypso_helper::middlewares::ratelimiter::get_rate_limiter())
                 .app_data(Data::new(self.shared_market_data.clone()))
                 .app_data(Data::new(self.shared_local_ask_data.clone()))
                 .app_data(Data::new(self.shared_parsed_block.clone()))
@@ -68,9 +87,21 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_entity_key_registry.clone()))
                 .app_data(Data::new(self.shared_generator_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
-                .service(ui_scope())
-                .service(get_stats_scope())
-                .service(get_core_scope())
+                .service(
+                    ui_scope()
+                        .wrap(ui_request_concurrency)
+                        .wrap(ui_rate_limiter),
+                )
+                .service(
+                    get_stats_scope()
+                        .wrap(stats_request_concurrency)
+                        .wrap(stats_rate_limiter),
+                )
+                .service(
+                    get_core_scope()
+                        .wrap(core_request_concurrency)
+                        .wrap(core_rate_limiter),
+                )
         });
 
         if enable_ssc {

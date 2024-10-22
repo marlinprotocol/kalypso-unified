@@ -277,6 +277,7 @@ impl LogParser {
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
+        let generator_store = { self.shared_generator_store.read().await };
 
         log::debug!("Trying to fetch available asks");
         let available_asks = ask_store
@@ -297,30 +298,23 @@ impl LogParser {
 
         let mut task_list = vec![];
 
-        let all_generators = {
-            &self
-                .shared_generator_store
-                .read()
-                .await
-                .clone()
-                .all_generators_address()
-        };
+        let all_generators = { generator_store.all_generators_address() };
         let mut cached_stake = {
             let mut m = HashMap::new();
-            let temp_gs = &self.shared_generator_store.read().await;
-            for _generator in all_generators {
-                let available_stake = temp_gs.get_available_stake(*_generator).unwrap();
-                m.insert(*_generator, available_stake);
+            for _generator in all_generators.clone() {
+                let available_stake = generator_store
+                    .get_available_stake(_generator.into())
+                    .unwrap();
+                m.insert(_generator, available_stake);
             }
             m
         };
 
         let mut cached_compute = {
             let mut m = HashMap::new();
-            let temp_gs = &self.shared_generator_store.read().await;
-            for _generator in all_generators {
-                let available_compute = temp_gs.get_available_compute(*_generator).unwrap();
-                m.insert(*_generator, available_compute);
+            for _generator in all_generators.clone() {
+                let available_compute = generator_store.get_available_compute(_generator).unwrap();
+                m.insert(_generator, available_compute);
             }
             m
         };
@@ -379,8 +373,8 @@ impl LogParser {
                 let market_id = random_pending_ask.market_id;
                 let stash_required = {
                     self.shared_market_store
-                        .read()
-                        .await
+                        .try_read()
+                        .unwrap()
                         .get_market_by_market_id(&market_id)
                         .unwrap()
                         .slashing_penalty
@@ -461,8 +455,8 @@ impl LogParser {
                 {
                     // previous ref of ask store won't work because it was readonly, create a write only one that drops here only.
                     self.shared_local_ask_store
-                        .write()
-                        .await
+                        .try_write()
+                        .unwrap()
                         .modify_state(&random_pending_ask.ask_id, ask_state);
                 }
                 continue;

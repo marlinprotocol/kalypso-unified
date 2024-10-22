@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use actix_web::web::Data;
 use actix_web::HttpResponse;
@@ -30,8 +31,12 @@ impl ListenerHealthCheckServer {
 
     pub async fn start_server(self, port: u16, enable_ssc: bool) -> anyhow::Result<()> {
         let server = HttpServer::new(move || {
+            let rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
+                Duration::from_secs(1),
+                100 as u64,
+            );
             App::new()
-                .wrap(kalypso_helper::middlewares::ratelimiter::get_rate_limiter())
+                .wrap(rate_limiter)
                 .app_data(Data::new(self.shared_latest_block.clone()))
                 .app_data(Data::new(self.service_name.clone()))
                 .route("/getLatestBlock", web::get().to(get_latest_block_number))
