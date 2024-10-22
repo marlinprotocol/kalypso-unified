@@ -99,7 +99,7 @@ async fn recompute_market_response(
         log::warn!("ask_store read available");
 
         // Extract all market metadata
-        let all_markets_meta = market_store.get_all_markets().clone(); // Clone to own the data
+        let all_markets_meta = market_store.get_all_markets().to_owned(); // Clone to own the data
 
         // Initialize HashMaps to store extracted data for quick lookup
         let mut proof_counts_map = std::collections::HashMap::new();
@@ -128,24 +128,28 @@ async fn recompute_market_response(
             // Extract median_time_per_proof
             let median_time = market_store
                 .get_median_proof_time_market_wise(market_id)
+                .to_owned()
                 .to_string();
             median_time_map.insert(market_id.clone(), median_time);
 
             // Extract median_cost_per_proof
             let median_cost = market_store
                 .get_median_proof_cost_market_wise(market_id)
+                .to_owned()
                 .to_string();
             median_cost_map.insert(market_id.clone(), median_cost);
 
             // Extract failed_requests
             let failed_requests = ask_store
                 .get_failed_request_count_by_market_id(market_id)
+                .to_owned()
                 .to_string();
             failed_requests_map.insert(market_id.clone(), failed_requests);
 
             // Extract total_earnings
             let total_earnings = market_store
                 .get_earnings(market_id)
+                .to_owned()
                 .unwrap_or(U256::zero())
                 .to_string();
             total_earnings_map.insert(market_id.clone(), total_earnings);

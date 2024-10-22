@@ -317,7 +317,6 @@ impl LocalAskStore {
         }
     }
 
-    #[allow(unused)]
     pub fn get_by_ask_id(&self, ask_id: &U256) -> Option<&LocalAsk> {
         self.asks_by_id.get(ask_id)
     }

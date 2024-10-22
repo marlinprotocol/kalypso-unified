@@ -1,6 +1,5 @@
 use super::EntityRegistryInstance;
 use super::GetRequestResponse;
-use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::utility;
 use actix_web::web;
@@ -31,7 +30,7 @@ pub async fn get_priv_input(
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
-    let local_ask: Option<&LocalAsk> = local_ask_store.get_by_ask_id(&ask_id_u256);
+    let local_ask = local_ask_store.get_by_ask_id(&ask_id_u256);
 
     if !local_ask.unwrap().has_private_inputs {
         return Ok(HttpResponse::BadRequest().json(json!({
