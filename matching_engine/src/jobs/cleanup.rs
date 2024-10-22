@@ -39,7 +39,7 @@ impl CleanupTool {
         }
     }
 
-    pub async fn ask_store_cleanup(
+    pub async fn start_cleanup(
         self,
         skip_relayer_balance_check: bool,
         slow_cleanup: bool,
