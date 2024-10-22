@@ -12,7 +12,7 @@ use kalypso_helper::secret_inputs_helpers;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 #[derive(Deserialize)]
 pub struct GetPrivInput {
@@ -23,11 +23,11 @@ pub struct GetPrivInput {
 
 pub async fn get_priv_input(
     _payload: web::Json<GetPrivInput>,
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
-    _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _matching_engine_key: Data<Arc<RwLock<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
-    let local_ask_store = { _local_ask_store.lock().await };
+    let local_ask_store = { _local_ask_store.read().await };
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
@@ -39,7 +39,7 @@ pub async fn get_priv_input(
         })));
     }
 
-    let matching_engine_key = _matching_engine_key.lock().await;
+    let matching_engine_key = _matching_engine_key.read().await;
     let entity_key_registry = _entity_key_registry.lock().await;
     let signer = utility::derive_address_from_signature(&_payload.signature, &_payload.ask_id)
         .expect("Failed to recover signature");

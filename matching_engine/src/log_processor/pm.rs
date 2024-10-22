@@ -7,7 +7,7 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use generator_store::SlashingRecord;
 
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::market_metadata::*;
@@ -21,17 +21,17 @@ use super::constants;
 pub async fn process_proof_market_place_logs(
     logs: Vec<Log>,
     proof_market_place: pmp::ProofMarketplace<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-    local_ask_store: &Arc<Mutex<LocalAskStore>>,
-    generator_store: &Arc<Mutex<generator_store::GeneratorStore>>,
-    market_store: &Arc<Mutex<MarketMetadataStore>>,
-    cost_store: &Arc<Mutex<CostStore>>,
+    local_ask_store: &Arc<RwLock<LocalAskStore>>,
+    generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
+    market_store: &Arc<RwLock<MarketMetadataStore>>,
+    cost_store: &Arc<RwLock<CostStore>>,
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut local_ask_store = { local_ask_store.lock().await };
-    let mut generator_store = { generator_store.lock().await };
-    let mut market_store = { market_store.lock().await };
-    let mut cost_store = { cost_store.lock().await };
+    let mut local_ask_store = { local_ask_store.write().await };
+    let mut generator_store = { generator_store.write().await };
+    let mut market_store = { market_store.write().await };
+    let mut cost_store = { cost_store.write().await };
 
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {

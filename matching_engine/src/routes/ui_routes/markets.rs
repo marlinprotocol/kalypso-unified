@@ -6,7 +6,7 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -45,15 +45,15 @@ type CachedMarketResponse = CachedResponse<MarketResponse>;
 
 use once_cell::sync::Lazy;
 
-static MARKET_RESPONSE: Lazy<Mutex<CachedMarketResponse>> =
-    Lazy::new(|| Mutex::new(CachedMarketResponse::new()));
+static MARKET_RESPONSE: Lazy<RwLock<CachedMarketResponse>> =
+    Lazy::new(|| RwLock::new(CachedMarketResponse::new()));
 
 pub async fn market_info(
-    _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
-    let cache_lock = MARKET_RESPONSE.lock().await;
+    let cache_lock = MARKET_RESPONSE.read().await;
 
     if let Some(response) = cache_lock.get_if_valid(Duration::from_secs(5)) {
         // Return the cached response if valid
@@ -62,7 +62,7 @@ pub async fn market_info(
     drop(cache_lock); // Release lock before acquiring a write lock
 
     // Step 2: If the cache is invalid, recompute the response
-    let mut cache_lock = MARKET_RESPONSE.lock().await;
+    let mut cache_lock = MARKET_RESPONSE.write().await;
     let new_response = recompute_market_response(_local_market_store, _local_ask_store).await;
 
     // Store the newly computed response in the cache
@@ -73,8 +73,8 @@ pub async fn market_info(
 }
 
 async fn recompute_market_response(
-    _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
 ) -> MarketResponse {
     log::info!("Starting recompute_market_response");
 
@@ -90,8 +90,8 @@ async fn recompute_market_response(
         slashing_penalty_map,
     ) = {
         // Scoped block to limit the duration of the locks
-        let market_store = _local_market_store.lock().await;
-        let ask_store = _local_ask_store.lock().await;
+        let market_store = _local_market_store.read().await;
+        let ask_store = _local_ask_store.read().await;
 
         // Extract all market metadata
         let all_markets_meta = market_store.get_all_markets().clone(); // Clone to own the data

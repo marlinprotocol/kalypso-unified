@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 use service_check_helper::{Request, RequestType};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{str::FromStr, sync::Arc};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
 pub fn get_welcome_request<R>() -> Request<(), R> {
@@ -156,12 +156,12 @@ impl MatchingEngine {
         let market_list_store = MarketMetadataStore::new();
 
         // wrapping around is case to shared across threads
-        let shared_local_ask_store = Arc::new(Mutex::new(local_ask_store));
-        let shared_generator_store = Arc::new(Mutex::new(generator_list_store));
-        let shared_market_store = Arc::new(Mutex::new(market_list_store));
-        let shared_key_store = Arc::new(Mutex::new(key_list_store));
-        let shared_cost_store = Arc::new(Mutex::new(cost_store));
-        let relayer_key_balance = Arc::new(Mutex::new(ethers::types::U256::zero()));
+        let shared_local_ask_store = Arc::new(RwLock::new(local_ask_store));
+        let shared_generator_store = Arc::new(RwLock::new(generator_list_store));
+        let shared_market_store = Arc::new(RwLock::new(market_list_store));
+        let shared_key_store = Arc::new(RwLock::new(key_list_store));
+        let shared_cost_store = Arc::new(RwLock::new(cost_store));
+        let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));
 
         let rpc_url = self.config.clone().rpc_url;
         let chain_id = self.config.clone().chain_id;
@@ -225,20 +225,20 @@ impl MatchingEngine {
             entity_key_registry_address,
             client.clone(),
         );
-        let shared_entity_key = Arc::new(Mutex::new(shared_entity_key_registry));
+        let shared_entity_key = Arc::new(RwLock::new(shared_entity_key_registry));
         let shared_entity_key_registry = Arc::clone(&shared_entity_key);
 
-        let shared_parsed_store = Arc::new(Mutex::new(
+        let shared_parsed_block_number_store = Arc::new(RwLock::new(
             U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
         ));
-        let shared_parsed_block = Arc::clone(&shared_parsed_store);
+        let shared_parsed_block = Arc::clone(&shared_parsed_block_number_store);
 
         let shared_market_data = Arc::clone(&shared_market_store);
         let shared_generator_data = Arc::clone(&shared_generator_store);
         let shared_local_ask_data = Arc::clone(&shared_local_ask_store);
 
         let matching_engine_key_for_server = hex::decode(matching_engine_key.clone()).unwrap();
-        let shared_matching_key = Arc::new(Mutex::new(matching_engine_key_for_server));
+        let shared_matching_key = Arc::new(RwLock::new(matching_engine_key_for_server));
         let shared_matching_key_clone = Arc::clone(&shared_matching_key);
 
         let should_stop = Arc::new(AtomicBool::new(false));

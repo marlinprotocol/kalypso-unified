@@ -1,6 +1,6 @@
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::log_processor::constants;
@@ -10,9 +10,9 @@ pub async fn process_generator_registry_logs(
     genertor_registry: bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    generator_store: &Arc<Mutex<generator_store::GeneratorStore>>,
+    generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut generator_store = { generator_store.lock().await };
+    let mut generator_store = { generator_store.write().await };
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");

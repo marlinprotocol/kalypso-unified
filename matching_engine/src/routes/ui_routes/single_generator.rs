@@ -9,7 +9,7 @@ use ethers::types::Address;
 use ethers::types::U256;
 use serde::Deserialize;
 use serde::Serialize;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
@@ -104,8 +104,8 @@ struct GeneratorQuery {
 }
 
 pub async fn single_generator(
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
     path: web::Path<(String,)>,
     query: web::Query<QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
@@ -152,11 +152,11 @@ pub async fn single_generator(
 async fn recompute_single_generator_response(
     generator_id: Address,
     query: GeneratorQuery,
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> Option<GeneratorResponse> {
-    let local_generator_store = _local_generator_store.lock().await;
-    let local_ask_store = _local_ask_store.lock().await;
+    let local_generator_store = _local_generator_store.read().await;
+    let local_ask_store = _local_ask_store.read().await;
     let generator_data = local_generator_store.get_by_address(&generator_id);
 
     if generator_data.is_none() {

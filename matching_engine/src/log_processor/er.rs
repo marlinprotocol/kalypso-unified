@@ -3,16 +3,16 @@ use crate::log_processor::constants;
 use ecies;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 pub async fn process_entity_key_registry_logs(
     logs: Vec<Log>,
     entity_key_registry: bindings::entity_key_registry::EntityKeyRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    key_store: &Arc<Mutex<key_store::KeyStore>>,
+    key_store: &Arc<RwLock<key_store::KeyStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut key_store = { key_store.lock().await };
+    let mut key_store = { key_store.write().await };
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");

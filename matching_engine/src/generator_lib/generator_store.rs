@@ -2,7 +2,7 @@ use ethers::core::types::Address;
 use ethers::prelude::*;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use tokio::sync::MutexGuard;
+use tokio::sync::RwLockReadGuard;
 
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
@@ -513,7 +513,7 @@ impl GeneratorStore {
     pub fn filter_by_has_private_inputs_support(
         &self,
         generator_query: GeneratorQueryResult,
-        key_store: MutexGuard<'_, KeyStore>,
+        key_store: RwLockReadGuard<'_, KeyStore>,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
 

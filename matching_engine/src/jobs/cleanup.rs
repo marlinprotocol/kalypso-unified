@@ -6,7 +6,7 @@ use std::{
     },
     time::Duration,
 };
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tokio::time::interval;
 
 use crate::ask_lib::ask_store::LocalAskStore;
@@ -15,20 +15,20 @@ use super::ProofMarketplaceInstance;
 
 pub struct CleanupTool {
     should_stop: Arc<AtomicBool>,
-    ask_store: Arc<Mutex<LocalAskStore>>,
+    ask_store: Arc<RwLock<LocalAskStore>>,
     #[allow(unused)]
     proof_market_place: ProofMarketplaceInstance, // will be used later for more finely cleaning up services,
     relayer_address: Address,
-    relayer_address_balance: Arc<Mutex<ethers::types::U256>>,
+    relayer_address_balance: Arc<RwLock<ethers::types::U256>>,
 }
 
 impl CleanupTool {
     pub fn new(
         should_stop: Arc<AtomicBool>,
-        ask_store: Arc<Mutex<LocalAskStore>>,
+        ask_store: Arc<RwLock<LocalAskStore>>,
         proof_market_place: ProofMarketplaceInstance,
         relayer_address: Address,
-        relayer_address_balance: Arc<Mutex<ethers::types::U256>>,
+        relayer_address_balance: Arc<RwLock<ethers::types::U256>>,
     ) -> Self {
         CleanupTool {
             should_stop,
@@ -75,7 +75,7 @@ impl CleanupTool {
                                 },
                             };
                             {
-                                let mut relayer_balance_lock = self.relayer_address_balance.lock().await;
+                                let mut relayer_balance_lock = self.relayer_address_balance.write().await;
                                 *relayer_balance_lock = balance;
                                 // Lock is automatically dropped here
                             }
@@ -83,7 +83,7 @@ impl CleanupTool {
 
                         // Clean up completed asks
                         {
-                            let mut ask_store = self.ask_store.lock().await;
+                            let mut ask_store = self.ask_store.write().await;
                             if let Some(completed_asks) = ask_store.get_cleanup_asks().result() {
                                 for elem in completed_asks {
                                     log::info!("Removed Completed ask: {}", &elem.ask_id);

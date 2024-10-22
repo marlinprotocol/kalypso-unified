@@ -8,14 +8,14 @@ use ethers::providers::{Http, Provider};
 use ethers::signers::Wallet;
 use ethers::types::U64;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::market_metadata::MarketMetadataStore;
 use crate::routes::{get_core_scope, get_stats_scope, ui_scope};
 use crate::{ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore};
 
 type EntityRegistryInstance = Arc<
-    Mutex<
+    RwLock<
         bindings::entity_key_registry::EntityKeyRegistry<
             SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
         >,
@@ -23,26 +23,26 @@ type EntityRegistryInstance = Arc<
 >;
 
 pub struct MatchingEngineServer {
-    shared_market_data: Arc<Mutex<MarketMetadataStore>>,
-    shared_local_ask_data: Arc<Mutex<LocalAskStore>>,
-    shared_parsed_block: Arc<Mutex<U64>>,
-    shared_matching_key_clone: Arc<Mutex<Vec<u8>>>,
+    shared_market_data: Arc<RwLock<MarketMetadataStore>>,
+    shared_local_ask_data: Arc<RwLock<LocalAskStore>>,
+    shared_parsed_block: Arc<RwLock<U64>>,
+    shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
     shared_entity_key_registry: EntityRegistryInstance,
-    shared_generator_data: Arc<Mutex<GeneratorStore>>,
-    relayer_key_balance: Arc<Mutex<ethers::types::U256>>,
+    shared_generator_data: Arc<RwLock<GeneratorStore>>,
+    relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
     should_stop: Arc<AtomicBool>,
 }
 
 impl MatchingEngineServer {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        shared_market_data: Arc<Mutex<MarketMetadataStore>>,
-        shared_local_ask_data: Arc<Mutex<LocalAskStore>>,
-        shared_parsed_block: Arc<Mutex<U64>>,
-        shared_matching_key_clone: Arc<Mutex<Vec<u8>>>,
+        shared_market_data: Arc<RwLock<MarketMetadataStore>>,
+        shared_local_ask_data: Arc<RwLock<LocalAskStore>>,
+        shared_parsed_block: Arc<RwLock<U64>>,
+        shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
         shared_entity_key_registry: EntityRegistryInstance,
-        shared_generator_data: Arc<Mutex<GeneratorStore>>,
-        relayer_key_balance: Arc<Mutex<ethers::types::U256>>,
+        shared_generator_data: Arc<RwLock<GeneratorStore>>,
+        relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
         should_stop: Arc<AtomicBool>,
     ) -> Self {
         MatchingEngineServer {

@@ -18,7 +18,7 @@ use std::{
     thread,
     time::Duration,
 };
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::log_processor;
 use crate::{
@@ -43,7 +43,7 @@ type GeneratorRegistryInstance = bindings::generator_registry::GeneratorRegistry
 
 pub struct LogParser {
     should_stop: Arc<AtomicBool>,
-    start_block: Arc<Mutex<U64>>,
+    start_block: Arc<RwLock<U64>>,
     block_range: U64,
     confirmations: U64,
     proof_marketplace: ProofMarketplaceInstance,
@@ -52,11 +52,11 @@ pub struct LogParser {
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
     matching_engine_slave_keys: Vec<Vec<u8>>,
-    shared_local_ask_store: Arc<Mutex<LocalAskStore>>,
-    shared_generator_store: Arc<Mutex<GeneratorStore>>,
-    shared_market_store: Arc<Mutex<MarketMetadataStore>>,
-    shared_key_store: Arc<Mutex<KeyStore>>,
-    shared_cost_store: Arc<Mutex<CostStore>>,
+    shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
+    shared_generator_store: Arc<RwLock<GeneratorStore>>,
+    shared_market_store: Arc<RwLock<MarketMetadataStore>>,
+    shared_key_store: Arc<RwLock<KeyStore>>,
+    shared_cost_store: Arc<RwLock<CostStore>>,
     chain_id: String,
     max_tasks_size: usize,
 }
@@ -67,7 +67,7 @@ impl LogParser {
         should_stop: Arc<AtomicBool>,
         rpc_url: String,
         relayer_signer: Wallet<SigningKey>,
-        start_block: Arc<Mutex<U64>>,
+        start_block: Arc<RwLock<U64>>,
         block_range: U64,
         confirmations: U64,
         proof_marketplace: ProofMarketplaceInstance,
@@ -75,11 +75,11 @@ impl LogParser {
         entity_registry: EntityRegistryInstance,
         matching_engine_key: String,
         matching_engine_slave_keys: Vec<String>,
-        shared_local_ask_store: Arc<Mutex<LocalAskStore>>,
-        shared_generator_store: Arc<Mutex<GeneratorStore>>,
-        shared_market_store: Arc<Mutex<MarketMetadataStore>>,
-        shared_key_store: Arc<Mutex<KeyStore>>,
-        shared_cost_store: Arc<Mutex<CostStore>>,
+        shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
+        shared_generator_store: Arc<RwLock<GeneratorStore>>,
+        shared_market_store: Arc<RwLock<MarketMetadataStore>>,
+        shared_key_store: Arc<RwLock<KeyStore>>,
+        shared_cost_store: Arc<RwLock<CostStore>>,
         chain_id: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
@@ -234,7 +234,7 @@ impl LogParser {
                 }
 
                 start_block = end_block + 1;
-                *self.start_block.lock().await = start_block;
+                *self.start_block.write().await = start_block;
                 continue;
             }
 
@@ -264,7 +264,7 @@ impl LogParser {
                 return Err("Failed fetching latest block number".into());
             }
         };
-        let start_block = { *self.start_block.lock().await };
+        let start_block = { *self.start_block.read().await };
         let end_block = if start_block + self.block_range > latest_block {
             latest_block - 1
         } else {
@@ -276,7 +276,7 @@ impl LogParser {
 
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
-        let mut ask_store = { self.shared_local_ask_store.lock().await };
+        let ask_store = { self.shared_local_ask_store.read().await };
 
         log::debug!("Trying to fetch available asks");
         let available_asks = ask_store
@@ -300,14 +300,14 @@ impl LogParser {
         let all_generators = {
             &self
                 .shared_generator_store
-                .lock()
+                .read()
                 .await
                 .clone()
                 .all_generators_address()
         };
         let mut cached_stake = {
             let mut m = HashMap::new();
-            let temp_gs = &self.shared_generator_store.lock().await;
+            let temp_gs = &self.shared_generator_store.read().await;
             for _generator in all_generators {
                 let available_stake = temp_gs.get_available_stake(*_generator).unwrap();
                 m.insert(*_generator, available_stake);
@@ -317,7 +317,7 @@ impl LogParser {
 
         let mut cached_compute = {
             let mut m = HashMap::new();
-            let temp_gs = &self.shared_generator_store.lock().await;
+            let temp_gs = &self.shared_generator_store.read().await;
             for _generator in all_generators {
                 let available_compute = temp_gs.get_available_compute(*_generator).unwrap();
                 m.insert(*_generator, available_compute);
@@ -351,7 +351,7 @@ impl LogParser {
                 continue;
             }
 
-            let key_store = { self.shared_key_store.lock().await };
+            let key_store = { self.shared_key_store.read().await };
             let idle_generator =
                 generator_helper::random_generator_selection(idle_generators).unwrap();
 
@@ -379,7 +379,7 @@ impl LogParser {
                 let market_id = random_pending_ask.market_id;
                 let stash_required = {
                     self.shared_market_store
-                        .lock()
+                        .read()
                         .await
                         .get_market_by_market_id(&market_id)
                         .unwrap()
@@ -458,7 +458,13 @@ impl LogParser {
                     random_pending_ask.ask_id,
                     ask_state
                 );
-                ask_store.modify_state(&random_pending_ask.ask_id, ask_state);
+                {
+                    // previous ref of ask store won't work because it was readonly, create a write only one that drops here only.
+                    self.shared_local_ask_store
+                        .write()
+                        .await
+                        .modify_state(&random_pending_ask.ask_id, ask_state);
+                }
                 continue;
             }
 
@@ -580,15 +586,15 @@ impl LogParser {
     async fn get_idle_generators(
         &self,
         random_pending_ask: LocalAsk,
-        generator_store: &Arc<Mutex<GeneratorStore>>,
-        market_store: &Arc<Mutex<MarketMetadataStore>>,
-        key_store: &Arc<Mutex<KeyStore>>,
+        generator_store: &Arc<RwLock<GeneratorStore>>,
+        market_store: &Arc<RwLock<MarketMetadataStore>>,
+        key_store: &Arc<RwLock<KeyStore>>,
         task_reward: U256,
     ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
-        let generator_store = generator_store.lock().await;
-        let market_metadata_store = market_store.lock().await;
-        let key_store = key_store.lock().await;
+        let generator_store = generator_store.read().await;
+        let market_metadata_store = market_store.read().await;
+        let key_store = key_store.read().await;
         let slashing_penalty = market_metadata_store
             .get_slashing_penalty_by_market_id(&random_pending_ask.market_id)
             .unwrap();

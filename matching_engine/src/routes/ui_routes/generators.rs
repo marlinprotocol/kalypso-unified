@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use ethers::types::U256;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -19,8 +19,8 @@ type CachedGeneratorResponse = CachedResponse<GeneratorResponse>;
 
 use once_cell::sync::Lazy;
 
-static GENERATOR_RESPONSE: Lazy<Mutex<CachedGeneratorResponse>> =
-    Lazy::new(|| Mutex::new(CachedGeneratorResponse::new()));
+static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
+    Lazy::new(|| RwLock::new(CachedGeneratorResponse::new()));
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Operator {
@@ -49,10 +49,10 @@ struct Market {
 }
 
 pub async fn get_generators_all(
-    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
-    let cache_lock = GENERATOR_RESPONSE.lock().await;
+    let cache_lock = GENERATOR_RESPONSE.read().await;
 
     if let Some(response) = cache_lock.get_if_valid(Duration::from_secs(5)) {
         // Return the cached response if valid
@@ -61,7 +61,7 @@ pub async fn get_generators_all(
     drop(cache_lock); // Release lock before acquiring a write lock
 
     // Step 2: If the cache is invalid, recompute the response
-    let mut cache_lock = GENERATOR_RESPONSE.lock().await;
+    let mut cache_lock = GENERATOR_RESPONSE.write().await;
     let new_response = recompute_generator_response(_local_generator_store).await;
 
     // Store the newly computed response in the cache
@@ -72,11 +72,11 @@ pub async fn get_generators_all(
 }
 
 async fn recompute_generator_response(
-    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> GeneratorResponse {
     // Step 1: Acquire the lock and extract all necessary data
     let generator_details = {
-        let store = _local_generator_store.lock().await;
+        let store = _local_generator_store.read().await;
         let all_generators = { store.all_generators_address().to_owned() };
 
         // Prepare a vector to hold generator details

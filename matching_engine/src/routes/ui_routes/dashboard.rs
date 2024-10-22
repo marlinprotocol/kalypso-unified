@@ -9,7 +9,7 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -55,9 +55,9 @@ static DASHBOARD_RESPONSE: Lazy<RwLock<CachedDashboardResponse>> =
     Lazy::new(|| RwLock::new(CachedDashboardResponse::new()));
 
 pub async fn get_dashboard(
-    _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (read lock)
     let cache_read_lock = DASHBOARD_RESPONSE.read().await;
@@ -85,13 +85,13 @@ pub async fn get_dashboard(
 }
 
 async fn recompute_dashboard_response(
-    local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
-    local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
-    local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+    local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> DashboardResponse {
     // Step 1: Retrieve all market metadata and count of markets
     let (all_markets, count_markets, market_median_map) = {
-        let store = local_market_store.lock().await;
+        let store = local_market_store.read().await;
         let all_markets = store.get_all_markets().clone(); // Clone to release the lock early
         let count_markets = store.count_markets();
 
@@ -136,7 +136,7 @@ async fn recompute_dashboard_response(
 
     // Step 3: Retrieve recent completed proofs and total proof count
     let (recent_completed_proofs, total_proof_count) = {
-        let store = local_ask_store.lock().await;
+        let store = local_ask_store.read().await;
         let recent_completed_proofs = store.get_recent_completed_proofs(20).clone(); // Clone to release the lock
         let total_proof_count = store.get_total_proof_count();
         (recent_completed_proofs, total_proof_count)
@@ -162,7 +162,7 @@ async fn recompute_dashboard_response(
 
         // Retrieve proof details
         let (time, cost, proof_link) = {
-            let store = local_ask_store.lock().await;
+            let store = local_ask_store.read().await;
             (
                 store
                     .get_proving_time(&ask_request.ask_id)
@@ -202,7 +202,7 @@ async fn recompute_dashboard_response(
 
     // Step 5: Retrieve the count of registered generators
     let registered_generators = {
-        let store = local_generator_store.lock().await;
+        let store = local_generator_store.read().await;
         store.all_generators_address().len()
     };
 

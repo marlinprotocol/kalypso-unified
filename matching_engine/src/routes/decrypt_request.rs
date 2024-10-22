@@ -6,7 +6,7 @@ use ethers::core::types::U256;
 use kalypso_helper::secret_inputs_helpers;
 use serde_json::json;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::market_metadata::*;
 use crate::utility;
@@ -15,8 +15,8 @@ use super::EntityRegistryInstance;
 
 pub async fn decrypt_request(
     _payload: web::Json<DecryptRequest>,
-    _market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
-    _matching_engine_key: Data<Arc<Mutex<Vec<u8>>>>,
+    _market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+    _matching_engine_key: Data<Arc<RwLock<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {
     let entity_key_registry = _entity_key_registry.lock().await;
@@ -91,7 +91,7 @@ pub async fn decrypt_request(
 
     let secret_data = hex::decode(_payload.private_input.clone()).expect("invalid_data");
     let acl = hex::decode(_payload.acl.clone()).expect("invalid acl data");
-    let matching_engine_key = _matching_engine_key.lock().await;
+    let matching_engine_key = _matching_engine_key.read().await;
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
         &secret_data,
         &acl,
