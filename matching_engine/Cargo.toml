@@ -24,6 +24,7 @@ lazy_static = "1.4.0"
 libzeropool-zkbob = "1.3.0"
 log = "0.4"
 once_cell = "1.20.2"
+rayon = "1.10.0"
 reqwest = { version = "0.12.4", features = ["json"] }
 secp256k1 = "0.29.0"
 serde = "1.0.178"
