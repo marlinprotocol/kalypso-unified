@@ -81,8 +81,9 @@ pub fn get_stats_scope() -> actix_web::Scope {
 }
 
 pub fn get_core_scope() -> actix_web::Scope {
-    web::scope("/app").route(
-        "/decryptRequest",
-        web::post().to(decrypt_request::decrypt_request),
-    )
+    web::scope("") // "" means root scope
+        .route(
+            "/decryptRequest",
+            web::post().to(decrypt_request::decrypt_request),
+        )
 }
