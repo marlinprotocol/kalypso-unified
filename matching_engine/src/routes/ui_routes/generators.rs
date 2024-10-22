@@ -51,77 +51,122 @@ struct Market {
 pub async fn get_generators_all(
     _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    let mut cache_lock = GENERATOR_RESPONSE.lock().await;
-    let response = cache_lock
-        .get_or_recompute(
-            Duration::from_secs(5),
-            recompute_generator_response(_local_generator_store.clone()),
-        )
-        .await;
+    // Step 1: Check if there's a cached response (lock for reading)
+    let cache_lock = GENERATOR_RESPONSE.lock().await;
 
-    Ok(HttpResponse::Ok().json(response))
+    if let Some(response) = cache_lock.get_if_valid(Duration::from_secs(5)) {
+        // Return the cached response if valid
+        return Ok(HttpResponse::Ok().json(response));
+    }
+    drop(cache_lock); // Release lock before acquiring a write lock
+
+    // Step 2: If the cache is invalid, recompute the response
+    let mut cache_lock = GENERATOR_RESPONSE.lock().await;
+    let new_response = recompute_generator_response(_local_generator_store).await;
+
+    // Store the newly computed response in the cache
+    cache_lock.store(new_response.clone());
+
+    // Return the newly computed response
+    Ok(HttpResponse::Ok().json(new_response))
 }
 
 async fn recompute_generator_response(
     _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
 ) -> GeneratorResponse {
-    let local_generator_store = _local_generator_store.lock().await;
-    let all_generators = local_generator_store.all_generators_address();
+    // Step 1: Acquire the lock and extract all necessary data
+    let generator_details = {
+        let store = _local_generator_store.lock().await;
+        let all_generators = { store.all_generators_address().to_owned() };
 
-    let result = all_generators
-        .into_iter()
-        .map(|generator_address| {
-            let operator_data = local_generator_store
-                .get_by_address(&generator_address)
-                .unwrap();
-            let all_markets_of_generator =
-                local_generator_store.get_all_markets_of_generator(&generator_address);
+        // Prepare a vector to hold generator details
+        let mut generator_details = Vec::with_capacity(all_generators.len());
 
-            Operator {
-                name: Some(address_to_string(&operator_data.address)),
-                address: address_to_string(&operator_data.address),
-                delegations: vec![TokenAmount {
-                    token: "POND".into(),
-                    amount: operator_data.total_stake.to_string(),
-                }],
-                markets: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info_per_market| Market {
-                        name: info_per_market.market_id.to_string(),
-                        token: vec!["POND".into()],
-                        id: info_per_market.market_id.to_string(),
-                    })
-                    .collect::<Vec<Market>>(),
-                earnings_to_date: local_generator_store
+        for generator_address in &all_generators {
+            // Clone generator_address to ensure ownership
+            let generator_address = generator_address.clone();
+
+            // Retrieve and clone operator_data
+            if let Some(operator_data) = store.get_by_address(&generator_address).cloned() {
+                // Retrieve and clone all_markets_of_generator
+                let all_markets_of_generator = store
+                    .get_all_markets_of_generator(&generator_address)
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>(); // Ensure deep cloning
+
+                // Retrieve and clone total_earning
+                let total_earning = store
                     .get_total_earning(&generator_address)
-                    .unwrap_or_default()
-                    .to_string(),
-                proofs_generated: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.proofs_submitted)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
-                proofs_missed: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.proofs_slashed)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
-                pending_proofs: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.active_requests)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
-                current_stake: vec![TokenAmount {
-                    token: "POND".into(),
-                    amount: operator_data.total_stake.to_string(),
-                }],
+                    .unwrap_or_else(|| U256::zero())
+                    .clone();
+
+                // Push the cloned data into generator_details
+                generator_details.push((
+                    generator_address,
+                    operator_data,
+                    all_markets_of_generator,
+                    total_earning,
+                ));
             }
-        })
-        .collect::<Vec<Operator>>();
+        }
+
+        generator_details
+    };
+
+    // Step 2: Process the data outside the locked scope using explicit loops
+    let mut result = Vec::with_capacity(generator_details.len());
+
+    for (_, operator_data, all_markets_of_generator, total_earning) in generator_details {
+        // Construct the delegations
+        let delegations = vec![TokenAmount {
+            token: "POND".into(),
+            amount: operator_data.total_stake.to_string(),
+        }];
+
+        // Construct the current stake
+        let current_stake = vec![TokenAmount {
+            token: "POND".into(),
+            amount: operator_data.total_stake.to_string(),
+        }];
+
+        // Construct the markets
+        let mut markets = Vec::with_capacity(all_markets_of_generator.len());
+        for info_per_market in &all_markets_of_generator {
+            let market = Market {
+                name: info_per_market.market_id.to_string(),
+                token: vec!["POND".into()],
+                id: info_per_market.market_id.to_string(),
+            };
+            markets.push(market);
+        }
+
+        // Calculate proofs_generated, proofs_missed, and pending_proofs
+        let mut proofs_generated = U256::zero();
+        let mut proofs_missed = U256::zero();
+        let mut pending_proofs = U256::zero();
+
+        for info in &all_markets_of_generator {
+            proofs_generated += info.proofs_submitted;
+            proofs_missed += info.proofs_slashed;
+            pending_proofs += info.active_requests;
+        }
+
+        // Construct the Operator struct
+        let operator = Operator {
+            name: Some(address_to_string(&operator_data.address)),
+            address: address_to_string(&operator_data.address),
+            delegations,
+            markets,
+            earnings_to_date: total_earning.to_string(),
+            proofs_generated: proofs_generated.to_string(),
+            proofs_missed: proofs_missed.to_string(),
+            pending_proofs: pending_proofs.to_string(),
+            current_stake,
+        };
+
+        result.push(operator);
+    }
 
     GeneratorResponse { result }
 }

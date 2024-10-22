@@ -1,4 +1,3 @@
-use std::future::Future;
 use tokio::time::{Duration, Instant};
 
 #[derive(Clone)]
@@ -16,20 +15,24 @@ impl<T: Clone> CachedResponse<T> {
         }
     }
 
-    // Get cached data or recompute it if the cache is outdated
-    pub async fn get_or_recompute<Fut>(&mut self, timeout: Duration, compute: Fut) -> T
-    where
-        Fut: Future<Output = T>,
-    {
-        // Check if the data needs to be recomputed
-        if self.data.is_none() || self.last_update.elapsed() > timeout {
-            // Await the asynchronous compute function
-            let new_data = compute.await;
-            self.data = Some(new_data.clone());
-            self.last_update = Instant::now();
+    // Check if the cached response is still valid
+    pub fn get_if_valid(&self, timeout: Duration) -> Option<T> {
+        if self.last_update.elapsed() <= timeout {
+            self.data.clone() // Return the cached data if valid
+        } else {
+            None // Cache is outdated
         }
+    }
 
-        // Return the cached or newly computed data
-        self.data.clone().unwrap()
+    // Store a newly computed value in the cache
+    pub fn store(&mut self, new_data: T) {
+        self.data = Some(new_data);
+        self.last_update = Instant::now();
+    }
+
+    // Remove cached data
+    #[allow(unused)]
+    pub fn clear(&mut self) {
+        self.data = None;
     }
 }

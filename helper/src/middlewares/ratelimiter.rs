@@ -12,7 +12,7 @@ pub fn get_rate_limiter() -> RateLimiter<
     impl Fn(&ServiceRequest) -> Ready<Result<SimpleInput, actix_web::Error>> + 'static,
 > {
     let backend = InMemoryBackend::builder().build();
-    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 25)
+    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(1), 100)
         .real_ip_key()
         .build();
 

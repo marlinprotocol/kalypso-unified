@@ -317,11 +317,11 @@ impl GeneratorStore {
         }
     }
 
-    pub fn get_all_markets_of_generator(&self, address: &Address) -> Vec<&GeneratorInfoPerMarket> {
+    pub fn get_all_markets_of_generator(&self, address: &Address) -> Vec<GeneratorInfoPerMarket> {
         match self.address_index.get(address) {
             Some(market_ids) => market_ids
                 .par_iter()
-                .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)))
+                .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)).cloned())
                 .collect(),
             None => Vec::new(),
         }

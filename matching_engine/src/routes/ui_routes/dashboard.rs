@@ -9,7 +9,7 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 use tokio::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -51,105 +51,166 @@ type CachedDashboardResponse = CachedResponse<DashboardResponse>;
 use once_cell::sync::Lazy;
 
 // Define a global instance of CachedDashboardResponse
-static DASHBOARD_RESPONSE: Lazy<Mutex<CachedDashboardResponse>> =
-    Lazy::new(|| Mutex::new(CachedDashboardResponse::new()));
+static DASHBOARD_RESPONSE: Lazy<RwLock<CachedDashboardResponse>> =
+    Lazy::new(|| RwLock::new(CachedDashboardResponse::new()));
 
 pub async fn get_dashboard(
     _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
     _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    // Step 1: Check if there's a cached response (short lock)
-    let mut cache_lock = DASHBOARD_RESPONSE.lock().await;
-    let response = cache_lock
-        .get_or_recompute(
-            Duration::from_secs(5),
-            recompute_dashboard_response(
-                _local_market_store.clone(),
-                _local_ask_store.clone(),
-                _local_generator_store.clone(),
-            ),
-        )
-        .await;
+    // Step 1: Check if there's a cached response (read lock)
+    let cache_read_lock = DASHBOARD_RESPONSE.read().await;
 
-    // Return the cached or newly computed response
-    Ok(HttpResponse::Ok().json(response))
+    if let Some(response) = cache_read_lock.get_if_valid(Duration::from_secs(5)) {
+        // Return the cached response if valid
+        return Ok(HttpResponse::Ok().json(response));
+    }
+    drop(cache_read_lock); // Drop the read lock to allow write lock acquisition
+
+    // Step 2: If the cache is invalid, recompute the response (write lock)
+    let mut cache_write_lock = DASHBOARD_RESPONSE.write().await;
+    let new_response = recompute_dashboard_response(
+        _local_market_store,
+        _local_ask_store,
+        _local_generator_store,
+    )
+    .await;
+
+    // Store the newly computed response in the cache
+    cache_write_lock.store(new_response.clone());
+
+    // Return the newly computed response
+    Ok(HttpResponse::Ok().json(new_response))
 }
 
 async fn recompute_dashboard_response(
-    _local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
+    local_market_store: Data<Arc<Mutex<MarketMetadataStore>>>,
+    local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
+    local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
 ) -> DashboardResponse {
-    let local_market_store = _local_market_store.lock().await;
-    let local_ask_store = _local_ask_store.lock().await;
-    let local_generator_store = _local_generator_store.lock().await;
+    // Step 1: Retrieve all market metadata and count of markets
+    let (all_markets, count_markets, market_median_map) = {
+        let store = local_market_store.lock().await;
+        let all_markets = store.get_all_markets().clone(); // Clone to release the lock early
+        let count_markets = store.count_markets();
 
-    let all_market_meta_data = local_market_store.get_all_markets();
-    let markets = all_market_meta_data
-        .into_iter()
-        .map(|meta| {
-            let market_id = meta.market_id;
+        // Create a map of market_id to (median_time, median_cost)
+        let mut market_median_map = std::collections::HashMap::new();
+        for meta in &all_markets {
+            let market_id = &meta.market_id;
+            let median_time = store
+                .get_median_proof_time_market_wise(market_id)
+                .to_string();
+            let median_cost = store
+                .get_median_proof_cost_market_wise(market_id)
+                .to_string();
+            market_median_map.insert(market_id.clone(), (median_time, median_cost));
+        }
 
-            let median_time = local_market_store.get_median_proof_time_market_wise(&market_id);
-            let median_cost = local_market_store.get_median_proof_cost_market_wise(&market_id);
-
-            Market {
-                name: market_id.to_string(),
-                token: "USDC".into(),
-                median_time: median_time.to_string(),
-                median_cost: median_cost.to_string(),
-            }
-        })
-        .collect::<Vec<Market>>();
-
-    let recent_proofs = {
-        let result = local_ask_store.get_recent_completed_proofs(20);
-
-        result
-            .into_iter()
-            .map(|ask_request| {
-                let market_id = ask_request.market_id;
-
-                let median_time = local_market_store.get_median_proof_time_market_wise(&market_id);
-
-                let median_cost = local_market_store.get_median_proof_cost_market_wise(&market_id);
-
-                let market = Market {
-                    name: market_id.to_string(),
-                    token: "USDC".into(),
-                    median_time: median_time.to_string(),
-                    median_cost: median_cost.to_string(),
-                };
-
-                RecentProof {
-                    market,
-                    requestor: address_to_string(&ask_request.prover_refund_address),
-                    inputs: bytes_to_string(&ask_request.prover_data),
-                    generator: Generator {
-                        name: None,
-                        address: address_to_string(&ask_request.generator.unwrap()),
-                    },
-                    time: local_ask_store
-                        .get_proving_time(&ask_request.ask_id)
-                        .unwrap_or_else(|| U256::zero())
-                        .to_string(),
-                    cost: local_ask_store
-                        .get_proving_cost(&ask_request.ask_id)
-                        .unwrap_or_else(|| U256::zero())
-                        .to_string(),
-                    proof_link: local_ask_store
-                        .get_proof_transaction(&ask_request.ask_id)
-                        .unwrap_or_default(),
-                }
-            })
-            .collect::<Vec<RecentProof>>()
+        (all_markets, count_markets, market_median_map)
     };
 
+    // Step 2: Construct the `markets` vector
+    let mut markets = Vec::with_capacity(all_markets.len());
+    for meta in &all_markets {
+        let market_id = &meta.market_id;
+        if let Some((median_time, median_cost)) = market_median_map.get(market_id) {
+            let market = Market {
+                name: market_id.to_string(),
+                token: "USDC".into(),
+                median_time: median_time.clone(),
+                median_cost: median_cost.clone(),
+            };
+            markets.push(market);
+        } else {
+            // Handle cases where median data might be missing
+            markets.push(Market {
+                name: market_id.to_string(),
+                token: "USDC".into(),
+                median_time: "0".into(),
+                median_cost: "0".into(),
+            });
+        }
+    }
+
+    // Step 3: Retrieve recent completed proofs and total proof count
+    let (recent_completed_proofs, total_proof_count) = {
+        let store = local_ask_store.lock().await;
+        let recent_completed_proofs = store.get_recent_completed_proofs(20).clone(); // Clone to release the lock
+        let total_proof_count = store.get_total_proof_count();
+        (recent_completed_proofs, total_proof_count)
+    };
+
+    // Step 4: Construct the `recent_proofs` vector
+    let mut recent_proofs = Vec::with_capacity(recent_completed_proofs.len());
+    for ask_request in recent_completed_proofs {
+        let market_id = &ask_request.market_id;
+
+        // Retrieve median data from the precomputed map
+        let (median_time, median_cost) = market_median_map
+            .get(market_id)
+            .map(|(t, c)| (t.clone(), c.clone()))
+            .unwrap_or(("0".to_string(), "0".to_string())); // Default values if not found
+
+        let market = Market {
+            name: market_id.to_string(),
+            token: "USDC".into(),
+            median_time,
+            median_cost,
+        };
+
+        // Retrieve proof details
+        let (time, cost, proof_link) = {
+            let store = local_ask_store.lock().await;
+            (
+                store
+                    .get_proving_time(&ask_request.ask_id)
+                    .unwrap_or(U256::zero())
+                    .to_string(),
+                store
+                    .get_proving_cost(&ask_request.ask_id)
+                    .unwrap_or(U256::zero())
+                    .to_string(),
+                store
+                    .get_proof_transaction(&ask_request.ask_id)
+                    .unwrap_or_default(),
+            )
+        };
+
+        // Assume that `ask_request.generator` is `Some`, handle `None` if necessary
+        let generator_address = match ask_request.generator {
+            Some(addr) => address_to_string(&addr),
+            None => "Unknown".into(), // Default or handle appropriately
+        };
+
+        let proof = RecentProof {
+            market,
+            requestor: address_to_string(&ask_request.prover_refund_address),
+            inputs: bytes_to_string(&ask_request.prover_data),
+            generator: Generator {
+                name: None, // Assuming no name is available
+                address: generator_address,
+            },
+            time,
+            cost,
+            proof_link,
+        };
+
+        recent_proofs.push(proof);
+    }
+
+    // Step 5: Retrieve the count of registered generators
+    let registered_generators = {
+        let store = local_generator_store.lock().await;
+        store.all_generators_address().len()
+    };
+
+    // Step 6: Assemble the final `DashboardResponse`
     DashboardResponse {
-        markets_created: local_market_store.count_markets(),
-        registered_generators: local_generator_store.all_generators_address().len(),
-        proofs_generated: local_ask_store.get_total_proof_count(),
+        markets_created: count_markets,
+        registered_generators,
+        proofs_generated: total_proof_count,
         markets,
         recent_proofs,
     }

@@ -114,7 +114,8 @@ pub async fn market_info(
         let asks = local_ask_store
             .get_by_market_id(&market_id_u256)
             .sort_by_ask_id(true)
-            .result();
+            .result()
+            .to_owned();
 
         if asks.is_none() {
             None

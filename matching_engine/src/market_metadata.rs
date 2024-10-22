@@ -31,14 +31,11 @@ impl Default for MarketMetadataStore {
 
 impl MarketMetadataStore {
     pub fn count_markets(&self) -> usize {
-        self.market_by_id.iter().count()
+        self.market_by_id.len()
     }
 
     pub fn get_all_markets(&self) -> Vec<MarketMetadata> {
-        self.market_by_id
-            .iter()
-            .map(|(_, market_metadata)| market_metadata.clone()) // Extract and clone the MarketMetadata
-            .collect() // Collect into a Vec
+        self.market_by_id.values().cloned().collect()
     }
 }
 
@@ -49,39 +46,42 @@ impl MarketMetadataStore {
         proof_time: U256,
         proof_cost: U256,
     ) {
+        // Minimize lock time by splitting into smaller steps
         self.median_proof_cost_tracker
             .insert(market_id.clone(), proof_cost);
+
         self.median_proof_time_tracker
             .insert(market_id.clone(), proof_time);
 
-        self.earnings
-            .entry(*market_id)
-            .and_modify(|e| *e = e.saturating_add(proof_cost))
-            .or_insert(proof_cost);
+        if let Some(existing_earning) = self.earnings.get_mut(market_id) {
+            *existing_earning = existing_earning.saturating_add(proof_cost);
+        } else {
+            self.earnings.insert(*market_id, proof_cost);
+        }
     }
 
     pub fn get_median_proof_time(&self) -> U256 {
         self.median_proof_time_tracker
             .median_all()
-            .unwrap_or_else(|| U256::zero())
+            .unwrap_or_else(U256::zero)
     }
 
     pub fn get_median_proof_time_market_wise(&self, market_id: &U256) -> U256 {
         self.median_proof_time_tracker
             .median_by_key(market_id)
-            .unwrap_or_else(|| U256::zero())
+            .unwrap_or_else(U256::zero)
     }
 
     pub fn get_median_proof_cost(&self) -> U256 {
         self.median_proof_cost_tracker
             .median_all()
-            .unwrap_or_else(|| U256::zero())
+            .unwrap_or_else(U256::zero)
     }
 
     pub fn get_median_proof_cost_market_wise(&self, market_id: &U256) -> U256 {
         self.median_proof_cost_tracker
             .median_by_key(market_id)
-            .unwrap_or_else(|| U256::zero())
+            .unwrap_or_else(U256::zero)
     }
 }
 
@@ -96,20 +96,24 @@ impl MarketMetadataStore {
     }
 
     pub fn insert(&mut self, market: MarketMetadata) {
-        self.market_by_id.insert(market.market_id, market.clone());
+        // Insert market metadata, minimizing lock time
+        self.market_by_id.insert(market.market_id, market);
     }
 
     #[allow(unused)]
     pub fn remove_by_market_id(&mut self, market_id: &U256) {
+        // Remove market metadata
         self.market_by_id.remove(market_id);
     }
 
     #[allow(unused)]
     pub fn get_market_by_market_id(&self, market_id: &U256) -> Option<&MarketMetadata> {
+        // Retrieve market metadata without holding a lock for too long
         self.market_by_id.get(market_id)
     }
 
     pub fn get_slashing_penalty_by_market_id(&self, market_id: &U256) -> Option<U256> {
+        // Safely access market metadata to retrieve the slashing penalty
         self.market_by_id
             .get(market_id)
             .map(|metadata| metadata.slashing_penalty)
@@ -117,26 +121,26 @@ impl MarketMetadataStore {
 
     #[allow(unused)]
     pub fn decode_market_verification_url_by_id(&self, market_id: &U256) -> Option<String> {
-        let market_metadata = &self.market_by_id.get(market_id).unwrap().metadata;
+        let market_metadata = self.market_by_id.get(market_id)?;
 
-        let metadata_str = market_metadata.to_string();
+        let metadata_str = market_metadata.metadata.to_string();
         let metadata_trim: Vec<_> = metadata_str.split('x').collect();
-        let market_metadata_decoded = hex::decode(metadata_trim[1]).unwrap();
+        let market_metadata_decoded = hex::decode(metadata_trim[1]).ok()?;
         let metadata_bytes: Bytes = market_metadata_decoded.into();
 
-        let received_url = String::from_utf8(metadata_bytes.0.to_vec());
-        match received_url {
-            Ok(url) => {
-                log::debug!("URL: {:?}", url.to_owned());
-                Some(url.to_owned())
-            }
-            Err(_) => None,
+        let received_url = String::from_utf8(metadata_bytes.0.to_vec()).ok();
+        if let Some(url) = received_url {
+            log::debug!("URL: {:?}", url);
+            Some(url)
+        } else {
+            None
         }
     }
 }
 
 impl MarketMetadataStore {
     pub fn get_earnings(&self, market_id: &U256) -> Option<U256> {
+        // Safely access the earnings map
         self.earnings.get(market_id).cloned()
     }
 }

@@ -7,20 +7,14 @@ use actix_web::web;
 use actix_web::HttpResponse;
 use ethers::types::Address;
 use ethers::types::U256;
-use im::HashMap;
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 use serde::Serialize;
-use std::future::Future;
 use tokio::sync::Mutex;
-use tokio::time::Duration;
 
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
 use actix_web::web::Data;
 use std::sync::Arc;
-
-use super::cache::CachedResponse;
 
 #[derive(Deserialize, Clone, Copy, Serialize, Debug, Hash, Eq, PartialEq)]
 pub struct QueryParams {
@@ -109,50 +103,6 @@ struct GeneratorQuery {
     query: QueryParams,
 }
 
-struct CachedSingleGeneratorData {
-    data: HashMap<GeneratorQuery, CachedResponse<Option<GeneratorResponse>>>,
-    duration: Duration,
-}
-
-impl CachedSingleGeneratorData {
-    fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-            duration: Duration::from_secs(5),
-        }
-    }
-
-    pub async fn get_or_compute<Fut>(
-        &mut self,
-        query: GeneratorQuery,
-        compute: Fut,
-    ) -> Option<GeneratorResponse>
-    where
-        Fut: Future<Output = Option<GeneratorResponse>>,
-    {
-        // Check if the query is already in the cache
-        if let Some(cached) = self.data.get_mut(&query) {
-            // Use the existing CachedResponse to get or recompute the value
-            return cached.get_or_recompute(self.duration, compute).await;
-        }
-
-        // If it's not in the cache, we need to compute the result
-        let mut cached_response = CachedResponse::new();
-        let result = cached_response
-            .get_or_recompute(self.duration, compute)
-            .await;
-
-        // Insert the new result into the cache
-        self.data.insert(query, cached_response);
-
-        result
-    }
-}
-
-// Define a global instance of CachedDashboardResponse
-static SINGLE_GENERATOR_RESPONSE: Lazy<Mutex<CachedSingleGeneratorData>> =
-    Lazy::new(|| Mutex::new(CachedSingleGeneratorData::new()));
-
 pub async fn single_generator(
     _local_ask_store: Data<Arc<Mutex<LocalAskStore>>>,
     _local_generator_store: Data<Arc<Mutex<GeneratorStore>>>,
@@ -180,26 +130,23 @@ pub async fn single_generator(
         },
     };
 
-    let mut cache_lock = SINGLE_GENERATOR_RESPONSE.lock().await;
-    let response = cache_lock
-        .get_or_compute(
-            generator_query,
-            recompute_single_generator_response(
-                generator_id,
-                generator_query,
-                _local_ask_store.clone(),
-                _local_generator_store.clone(),
-            ),
-        )
-        .await;
+    // Step 1: Recompute the response every time
+    let new_response = recompute_single_generator_response(
+        generator_id,
+        generator_query,
+        _local_ask_store.clone(),
+        _local_generator_store.clone(),
+    )
+    .await;
 
-    if response.is_none() {
+    if new_response.is_none() {
         return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
             status: "Generator Data Not Found".into(),
         }));
-    } else {
-        return Ok(HttpResponse::Ok().json(response));
     }
+
+    // Return the newly computed response
+    Ok(HttpResponse::Ok().json(new_response))
 }
 
 async fn recompute_single_generator_response(
