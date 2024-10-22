@@ -106,10 +106,9 @@ impl MarketMetadataStore {
         self.market_by_id.remove(market_id);
     }
 
-    #[allow(unused)]
-    pub fn get_market_by_market_id(&self, market_id: &U256) -> Option<&MarketMetadata> {
+    pub fn get_market_by_market_id(&self, market_id: &U256) -> Option<MarketMetadata> {
         // Retrieve market metadata without holding a lock for too long
-        self.market_by_id.get(market_id)
+        self.market_by_id.get(market_id).cloned()
     }
 
     pub fn get_slashing_penalty_by_market_id(&self, market_id: &U256) -> Option<U256> {

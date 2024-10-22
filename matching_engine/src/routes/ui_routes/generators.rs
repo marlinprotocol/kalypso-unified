@@ -52,23 +52,27 @@ pub async fn get_generators_all(
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
-    let cache_lock = GENERATOR_RESPONSE.read().await;
 
-    if let Some(response) = cache_lock.get_if_valid(Duration::from_secs(5)) {
+    if let Some(response) = GENERATOR_RESPONSE
+        .read()
+        .await
+        .get_if_valid(Duration::from_secs(5))
+    {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
-    drop(cache_lock); // Release lock before acquiring a write lock
 
     // Step 2: If the cache is invalid, recompute the response
-    let mut cache_lock = GENERATOR_RESPONSE.write().await;
     let new_response = recompute_generator_response(_local_generator_store).await;
 
-    // Store the newly computed response in the cache
-    cache_lock.store(new_response.clone());
+    {
+        let mut cache_lock = GENERATOR_RESPONSE.write().await;
+        // Store the newly computed response in the cache
+        cache_lock.store(new_response.clone());
+    }
 
     // Return the newly computed response
-    Ok(HttpResponse::Ok().json(new_response))
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_generator_response(

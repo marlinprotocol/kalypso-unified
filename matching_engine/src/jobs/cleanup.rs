@@ -83,11 +83,13 @@ impl CleanupTool {
 
                         // Clean up completed asks
                         {
-                            let mut ask_store = self.ask_store.write().await;
-                            if let Some(completed_asks) = ask_store.get_cleanup_asks().result() {
-                                for elem in completed_asks {
-                                    log::info!("Removed Completed ask: {}", &elem.ask_id);
-                                    ask_store.remove_ask_only_if_completed(&elem.ask_id);
+                            if let Some(completed_asks) = self.ask_store.read().await.get_cleanup_asks().result() {
+                                if completed_asks.len() > 0 {
+                                    let mut ask_store = self.ask_store.write().await;
+                                    for elem in completed_asks {
+                                        log::info!("Removed Completed ask: {}", &elem.ask_id);
+                                        ask_store.remove_ask_only_if_completed(&elem.ask_id);
+                                    }
                                 }
                             }
                             // Lock is automatically dropped here

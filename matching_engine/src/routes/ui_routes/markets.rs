@@ -48,28 +48,31 @@ use once_cell::sync::Lazy;
 static MARKET_RESPONSE: Lazy<RwLock<CachedMarketResponse>> =
     Lazy::new(|| RwLock::new(CachedMarketResponse::new()));
 
-pub async fn market_info(
+pub async fn total_market_info(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
-    let cache_lock = MARKET_RESPONSE.read().await;
 
-    if let Some(response) = cache_lock.get_if_valid(Duration::from_secs(5)) {
+    if let Some(response) = MARKET_RESPONSE
+        .read()
+        .await
+        .get_if_valid(Duration::from_secs(5))
+    {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
-    drop(cache_lock); // Release lock before acquiring a write lock
 
     // Step 2: If the cache is invalid, recompute the response
-    let mut cache_lock = MARKET_RESPONSE.write().await;
     let new_response = recompute_market_response(_local_market_store, _local_ask_store).await;
 
-    // Store the newly computed response in the cache
-    cache_lock.store(new_response.clone());
-
+    {
+        let mut cache_lock = MARKET_RESPONSE.write().await;
+        // Store the newly computed response in the cache
+        cache_lock.store(new_response.clone());
+    }
     // Return the newly computed response
-    Ok(HttpResponse::Ok().json(new_response))
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_market_response(
@@ -91,7 +94,9 @@ async fn recompute_market_response(
     ) = {
         // Scoped block to limit the duration of the locks
         let market_store = _local_market_store.read().await;
+        log::warn!("market_store read available");
         let ask_store = _local_ask_store.read().await;
+        log::warn!("ask_store read available");
 
         // Extract all market metadata
         let all_markets_meta = market_store.get_all_markets().clone(); // Clone to own the data
@@ -162,7 +167,7 @@ async fn recompute_market_response(
         )
     }; // Both locks are released here
 
-    log::info!("Released locks on MarketMetadataStore and LocalAskStore");
+    log::debug!("Released locks on MarketMetadataStore and LocalAskStore");
 
     // Step 2: Process the data using explicit loops without holding any locks
     let mut markets = Vec::with_capacity(all_markets_meta.len());

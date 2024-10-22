@@ -59,17 +59,16 @@ pub async fn get_dashboard(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    // Step 1: Check if there's a cached response (read lock)
-    let cache_read_lock = DASHBOARD_RESPONSE.read().await;
-
-    if let Some(response) = cache_read_lock.get_if_valid(Duration::from_secs(5)) {
+    if let Some(response) = DASHBOARD_RESPONSE
+        .read()
+        .await
+        .get_if_valid(Duration::from_secs(5))
+    {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
-    drop(cache_read_lock); // Drop the read lock to allow write lock acquisition
 
     // Step 2: If the cache is invalid, recompute the response (write lock)
-    let mut cache_write_lock = DASHBOARD_RESPONSE.write().await;
     let new_response = recompute_dashboard_response(
         _local_market_store,
         _local_ask_store,
@@ -77,11 +76,14 @@ pub async fn get_dashboard(
     )
     .await;
 
-    // Store the newly computed response in the cache
-    cache_write_lock.store(new_response.clone());
+    {
+        let mut cache_write_lock = DASHBOARD_RESPONSE.write().await;
+        // Store the newly computed response in the cache
+        cache_write_lock.store(new_response.clone());
+    }
 
     // Return the newly computed response
-    Ok(HttpResponse::Ok().json(new_response))
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_dashboard_response(

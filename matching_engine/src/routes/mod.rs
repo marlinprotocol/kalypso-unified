@@ -46,7 +46,10 @@ pub fn ui_scope() -> actix_web::Scope {
             "/generator/{id}",
             web::get().to(ui_routes::single_generator::single_generator),
         )
-        .route("/markets", web::get().to(ui_routes::markets::market_info))
+        .route(
+            "/markets",
+            web::get().to(ui_routes::markets::total_market_info),
+        )
 }
 
 pub fn get_stats_scope() -> actix_web::Scope {

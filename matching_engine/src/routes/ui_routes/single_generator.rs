@@ -146,7 +146,7 @@ pub async fn single_generator(
     }
 
     // Return the newly computed response
-    Ok(HttpResponse::Ok().json(new_response))
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_single_generator_response(

@@ -29,9 +29,6 @@ pub async fn process_proof_market_place_logs(
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut local_ask_store = { local_ask_store.write().await };
-    let mut generator_store = { generator_store.write().await };
-    let mut market_store = { market_store.write().await };
-    let mut cost_store = { cost_store.write().await };
 
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
@@ -147,7 +144,10 @@ pub async fn process_proof_market_place_logs(
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
 
             local_ask_store.modify_state(&ask_id, AskState::Assigned);
-            generator_store.update_on_assigned_task(&ask_data.3, &ask_data.0.market_id);
+            generator_store
+                .write()
+                .await
+                .update_on_assigned_task(&ask_data.3, &ask_data.0.market_id);
 
             continue;
         }
@@ -170,6 +170,8 @@ pub async fn process_proof_market_place_logs(
             local_ask_store.modify_state(&ask_id, AskState::Complete);
             let generator_address = ask_data.3;
             let proof_generator_cost = generator_store
+                .read()
+                .await
                 .get_by_address_and_market(&generator_address, &ask_data.0.market_id)
                 .map_or(U256::from(0), |generator_info| {
                     generator_info.proof_generation_cost.clone()
@@ -185,17 +187,19 @@ pub async fn process_proof_market_place_logs(
                 proof_generator_cost,
                 tx_to_string(&log.transaction_hash.unwrap()),
             );
-            generator_store.update_on_submit_proof(
+            generator_store.write().await.update_on_submit_proof(
                 &generator_address,
                 &ask_data.0.market_id,
                 &proof_generator_cost,
             );
 
-            market_store.note_proof_submission_stats(
-                &ask_data.0.market_id,
-                proof_time,
-                proof_generator_cost,
-            );
+            {
+                market_store.write().await.note_proof_submission_stats(
+                    &ask_data.0.market_id,
+                    proof_time,
+                    proof_generator_cost,
+                );
+            }
             continue;
         }
 
@@ -228,7 +232,9 @@ pub async fn process_proof_market_place_logs(
                 metadata: market.6,
             };
 
-            market_store.insert(market.clone());
+            {
+                market_store.write().await.insert(market.clone());
+            }
             // let verification_url = market_store.decode_market_verification_url_by_id(&market_id);
 
             log::debug!("Market added to store: {:?}", market.market_id);
@@ -301,22 +307,28 @@ pub async fn process_proof_market_place_logs(
             log::debug!("Proof not Generated: update generator state");
             let generator_address = ask_data.3;
 
-            let market_data = market_store.get_market_by_market_id(&ask_data.0.market_id);
+            let market_data = {
+                market_store
+                    .read()
+                    .await
+                    .get_market_by_market_id(&ask_data.0.market_id)
+            };
             log::debug!("Proof not Generated: update on slashing penalty");
 
             let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
 
-            generator_store.update_on_slashing(
+            let sp = market_data.unwrap().slashing_penalty;
+            generator_store.write().await.update_on_slashing(
                 &generator_address,
                 &ask_data.0.market_id,
-                &market_data.unwrap().slashing_penalty,
+                &sp,
                 SlashingRecord {
                     ask_id,
                     market_id: ask.market_id,
                     slashing_tx: tx_to_string(&log.transaction_hash.unwrap()),
                     price_offered: ask.reward,
                     expected_time: ask.deadline,
-                    slashing_penalty: market_data.unwrap().slashing_penalty,
+                    slashing_penalty: sp,
                 },
             );
 
@@ -344,12 +356,14 @@ pub async fn process_proof_market_place_logs(
             let generator_address = ask_data.3;
 
             let proof_generator_cost = generator_store
+                .read()
+                .await
                 .get_by_address_and_market(&generator_address, &ask_data.0.market_id)
                 .map_or(U256::from(0), |generator_info| {
                     generator_info.proof_generation_cost.clone()
                 });
 
-            generator_store.update_on_submit_proof(
+            generator_store.write().await.update_on_submit_proof(
                 &generator_address,
                 &ask_data.0.market_id,
                 &proof_generator_cost,
@@ -368,7 +382,7 @@ pub async fn process_proof_market_place_logs(
             let secret_type = update_cost_per_byte_log.secret_type;
             let cost_per_byte = update_cost_per_byte_log.cost_per_input_bytes;
 
-            cost_store.upsert(secret_type, cost_per_byte);
+            cost_store.write().await.upsert(secret_type, cost_per_byte);
 
             log::info!(
                 "Cost per input byte changed to {:?} for input {:?}",
