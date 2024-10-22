@@ -25,7 +25,7 @@ impl CostStore {
     }
 
     // Get function: retrieve a value by key
-    pub fn get(&self, key: u8) -> Option<&U256> {
-        self.data.get(&key)
+    pub fn get(&self, key: u8) -> Option<U256> {
+        self.data.get(&key).cloned()
     }
 }

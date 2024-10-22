@@ -55,7 +55,8 @@ impl<'a> GeneratorQueryResult<'a> {
     }
 
     // Final getter to consume the object and retrieve the filtered generators
-    pub fn result(self) -> Vec<&'a GeneratorInfoPerMarket> {
-        self.generator_markets
+    pub fn result(self) -> Vec<GeneratorInfoPerMarket> {
+        // Clone the elements or map them to owned values
+        self.generator_markets.into_iter().cloned().collect()
     }
 }

@@ -91,7 +91,7 @@ async fn recompute_generator_response(
             let generator_address = generator_address.clone();
 
             // Retrieve and clone operator_data
-            if let Some(operator_data) = store.get_by_address(&generator_address).cloned() {
+            if let Some(operator_data) = store.get_by_address(&generator_address) {
                 // Retrieve and clone all_markets_of_generator
                 let all_markets_of_generator = store
                     .get_all_markets_of_generator(&generator_address)

@@ -132,8 +132,8 @@ impl GeneratorStore {
         &self,
         address: &Address,
         market_id: &U256,
-    ) -> Option<&GeneratorInfoPerMarket> {
-        self.generator_markets.get(&(*address, *market_id))
+    ) -> Option<GeneratorInfoPerMarket> {
+        self.generator_markets.get(&(*address, *market_id)).cloned()
     }
 
     pub fn remove_by_address_and_market(&mut self, address: &Address, market_id: &U256) {
@@ -355,8 +355,8 @@ impl GeneratorStore {
         }
     }
 
-    pub fn get_by_address(&self, address: &Address) -> Option<&Generator> {
-        self.generators.get(address)
+    pub fn get_by_address(&self, address: &Address) -> Option<Generator> {
+        self.generators.get(address).cloned()
     }
 }
 

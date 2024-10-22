@@ -28,8 +28,8 @@ impl KeyStore {
     }
 
     // Updated to reflect the tuple key
-    pub fn get_by_address(&self, address: &Address, value: u64) -> Option<&Key> {
-        self.keys.get(&(*address, value))
+    pub fn get_by_address(&self, address: &Address, value: u64) -> Option<Key> {
+        self.keys.get(&(*address, value)).cloned()
     }
 
     // Updated to reflect the tuple key

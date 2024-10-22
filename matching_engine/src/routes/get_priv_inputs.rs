@@ -31,8 +31,13 @@ pub async fn get_priv_input(
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
 
     let local_ask = local_ask_store.get_by_ask_id(&ask_id_u256);
-
-    if !local_ask.unwrap().has_private_inputs {
+    if local_ask.is_none() {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "status": "invalid"
+        })));
+    }
+    let local_ask = local_ask.unwrap();
+    if !local_ask.has_private_inputs {
         return Ok(HttpResponse::BadRequest().json(json!({
             "status": "invalid"
         })));
@@ -90,10 +95,10 @@ pub async fn get_priv_input(
     }
 
     let decrypted_secret_data = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
-        &local_ask.unwrap().secret_data.clone().unwrap(),
-        &local_ask.unwrap().secret_acl.clone().unwrap(),
+        &local_ask.secret_data.clone().unwrap(),
+        &local_ask.secret_acl.clone().unwrap(),
         &matching_engine_key.clone(),
-        Some(local_ask.unwrap().market_id),
+        Some(local_ask.market_id),
     )
     .expect("Failed to get private inputs for the ask id");
 

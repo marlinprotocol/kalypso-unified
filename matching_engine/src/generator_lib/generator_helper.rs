@@ -16,7 +16,7 @@ pub fn random_generator_selection(
 }
 
 pub fn select_idle_generators(
-    generators: Vec<&GeneratorInfoPerMarket>,
+    generators: Vec<GeneratorInfoPerMarket>,
 ) -> Vec<GeneratorInfoPerMarket> {
     let mut to_return = vec![];
     for generator in generators {

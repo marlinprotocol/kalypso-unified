@@ -317,8 +317,8 @@ impl LocalAskStore {
         }
     }
 
-    pub fn get_by_ask_id(&self, ask_id: &U256) -> Option<&LocalAsk> {
-        self.asks_by_id.get(ask_id)
+    pub fn get_by_ask_id(&self, ask_id: &U256) -> Option<LocalAsk> {
+        self.asks_by_id.get(ask_id).cloned()
     }
 
     pub fn get_ask_status(&self) -> LocalAskStatus {
