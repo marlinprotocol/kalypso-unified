@@ -12,12 +12,86 @@ pub async fn process_generator_registry_logs(
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut generator_store = { generator_store.write().await };
     for log in &logs {
         if constants::TOPICS_TO_SKIP.get(&log.topics[0]).is_some() {
             log::warn!("standard topic to skip found, ignoring it");
             continue;
         }
+
+        if let Ok(add_ivs_key_log) = genertor_registry
+            .decode_event::<bindings::generator_registry::AddIvsKeyFilter>(
+                "AddIvsKey",
+                log.topics.clone(),
+                log.data.clone(),
+            )
+        {
+            log::warn!(
+                "Ivs key signer: {:?}, market id: {:?}",
+                add_ivs_key_log.signer,
+                add_ivs_key_log.market_id
+            );
+            continue;
+        }
+
+        if let Ok(upgraded_logs) =
+            genertor_registry.decode_event_raw("Upgraded", log.topics.clone(), log.data.clone())
+        {
+            log::debug!("Upgraded: {:?}", upgraded_logs);
+            continue;
+        }
+
+        if let Ok(initialized_logs) =
+            genertor_registry.decode_event_raw("Initialized", log.topics.clone(), log.data.clone())
+        {
+            log::warn!("Version: {:?}", initialized_logs);
+            continue;
+        }
+
+        if let Ok(role_granted_logs) = genertor_registry
+            .decode_event::<bindings::generator_registry::RoleGrantedFilter>(
+            "RoleGranted",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!(
+                "Role: {:?}, Sender: {:?}",
+                hex::encode(role_granted_logs.role),
+                role_granted_logs.sender
+            );
+            continue;
+        }
+
+        if let Ok(role_revoked_logs) = genertor_registry
+            .decode_event::<bindings::generator_registry::RoleRevokedFilter>(
+            "RoleRevoked",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!(
+                "Role: {:?}, Sender: {:?}",
+                hex::encode(role_revoked_logs.role),
+                role_revoked_logs.sender
+            );
+            continue;
+        }
+
+        if let Ok(role_admin_changed_logs) = genertor_registry
+            .decode_event::<bindings::generator_registry::RoleAdminChangedFilter>(
+            "RoleAdminChanged",
+            log.topics.clone(),
+            log.data.clone(),
+        ) {
+            log::warn!(
+                "New Admin: {:?}, Old Admin: {:?}, Role: {:?}",
+                role_admin_changed_logs.new_admin_role,
+                role_admin_changed_logs.previous_admin_role,
+                role_admin_changed_logs.role
+            );
+            continue;
+        }
+
+        // using here, as above events don' require any write lock
+        let mut generator_store = { generator_store.write().await };
 
         if let Ok(parsed_registered_generator_log) = genertor_registry.decode_event_raw(
             "RegisteredGenerator",
@@ -196,21 +270,6 @@ pub async fn process_generator_registry_logs(
             continue;
         }
 
-        if let Ok(add_ivs_key_log) = genertor_registry
-            .decode_event::<bindings::generator_registry::AddIvsKeyFilter>(
-                "AddIvsKey",
-                log.topics.clone(),
-                log.data.clone(),
-            )
-        {
-            log::warn!(
-                "Ivs key signer: {:?}, market id: {:?}",
-                add_ivs_key_log.signer,
-                add_ivs_key_log.market_id
-            );
-            continue;
-        }
-
         if let Ok(added_stake_log) = genertor_registry
             .decode_event::<bindings::generator_registry::AddedStakeFilter>(
                 "AddedStake",
@@ -325,63 +384,6 @@ pub async fn process_generator_registry_logs(
             generator_store.remove_compute(&address, compute);
             generator_store.resume_assignments_accross_all_markets(&address);
             generator_store.update_intended_compute_util(&address, 1000000000000000000_i64.into());
-            continue;
-        }
-
-        if let Ok(upgraded_logs) =
-            genertor_registry.decode_event_raw("Upgraded", log.topics.clone(), log.data.clone())
-        {
-            log::debug!("Upgraded: {:?}", upgraded_logs);
-            continue;
-        }
-
-        if let Ok(initialized_logs) =
-            genertor_registry.decode_event_raw("Initialized", log.topics.clone(), log.data.clone())
-        {
-            log::warn!("Version: {:?}", initialized_logs);
-            continue;
-        }
-
-        if let Ok(role_granted_logs) = genertor_registry
-            .decode_event::<bindings::generator_registry::RoleGrantedFilter>(
-            "RoleGranted",
-            log.topics.clone(),
-            log.data.clone(),
-        ) {
-            log::warn!(
-                "Role: {:?}, Sender: {:?}",
-                hex::encode(role_granted_logs.role),
-                role_granted_logs.sender
-            );
-            continue;
-        }
-
-        if let Ok(role_revoked_logs) = genertor_registry
-            .decode_event::<bindings::generator_registry::RoleRevokedFilter>(
-            "RoleRevoked",
-            log.topics.clone(),
-            log.data.clone(),
-        ) {
-            log::warn!(
-                "Role: {:?}, Sender: {:?}",
-                hex::encode(role_revoked_logs.role),
-                role_revoked_logs.sender
-            );
-            continue;
-        }
-
-        if let Ok(role_admin_changed_logs) = genertor_registry
-            .decode_event::<bindings::generator_registry::RoleAdminChangedFilter>(
-            "RoleAdminChanged",
-            log.topics.clone(),
-            log.data.clone(),
-        ) {
-            log::warn!(
-                "New Admin: {:?}, Old Admin: {:?}, Role: {:?}",
-                role_admin_changed_logs.new_admin_role,
-                role_admin_changed_logs.previous_admin_role,
-                role_admin_changed_logs.role
-            );
             continue;
         }
 
