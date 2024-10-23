@@ -7,15 +7,59 @@ use actix_web::web;
 use actix_web::HttpResponse;
 use ethers::types::Address;
 use ethers::types::U256;
+use im::HashMap;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use serde::Serialize;
 use tokio::sync::RwLock;
 use tokio::sync::RwLockReadGuard;
+use tokio::time::Duration;
 
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
 use actix_web::web::Data;
 use std::sync::Arc;
+
+use super::cache::CachedResponse;
+
+type CachedSingleGeneratorResponse = CachedResponse<GeneratorResponse>;
+
+struct CachedGeneratorResponse {
+    data: HashMap<GeneratorQuery, CachedSingleGeneratorResponse>,
+}
+
+static SINGLE_GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
+    Lazy::new(|| RwLock::new(CachedGeneratorResponse::new()));
+
+impl CachedGeneratorResponse {
+    pub fn new() -> Self {
+        Self {
+            data: HashMap::new(),
+        }
+    }
+
+    pub fn get(&self, query: &GeneratorQuery, timeout: Duration) -> Option<GeneratorResponse> {
+        let cache = self.data.get(query);
+        if cache.is_none() {
+            None
+        } else {
+            cache.unwrap().get_if_valid(timeout)
+        }
+    }
+
+    pub fn store(&mut self, query: &GeneratorQuery, response: GeneratorResponse) {
+        // Attempt to get a mutable reference to the cache
+        if let Some(cache) = self.data.get_mut(query) {
+            // If the cache exists, store the response mutably
+            cache.store(response);
+        } else {
+            // If the cache does not exist, create a new one
+            let mut cache = CachedSingleGeneratorResponse::new();
+            cache.store(response);
+            self.data.insert(*query, cache);
+        }
+    }
+}
 
 #[derive(Deserialize, Clone, Copy, Serialize, Debug, Hash, Eq, PartialEq)]
 pub struct QueryParams {
@@ -131,6 +175,19 @@ pub async fn single_generator(
         },
     };
 
+    let cached_response = match SINGLE_GENERATOR_RESPONSE.try_read() {
+        Ok(data) => data.get(&generator_query, Duration::from_secs(10)),
+        _ => {
+            return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                status: "Resource Busy".into(),
+            }))
+        }
+    };
+
+    if cached_response.is_some() {
+        return Ok(HttpResponse::Ok().json(cached_response));
+    }
+
     let local_ask_store = {
         match _local_ask_store.try_read() {
             Ok(data) => data,
@@ -168,8 +225,15 @@ pub async fn single_generator(
         }));
     }
 
+    match SINGLE_GENERATOR_RESPONSE.try_write() {
+        Ok(mut data) => data.store(&generator_query, new_response.clone().unwrap()),
+        _ => {
+            log::warn!("Failed Caching Single Generator response");
+        }
+    }
+
     // Return the newly computed response
-    return Ok(HttpResponse::Ok().json(new_response));
+    return Ok(HttpResponse::Ok().json(new_response.unwrap()));
 }
 
 async fn recompute_single_generator_response<'a>(
