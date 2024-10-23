@@ -186,11 +186,15 @@ pub async fn process_proof_market_place_logs(
                 proof_generator_cost,
                 tx_to_string(&log.transaction_hash.unwrap()),
             );
-            generator_store.write().await.update_on_submit_proof(
-                &generator_address,
-                &ask_data.0.market_id,
-                &proof_generator_cost,
-            );
+            local_ask_store.remove_ask_only_if_completed(&ask_id);
+
+            {
+                generator_store.write().await.update_on_submit_proof(
+                    &generator_address,
+                    &ask_data.0.market_id,
+                    &proof_generator_cost,
+                );
+            }
 
             {
                 market_store.write().await.note_proof_submission_stats(
@@ -281,6 +285,7 @@ pub async fn process_proof_market_place_logs(
             log::debug!("Ask has been cancelled {:?}", ask_cancelled_log.ask_id);
             let mut local_ask_store = { local_ask_store.write().await };
             local_ask_store.modify_state(&ask_cancelled_log.ask_id, AskState::Complete);
+            local_ask_store.remove_ask_only_if_completed(&ask_cancelled_log.ask_id);
             continue;
         }
 
@@ -317,21 +322,24 @@ pub async fn process_proof_market_place_logs(
             log::debug!("Proof not Generated: update on slashing penalty");
 
             let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
+            local_ask_store.remove_ask_only_if_completed(&ask_id);
 
-            let sp = market_data.unwrap().slashing_penalty;
-            generator_store.write().await.update_on_slashing(
-                &generator_address,
-                &ask_data.0.market_id,
-                &sp,
-                SlashingRecord {
-                    ask_id,
-                    market_id: ask.market_id,
-                    slashing_tx: tx_to_string(&log.transaction_hash.unwrap()),
-                    price_offered: ask.reward,
-                    expected_time: ask.deadline,
-                    slashing_penalty: sp,
-                },
-            );
+            {
+                let sp = market_data.unwrap().slashing_penalty;
+                generator_store.write().await.update_on_slashing(
+                    &generator_address,
+                    &ask_data.0.market_id,
+                    &sp,
+                    SlashingRecord {
+                        ask_id,
+                        market_id: ask.market_id,
+                        slashing_tx: tx_to_string(&log.transaction_hash.unwrap()),
+                        price_offered: ask.reward,
+                        expected_time: ask.deadline,
+                        slashing_penalty: sp,
+                    },
+                );
+            }
 
             log::warn!("Complete Proof not Generated");
             continue;
@@ -357,20 +365,23 @@ pub async fn process_proof_market_place_logs(
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
 
             let generator_address = ask_data.3;
+            local_ask_store.remove_ask_only_if_completed(&ask_id);
 
-            let proof_generator_cost = generator_store
-                .read()
-                .await
-                .get_by_address_and_market(&generator_address, &ask_data.0.market_id)
-                .map_or(U256::from(0), |generator_info| {
-                    generator_info.proof_generation_cost.clone()
-                });
+            {
+                let proof_generator_cost = generator_store
+                    .read()
+                    .await
+                    .get_by_address_and_market(&generator_address, &ask_data.0.market_id)
+                    .map_or(U256::from(0), |generator_info| {
+                        generator_info.proof_generation_cost.clone()
+                    });
 
-            generator_store.write().await.update_on_submit_proof(
-                &generator_address,
-                &ask_data.0.market_id,
-                &proof_generator_cost,
-            );
+                generator_store.write().await.update_on_submit_proof(
+                    &generator_address,
+                    &ask_data.0.market_id,
+                    &proof_generator_cost,
+                );
+            }
             log::warn!("Complete invalid input proof submitted");
             continue;
         }

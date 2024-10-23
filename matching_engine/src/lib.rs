@@ -16,7 +16,7 @@ use market_metadata::MarketMetadataStore;
 use costs::CostStore;
 use ethers::prelude::*;
 use generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
-use jobs::{cleanup::CleanupTool, parser::LogParser, server::MatchingEngineServer};
+use jobs::{parser::LogParser, server::MatchingEngineServer};
 use models::{GetAskStatus, MarketInfo};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -303,20 +303,6 @@ impl MatchingEngine {
         });
 
         handles.push(parser_handle);
-
-        let cleanup_tool = CleanupTool::new(
-            should_stop,
-            shared_local_ask_store,
-            proof_marketplace,
-            relayer_signer.address(),
-            relayer_key_balance,
-        );
-        let cleanup_handle = tokio::spawn(async move {
-            match cleanup_tool.start_cleanup(true, true).await {
-                _ => Ok(()),
-            }
-        });
-        handles.push(cleanup_handle);
 
         for handle in handles {
             let _ = handle.await;
