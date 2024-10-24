@@ -327,7 +327,7 @@ impl AddAssign for TokenTracker {
     }
 }
 
-pub const POND: &str = "POND";
+// pub const POND: &str = "POND";
 pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0x9999888899998888999988889999888899998888";
 pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x1234123412347777666655551234123476547654";
 

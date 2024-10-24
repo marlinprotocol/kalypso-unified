@@ -7,7 +7,8 @@ use crate::utility::bytes_to_string;
 use crate::utility::random_u256;
 use crate::utility::random_usize;
 use crate::utility::TokenAmount;
-use crate::utility::POND;
+use crate::utility::TEST_TOKEN_ADDRESS_ONE;
+use crate::utility::TEST_TOKEN_ADDRESS_TWO;
 use actix_web::web;
 use actix_web::HttpResponse;
 use ethers::types::Address;
@@ -44,12 +45,9 @@ impl CachedGeneratorResponse {
     }
 
     pub fn get(&self, query: &GeneratorQuery, timeout: Duration) -> Option<GeneratorResponse> {
-        let cache = self.data.get(query);
-        if cache.is_none() {
-            None
-        } else {
-            cache.unwrap().get_if_valid(timeout)
-        }
+        self.data
+            .get(query)
+            .and_then(|cache| cache.get_if_valid(timeout))
     }
 
     pub fn store(&mut self, query: &GeneratorQuery, response: GeneratorResponse) {
@@ -116,7 +114,7 @@ struct Job {
 struct MarketInfo {
     name: Option<String>,
     id: String,
-    token: String,
+    token: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -332,7 +330,10 @@ async fn recompute_single_generator_response<'a>(
                         market: MarketInfo {
                             name: None,
                             id: a.market_id.to_string(),
-                            token: "POND".to_string(),
+                            token: vec![
+                                address_to_string(&TEST_TOKEN_ADDRESS_ONE),
+                                address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                            ],
                         },
                         requestor: address_to_string(&a.prover_refund_address),
                         inputs: bytes_to_string(&a.prover_data),
@@ -355,7 +356,10 @@ async fn recompute_single_generator_response<'a>(
                 market: MarketInfo {
                     name: None,
                     id: ask.market_id.to_string(),
-                    token: "POND".to_string(),
+                    token: vec![
+                        address_to_string(&TEST_TOKEN_ADDRESS_ONE),
+                        address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                    ],
                 },
                 requestor: address_to_string(&ask.prover_refund_address),
                 inputs: bytes_to_string(&ask.prover_data),
@@ -364,7 +368,7 @@ async fn recompute_single_generator_response<'a>(
                 time_taken_for_proof_generation: Some(
                     local_ask_store
                         .get_proving_time(&ask.ask_id)
-                        .unwrap()
+                        .unwrap_or_default()
                         .to_string(),
                 ),
                 proof: Some(
@@ -383,7 +387,10 @@ async fn recompute_single_generator_response<'a>(
                 market: MarketInfo {
                     name: None,
                     id: record.market_id.to_string(),
-                    token: POND.to_string(),
+                    token: vec![
+                        address_to_string(&TEST_TOKEN_ADDRESS_ONE),
+                        address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                    ],
                 },
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),

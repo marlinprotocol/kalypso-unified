@@ -53,9 +53,9 @@ struct Jobs {
 struct SingleMarketResponse {
     registered_generators: usize,
     slashing_penalty: Vec<TokenAmount>,
-    median_cost: U256,
-    median_proof_time: U256,
-    total_earnings: U256,
+    median_cost: String,
+    median_proof_time: String,
+    total_earnings: String,
     total_slashed: Vec<TokenAmount>,
     hardware_requirement: MinHardware,
     min_stake: Vec<TokenAmount>,
@@ -205,8 +205,18 @@ async fn recompute_single_market_response<'a>(
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
 ) -> Option<SingleMarketResponse> {
-    let median_cost = local_market_store.get_median_proof_cost_market_wise(&market_id);
-    let median_proof_time = local_market_store.get_median_proof_time_market_wise(&market_id);
+    let marketmetadata = local_market_store.get_market_by_market_id(&market_id);
+
+    if marketmetadata.is_none() {
+        return None;
+    }
+
+    let median_cost = local_market_store
+        .get_median_proof_cost_market_wise(&market_id)
+        .to_string();
+    let median_proof_time = local_market_store
+        .get_median_proof_time_market_wise(&market_id)
+        .to_string();
     let registered_generators = local_generator_store.get_all_by_market_id(&market_id);
 
     let local_generator_store_arc = Arc::new(local_generator_store.clone());
@@ -225,7 +235,8 @@ async fn recompute_single_market_response<'a>(
         slashing_penalty: slashing_penalty.clone(),
         total_earnings: local_market_store
             .get_earnings(&market_id)
-            .unwrap_or_default(),
+            .unwrap_or_default()
+            .to_string(),
         total_slashed: registered_generators
             .into_par_iter()
             .map(|elem| {

@@ -238,7 +238,7 @@ impl LogParser {
                 *self.start_block.write().await = start_block;
                 continue;
             }
-            
+
             matches_upto = match self.create_match(end_block).await {
                 Ok(upto) => {
                     log::info!("Completed match assignment upto: {}", upto);

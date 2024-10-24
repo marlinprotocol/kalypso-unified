@@ -1,7 +1,9 @@
 use super::cache::CachedResponse;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::WelcomeResponse;
-use crate::utility::{address_to_string, TokenAmount, TokenTracker, POND};
+use crate::utility::{
+    address_to_string, TokenAmount, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_TWO,
+};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
@@ -60,9 +62,9 @@ impl Default for GeneratorMeta {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Market {
+    id: String,
     name: String,
     token: Vec<String>,
-    id: String,
 }
 
 pub async fn get_generators_all(
@@ -163,7 +165,10 @@ async fn recompute_generator_response<'a>(
         for info_per_market in &all_markets_of_generator {
             let market = Market {
                 name: info_per_market.market_id.to_string(),
-                token: vec![POND.to_string()],
+                token: vec![
+                    address_to_string(&TEST_TOKEN_ADDRESS_ONE),
+                    address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                ],
                 id: info_per_market.market_id.to_string(),
             };
             markets.push(market);
