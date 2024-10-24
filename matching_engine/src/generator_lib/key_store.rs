@@ -6,8 +6,24 @@ use std::collections::HashMap;
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
 pub struct Key {
     pub address: Address,
-    pub key_index: u64,
-    pub ecies_pub_key: Option<Bytes>,
+    key_index: u64,
+    ecies_pub_key: Option<Bytes>,
+}
+
+impl Key {
+    pub fn ecies_pub_key(&self) -> Option<Bytes> {
+        self.ecies_pub_key.clone()
+    }
+}
+
+impl Key {
+    pub fn new(address: Address, key_index: u64, ecies_pub_key: Option<Bytes>) -> Self {
+        Self {
+            address,
+            key_index,
+            ecies_pub_key,
+        }
+    }
 }
 
 #[derive(Debug)]

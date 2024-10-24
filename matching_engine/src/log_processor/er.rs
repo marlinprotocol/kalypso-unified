@@ -118,11 +118,7 @@ pub async fn process_entity_key_registry_logs(
                             );
                         }
                         None => {
-                            let key = key_store::Key {
-                                address: user,
-                                key_index,
-                                ecies_pub_key: Some((*pub_key_array).into()),
-                            };
+                            let key = key_store::Key::new(user, key_index, Some((*pub_key_array).into()));
                             key_store.insert(key.address, key_index, key);
                         }
                     }
@@ -135,11 +131,7 @@ pub async fn process_entity_key_registry_logs(
                             key_store.update_pub_key(&user, key_index, None);
                         }
                         None => {
-                            let key = key_store::Key {
-                                address: user,
-                                key_index,
-                                ecies_pub_key: None,
-                            };
+                            let key = key_store::Key::new(user, key_index, None);
                             key_store.insert(user, key_index, key);
                         }
                     }

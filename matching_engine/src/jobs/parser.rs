@@ -418,7 +418,7 @@ impl LogParser {
                 let generator_ecies_pub_key = key_store
                     .get_by_address(&idle_generator.address, idle_generator.market_id.as_u64())
                     .unwrap()
-                    .ecies_pub_key
+                    .ecies_pub_key()
                     .clone()
                     .unwrap()
                     .to_vec();
