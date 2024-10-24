@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::log_processor::constants;
-use crate::utility::{TokenTracker, TEST_TOKEN_ADDRESS};
+use crate::utility::{TokenTracker, TEST_TOKEN_ADDRESS_ONE};
 
 pub async fn process_generator_registry_logs(
     logs: Vec<Log>,
@@ -122,7 +122,7 @@ pub async fn process_generator_registry_logs(
                 reward_address: generator_data.0,
                 total_stake: {
                     let mut total_stake = TokenTracker::new();
-                    total_stake.add_token(&TEST_TOKEN_ADDRESS, &stake);
+                    total_stake.add_token(&TEST_TOKEN_ADDRESS_ONE, &stake);
                     total_stake
                 },
                 sum_of_compute_allocations: 0.into(),
@@ -280,7 +280,7 @@ pub async fn process_generator_registry_logs(
             let address = added_stake_log.generator;
             let amount = added_stake_log.amount;
 
-            generator_store.add_extra_stake(&address, &TEST_TOKEN_ADDRESS, &amount);
+            generator_store.add_extra_stake(&address, &TEST_TOKEN_ADDRESS_ONE, &amount);
 
             continue;
         }
@@ -320,7 +320,7 @@ pub async fn process_generator_registry_logs(
             let address = remove_stake_log.generator;
             let amount = remove_stake_log.amount;
 
-            generator_store.remove_stake(&address, &TEST_TOKEN_ADDRESS, &amount);
+            generator_store.remove_stake(&address, &TEST_TOKEN_ADDRESS_ONE, &amount);
             generator_store.resume_assignments_accross_all_markets(&address);
             generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
 
@@ -396,7 +396,7 @@ pub async fn process_generator_registry_logs(
             let address = stake_lock_logs.generator;
             let stake_locked = stake_lock_logs.stake;
 
-            generator_store.update_on_stake_locked(&address, &TEST_TOKEN_ADDRESS, stake_locked);
+            generator_store.update_on_stake_locked(&address, &TEST_TOKEN_ADDRESS_ONE, stake_locked);
             continue;
         }
 
@@ -422,7 +422,11 @@ pub async fn process_generator_registry_logs(
             log::warn!("Stake Lock Released: {:?}", stake_lock_logs);
             let address = stake_lock_logs.generator;
             let stake_released = stake_lock_logs.stake;
-            generator_store.update_on_stake_released(&address, &TEST_TOKEN_ADDRESS, stake_released);
+            generator_store.update_on_stake_released(
+                &address,
+                &TEST_TOKEN_ADDRESS_ONE,
+                stake_released,
+            );
             continue;
         }
 
@@ -449,7 +453,7 @@ pub async fn process_generator_registry_logs(
             let address = stake_slash_logs.generator;
             let stake_slashed = stake_slash_logs.stake;
 
-            generator_store.remove_stake(&address, &TEST_TOKEN_ADDRESS, &stake_slashed);
+            generator_store.remove_stake(&address, &TEST_TOKEN_ADDRESS_ONE, &stake_slashed);
             continue;
         }
 

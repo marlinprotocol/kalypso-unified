@@ -630,7 +630,10 @@ impl GeneratorStore {
 mod tests {
     use crate::{
         generator_lib::generator_helper::select_idle_generators,
-        utility::{TokenTracker, TEST_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS_STRING},
+        utility::{
+            TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_ONE_STRING,
+            TEST_TOKEN_ADDRESS_TWO, TEST_TOKEN_ADDRESS_TWO_STRING,
+        },
     };
 
     use super::{Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore};
@@ -650,14 +653,14 @@ mod tests {
             address: Address::random(),
             reward_address: Address::random(),
             total_stake: TokenTracker::from_address_string_and_dec_string(
-                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["123123".into()],
             )
             .unwrap(),
             sum_of_compute_allocations: U256::from_dec_str("12312312").unwrap(),
             compute_consumed: U256::from_dec_str("12312").unwrap(),
             stake_locked: TokenTracker::from_address_string_and_dec_string(
-                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["123123".into()],
             )
             .unwrap(),
@@ -684,7 +687,7 @@ mod tests {
         assert_eq!(
             random_generator.total_stake,
             TokenTracker::from_address_string_and_dec_string(
-                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["100".into()],
             )
             .unwrap()
@@ -717,7 +720,7 @@ mod tests {
 
         generator_store.add_extra_stake(
             &random_generator.address,
-            &TEST_TOKEN_ADDRESS,
+            &TEST_TOKEN_ADDRESS_ONE,
             &U256::from_dec_str("5").unwrap(),
         );
 
@@ -727,7 +730,7 @@ mod tests {
                 .unwrap()
                 .total_stake,
             TokenTracker::from_address_string_and_dec_string(
-                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["105".into()],
             )
             .unwrap()
@@ -735,7 +738,7 @@ mod tests {
 
         generator_store.remove_stake(
             &random_generator.address,
-            &TEST_TOKEN_ADDRESS,
+            &TEST_TOKEN_ADDRESS_ONE,
             &U256::from_dec_str("15").unwrap(),
         );
 
@@ -745,8 +748,29 @@ mod tests {
                 .unwrap()
                 .total_stake,
             TokenTracker::from_address_string_and_dec_string(
-                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["90".into()],
+            )
+            .unwrap()
+        );
+
+        generator_store.add_extra_stake(
+            &random_generator.address,
+            &TEST_TOKEN_ADDRESS_TWO,
+            &U256::from_dec_str("20").unwrap(),
+        );
+
+        assert_eq!(
+            generator_store
+                .get_by_address(&random_generator.address)
+                .unwrap()
+                .total_stake,
+            TokenTracker::from_address_string_and_dec_string(
+                vec![
+                    TEST_TOKEN_ADDRESS_ONE_STRING.to_string(),
+                    TEST_TOKEN_ADDRESS_TWO_STRING.to_string()
+                ],
+                vec!["90".into(), "20".into()],
             )
             .unwrap()
         );
@@ -998,7 +1022,7 @@ mod tests {
                 );
                 generator_store.update_on_stake_locked(
                     &idle_generator.address,
-                    &TEST_TOKEN_ADDRESS,
+                    &TEST_TOKEN_ADDRESS_ONE,
                     U256::from_dec_str(stake_locked_on_request).unwrap(),
                 );
             }
@@ -1059,7 +1083,7 @@ mod tests {
                 address: Address::random(),
                 reward_address: Address::random(),
                 total_stake: TokenTracker::from_address_string_and_dec_string(
-                    vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                    vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                     vec![default_total_stake.clone()],
                 )
                 .unwrap(),
@@ -1067,7 +1091,7 @@ mod tests {
                     .unwrap(),
                 compute_consumed: U256::from_dec_str("0").unwrap(),
                 stake_locked: TokenTracker::from_address_string_and_dec_string(
-                    vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                    vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                     vec!["0".into()],
                 )
                 .unwrap(),
