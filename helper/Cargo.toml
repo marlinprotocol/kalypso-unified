@@ -24,3 +24,8 @@ serde_json = "1.0"
 validator = { version = "0.18.1", features = ["derive"] }
 rustls = "0.20"
 tokio = { version = "1", features = ["full"] }
+actix-cors = {version = "0.7.0", optional=true }
+
+[features]
+default = []
+enable_cors = ["actix-cors"]

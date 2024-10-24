@@ -14,15 +14,15 @@ use super::key_store::KeyStore;
 #[derive(Debug, Clone)]
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
-    generators: HashMap<Address, Generator>,
-    generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>,
-    state_index: HashMap<GeneratorState, Vec<(Address, U256)>>,
-    address_index: HashMap<Address, Vec<U256>>,
-    earnings: HashMap<Address, U256>, // address to usdc earning
-    earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // address to market to usdc earning
-    slashings: HashMap<Address, U256>,
-    slashings_per_market: HashMap<Address, HashMap<U256, U256>>,
-    slashing_records: HashMap<Address, Vec<SlashingRecord>>,
+    generators: HashMap<Address, Generator>, // Generator -> Details
+    generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>, //[Generator, MarketId] -> MarketWiseInfo
+    state_index: HashMap<GeneratorState, Vec<(Address, U256)>>, // State -> [Generator, MarketId]
+    address_index: HashMap<Address, Vec<U256>>, // Generator -> [MarketId] participations
+    earnings: HashMap<Address, U256>,           // Generator -> TotalEarnings
+    earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
+    slashings: HashMap<Address, U256>,                          // Generator -> Total Slashings
+    slashings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> slashings per market
+    slashing_records: HashMap<Address, Vec<SlashingRecord>>,     // Generator -> Slashing Record
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
