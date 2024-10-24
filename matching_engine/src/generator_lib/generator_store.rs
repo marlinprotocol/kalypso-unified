@@ -7,6 +7,8 @@ use tokio::sync::RwLockReadGuard;
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
+use crate::utility::{AddressTokenPair, TokenTracker};
+
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
@@ -20,9 +22,9 @@ pub struct GeneratorStore {
     address_index: HashMap<Address, Vec<U256>>, // Generator -> [MarketId] participations
     earnings: HashMap<Address, U256>,           // Generator -> TotalEarnings
     earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
-    slashings: HashMap<Address, U256>,                          // Generator -> Total Slashings
-    slashings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> slashings per market
-    slashing_records: HashMap<Address, Vec<SlashingRecord>>,     // Generator -> Slashing Record
+    slashings: HashMap<Address, TokenTracker>,                  // Generator -> Total Slashings
+    slashings_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
+    slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -32,14 +34,14 @@ pub struct SlashingRecord {
     pub slashing_tx: String,
     pub price_offered: U256,
     pub expected_time: U256,
-    pub slashing_penalty: U256,
+    pub slashing_penalty: AddressTokenPair,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
 pub struct GeneratorInfoPerMarket {
     pub address: Address,
     pub market_id: U256,
-    pub total_stake: U256,
+    // pub total_stake: TokenTracker,
     pub compute_required_per_request: U256,
     pub proof_generation_cost: U256,
     pub proposed_time: U256,
@@ -53,10 +55,10 @@ pub struct GeneratorInfoPerMarket {
 pub struct Generator {
     pub address: Address,
     pub reward_address: Address,
-    pub total_stake: U256,
+    pub total_stake: TokenTracker,
     pub sum_of_compute_allocations: U256,
     pub compute_consumed: U256,
-    pub stake_locked: U256,
+    pub stake_locked: TokenTracker,
     pub active_market_places: U256,
     pub declared_compute: U256,
     pub intended_stake_util: U256,
@@ -158,19 +160,14 @@ impl GeneratorStore {
         self.generators.remove(address);
     }
 
-    pub fn add_extra_stake(&mut self, address: &Address, amount: &U256) {
-        if let Some(generator) = self.generators.get_mut(address) {
-            generator.total_stake = generator.total_stake.add(amount);
-
-            if let Some(markets) = self.address_index.get(address) {
-                for elem in markets {
-                    if let Some(generator_market) =
-                        self.generator_markets.get_mut(&(*address, *elem))
-                    {
-                        generator_market.total_stake = generator.total_stake;
-                    }
-                }
-            }
+    pub fn add_extra_stake(
+        &mut self,
+        generator_address: &Address,
+        token_address: &Address,
+        amount: &U256,
+    ) {
+        if let Some(generator) = self.generators.get_mut(generator_address) {
+            generator.total_stake.add_token(token_address, amount);
         }
     }
 
@@ -180,19 +177,16 @@ impl GeneratorStore {
         }
     }
 
-    pub fn remove_stake(&mut self, address: &Address, amount: &U256) {
-        if let Some(generator) = self.generators.get_mut(address) {
-            generator.total_stake = generator.total_stake.sub(amount);
-
-            if let Some(markets) = self.address_index.get(address) {
-                for elem in markets {
-                    if let Some(generator_market) =
-                        self.generator_markets.get_mut(&(*address, *elem))
-                    {
-                        generator_market.total_stake = generator.total_stake;
-                    }
-                }
-            }
+    pub fn remove_stake(
+        &mut self,
+        generator_address: &Address,
+        token_address: &Address,
+        amount: &U256,
+    ) {
+        if let Some(generator) = self.generators.get_mut(generator_address) {
+            generator
+                .total_stake
+                .sub_token_saturating(token_address, amount);
         }
     }
 
@@ -265,43 +259,79 @@ impl GeneratorStore {
 
     pub fn update_on_slashing(
         &mut self,
-        address: &Address,
+        generator_address: &Address,
+        token_address: &Address,
+        ask_id: &U256,
         market_id: &U256,
         slashing: &U256,
-        slashing_record: SlashingRecord,
+        slashing_tx: String,
+        price_offered: &U256,
+        deadline: &U256,
     ) {
-        if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
+        if let Some(generator_market) = self
+            .generator_markets
+            .get_mut(&(*generator_address, *market_id))
+        {
             generator_market.active_requests.sub_assign(U256::one());
             generator_market.proofs_slashed.add_assign(U256::one());
         }
 
         self.slashings
-            .entry(*address)
-            .and_modify(|e| *e = e.saturating_add(*slashing))
-            .or_insert(*slashing);
+            .entry(*generator_address)
+            .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing entry
+            .or_insert({
+                let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
+                tracker.add_token(token_address, slashing); // Add the slashing amount
+                tracker
+            });
 
         self.slashings_per_market
-            .entry(*address)
-            .or_insert_with(HashMap::new)
+            .entry(*generator_address)
+            .or_insert_with(HashMap::new) // Create the inner HashMap if it doesn't exist
             .entry(*market_id)
-            .and_modify(|e| *e = e.saturating_add(*slashing))
-            .or_insert(*slashing);
+            .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing TokenTracker
+            .or_insert({
+                let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
+                tracker.add_token(token_address, slashing); // Add the slashing amount
+                tracker
+            });
 
         self.slashing_records
-            .entry(*address)
+            .entry(*generator_address)
             .or_insert_with(Vec::new)
-            .push(slashing_record);
+            .push(SlashingRecord {
+                ask_id: ask_id.clone(),
+                market_id: market_id.clone(),
+                slashing_tx,
+                price_offered: price_offered.clone(),
+                expected_time: deadline.clone(),
+                slashing_penalty: (token_address.clone(), slashing.clone()),
+            });
     }
 
-    pub fn update_on_stake_locked(&mut self, address: &Address, stake_locked: U256) {
-        if let Some(generator) = self.generators.get_mut(address) {
-            generator.stake_locked.add_assign(stake_locked);
+    pub fn update_on_stake_locked(
+        &mut self,
+        generator_address: &Address,
+        token_address: &Address,
+        stake_locked: U256,
+    ) {
+        if let Some(generator) = self.generators.get_mut(generator_address) {
+            generator
+                .stake_locked
+                .add_token(token_address, &stake_locked);
         }
     }
 
-    pub fn update_on_stake_released(&mut self, address: &Address, stake_released: U256) {
-        if let Some(generator) = self.generators.get_mut(address) {
-            generator.stake_locked.sub_assign(stake_released);
+    pub fn update_on_stake_released(
+        &mut self,
+        generator_address: &Address,
+        token_address: &Address,
+        stake_released: U256,
+    ) {
+        if let Some(generator) = self.generators.get_mut(generator_address) {
+            generator
+                .stake_locked
+                .sub_token_saturating(token_address, &stake_released);
         }
     }
 
@@ -367,10 +397,13 @@ impl GeneratorStore {
             .map(|generator| generator.declared_compute.sub(generator.compute_consumed))
     }
 
-    pub fn get_available_stake(&self, address: Address) -> Option<U256> {
-        self.generators
-            .get(&address)
-            .map(|generator| generator.total_stake.sub(generator.stake_locked))
+    pub fn get_available_stake(&self, generator_address: Address) -> Option<TokenTracker> {
+        self.generators.get(&generator_address).map(|generator| {
+            generator
+                .total_stake
+                .clone()
+                .sub(generator.stake_locked.clone())
+        })
     }
 
     pub fn get_all_by_market_id(&self, market_id: &U256) -> Option<Vec<GeneratorInfoPerMarket>> {
@@ -482,7 +515,7 @@ impl GeneratorStore {
     pub fn filter_by_available_stake(
         &self,
         generator_query: GeneratorQueryResult,
-        min_stake: U256,
+        min_stake: Vec<AddressTokenPair>, // Now accepting a vector of AddressTokenPairs
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
 
@@ -492,11 +525,18 @@ impl GeneratorStore {
             .filter_map(|elem| {
                 // Try to get the generator from the store
                 if let Some(generator) = self.generators.get(&elem.address) {
-                    let remaining_stake = generator.total_stake.sub(generator.stake_locked);
+                    let remaining_stake = generator
+                        .total_stake
+                        .clone()
+                        .sub(generator.stake_locked.clone());
 
-                    // Check if the remaining stake is greater than or equal to the minimum stake
-                    if remaining_stake.ge(&min_stake) {
-                        // If so, retrieve the generator market and return it
+                    // Check if at least one of the AddressTokenPairs in min_stake meets the condition
+                    let is_valid = min_stake
+                        .iter()
+                        .any(|min_stake_pair| remaining_stake.has_more_than_or_eq(min_stake_pair));
+
+                    // If valid, retrieve the generator market and return it
+                    if is_valid {
                         self.generator_markets.get(&(elem.address, elem.market_id))
                     } else {
                         None // Otherwise, filter it out
@@ -553,13 +593,17 @@ impl GeneratorStore {
             .and_then(|market_earnings| market_earnings.get(market_id).cloned())
     }
 
-    pub fn get_total_slashing(&self, address: &Address) -> Option<U256> {
-        self.slashings.get(address).cloned()
+    pub fn get_total_slashing(&self, generator_address: &Address) -> Option<TokenTracker> {
+        self.slashings.get(generator_address).cloned()
     }
 
     // Get earnings for a specific address and market
     #[allow(unused)]
-    pub fn get_slashing_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
+    pub fn get_slashing_per_market(
+        &self,
+        address: &Address,
+        market_id: &U256,
+    ) -> Option<TokenTracker> {
         self.slashings_per_market
             .get(address)
             .and_then(|market_earnings| market_earnings.get(market_id).cloned())
@@ -577,7 +621,10 @@ impl GeneratorStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::generator_lib::generator_helper::select_idle_generators;
+    use crate::{
+        generator_lib::generator_helper::select_idle_generators,
+        utility::{TokenTracker, TEST_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS_STRING},
+    };
 
     use super::{Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore};
     use ethers::{
@@ -595,10 +642,18 @@ mod tests {
         let generator1 = Generator {
             address: Address::random(),
             reward_address: Address::random(),
-            total_stake: U256::from_dec_str("123123").unwrap(),
+            total_stake: TokenTracker::from_address_string_and_dec_string(
+                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec!["123123".into()],
+            )
+            .unwrap(),
             sum_of_compute_allocations: U256::from_dec_str("12312312").unwrap(),
             compute_consumed: U256::from_dec_str("12312").unwrap(),
-            stake_locked: U256::from_dec_str("12312").unwrap(),
+            stake_locked: TokenTracker::from_address_string_and_dec_string(
+                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec!["123123".into()],
+            )
+            .unwrap(),
             active_market_places: U256::from_dec_str("12").unwrap(),
             declared_compute: U256::from_dec_str("123123").unwrap(),
             intended_stake_util: U256::from_dec_str("123123").unwrap(),
@@ -621,7 +676,11 @@ mod tests {
         // Perform your stake and compute operations on `generator`
         assert_eq!(
             random_generator.total_stake,
-            U256::from_dec_str("100").unwrap()
+            TokenTracker::from_address_string_and_dec_string(
+                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec!["100".into()],
+            )
+            .unwrap()
         );
         assert_eq!(
             random_generator.sum_of_compute_allocations,
@@ -649,19 +708,27 @@ mod tests {
             U256::from_dec_str("99").unwrap()
         );
 
-        generator_store
-            .add_extra_stake(&random_generator.address, &U256::from_dec_str("5").unwrap());
+        generator_store.add_extra_stake(
+            &random_generator.address,
+            &TEST_TOKEN_ADDRESS,
+            &U256::from_dec_str("5").unwrap(),
+        );
 
         assert_eq!(
             generator_store
                 .get_by_address(&random_generator.address)
                 .unwrap()
                 .total_stake,
-            U256::from_dec_str("105").unwrap()
+            TokenTracker::from_address_string_and_dec_string(
+                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec!["105".into()],
+            )
+            .unwrap()
         );
 
         generator_store.remove_stake(
             &random_generator.address,
+            &TEST_TOKEN_ADDRESS,
             &U256::from_dec_str("15").unwrap(),
         );
 
@@ -670,7 +737,11 @@ mod tests {
                 .get_by_address(&random_generator.address)
                 .unwrap()
                 .total_stake,
-            U256::from_dec_str("90").unwrap()
+            TokenTracker::from_address_string_and_dec_string(
+                vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                vec!["90".into()],
+            )
+            .unwrap()
         );
     }
 
@@ -679,11 +750,8 @@ mod tests {
         let mut generator_store = create_new_store_with_generators(4, None, None, None);
         let random_generator = get_random_generator(&generator_store);
 
-        let random_generator_info_per_market = get_random_market_info_for_generator(
-            &random_generator.address,
-            random_generator.total_stake,
-            "1".into(),
-        );
+        let random_generator_info_per_market =
+            get_random_market_info_for_generator(&random_generator.address, "1".into());
         generator_store.insert_markets(random_generator_info_per_market);
 
         let generator_info_per_market = generator_store.get_by_address_and_market(
@@ -724,11 +792,8 @@ mod tests {
         let all_generators = { generator_store.clone().all_generators_address() };
         for generator in all_generators {
             let generator = generator_store.get_by_address(&generator).unwrap();
-            let random_generator_info_per_market = get_random_market_info_for_generator(
-                &generator.address,
-                generator.total_stake,
-                "1".into(),
-            );
+            let random_generator_info_per_market =
+                get_random_market_info_for_generator(&generator.address, "1".into());
             generator_store.insert_markets(random_generator_info_per_market);
         }
 
@@ -771,11 +836,8 @@ mod tests {
         let all_generators = { generator_store.clone().all_generators_address() };
         for generator in all_generators {
             let generator = generator_store.get_by_address(&generator).unwrap();
-            let random_generator_info_per_market = get_random_market_info_for_generator(
-                &generator.address,
-                generator.total_stake,
-                "1".into(),
-            );
+            let random_generator_info_per_market =
+                get_random_market_info_for_generator(&generator.address, "1".into());
             generator_store.insert_markets(random_generator_info_per_market);
         }
 
@@ -818,11 +880,8 @@ mod tests {
         let all_generators = { generator_store.clone().all_generators_address() };
         for generator in all_generators {
             let generator = generator_store.get_by_address(&generator).unwrap();
-            let random_generator_info_per_market = get_random_market_info_for_generator(
-                &generator.address,
-                generator.total_stake,
-                "1".into(),
-            );
+            let random_generator_info_per_market =
+                get_random_market_info_for_generator(&generator.address, "1".into());
             generator_store.insert_markets(random_generator_info_per_market);
         }
 
@@ -881,11 +940,8 @@ mod tests {
                 let generator = generator_store.get_by_address(&generator).unwrap();
 
                 // Now drop the immutable borrow by extracting necessary info
-                let random_generator_info_per_market = get_random_market_info_for_generator(
-                    &generator.address,
-                    generator.total_stake,
-                    market,
-                );
+                let random_generator_info_per_market =
+                    get_random_market_info_for_generator(&generator.address, market);
 
                 // Second borrow: insert markets
                 generator_store.insert_markets(random_generator_info_per_market);
@@ -935,6 +991,7 @@ mod tests {
                 );
                 generator_store.update_on_stake_locked(
                     &idle_generator.address,
+                    &TEST_TOKEN_ADDRESS,
                     U256::from_dec_str(stake_locked_on_request).unwrap(),
                 );
             }
@@ -951,13 +1008,11 @@ mod tests {
 
     fn get_random_market_info_for_generator(
         generator: &H160,
-        total_stake: U256,
         market_id: String,
     ) -> GeneratorInfoPerMarket {
         GeneratorInfoPerMarket {
             address: *generator,
             market_id: U256::from_dec_str(&market_id).unwrap(),
-            total_stake,
             compute_required_per_request: U256::from_dec_str("1").unwrap(),
             proof_generation_cost: U256::from_dec_str("5").unwrap(),
             proposed_time: U256::from_dec_str("10").unwrap(),
@@ -996,11 +1051,19 @@ mod tests {
             let generator = Generator {
                 address: Address::random(),
                 reward_address: Address::random(),
-                total_stake: U256::from_dec_str(&default_total_stake).unwrap(),
+                total_stake: TokenTracker::from_address_string_and_dec_string(
+                    vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                    vec![default_total_stake.clone()],
+                )
+                .unwrap(),
                 sum_of_compute_allocations: U256::from_dec_str(&default_sum_of_compute_allocations)
                     .unwrap(),
                 compute_consumed: U256::from_dec_str("0").unwrap(),
-                stake_locked: U256::from_dec_str("0").unwrap(),
+                stake_locked: TokenTracker::from_address_string_and_dec_string(
+                    vec![TEST_TOKEN_ADDRESS_STRING.to_string()],
+                    vec!["0".into()],
+                )
+                .unwrap(),
                 active_market_places: U256::from_dec_str("0").unwrap(),
                 declared_compute: U256::from_dec_str(&default_declared_compute).unwrap(),
                 intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),

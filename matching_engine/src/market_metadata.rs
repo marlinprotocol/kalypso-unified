@@ -3,14 +3,17 @@ use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::counters::median_counter::MedianCounter;
+use crate::{
+    counters::median_counter::MedianCounter,
+    utility::{AddressTokenPair, TokenTracker},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
 pub struct MarketMetadata {
     pub market_id: U256,
     pub verifier: Address,
     pub prover_image_id: [u8; 32],
-    pub slashing_penalty: U256,
+    pub slashing_penalty: TokenTracker,
     pub activation_block: U256,
     pub ivs_image_id: [u8; 32],
     pub metadata: Bytes,
@@ -111,11 +114,14 @@ impl MarketMetadataStore {
         self.market_by_id.get(market_id).cloned()
     }
 
-    pub fn get_slashing_penalty_by_market_id(&self, market_id: &U256) -> Option<U256> {
+    pub fn get_slashing_penalty_by_market_id(
+        &self,
+        market_id: &U256,
+    ) -> Option<Vec<AddressTokenPair>> {
         // Safely access market metadata to retrieve the slashing penalty
         self.market_by_id
             .get(market_id)
-            .map(|metadata| metadata.slashing_penalty)
+            .map(|metadata| metadata.slashing_penalty.to_address_token_pair())
     }
 
     #[allow(unused)]

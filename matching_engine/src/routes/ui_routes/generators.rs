@@ -1,7 +1,7 @@
 use super::cache::CachedResponse;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::WelcomeResponse;
-use crate::utility::{address_to_string, POND};
+use crate::utility::{address_to_string, TokenAmount, TokenTracker, POND};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
@@ -56,12 +56,6 @@ impl Default for GeneratorMeta {
             twitter: Some("todo t!".into()),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct TokenAmount {
-    token: String,
-    amount: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -159,22 +153,10 @@ async fn recompute_generator_response<'a>(
 
     // Step 2: Process the data outside the locked scope using explicit loops
     let mut result = Vec::with_capacity(generator_details.len());
-    let mut total_pond_stake = U256::zero();
+    let mut total_stake = TokenTracker::new();
 
     for (_, operator_data, all_markets_of_generator, total_earning) in generator_details {
-        total_pond_stake += operator_data.total_stake;
-
-        // Construct the delegations
-        let delegations = vec![TokenAmount {
-            token: POND.to_string(),
-            amount: operator_data.total_stake.to_string(),
-        }];
-
-        // Construct the current stake
-        let current_stake = vec![TokenAmount {
-            token: POND.to_string(),
-            amount: operator_data.total_stake.to_string(),
-        }];
+        total_stake += operator_data.clone().total_stake;
 
         // Construct the markets
         let mut markets = Vec::with_capacity(all_markets_of_generator.len());
@@ -198,6 +180,12 @@ async fn recompute_generator_response<'a>(
             pending_proofs += info.active_requests;
         }
 
+        let delegations = operator_data
+            .total_stake
+            .clone()
+            .to_token_amount()
+            .to_owned();
+        let current_stake = delegations.clone();
         // Construct the Operator struct
         let operator = Operator {
             name: Some(address_to_string(&operator_data.address)),
@@ -222,7 +210,7 @@ async fn recompute_generator_response<'a>(
         registered_generators,
         total_staked: vec![TokenAmount {
             token: POND.to_string(),
-            amount: total_pond_stake.to_string(),
+            amount: total_stake.to_string(),
         }],
     }
 }

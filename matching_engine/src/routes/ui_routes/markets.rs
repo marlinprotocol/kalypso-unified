@@ -1,7 +1,7 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
 use crate::models::WelcomeResponse;
-use crate::utility::random_usize;
+use crate::utility::{random_usize, TokenAmount};
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
@@ -29,12 +29,6 @@ pub struct Market {
     total_earnings: String,
     slashing_penalty: Vec<TokenAmount>,
     status: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct TokenAmount {
-    token: String,
-    amount: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

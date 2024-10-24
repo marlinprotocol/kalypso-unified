@@ -5,6 +5,7 @@ use crate::utility::address_to_string;
 use crate::utility::bytes_to_string;
 use crate::utility::random_u256;
 use crate::utility::random_usize;
+use crate::utility::TokenAmount;
 use crate::utility::POND;
 use actix_web::web;
 use actix_web::HttpResponse;
@@ -132,12 +133,6 @@ struct Market {
 struct MinHardware {
     instance_type: String,
     vcpus: usize,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct TokenAmount {
-    token: String,
-    amount: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -274,13 +269,10 @@ async fn recompute_single_generator_response<'a>(
             .get_total_earning(&generator_id)
             .unwrap_or_default()
             .to_string(),
-        total_slashed: vec![TokenAmount {
-            amount: local_generator_store
-                .get_total_slashing(&generator_id)
-                .unwrap_or_default()
-                .to_string(),
-            token: POND.to_string(),
-        }],
+        total_slashed: local_generator_store
+            .get_total_slashing(&generator_id)
+            .unwrap_or_default()
+            .to_token_amount(),
         total_delegations: vec![TokenAmount {
             token: POND.to_string(),
             amount: generator_data.total_stake.to_string(),
@@ -399,8 +391,8 @@ async fn recompute_single_generator_response<'a>(
                 price_offered: record.price_offered.to_string(),
                 expected_time: record.expected_time.to_string(),
                 slashing_penalty: TokenAmount {
-                    token: POND.to_string(),
-                    amount: record.slashing_penalty.to_string(),
+                    token: address_to_string(&record.slashing_penalty.0),
+                    amount: record.slashing_penalty.1.to_string(),
                 },
             })
             .collect(),

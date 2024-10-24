@@ -369,7 +369,7 @@ impl LogParser {
                 }
             }
 
-            if let Some(&cached_stake_value) = cached_stake.get(&idle_generator.address) {
+            if let Some(cached_stake_value) = cached_stake.get(&idle_generator.address).cloned() {
                 let market_id = random_pending_ask.market_id;
                 let stash_required = {
                     self.shared_market_store
@@ -381,9 +381,9 @@ impl LogParser {
                 };
 
                 log::info!(
-                    "Generator: {}, Stask available: {}, vs stash required: {}",
+                    "Generator: {}, Stash available: {}, vs stash required: {}",
                     idle_generator.address,
-                    cached_stake_value,
+                    cached_stake_value.to_string(),
                     stash_required
                 );
 

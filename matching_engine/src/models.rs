@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ask_lib::ask_status::{AskState, LocalAskStatus},
     generator_lib::generator_state::GeneratorState,
+    utility::TokenTracker,
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -80,8 +81,8 @@ pub struct AskInfoToSend {
 #[derive(Serialize, Deserialize)]
 pub struct GeneratorInfo {
     pub generator_address: Address,
-    pub stake_locked: U256,
-    pub total_stake: U256,
+    pub stake_locked: TokenTracker,
+    pub total_stake: TokenTracker,
     pub compute_consumed: U256,
     pub declared_compute: U256,
     pub compute_required_per_request: U256,

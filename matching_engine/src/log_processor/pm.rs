@@ -3,8 +3,9 @@ use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
 use crate::utility::tx_to_string;
+use crate::utility::TokenTracker;
+use crate::utility::TEST_TOKEN_ADDRESS;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
-use generator_store::SlashingRecord;
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -235,7 +236,11 @@ pub async fn process_proof_market_place_logs(
                 market_id,
                 verifier: market.0,
                 prover_image_id: market.1,
-                slashing_penalty: market.2,
+                slashing_penalty: {
+                    let mut slashing_penalty = TokenTracker::new();
+                    slashing_penalty.add_token(&TEST_TOKEN_ADDRESS, &market.2);
+                    slashing_penalty
+                },
                 activation_block: market.3,
                 ivs_image_id: market.4,
                 metadata: market.6,
@@ -340,20 +345,22 @@ pub async fn process_proof_market_place_logs(
             local_ask_store.remove_ask_only_if_completed(&ask_id);
 
             {
-                let sp = market_data.unwrap().slashing_penalty;
-                generator_store.write().await.update_on_slashing(
-                    &generator_address,
-                    &ask_data.0.market_id,
-                    &sp,
-                    SlashingRecord {
-                        ask_id,
-                        market_id: ask.market_id,
-                        slashing_tx: tx_to_string(&log.transaction_hash.unwrap()),
-                        price_offered: ask.reward,
-                        expected_time: ask.deadline,
-                        slashing_penalty: sp,
-                    },
-                );
+                for (slashing_token, slashing_amount) in market_data
+                    .unwrap()
+                    .slashing_penalty
+                    .to_address_token_pair()
+                {
+                    generator_store.write().await.update_on_slashing(
+                        &generator_address,
+                        &slashing_token,
+                        &ask_id,
+                        &ask.market_id,
+                        &slashing_amount,
+                        tx_to_string(&log.transaction_hash.unwrap()),
+                        &ask.reward,
+                        &ask.deadline,
+                    );
+                }
             }
 
             log::warn!("Complete Proof not Generated");
