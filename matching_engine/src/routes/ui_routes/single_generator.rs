@@ -2,6 +2,7 @@ use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
+use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
 use crate::utility::random_u256;
 use crate::utility::random_usize;
@@ -273,10 +274,7 @@ async fn recompute_single_generator_response<'a>(
             .get_total_slashing(&generator_id)
             .unwrap_or_default()
             .to_token_amount(),
-        total_delegations: vec![TokenAmount {
-            token: POND.to_string(),
-            amount: generator_data.total_stake.to_string(),
-        }],
+        total_delegations: generator_data.total_stake.to_token_amount(),
         markets: all_markets_of_generator
             .clone()
             .into_iter()
@@ -390,10 +388,7 @@ async fn recompute_single_generator_response<'a>(
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),
                 expected_time: record.expected_time.to_string(),
-                slashing_penalty: TokenAmount {
-                    token: address_to_string(&record.slashing_penalty.0),
-                    amount: record.slashing_penalty.1.to_string(),
-                },
+                slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
             })
             .collect(),
     })

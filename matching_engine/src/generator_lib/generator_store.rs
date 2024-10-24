@@ -6,6 +6,7 @@ use tokio::sync::RwLockReadGuard;
 
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::sync::Arc;
 
 use crate::utility::{AddressTokenPair, TokenTracker};
 
@@ -23,7 +24,7 @@ pub struct GeneratorStore {
     earnings: HashMap<Address, U256>,           // Generator -> TotalEarnings
     earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
     slashings: HashMap<Address, TokenTracker>,                  // Generator -> Total Slashings
-    slashings_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
+    slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
     slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
 }
 
@@ -83,7 +84,7 @@ impl GeneratorStore {
             earnings: HashMap::new(),
             earnings_per_market: HashMap::new(),
             slashings: HashMap::new(),
-            slashings_per_market: HashMap::new(),
+            slashing_per_generator_per_market: HashMap::new(),
             slashing_records: HashMap::new(),
         }
     }
@@ -285,7 +286,7 @@ impl GeneratorStore {
                 tracker
             });
 
-        self.slashings_per_market
+        self.slashing_per_generator_per_market
             .entry(*generator_address)
             .or_insert_with(HashMap::new) // Create the inner HashMap if it doesn't exist
             .entry(*market_id)
@@ -406,17 +407,25 @@ impl GeneratorStore {
         })
     }
 
-    pub fn get_all_by_market_id(&self, market_id: &U256) -> Option<Vec<GeneratorInfoPerMarket>> {
-        let all_generators = self.clone().all_generators_address();
-        let mut generator_for_given_market = vec![];
-        for generator in all_generators {
-            let generator_info_per_market = self.get_by_address_and_market(&generator, &market_id);
-            if generator_info_per_market.is_some() {
-                generator_for_given_market.push(generator_info_per_market.unwrap().clone());
-            }
-        }
+    pub fn get_all_by_market_id(&self, market_id: &U256) -> Vec<GeneratorInfoPerMarket> {
+        // Clone self and wrap it in an Arc for thread-safe sharing
+        let self_arc = Arc::new(self.clone());
 
-        Some(generator_for_given_market)
+        // Retrieve all generator addresses
+        let all_generators = self_arc.all_generators_address();
+
+        // Process generators in parallel using Rayon
+        let generator_for_given_market: Vec<GeneratorInfoPerMarket> = all_generators
+            .par_iter()
+            .filter_map(|generator| {
+                // Clone the Arc to share ownership across threads
+                let self_clone = Arc::clone(&self_arc);
+                // Retrieve generator info for the given market
+                self_clone.get_by_address_and_market(generator, market_id)
+            })
+            .collect();
+
+        generator_for_given_market
     }
 }
 
@@ -597,16 +606,14 @@ impl GeneratorStore {
         self.slashings.get(generator_address).cloned()
     }
 
-    // Get earnings for a specific address and market
-    #[allow(unused)]
-    pub fn get_slashing_per_market(
+    pub fn get_slashing_per_generator_per_market(
         &self,
         address: &Address,
         market_id: &U256,
     ) -> Option<TokenTracker> {
-        self.slashings_per_market
+        self.slashing_per_generator_per_market
             .get(address)
-            .and_then(|market_earnings| market_earnings.get(market_id).cloned())
+            .and_then(|elem| elem.get(market_id).cloned())
     }
 
     pub fn get_slashing_records(&self, address: &Address) -> Vec<SlashingRecord> {

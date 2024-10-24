@@ -123,6 +123,13 @@ pub struct TokenAmount {
 
 pub type AddressTokenPair = (Address, U256);
 
+pub fn address_token_pair_to_token_amount(pair: AddressTokenPair) -> TokenAmount {
+    TokenAmount {
+        token: address_to_string(&pair.0),
+        amount: pair.1.to_string(),
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
 pub struct TokenTracker {
     tokens: HashMap<Address, U256>,

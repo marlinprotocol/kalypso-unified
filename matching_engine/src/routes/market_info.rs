@@ -90,12 +90,11 @@ pub async fn market_stats(
     };
 
     let generator_count = {
-        let generators = local_generator_store.get_all_by_market_id(&market_id_u256);
-        if generators.is_none() {
-            Some(0)
-        } else {
-            Some(generators.unwrap().len())
-        }
+        Some(
+            local_generator_store
+                .get_all_by_market_id(&market_id_u256)
+                .len(),
+        )
     };
 
     return Ok(HttpResponse::Ok().json(MarketStatsResponse {

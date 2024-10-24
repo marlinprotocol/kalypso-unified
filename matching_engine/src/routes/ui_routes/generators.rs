@@ -208,9 +208,6 @@ async fn recompute_generator_response<'a>(
     GeneratorResponse {
         result,
         registered_generators,
-        total_staked: vec![TokenAmount {
-            token: POND.to_string(),
-            amount: total_stake.to_string(),
-        }],
+        total_staked: total_stake.to_token_amount(),
     }
 }

@@ -173,7 +173,7 @@ async fn recompute_market_response<'a>(
             total_earnings_map.insert(market_id.clone(), total_earnings);
 
             // Extract slashing_penalty
-            let slashing_penalty = meta.slashing_penalty.to_string();
+            let slashing_penalty = meta.slashing_penalty.clone();
             slashing_penalty_map.insert(market_id.clone(), slashing_penalty);
         }
 
@@ -232,10 +232,7 @@ async fn recompute_market_response<'a>(
             median_cost_per_proof,
             failed_requests,
             total_earnings,
-            slashing_penalty: vec![TokenAmount {
-                token: "POND".to_string(),
-                amount: slashing_penalty,
-            }],
+            slashing_penalty: slashing_penalty.to_token_amount(),
             status: true, // Adjust as needed
         };
 
