@@ -48,6 +48,7 @@ pub async fn process_proof_market_place_logs(
                 .call()
                 .await
                 .unwrap();
+            let created_on: U256 = log.block_number.unwrap().as_u64().into();
 
             let mut ask_to_store = LocalAsk {
                 ask_id: parsed_ask_created_log.ask_id,
@@ -63,6 +64,7 @@ pub async fn process_proof_market_place_logs(
                 state: Some(AskState::Create),
                 generator: None,
                 invalid_secret_flag: false,
+                created_on,
             };
 
             if parsed_ask_created_log.has_private_inputs {
@@ -166,7 +168,11 @@ pub async fn process_proof_market_place_logs(
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
 
+            let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
+            local_ask_store
+                .update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
             local_ask_store.modify_state(&ask_id, AskState::Complete);
+
             let generator_address = ask_data.3;
             let proof_generator_cost = generator_store
                 .read()
@@ -176,8 +182,8 @@ pub async fn process_proof_market_place_logs(
                     generator_info.proof_generation_cost.clone()
                 });
 
-            let proof_submitted_on: U256 = log.block_number.unwrap().as_u64().into();
-            let proof_time = proof_submitted_on.saturating_sub(ask_data.0.deadline);
+            let created_on = { local_ask_store.get_by_ask_id(&ask_id).unwrap().created_on };
+            let proof_time = proof_cycle_completed_on.saturating_sub(created_on);
 
             local_ask_store.store_valid_proof(
                 &ask_id,
@@ -284,6 +290,12 @@ pub async fn process_proof_market_place_logs(
         ) {
             log::debug!("Ask has been cancelled {:?}", ask_cancelled_log.ask_id);
             let mut local_ask_store = { local_ask_store.write().await };
+
+            let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
+            local_ask_store.update_proof_proof_cycle_completed_on(
+                &ask_cancelled_log.ask_id,
+                proof_cycle_completed_on,
+            );
             local_ask_store.modify_state(&ask_cancelled_log.ask_id, AskState::Complete);
             local_ask_store.remove_ask_only_if_completed(&ask_cancelled_log.ask_id);
             continue;
@@ -304,8 +316,11 @@ pub async fn process_proof_market_place_logs(
             );
             let mut local_ask_store = { local_ask_store.write().await };
 
+            let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
+            local_ask_store
+                .update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
             local_ask_store.modify_state(&ask_id, AskState::Complete);
-            local_ask_store.note_invalid_proof(&ask_id);
+            local_ask_store.note_proof_denied(&ask_id);
 
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
@@ -359,7 +374,11 @@ pub async fn process_proof_market_place_logs(
             );
             let mut local_ask_store = { local_ask_store.write().await };
 
+            let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
+            local_ask_store
+                .update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
             local_ask_store.modify_state(&ask_id, AskState::Complete);
+            local_ask_store.note_invalid_inputs(&ask_id);
 
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();

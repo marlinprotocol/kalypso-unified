@@ -83,8 +83,8 @@ impl MatchingEngineServer {
             let matching_engine_server = App::new();
 
             #[cfg(feature = "matching_engine_enable_cors")]
-            let matching_engine_server = App::new().wrap(kalypso_helper::middlewares::dirty_cors::get_dirty_cors());
-
+            let matching_engine_server =
+                App::new().wrap(kalypso_helper::middlewares::dirty_cors::get_dirty_cors());
 
             matching_engine_server
                 .app_data(Data::new(self.shared_market_data.clone()))

@@ -1,8 +1,10 @@
 use ethers::abi::{encode, Token};
+use ethers::core::rand;
 use ethers::core::utils::hex::FromHex;
 use ethers::types::{Address, Signature, SignatureError, H160, U256};
 use ethers::utils::keccak256;
 use hex::decode;
+use rand::Rng;
 use std::error::Error;
 
 pub fn address_to_string(address: &Address) -> String {
@@ -81,4 +83,34 @@ pub fn public_key_to_address(public_key_hex: &str) -> Result<H160, hex::FromHexE
 
     // Take the last 20 bytes of the hash to get the address
     Ok(H160::from_slice(&hash[12..]))
+}
+
+pub const POND: &str = "POND";
+
+pub fn random_u256() -> U256 {
+    // Define lower and upper bounds as u128
+    const LOWER_BOUND: u128 = 10u128.pow(18);
+    const UPPER_BOUND: u128 = 10u128.pow(22);
+
+    // Calculate the range
+    let range = UPPER_BOUND - LOWER_BOUND;
+
+    // Initialize the random number generator
+    let mut rng = rand::thread_rng();
+
+    // Generate a random u128 within [0, range)
+    let rand_u128: u128 = rng.gen_range(0..range);
+
+    // Shift the random number into the desired range
+    let result_u128 = rand_u128 + LOWER_BOUND;
+
+    // Convert u128 to U256
+    let result = U256::from(result_u128);
+
+    result
+}
+
+pub fn random_usize() -> usize {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(1..=256)
 }

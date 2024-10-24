@@ -60,6 +60,18 @@ pub async fn get_ask_proof_by_ask_id(
                     proof: valid_proof.to_vec(),
                 }))
             }
+            Proof::InvalidInputAttestation => {
+                return Ok(HttpResponse::NotFound().json(GetProofResponse {
+                    status: "Invalid Inputs Detected".into(),
+                    proof: vec![],
+                }))
+            }
+            Proof::FailedProofGeneration => {
+                return Ok(HttpResponse::ExpectationFailed().json(GetProofResponse {
+                    status: "Proof Request was not completed by generator".into(),
+                    proof: vec![],
+                }))
+            }
         },
         _ => {
             return Ok(HttpResponse::NotFound().json(GetProofResponse {

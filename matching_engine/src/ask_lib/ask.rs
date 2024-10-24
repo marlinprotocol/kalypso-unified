@@ -19,6 +19,7 @@ pub struct LocalAsk {
     pub state: Option<AskState>,
     pub generator: Option<Address>,
     pub invalid_secret_flag: bool,
+    pub created_on: U256,
 }
 
 use std::{

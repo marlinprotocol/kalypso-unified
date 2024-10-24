@@ -1,7 +1,7 @@
 use super::cache::CachedResponse;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::WelcomeResponse;
-use crate::utility::address_to_string;
+use crate::utility::{address_to_string, POND};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,8 @@ use tokio::time::Duration;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct GeneratorResponse {
     result: Vec<Operator>,
+    registered_generators: usize,
+    total_staked: Vec<TokenAmount>,
 }
 
 type CachedGeneratorResponse = CachedResponse<GeneratorResponse>;
@@ -26,6 +28,7 @@ static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Operator {
     name: Option<String>,
+    details: Option<GeneratorMeta>,
     address: String,
     delegations: Vec<TokenAmount>,
     markets: Vec<Market>,
@@ -34,6 +37,25 @@ struct Operator {
     proofs_missed: String,
     pending_proofs: String,
     current_stake: Vec<TokenAmount>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct GeneratorMeta {
+    display_name: Option<String>,
+    display_description: Option<String>,
+    website: Option<String>,
+    twitter: Option<String>,
+}
+
+impl Default for GeneratorMeta {
+    fn default() -> Self {
+        Self {
+            display_name: Some("todo n!".into()),
+            display_description: Some("todo d!".into()),
+            website: Some("todo _w".into()),
+            twitter: Some("todo t!".into()),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -137,17 +159,20 @@ async fn recompute_generator_response<'a>(
 
     // Step 2: Process the data outside the locked scope using explicit loops
     let mut result = Vec::with_capacity(generator_details.len());
+    let mut total_pond_stake = U256::zero();
 
     for (_, operator_data, all_markets_of_generator, total_earning) in generator_details {
+        total_pond_stake += operator_data.total_stake;
+
         // Construct the delegations
         let delegations = vec![TokenAmount {
-            token: "POND".into(),
+            token: POND.to_string(),
             amount: operator_data.total_stake.to_string(),
         }];
 
         // Construct the current stake
         let current_stake = vec![TokenAmount {
-            token: "POND".into(),
+            token: POND.to_string(),
             amount: operator_data.total_stake.to_string(),
         }];
 
@@ -156,7 +181,7 @@ async fn recompute_generator_response<'a>(
         for info_per_market in &all_markets_of_generator {
             let market = Market {
                 name: info_per_market.market_id.to_string(),
-                token: vec!["POND".into()],
+                token: vec![POND.to_string()],
                 id: info_per_market.market_id.to_string(),
             };
             markets.push(market);
@@ -176,6 +201,7 @@ async fn recompute_generator_response<'a>(
         // Construct the Operator struct
         let operator = Operator {
             name: Some(address_to_string(&operator_data.address)),
+            details: Some(GeneratorMeta::default()),
             address: address_to_string(&operator_data.address),
             delegations,
             markets,
@@ -189,5 +215,14 @@ async fn recompute_generator_response<'a>(
         result.push(operator);
     }
 
-    GeneratorResponse { result }
+    let registered_generators = result.len();
+
+    GeneratorResponse {
+        result,
+        registered_generators,
+        total_staked: vec![TokenAmount {
+            token: POND.to_string(),
+            amount: total_pond_stake.to_string(),
+        }],
+    }
 }

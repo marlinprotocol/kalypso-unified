@@ -1,6 +1,7 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
 use crate::models::WelcomeResponse;
+use crate::utility::random_usize;
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
@@ -229,7 +230,7 @@ async fn recompute_market_response<'a>(
             name: None, // Adjust as needed
             hardware_requirement: MinHardware {
                 instance_type: "todo".into(), // Replace with actual data
-                vcpus: 1234,                  // Replace with actual data
+                vcpus: random_usize(),        // Replace with actual data
             },
             total_proofs_generated,
             requests_in_progress: requests_in_progress.to_string(),

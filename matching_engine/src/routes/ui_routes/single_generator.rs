@@ -3,6 +3,9 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 use crate::utility::bytes_to_string;
+use crate::utility::random_u256;
+use crate::utility::random_usize;
+use crate::utility::POND;
 use actix_web::web;
 use actix_web::HttpResponse;
 use ethers::types::Address;
@@ -75,6 +78,7 @@ pub struct QueryParams {
 pub struct GeneratorResponse {
     operator: Operator,
     reward_address: String,
+    kalypso_points: String,
     active_jobs: String,
     no_of_markets: String,
     total_earnings: String,
@@ -257,6 +261,7 @@ async fn recompute_single_generator_response<'a>(
             name: Some("todo".into()),
             address: address_to_string(&generator_id),
         },
+        kalypso_points: random_u256().to_string(),
         reward_address: address_to_string(&generator_data.reward_address),
         active_jobs: all_markets_of_generator
             .clone()
@@ -274,10 +279,10 @@ async fn recompute_single_generator_response<'a>(
                 .get_total_slashing(&generator_id)
                 .unwrap_or_default()
                 .to_string(),
-            token: "POND".into(),
+            token: POND.to_string(),
         }],
         total_delegations: vec![TokenAmount {
-            token: "POND".into(),
+            token: POND.to_string(),
             amount: generator_data.total_stake.to_string(),
         }],
         markets: all_markets_of_generator
@@ -310,7 +315,7 @@ async fn recompute_single_generator_response<'a>(
                     .to_string(),
                 min_hardware_requirement: MinHardware {
                     instance_type: "todo".into(),
-                    vcpus: 1234,
+                    vcpus: random_usize(),
                 },
             })
             .collect(),
@@ -366,8 +371,18 @@ async fn recompute_single_generator_response<'a>(
                 inputs: bytes_to_string(&ask.prover_data),
                 deadline: ask.deadline.to_string(),
                 cost: ask.reward.to_string(),
-                time_taken_for_proof_generation: None,
-                proof: None,
+                time_taken_for_proof_generation: Some(
+                    local_ask_store
+                        .get_proving_time(&ask.ask_id)
+                        .unwrap()
+                        .to_string(),
+                ),
+                proof: Some(
+                    local_ask_store
+                        .get_proof_by_ask_id(&ask.ask_id)
+                        .unwrap()
+                        .to_string(),
+                ),
             })
             .collect::<Vec<Job>>(),
         slashing_history: local_generator_store
@@ -378,13 +393,13 @@ async fn recompute_single_generator_response<'a>(
                 market: MarketInfo {
                     name: None,
                     id: record.market_id.to_string(),
-                    token: "POND".into(),
+                    token: POND.to_string(),
                 },
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),
                 expected_time: record.expected_time.to_string(),
                 slashing_penalty: TokenAmount {
-                    token: "POND".into(),
+                    token: POND.to_string(),
                     amount: record.slashing_penalty.to_string(),
                 },
             })

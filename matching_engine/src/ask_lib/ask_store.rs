@@ -2,7 +2,7 @@ use ethers::core::types::U256;
 use ethers::prelude::*;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display, fmt::Formatter, fmt::Result};
 
 use crate::counters::counters::GenericCounters;
 
@@ -14,8 +14,26 @@ use super::{
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Proof {
     ValidProof(Bytes),
-    // latter we may need to store the invalid input attestations here
+    InvalidInputAttestation,
+    FailedProofGeneration,
 }
+
+impl Display for Proof {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Proof::ValidProof(bytes) => {
+                write!(f, "valid: {}", hex::encode(bytes))
+            }
+            Proof::InvalidInputAttestation => {
+                write!(f, "invalid inputs detected")
+            }
+            Proof::FailedProofGeneration => {
+                write!(f, "failed proof generation")
+            }
+        }
+    }
+}
+
 pub struct LocalAskStore {
     asks_by_id: HashMap<U256, LocalAsk>,
     market_id_index: HashMap<U256, Vec<LocalAsk>>,
@@ -28,6 +46,7 @@ pub struct LocalAskStore {
     proof_transaction: HashMap<U256, String>,
     failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
     completed_proofs: CompletedProofs,
+    proof_cycle_completed_on: HashMap<U256, U256>,
 }
 
 pub struct AskQueryResult {
@@ -180,6 +199,7 @@ impl LocalAskStore {
             proof_transaction: HashMap::new(),
             failed_request_counter_by_market: GenericCounters::new(),
             completed_proofs: CompletedProofs::new(),
+            proof_cycle_completed_on: HashMap::new(),
         }
     }
 
@@ -271,9 +291,21 @@ impl LocalAskStore {
         }
     }
 
-    pub fn note_invalid_proof(&mut self, ask_id: &U256) {
+    pub fn note_invalid_inputs(&mut self, ask_id: &U256) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
+                self.proofs.insert(*ask_id, Proof::InvalidInputAttestation);
+                self.failed_request_counter_by_market
+                    .insert(ask_data.market_id, ask_data.ask_id);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn note_proof_denied(&mut self, ask_id: &U256) {
+        match self.asks_by_id.get_mut(ask_id) {
+            Some(ask_data) => {
+                self.proofs.insert(*ask_id, Proof::FailedProofGeneration);
                 self.failed_request_counter_by_market
                     .insert(ask_data.market_id, ask_data.ask_id);
             }
@@ -408,5 +440,16 @@ impl LocalAskStore {
             // If no proofs exist for this generator, return an empty vector
             Vec::new()
         }
+    }
+}
+
+impl LocalAskStore {
+    pub fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256> {
+        self.proof_cycle_completed_on.get(ask_id).cloned()
+    }
+
+    pub fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256) {
+        self.proof_cycle_completed_on
+            .insert(ask_id.clone(), submitted_on);
     }
 }
