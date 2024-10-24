@@ -35,3 +35,4 @@ tokio = { version = "1.15.0", features = ["full"] }
 [features]
 default = []
 matching_engine_enable_cors = ["kalypso_helper/enable_cors"]
+disable_match_creation = []

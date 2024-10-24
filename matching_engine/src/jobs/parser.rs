@@ -9,6 +9,7 @@ use k256::ecdsa::SigningKey;
 use kalypso_helper::secret_inputs_helpers;
 use std::collections::HashMap;
 use std::ops::Sub;
+
 use std::{
     str::FromStr,
     sync::{
@@ -237,7 +238,7 @@ impl LogParser {
                 *self.start_block.write().await = start_block;
                 continue;
             }
-
+            
             matches_upto = match self.create_match(end_block).await {
                 Ok(upto) => {
                     log::info!("Completed match assignment upto: {}", upto);
@@ -274,6 +275,13 @@ impl LogParser {
         Ok((start_block, end_block))
     }
 
+    #[cfg(feature = "disable_match_creation")]
+    async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
+        thread::sleep(Duration::from_secs(5)); // just to mimic match creation time and may be free resource for else where
+        Ok(end_block)
+    }
+
+    #[cfg(not(feature = "disable_match_creation"))]
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
@@ -577,6 +585,7 @@ impl LogParser {
         Ok(end_block)
     }
 
+    #[cfg(not(feature = "disable_match_creation"))]
     async fn get_idle_generators(
         &self,
         random_pending_ask: LocalAsk,
