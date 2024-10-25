@@ -193,7 +193,7 @@ async fn recompute_generator_response<'a>(
         let current_stake = delegations.clone();
         // Construct the Operator struct
         let operator = Operator {
-            name: Some(address_to_string(&operator_data.address)),
+            name: Some("todo_n!".into()),
             details: Some(GeneratorMeta::default()),
             address: address_to_string(&operator_data.address),
             delegations,
