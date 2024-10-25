@@ -297,6 +297,7 @@ impl LocalAskStore {
                 self.proofs.insert(*ask_id, Proof::InvalidInputAttestation);
                 self.failed_request_counter_by_market
                     .insert(ask_data.market_id, ask_data.ask_id);
+                self.proof_transaction.insert(*ask_id, proof_transaction);
             }
             _ => {}
         }
@@ -308,6 +309,7 @@ impl LocalAskStore {
                 self.proofs.insert(*ask_id, Proof::FailedProofGeneration);
                 self.failed_request_counter_by_market
                     .insert(ask_data.market_id, ask_data.ask_id);
+                self.proof_transaction.insert(*ask_id, proof_transaction);
             }
             _ => {}
         }
