@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::log_processor::constants;
-use crate::utility::{TokenTracker, TEST_TOKEN_ADDRESS_ONE};
+use crate::utility::{tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE};
 
 pub async fn process_generator_registry_logs(
     logs: Vec<Log>,
@@ -280,7 +280,15 @@ pub async fn process_generator_registry_logs(
             let address = added_stake_log.generator;
             let amount = added_stake_log.amount;
 
-            generator_store.add_extra_stake(&address, &TEST_TOKEN_ADDRESS_ONE, &amount);
+            generator_store.add_extra_stake(
+                &address,
+                &TEST_TOKEN_ADDRESS_ONE,
+                &amount,
+                log.block_number.unwrap(),
+                log.transaction_index.unwrap(),
+                log.log_index.unwrap(),
+                tx_to_string(&log.transaction_hash.unwrap()),
+            );
 
             continue;
         }
@@ -320,7 +328,16 @@ pub async fn process_generator_registry_logs(
             let address = remove_stake_log.generator;
             let amount = remove_stake_log.amount;
 
-            generator_store.remove_stake(&address, &TEST_TOKEN_ADDRESS_ONE, &amount);
+            generator_store.remove_stake(
+                &address,
+                &TEST_TOKEN_ADDRESS_ONE,
+                &amount,
+                log.block_number.unwrap(),
+                log.transaction_index.unwrap(),
+                log.log_index.unwrap(),
+                tx_to_string(&log.transaction_hash.unwrap()),
+                delegation::Operation::UnDelegate,
+            );
             generator_store.resume_assignments_accross_all_markets(&address);
             generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
 
@@ -453,7 +470,16 @@ pub async fn process_generator_registry_logs(
             let address = stake_slash_logs.generator;
             let stake_slashed = stake_slash_logs.stake;
 
-            generator_store.remove_stake(&address, &TEST_TOKEN_ADDRESS_ONE, &stake_slashed);
+            generator_store.remove_stake(
+                &address,
+                &TEST_TOKEN_ADDRESS_ONE,
+                &stake_slashed,
+                log.block_number.unwrap(),
+                log.transaction_index.unwrap(),
+                log.log_index.unwrap(),
+                tx_to_string(&log.transaction_hash.unwrap()),
+                delegation::Operation::Slash,
+            );
             continue;
         }
 

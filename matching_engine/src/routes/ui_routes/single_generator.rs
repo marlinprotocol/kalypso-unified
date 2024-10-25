@@ -94,7 +94,20 @@ pub struct GeneratorResponse {
     slashing_history: Vec<Slash>,
     available_stake: Vec<TokenAmount>,
     stake_locked: Vec<TokenAmount>,
+    delegations: Vec<DelegateOperation>,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct DelegateOperation {
+    delegation: TokenAmount,
+    source: String,
+    operation: String,
+    block_number: String,
+    transaction_index: String,
+    log_index: String,
+    tx: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Slash {
     timestamp: String,
@@ -432,6 +445,19 @@ async fn recompute_single_generator_response<'a>(
                 price_offered: record.price_offered.to_string(),
                 expected_time: record.expected_time.to_string(),
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
+            })
+            .collect(),
+        delegations: local_generator_store
+            .get_delegations(&generator_id, None, None)
+            .iter()
+            .map(|element| DelegateOperation {
+                delegation: address_token_pair_to_token_amount(element.delegation),
+                source: element.source.to_string(),
+                operation: element.operation.to_string(),
+                block_number: element.block_number.to_string(),
+                transaction_index: element.transaction_index.to_string(),
+                log_index: element.log_index.to_string(),
+                tx: element.tx.clone(),
             })
             .collect(),
     })

@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use crate::utility::{AddressTokenPair, TokenTracker};
 
+use super::delegation::{Delegation, DelegationStore};
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
@@ -26,6 +27,7 @@ pub struct GeneratorStore {
     slashings: HashMap<Address, TokenTracker>,                  // Generator -> Total Slashings
     slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
     slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
+    delegation_store: DelegationStore,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -86,6 +88,7 @@ impl GeneratorStore {
             slashings: HashMap::new(),
             slashing_per_generator_per_market: HashMap::new(),
             slashing_records: HashMap::new(),
+            delegation_store: DelegationStore::new(),
         }
     }
 
@@ -94,6 +97,19 @@ impl GeneratorStore {
             .par_iter()
             .map(|(address, _)| address.clone())
             .collect()
+    }
+
+    pub fn get_delegations(
+        &self,
+        generator_address: &Address,
+        skip: Option<usize>,
+        count: Option<usize>,
+    ) -> Vec<Delegation> {
+        self.delegation_store.get_delegations(
+            generator_address,
+            skip.unwrap_or(0),
+            count.unwrap_or(100),
+        )
     }
 
     pub fn total_stake_across_all_generators(&self) -> TokenTracker {
@@ -176,9 +192,25 @@ impl GeneratorStore {
         generator_address: &Address,
         token_address: &Address,
         amount: &U256,
+        block_number: U64,
+        transaction_index: U64,
+        log_index: U256,
+        tx: String,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
             generator.total_stake.add_token(token_address, amount);
+            self.delegation_store.add_delegation(
+                generator_address,
+                Delegation {
+                    delegation: (*token_address, *amount),
+                    source: super::delegation::Source::Native,
+                    operation: super::delegation::Operation::Delegate,
+                    block_number,
+                    transaction_index,
+                    log_index,
+                    tx,
+                },
+            );
         }
     }
 
@@ -193,11 +225,29 @@ impl GeneratorStore {
         generator_address: &Address,
         token_address: &Address,
         amount: &U256,
+        block_number: U64,
+        transaction_index: U64,
+        log_index: U256,
+        tx: String,
+        operation: super::delegation::Operation,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
             generator
                 .total_stake
                 .sub_token_saturating(token_address, amount);
+
+            self.delegation_store.add_delegation(
+                generator_address,
+                Delegation {
+                    delegation: (*token_address, *amount),
+                    source: super::delegation::Source::Native,
+                    operation,
+                    block_number,
+                    transaction_index,
+                    log_index,
+                    tx,
+                },
+            );
         }
     }
 
@@ -738,6 +788,10 @@ mod tests {
             &random_generator.address,
             &TEST_TOKEN_ADDRESS_ONE,
             &U256::from_dec_str("5").unwrap(),
+            0.into(),
+            0.into(),
+            0.into(),
+            "".into(),
         );
 
         assert_eq!(
@@ -756,6 +810,11 @@ mod tests {
             &random_generator.address,
             &TEST_TOKEN_ADDRESS_ONE,
             &U256::from_dec_str("15").unwrap(),
+            0.into(),
+            0.into(),
+            0.into(),
+            "".into(),
+            crate::generator_lib::delegation::Operation::UnDelegate,
         );
 
         assert_eq!(
@@ -774,6 +833,10 @@ mod tests {
             &random_generator.address,
             &TEST_TOKEN_ADDRESS_TWO,
             &U256::from_dec_str("20").unwrap(),
+            0.into(),
+            0.into(),
+            0.into(),
+            "".into(),
         );
 
         assert_eq!(
