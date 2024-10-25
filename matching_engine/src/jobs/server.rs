@@ -12,6 +12,7 @@ use kalypso_helper::middlewares::request_limiter::ConcurrencyLimiter;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 
+use crate::generator_lib::key_store::KeyStore;
 use crate::market_metadata::MarketMetadataStore;
 use crate::routes::{get_core_scope, get_stats_scope, ui_scope};
 use crate::{ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore};
@@ -31,6 +32,7 @@ pub struct MatchingEngineServer {
     shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
     shared_entity_key_registry: EntityRegistryInstance,
     shared_generator_data: Arc<RwLock<GeneratorStore>>,
+    shared_key_data: Arc<RwLock<KeyStore>>,
     relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
     should_stop: Arc<AtomicBool>,
 }
@@ -44,6 +46,7 @@ impl MatchingEngineServer {
         shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
         shared_entity_key_registry: EntityRegistryInstance,
         shared_generator_data: Arc<RwLock<GeneratorStore>>,
+        shared_key_data: Arc<RwLock<KeyStore>>,
         relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
         should_stop: Arc<AtomicBool>,
     ) -> Self {
@@ -54,6 +57,7 @@ impl MatchingEngineServer {
             shared_matching_key_clone,
             shared_entity_key_registry,
             shared_generator_data,
+            shared_key_data,
             relayer_key_balance,
             should_stop,
         }
@@ -93,6 +97,7 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_matching_key_clone.clone()))
                 .app_data(Data::new(self.shared_entity_key_registry.clone()))
                 .app_data(Data::new(self.shared_generator_data.clone()))
+                .app_data(Data::new(self.shared_key_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
                 .service(
                     ui_scope()

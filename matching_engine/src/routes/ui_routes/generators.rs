@@ -75,7 +75,7 @@ pub async fn get_generators_all(
     if let Some(response) = GENERATOR_RESPONSE
         .try_read()
         .unwrap()
-        .get_if_valid(Duration::from_secs(5))
+        .get_if_valid(Duration::from_secs(10))
     {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));

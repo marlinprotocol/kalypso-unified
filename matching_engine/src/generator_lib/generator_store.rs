@@ -96,6 +96,16 @@ impl GeneratorStore {
             .collect()
     }
 
+    pub fn total_stake_across_all_generators(&self) -> TokenTracker {
+        self.generators
+            .par_iter()
+            .map(|(_, data)| data.total_stake.clone()) // Clone if TokenTracker isn't Copy
+            .reduce(
+                || TokenTracker::new(),      // Identity element
+                |acc, stake| acc.add(stake), // Combine function
+            )
+    }
+
     pub fn insert(&mut self, generator: Generator) {
         let address = generator.address;
         if !self.generators.contains_key(&generator.address) {
@@ -398,13 +408,19 @@ impl GeneratorStore {
             .map(|generator| generator.declared_compute.sub(generator.compute_consumed))
     }
 
-    pub fn get_available_stake(&self, generator_address: Address) -> Option<TokenTracker> {
+    pub fn get_available_stake(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.generators.get(&generator_address).map(|generator| {
             generator
                 .total_stake
                 .clone()
                 .sub(generator.stake_locked.clone())
         })
+    }
+
+    pub fn get_stake_locked(&self, generator_address: &Address) -> Option<TokenTracker> {
+        self.generators
+            .get(&generator_address)
+            .map(|generator| generator.stake_locked.clone())
     }
 
     pub fn get_all_by_market_id(&self, market_id: &U256) -> Vec<GeneratorInfoPerMarket> {

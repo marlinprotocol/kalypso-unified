@@ -258,6 +258,7 @@ impl MatchingEngine {
             shared_matching_key_clone,
             shared_entity_key_registry,
             shared_generator_data,
+            shared_key_store.clone(),
             relayer_key_balance.clone(),
             should_stop.clone(),
         );

@@ -1,5 +1,7 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::LocalAskStore;
+use crate::generator_lib::key_store::Key;
+use crate::generator_lib::key_store::KeyStore;
 use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 use crate::utility::address_token_pair_to_token_amount;
@@ -90,6 +92,8 @@ pub struct GeneratorResponse {
     active_jobs_list: Vec<Job>,
     completed_jobs_list: Vec<Job>,
     slashing_history: Vec<Slash>,
+    available_stake: Vec<TokenAmount>,
+    stake_locked: Vec<TokenAmount>,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Slash {
@@ -130,6 +134,7 @@ struct Market {
     slashing_penalties_incured: String,
     pending_proofs: String,
     min_hardware_requirement: MinHardware,
+    enclave_key: Option<Key>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -153,6 +158,7 @@ struct GeneratorQuery {
 pub async fn single_generator(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    _local_key_store: Data<Arc<RwLock<KeyStore>>>,
     path: web::Path<(String,)>,
     query: web::Query<QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
@@ -212,12 +218,24 @@ pub async fn single_generator(
         }
     };
 
+    let local_key_store = {
+        match _local_key_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     // Step 1: Recompute the response every time
     let new_response = recompute_single_generator_response(
         generator_id,
         generator_query,
         local_ask_store,
         local_generator_store,
+        local_key_store,
     )
     .await;
 
@@ -243,6 +261,7 @@ async fn recompute_single_generator_response<'a>(
     query: GeneratorQuery,
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
+    local_key_store: RwLockReadGuard<'a, KeyStore>,
 ) -> Option<GeneratorResponse> {
     let generator_data = local_generator_store.get_by_address(&generator_id);
 
@@ -277,6 +296,14 @@ async fn recompute_single_generator_response<'a>(
             .unwrap_or_default()
             .to_token_amount(),
         total_delegations: generator_data.total_stake.to_token_amount(),
+        available_stake: local_generator_store
+            .get_available_stake(&generator_id)
+            .unwrap_or_default()
+            .to_token_amount(),
+        stake_locked: local_generator_store
+            .get_stake_locked(&generator_id)
+            .unwrap_or_default()
+            .to_token_amount(),
         markets: all_markets_of_generator
             .clone()
             .into_iter()
@@ -309,6 +336,7 @@ async fn recompute_single_generator_response<'a>(
                     instance_type: "todo".into(),
                     vcpus: random_usize(),
                 },
+                enclave_key: local_key_store.get_by_address(&info.address, info.market_id.as_u64()),
             })
             .collect(),
         active_jobs_list: local_ask_store

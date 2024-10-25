@@ -1,5 +1,6 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
+use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::WelcomeResponse;
 use crate::utility::{random_usize, TokenAmount};
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
@@ -14,6 +15,8 @@ use tokio::time::Duration;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MarketResponse {
     result: Vec<Market>,
+    registered_generators: usize,
+    total_stake: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -47,13 +50,14 @@ static MARKET_RESPONSE: Lazy<RwLock<CachedMarketResponse>> =
 pub async fn total_market_info(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
 
     if let Some(response) = MARKET_RESPONSE
         .try_read()
         .unwrap()
-        .get_if_valid(Duration::from_secs(5))
+        .get_if_valid(Duration::from_secs(10))
     {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
@@ -81,8 +85,20 @@ pub async fn total_market_info(
         }
     };
 
+    let local_generator_store = {
+        match _local_generator_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
     // Step 2: If the cache is invalid, recompute the response
-    let new_response = recompute_market_response(local_market_store, local_ask_store).await;
+    let new_response =
+        recompute_market_response(local_market_store, local_ask_store, local_generator_store).await;
 
     {
         // Store the newly computed response in the cache
@@ -102,6 +118,7 @@ pub async fn total_market_info(
 async fn recompute_market_response<'a>(
     local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
+    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
 ) -> MarketResponse {
     log::debug!("Starting recompute_market_response");
 
@@ -241,5 +258,11 @@ async fn recompute_market_response<'a>(
 
     log::debug!("Finished processing market data");
 
-    MarketResponse { result: markets }
+    MarketResponse {
+        result: markets,
+        registered_generators: local_generator_store.all_generators_address().len(),
+        total_stake: local_generator_store
+            .total_stake_across_all_generators()
+            .to_token_amount(),
+    }
 }

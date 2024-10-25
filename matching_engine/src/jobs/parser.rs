@@ -310,9 +310,7 @@ impl LogParser {
         let mut cached_stake = {
             let mut m = HashMap::new();
             for _generator in all_generators.clone() {
-                let available_stake = generator_store
-                    .get_available_stake(_generator.into())
-                    .unwrap();
+                let available_stake = generator_store.get_available_stake(&_generator).unwrap();
                 m.insert(_generator, available_stake);
             }
             m
