@@ -291,7 +291,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn note_invalid_inputs(&mut self, ask_id: &U256) {
+    pub fn note_invalid_inputs(&mut self, ask_id: &U256, proof_transaction: String) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
                 self.proofs.insert(*ask_id, Proof::InvalidInputAttestation);
@@ -302,7 +302,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn note_proof_denied(&mut self, ask_id: &U256) {
+    pub fn note_proof_denied(&mut self, ask_id: &U256, proof_transaction: String) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
                 self.proofs.insert(*ask_id, Proof::FailedProofGeneration);

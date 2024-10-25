@@ -30,6 +30,8 @@ use super::cache::CachedResponse;
 
 type CachedSingleGeneratorResponse = CachedResponse<GeneratorResponse>;
 
+const DEFAULT_COUNT: &usize = &100;
+
 struct CachedGeneratorResponse {
     data: HashMap<GeneratorQuery, CachedSingleGeneratorResponse>,
 }
@@ -101,6 +103,7 @@ struct Slash {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Job {
+    ask_id: String,
     market: MarketInfo,
     requestor: String,
     inputs: String,
@@ -108,6 +111,7 @@ struct Job {
     cost: String,
     time_taken_for_proof_generation: Option<String>,
     proof: Option<String>,
+    proof_transaction: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -321,12 +325,13 @@ async fn recompute_single_generator_response<'a>(
                     .collect::<Vec<LocalAsk>>()
                     .into_iter()
                     .skip(query.query.active_jobs_skip.unwrap_or_default())
-                    .take(query.query.active_jobs.unwrap_or_else(|| 10))
+                    .take(query.query.active_jobs.unwrap_or_else(|| *DEFAULT_COUNT))
                     .collect::<Vec<LocalAsk>>();
 
                 local_asks
                     .into_iter()
                     .map(|a| Job {
+                        ask_id: a.ask_id.to_string(),
                         market: MarketInfo {
                             name: None,
                             id: a.market_id.to_string(),
@@ -341,6 +346,7 @@ async fn recompute_single_generator_response<'a>(
                         cost: a.reward.to_string(),
                         time_taken_for_proof_generation: None,
                         proof: None,
+                        proof_transaction: None,
                     })
                     .collect()
             })
@@ -349,10 +355,11 @@ async fn recompute_single_generator_response<'a>(
             .get_completed_proof_of_generator(
                 &generator_id,
                 query.query.completed_jobs_skip.unwrap_or_default(),
-                query.query.completed_jobs.unwrap_or_else(|| 10),
+                query.query.completed_jobs.unwrap_or_else(|| *DEFAULT_COUNT),
             )
             .into_iter()
             .map(|ask| Job {
+                ask_id: ask.ask_id.to_string(),
                 market: MarketInfo {
                     name: None,
                     id: ask.market_id.to_string(),
@@ -377,6 +384,7 @@ async fn recompute_single_generator_response<'a>(
                         .unwrap()
                         .to_string(),
                 ),
+                proof_transaction: local_ask_store.get_proof_transaction(&ask.ask_id),
             })
             .collect::<Vec<Job>>(),
         slashing_history: local_generator_store

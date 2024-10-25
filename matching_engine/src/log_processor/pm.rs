@@ -325,7 +325,8 @@ pub async fn process_proof_market_place_logs(
             local_ask_store
                 .update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
             local_ask_store.modify_state(&ask_id, AskState::Complete);
-            local_ask_store.note_proof_denied(&ask_id);
+            local_ask_store
+                .note_proof_denied(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
 
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
@@ -385,7 +386,8 @@ pub async fn process_proof_market_place_logs(
             local_ask_store
                 .update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
             local_ask_store.modify_state(&ask_id, AskState::Complete);
-            local_ask_store.note_invalid_inputs(&ask_id);
+            local_ask_store
+                .note_invalid_inputs(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
 
             let ask_data: (pmp::Ask, u8, H160, H160) =
                 proof_market_place.list_of_ask(ask_id).call().await.unwrap();
