@@ -282,8 +282,6 @@ async fn recompute_single_market_response<'a>(
                 }
             },
         },
-        market_setup_data: marketmetadata
-            .deserialize_market_bytes()
-            .unwrap_or_default(),
+        market_setup_data: marketmetadata.deserialize_market_bytes(),
     })
 }

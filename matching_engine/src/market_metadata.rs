@@ -75,14 +75,16 @@ pub struct MarketMetadata {
 }
 
 impl MarketMetadata {
-    pub fn deserialize_market_bytes(&self) -> Option<MarketSetupData> {
-        // Convert bytes to a UTF-8 string
-        let json_str = std::str::from_utf8(&self.metadata).ok()?;
+    /// Deserializes the raw metadata bytes into a `MarketSetupData` struct.
+    ///
+    /// If deserialization fails at any step, it returns a default `MarketSetupData` instance.
+    pub fn deserialize_market_bytes(&self) -> MarketSetupData {
+        // Convert bytes to a UTF-8 string. If conversion fails, use an empty JSON object.
+        let json_str = std::str::from_utf8(&self.metadata).unwrap_or("{}");
 
-        // Deserialize JSON string into MarketSetupData struct
-        let data: MarketSetupData = serde_json::from_str(json_str).ok()?;
-
-        Some(data)
+        // Deserialize JSON string into `MarketSetupData` struct.
+        // If deserialization fails, return the default `MarketSetupData`.
+        serde_json::from_str(json_str).unwrap_or_default()
     }
 }
 

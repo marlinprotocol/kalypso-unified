@@ -137,14 +137,12 @@ pub struct GeneratorMeta {
 }
 
 impl Generator {
-    pub fn deserialize_generator_bytes(&self) -> Option<GeneratorMeta> {
+    pub fn deserialize_generator_bytes(&self) -> GeneratorMeta {
         // Convert bytes to a UTF-8 string
-        let json_str = std::str::from_utf8(&self.generator_data).ok()?;
+        let json_str = std::str::from_utf8(&self.generator_data).unwrap_or("{}");
 
         // Deserialize JSON string into MarketSetupData struct
-        let data: GeneratorMeta = serde_json::from_str(json_str).ok()?;
-
-        Some(data)
+        serde_json::from_str(json_str).unwrap_or_default()
     }
 }
 

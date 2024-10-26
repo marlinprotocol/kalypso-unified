@@ -253,7 +253,7 @@ async fn recompute_market_response<'a>(
             total_earnings,
             slashing_penalty: slashing_penalty.to_token_amount(),
             status: true, // Adjust as needed
-            market_setup_data: meta.deserialize_market_bytes().unwrap_or_default(),
+            market_setup_data: meta.deserialize_market_bytes(),
         };
 
         markets.push(market);

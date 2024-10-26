@@ -1,5 +1,6 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::LocalAskStore;
+use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::key_store::Key;
 use crate::generator_lib::key_store::KeyStore;
 use crate::models::WelcomeResponse;
@@ -292,9 +293,7 @@ async fn recompute_single_generator_response<'a>(
             name: Some("todo".into()),
             address: address_to_string(&generator_id),
         },
-        details: generator_data
-            .deserialize_generator_bytes()
-            .unwrap_or_default(),
+        details: generator_data.deserialize_generator_bytes(),
         kalypso_points: random_u256().to_string(),
         reward_address: address_to_string(&generator_data.reward_address),
         active_jobs: all_markets_of_generator

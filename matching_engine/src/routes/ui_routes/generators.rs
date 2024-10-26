@@ -173,9 +173,7 @@ async fn recompute_generator_response<'a>(
         let current_stake = delegations.clone();
         // Construct the Operator struct
         let operator = Operator {
-            details: operator_data
-                .deserialize_generator_bytes()
-                .unwrap_or_default(),
+            details: operator_data.deserialize_generator_bytes(),
             address: address_to_string(&operator_data.address),
             delegations,
             markets,
