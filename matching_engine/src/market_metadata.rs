@@ -8,7 +8,7 @@ use crate::{
     utility::{AddressTokenPair, TokenTracker},
 };
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketSetupData {
     /// The display name of the zkApp.
@@ -48,10 +48,10 @@ pub struct MarketSetupData {
     license: Option<String>,
 
     /// Categories that classify the zkApp.
-    categories: Option<Vec<String>>,
+    categories: Vec<String>,
 
     /// Tags for better searchability and organization.
-    tags: Option<Vec<String>>,
+    tags: Vec<String>,
 
     /// Contact email for support or inquiries.
     contact_email: Option<String>,

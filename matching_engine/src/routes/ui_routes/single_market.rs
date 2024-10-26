@@ -60,7 +60,7 @@ struct SingleMarketResponse {
     hardware_requirement: MinHardware,
     min_stake: Vec<TokenAmount>,
     jobs: Jobs,
-    market_setup_data: Option<MarketSetupData>,
+    market_setup_data: MarketSetupData,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -282,6 +282,8 @@ async fn recompute_single_market_response<'a>(
                 }
             },
         },
-        market_setup_data: marketmetadata.deserialize_market_bytes(),
+        market_setup_data: marketmetadata
+            .deserialize_market_bytes()
+            .unwrap_or_default(),
     })
 }

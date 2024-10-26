@@ -33,7 +33,7 @@ pub struct Market {
     total_earnings: String,
     slashing_penalty: Vec<TokenAmount>,
     status: bool,
-    market_setup_data: Option<MarketSetupData>,
+    market_setup_data: MarketSetupData,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -253,7 +253,7 @@ async fn recompute_market_response<'a>(
             total_earnings,
             slashing_penalty: slashing_penalty.to_token_amount(),
             status: true, // Adjust as needed
-            market_setup_data: meta.deserialize_market_bytes(),
+            market_setup_data: meta.deserialize_market_bytes().unwrap_or_default(),
         };
 
         markets.push(market);

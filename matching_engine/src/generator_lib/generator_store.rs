@@ -69,7 +69,7 @@ pub struct Generator {
     pub generator_data: Bytes,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorMeta {
     /// The display name of the generator or application.
@@ -121,10 +121,10 @@ pub struct GeneratorMeta {
     version: Option<String>,
 
     /// Categories that classify the generator or application.
-    categories: Option<Vec<String>>,
+    categories: Vec<String>,
 
     /// Tags for better searchability and organization.
-    tags: Option<Vec<String>>,
+    tags: Vec<String>,
 
     /// License information, e.g., MIT, GPL.
     license: Option<String>,

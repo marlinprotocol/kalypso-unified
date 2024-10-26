@@ -29,7 +29,7 @@ static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Operator {
-    details: Option<GeneratorMeta>,
+    details: GeneratorMeta,
     address: String,
     delegations: Vec<TokenAmount>,
     markets: Vec<Market>,
@@ -173,7 +173,9 @@ async fn recompute_generator_response<'a>(
         let current_stake = delegations.clone();
         // Construct the Operator struct
         let operator = Operator {
-            details: operator_data.deserialize_generator_bytes(),
+            details: operator_data
+                .deserialize_generator_bytes()
+                .unwrap_or_default(),
             address: address_to_string(&operator_data.address),
             delegations,
             markets,
