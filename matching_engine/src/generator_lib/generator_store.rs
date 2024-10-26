@@ -73,9 +73,11 @@ pub struct Generator {
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorMeta {
     /// The display name of the generator or application.
+    #[serde(alias = "display_name")]
     display_name: Option<String>,
 
     /// A brief description of the generator or application.
+    #[serde(alias = "display_description")]
     display_description: Option<String>,
 
     /// The official website URL.
@@ -88,12 +90,15 @@ pub struct GeneratorMeta {
     discord: Option<String>,
 
     /// URL to the logo image, enhancing brand recognition.
+    #[serde(alias = "logo_url")]
     logo_url: Option<String>,
 
     /// URL to a banner image for promotional purposes.
+    #[serde(alias = "banner_url")]
     banner_url: Option<String>,
 
     /// Contact email for support or inquiries.
+    #[serde(alias = "contact_email")]
     contact_email: Option<String>,
 
     /// GitHub repository URL for open-source projects.
@@ -115,6 +120,7 @@ pub struct GeneratorMeta {
     instagram: Option<String>,
 
     /// Repository URL, useful if different from GitHub.
+    #[serde(alias = "repo_url")]
     repo_url: Option<String>,
 
     /// Current version of the generator or application.
@@ -130,9 +136,11 @@ pub struct GeneratorMeta {
     license: Option<String>,
 
     /// URL to the Terms of Service.
+    #[serde(alias = "terms_of_service_url")]
     terms_of_service_url: Option<String>,
 
     /// URL to the Privacy Policy.
+    #[serde(alias = "privacy_policy_url")]
     privacy_policy_url: Option<String>,
 }
 

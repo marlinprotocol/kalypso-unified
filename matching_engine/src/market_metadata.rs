@@ -12,18 +12,23 @@ use crate::{
 #[serde(rename_all = "camelCase")]
 pub struct MarketSetupData {
     /// The display name of the zkApp.
+    #[serde(alias = "zk_app_name")]
     zk_app_name: Option<String>,
 
     /// URL to the prover code repository or resource.
+    #[serde(alias = "prover_code")]
     prover_code: Option<String>,
 
     /// URL to the verifier code repository or resource.
+    #[serde(alias = "verifier_code")]
     verifier_code: Option<String>,
 
     /// URL to the prover Oyster image or related resource.
+    #[serde(alias = "prover_oyster_image")]
     prover_oyster_image: Option<String>,
 
     /// URL to the input/output verifier, optional for private markets.
+    #[serde(alias = "input_output_verifier_url")]
     input_output_verifier_url: Option<String>,
 
     /// A brief description of the zkApp.
@@ -57,9 +62,11 @@ pub struct MarketSetupData {
     contact_email: Option<String>,
 
     /// URL to the Terms of Service.
+    #[serde(alias = "terms_of_service_url")]
     terms_of_service_url: Option<String>,
 
     /// URL to the Privacy Policy.
+    #[serde(alias = "privacy_policy_url")]
     privacy_policy_url: Option<String>,
 }
 
