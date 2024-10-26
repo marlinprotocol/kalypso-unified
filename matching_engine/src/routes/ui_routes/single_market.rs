@@ -262,6 +262,7 @@ async fn recompute_single_market_response<'a>(
             proofs_pending: {
                 let result = local_ask_store
                     .get_by_ask_state_except_complete(AskState::Create)
+                    .filter_by_market_id(market_id)
                     .result();
 
                 if result.is_some() {
@@ -273,6 +274,7 @@ async fn recompute_single_market_response<'a>(
             proofs_in_progress: {
                 let result = local_ask_store
                     .get_by_ask_state_except_complete(AskState::Assigned)
+                    .filter_by_market_id(market_id)
                     .result();
 
                 if result.is_some() {
