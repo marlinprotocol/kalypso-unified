@@ -8,6 +8,61 @@ use crate::{
     utility::{AddressTokenPair, TokenTracker},
 };
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketSetupData {
+    /// The display name of the zkApp.
+    zk_app_name: Option<String>,
+
+    /// URL to the prover code repository or resource.
+    prover_code: Option<String>,
+
+    /// URL to the verifier code repository or resource.
+    verifier_code: Option<String>,
+
+    /// URL to the prover Oyster image or related resource.
+    prover_oyster_image: Option<String>,
+
+    /// URL to the input/output verifier, optional for private markets.
+    input_output_verifier_url: Option<String>,
+
+    /// A brief description of the zkApp.
+    description: Option<String>,
+
+    /// The version of the zkApp.
+    version: Option<String>,
+
+    /// URL to the official website of the zkApp.
+    website: Option<String>,
+
+    /// Twitter handle or URL related to the zkApp.
+    twitter: Option<String>,
+
+    /// Discord invite link or server URL for the zkApp community.
+    discord: Option<String>,
+
+    /// GitHub repository URL for the zkApp.
+    github: Option<String>,
+
+    /// License information for the zkApp (e.g., MIT, GPL).
+    license: Option<String>,
+
+    /// Categories that classify the zkApp.
+    categories: Option<Vec<String>>,
+
+    /// Tags for better searchability and organization.
+    tags: Option<Vec<String>>,
+
+    /// Contact email for support or inquiries.
+    contact_email: Option<String>,
+
+    /// URL to the Terms of Service.
+    terms_of_service_url: Option<String>,
+
+    /// URL to the Privacy Policy.
+    privacy_policy_url: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
 pub struct MarketMetadata {
     pub market_id: U256,
@@ -17,6 +72,18 @@ pub struct MarketMetadata {
     pub activation_block: U256,
     pub ivs_image_id: [u8; 32],
     pub metadata: Bytes,
+}
+
+impl MarketMetadata {
+    pub fn deserialize_market_bytes(&self) -> Option<MarketSetupData> {
+        // Convert bytes to a UTF-8 string
+        let json_str = std::str::from_utf8(&self.metadata).ok()?;
+
+        // Deserialize JSON string into MarketSetupData struct
+        let data: MarketSetupData = serde_json::from_str(json_str).ok()?;
+
+        Some(data)
+    }
 }
 
 pub struct MarketMetadataStore {

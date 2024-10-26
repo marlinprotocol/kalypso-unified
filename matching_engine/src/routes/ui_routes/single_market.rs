@@ -21,7 +21,7 @@
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::generator_store::GeneratorStore;
-use crate::market_metadata::MarketMetadataStore;
+use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
 use crate::models::WelcomeResponse;
 use crate::utility::{address_token_pair_to_token_amount, random_usize, TokenAmount, TokenTracker};
 use actix_web::web::{self, Data};
@@ -60,6 +60,7 @@ struct SingleMarketResponse {
     hardware_requirement: MinHardware,
     min_stake: Vec<TokenAmount>,
     jobs: Jobs,
+    market_setup_data: Option<MarketSetupData>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -211,6 +212,8 @@ async fn recompute_single_market_response<'a>(
         return None;
     }
 
+    let marketmetadata = marketmetadata.unwrap();
+
     let median_cost = local_market_store
         .get_median_proof_cost_market_wise(&market_id)
         .to_string();
@@ -279,5 +282,6 @@ async fn recompute_single_market_response<'a>(
                 }
             },
         },
+        market_setup_data: marketmetadata.deserialize_market_bytes(),
     })
 }

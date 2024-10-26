@@ -1,6 +1,7 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
+use crate::market_metadata::MarketSetupData;
 use crate::models::WelcomeResponse;
 use crate::utility::{random_usize, TokenAmount};
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
@@ -32,6 +33,7 @@ pub struct Market {
     total_earnings: String,
     slashing_penalty: Vec<TokenAmount>,
     status: bool,
+    market_setup_data: Option<MarketSetupData>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -251,6 +253,7 @@ async fn recompute_market_response<'a>(
             total_earnings,
             slashing_penalty: slashing_penalty.to_token_amount(),
             status: true, // Adjust as needed
+            market_setup_data: meta.deserialize_market_bytes(),
         };
 
         markets.push(market);

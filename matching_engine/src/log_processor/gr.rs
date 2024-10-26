@@ -132,7 +132,7 @@ pub async fn process_generator_registry_logs(
                 declared_compute: compute,
                 intended_stake_util: 1000000000000000000_i64.into(),
                 intended_compute_util: 1000000000000000000_i64.into(),
-                generator_data: Some(generator_data.9),
+                generator_data: generator_data.9,
             };
 
             generator_store.insert(generator.clone());

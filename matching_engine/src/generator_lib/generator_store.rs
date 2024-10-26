@@ -66,7 +66,86 @@ pub struct Generator {
     pub declared_compute: U256,
     pub intended_stake_util: U256,
     pub intended_compute_util: U256,
-    pub generator_data: Option<Bytes>,
+    pub generator_data: Bytes,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct GeneratorMeta {
+    /// The display name of the generator or application.
+    display_name: Option<String>,
+
+    /// A brief description of the generator or application.
+    display_description: Option<String>,
+
+    /// The official website URL.
+    website: Option<String>,
+
+    /// Twitter handle or URL.
+    twitter: Option<String>,
+
+    /// Discord invite link or server URL.
+    discord: Option<String>,
+
+    /// URL to the logo image, enhancing brand recognition.
+    logo_url: Option<String>,
+
+    /// URL to a banner image for promotional purposes.
+    banner_url: Option<String>,
+
+    /// Contact email for support or inquiries.
+    contact_email: Option<String>,
+
+    /// GitHub repository URL for open-source projects.
+    github: Option<String>,
+
+    /// LinkedIn profile or company page URL.
+    linkedin: Option<String>,
+
+    /// Medium blog URL for updates and articles.
+    medium: Option<String>,
+
+    /// Reddit community URL.
+    reddit: Option<String>,
+
+    /// YouTube channel URL for tutorials and updates.
+    youtube: Option<String>,
+
+    /// Instagram profile URL for visual content.
+    instagram: Option<String>,
+
+    /// Repository URL, useful if different from GitHub.
+    repo_url: Option<String>,
+
+    /// Current version of the generator or application.
+    version: Option<String>,
+
+    /// Categories that classify the generator or application.
+    categories: Option<Vec<String>>,
+
+    /// Tags for better searchability and organization.
+    tags: Option<Vec<String>>,
+
+    /// License information, e.g., MIT, GPL.
+    license: Option<String>,
+
+    /// URL to the Terms of Service.
+    terms_of_service_url: Option<String>,
+
+    /// URL to the Privacy Policy.
+    privacy_policy_url: Option<String>,
+}
+
+impl Generator {
+    pub fn deserialize_generator_bytes(&self) -> Option<GeneratorMeta> {
+        // Convert bytes to a UTF-8 string
+        let json_str = std::str::from_utf8(&self.generator_data).ok()?;
+
+        // Deserialize JSON string into MarketSetupData struct
+        let data: GeneratorMeta = serde_json::from_str(json_str).ok()?;
+
+        Some(data)
+    }
 }
 
 impl Default for GeneratorStore {
@@ -734,7 +813,7 @@ mod tests {
             declared_compute: U256::from_dec_str("123123").unwrap(),
             intended_stake_util: U256::from_dec_str("123123").unwrap(),
             intended_compute_util: U256::from_dec_str("123123").unwrap(),
-            generator_data: None,
+            generator_data: vec![].into(),
         };
 
         generator_store.insert(generator1.clone());
@@ -1178,7 +1257,7 @@ mod tests {
                 declared_compute: U256::from_dec_str(&default_declared_compute).unwrap(),
                 intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),
                 intended_compute_util: U256::from_dec_str("1000000000000000000").unwrap(),
-                generator_data: None,
+                generator_data: vec![].into(),
             };
 
             generator_store.insert(generator);

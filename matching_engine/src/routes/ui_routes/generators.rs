@@ -1,5 +1,5 @@
 use super::cache::CachedResponse;
-use crate::generator_lib::generator_store::GeneratorStore;
+use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::models::WelcomeResponse;
 use crate::utility::{
     address_to_string, TokenAmount, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_TWO,
@@ -29,7 +29,6 @@ static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Operator {
-    name: Option<String>,
     details: Option<GeneratorMeta>,
     address: String,
     delegations: Vec<TokenAmount>,
@@ -39,25 +38,6 @@ struct Operator {
     proofs_missed: String,
     pending_proofs: String,
     current_stake: Vec<TokenAmount>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct GeneratorMeta {
-    display_name: Option<String>,
-    display_description: Option<String>,
-    website: Option<String>,
-    twitter: Option<String>,
-}
-
-impl Default for GeneratorMeta {
-    fn default() -> Self {
-        Self {
-            display_name: Some("todo n!".into()),
-            display_description: Some("todo d!".into()),
-            website: Some("todo _w".into()),
-            twitter: Some("todo t!".into()),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -193,8 +173,7 @@ async fn recompute_generator_response<'a>(
         let current_stake = delegations.clone();
         // Construct the Operator struct
         let operator = Operator {
-            name: Some("todo_n!".into()),
-            details: Some(GeneratorMeta::default()),
+            details: operator_data.deserialize_generator_bytes(),
             address: address_to_string(&operator_data.address),
             delegations,
             markets,
