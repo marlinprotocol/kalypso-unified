@@ -81,6 +81,7 @@ pub struct QueryParams {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GeneratorResponse {
     operator: Operator,
+    details: GeneratorMeta,
     reward_address: String,
     kalypso_points: String,
     active_jobs: String,
@@ -291,6 +292,9 @@ async fn recompute_single_generator_response<'a>(
             name: Some("todo".into()),
             address: address_to_string(&generator_id),
         },
+        details: generator_data
+            .deserialize_generator_bytes()
+            .unwrap_or_default(),
         kalypso_points: random_u256().to_string(),
         reward_address: address_to_string(&generator_data.reward_address),
         active_jobs: all_markets_of_generator
