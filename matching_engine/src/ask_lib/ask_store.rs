@@ -443,6 +443,26 @@ impl LocalAskStore {
             Vec::new()
         }
     }
+
+    pub fn get_completed_proofs_of_market(
+        &self,
+        market_id: &U256,
+        skip: usize,
+        count: usize,
+    ) -> Vec<LocalAsk> {
+        if let Some(market_proofs) = self.completed_proofs.get_all_proofs_for_market(market_id) {
+            // Skip the specified number of results and take 'count' results
+            market_proofs
+                .iter()
+                .skip(skip) // Skip the first 'skip' elements
+                .take(count) // Take the next 'count' elements
+                .cloned() // Clone the elements since we're returning Vec<LocalAsk>
+                .collect()
+        } else {
+            // If no proofs exist for this generator, return an empty vector
+            Vec::new()
+        }
+    }
 }
 
 impl LocalAskStore {

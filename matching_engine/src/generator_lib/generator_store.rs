@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::utility::{AddressTokenPair, TokenTracker};
 
-use super::delegation::{Delegation, DelegationStore};
+use super::delegation::{Delegation, DelegationStore, Operation};
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
@@ -187,11 +187,13 @@ impl GeneratorStore {
     pub fn get_delegations(
         &self,
         generator_address: &Address,
+        operations: Vec<Operation>,
         skip: Option<usize>,
         count: Option<usize>,
     ) -> Vec<Delegation> {
-        self.delegation_store.get_delegations(
+        self.delegation_store.get_delegations_by_operations(
             generator_address,
+            operations,
             skip.unwrap_or(0),
             count.unwrap_or(100),
         )

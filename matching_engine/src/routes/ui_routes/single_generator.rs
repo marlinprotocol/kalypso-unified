@@ -1,5 +1,6 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::LocalAskStore;
+use crate::generator_lib::delegation::Operation;
 use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::key_store::Key;
 use crate::generator_lib::key_store::KeyStore;
@@ -333,12 +334,7 @@ async fn recompute_single_generator_response<'a>(
                     .to_string(),
                 proofs_missed: info.proofs_slashed.to_string(),
                 proofs_generated: info.proofs_submitted.to_string(),
-                slashing_penalties_incured: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.proofs_slashed)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
+                slashing_penalties_incured: info.proofs_slashed.to_string(),
                 pending_proofs: info.active_requests.to_string(),
                 min_hardware_requirement: MinHardware {
                     instance_type: "todo".into(),
@@ -443,7 +439,12 @@ async fn recompute_single_generator_response<'a>(
             })
             .collect(),
         delegations: local_generator_store
-            .get_delegations(&generator_id, None, None)
+            .get_delegations(
+                &generator_id,
+                vec![Operation::Delegate, Operation::UnDelegate],
+                None,
+                None,
+            )
             .iter()
             .map(|element| DelegateOperation {
                 delegation: address_token_pair_to_token_amount(element.delegation),

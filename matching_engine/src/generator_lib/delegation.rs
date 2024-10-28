@@ -137,9 +137,10 @@ impl DelegationStore {
     /// A `Vec<Delegation>` containing the requested delegations. If the generator
     /// does not exist or there are not enough delegations, the returned vector
     /// will contain as many delegations as available after skipping.
-    pub fn get_delegations(
+    pub fn get_delegations_by_operations(
         &self,
         generator: &Address,
+        operations: Vec<Operation>,
         skip: usize,
         count: usize,
     ) -> Vec<Delegation> {
@@ -147,6 +148,7 @@ impl DelegationStore {
         if let Some(delegations_set) = self.by_generator.get(generator) {
             delegations_set
                 .iter() // Create an iterator over &Delegation
+                .filter(|delegation| operations.contains(&delegation.operation)) // Filter by operations
                 .skip(skip) // Skip the first `skip` delegations
                 .take(count) // Take the next `count` delegations
                 .cloned() // Clone each Delegation to return owned instances

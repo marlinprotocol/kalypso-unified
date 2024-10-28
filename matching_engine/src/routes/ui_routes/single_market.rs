@@ -19,6 +19,8 @@ use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
 
+const DEFAULT_COUNT: &usize = &100;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MinHardware {
     instance_type: String,
@@ -315,7 +317,7 @@ async fn recompute_single_market_response<'a>(
             .get_by_ask_state_except_complete(AskState::Create)
             .result()
             .map(|mut asks| {
-                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                asks.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
                 let local_asks = asks.into_iter().collect::<Vec<LocalAsk>>();
 
                 local_asks
@@ -337,28 +339,29 @@ async fn recompute_single_market_response<'a>(
             .unwrap_or_default(),
 
         completed_jobs: local_ask_store
-            .get_by_ask_state_except_complete(AskState::Complete)
-            .result()
-            .map(|mut asks| {
-                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
-                let local_asks = asks.into_iter().collect::<Vec<LocalAsk>>();
-
-                local_asks
-                    .into_iter()
-                    .map(|a| Job {
-                        ask_id: a.ask_id.to_string(),
-                        requestor: address_to_string(&a.prover_refund_address),
-                        cost: TokenAmount {
-                            token: address_to_string(&USDC_TOKEN),
-                            amount: a.reward.to_string(),
-                        },
-                        time: (a.deadline - a.created_on).to_string(),
-                        inputs: a.prover_data.to_string(),
-                        generator: None,
-                        status: AskState::Create,
-                    })
-                    .collect()
+            .get_completed_proofs_of_market(&market_id, 0, DEFAULT_COUNT.clone())
+            .into_iter()
+            .map(|a| Job {
+                ask_id: a.ask_id.to_string(),
+                requestor: address_to_string(&a.prover_refund_address),
+                cost: TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: a.reward.to_string(),
+                },
+                time: local_ask_store
+                    .get_proving_time(&a.ask_id)
+                    .unwrap_or_default()
+                    .to_string(),
+                inputs: a.prover_data.to_string(),
+                generator: {
+                    if a.generator.is_some() {
+                        Some(address_to_string(&a.generator.unwrap()))
+                    } else {
+                        None
+                    }
+                },
+                status: AskState::Complete,
             })
-            .unwrap_or_default(),
+            .collect(),
     })
 }
