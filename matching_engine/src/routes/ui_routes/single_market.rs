@@ -125,7 +125,7 @@ pub async fn single_market(
     path: web::Path<(String,)>,
     // query: web::Query<QueryParams>, // If required add latter
 ) -> actix_web::Result<HttpResponse> {
-    let market_id: U256 = match path.into_inner().0.parse() {
+    let market_id: U256 = match U256::from_dec_str(&path.0) {
         Ok(data) => data,
         _ => {
             return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
