@@ -146,6 +146,7 @@ struct Market {
     id: String,
     earnings_to_date: String,
     proofs_missed: String,
+    proofs_generated: String,
     slashing_penalties_incured: String,
     pending_proofs: String,
     min_hardware_requirement: MinHardware,
@@ -290,7 +291,7 @@ async fn recompute_single_generator_response<'a>(
 
     Some(GeneratorResponse {
         operator: Operator {
-            name: Some("todo".into()),
+            name: None,
             address: address_to_string(&generator_id),
         },
         details: generator_data.deserialize_generator_bytes(),
@@ -334,6 +335,12 @@ async fn recompute_single_generator_response<'a>(
                     .clone()
                     .into_iter()
                     .map(|info| info.proofs_slashed)
+                    .fold(U256::zero(), |a, x| a + x)
+                    .to_string(),
+                proofs_generated: all_markets_of_generator
+                    .clone()
+                    .into_iter()
+                    .map(|info| info.proofs_submitted)
                     .fold(U256::zero(), |a, x| a + x)
                     .to_string(),
                 slashing_penalties_incured: all_markets_of_generator

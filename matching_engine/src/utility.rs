@@ -327,7 +327,7 @@ impl AddAssign for TokenTracker {
     }
 }
 
-// pub const POND: &str = "POND";
+pub const USDC_TOKEN_STRING: &str = "0x6543210965432109654321096543210965432109";
 pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0x9999888899998888999988889999888899998888";
 pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x1234123412347777666655551234123476547654";
 
@@ -337,3 +337,5 @@ pub static TEST_TOKEN_ADDRESS_ONE: Lazy<Address> =
 
 pub static TEST_TOKEN_ADDRESS_TWO: Lazy<Address> =
     Lazy::new(|| TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap());
+
+pub static USDC_TOKEN: Lazy<Address> = Lazy::new(|| USDC_TOKEN_STRING.parse::<Address>().unwrap());

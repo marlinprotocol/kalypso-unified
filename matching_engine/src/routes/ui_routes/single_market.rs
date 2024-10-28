@@ -1,29 +1,13 @@
-// const dashboardData = {
-// registeredGenerators: 291,
-// medianTime: '3.5 Sec',
-// medianCost: '$0.75',
-// slashingPenalty: '5%',
-// totalEarnings: 'USDT 1,234,567',
-// totalSlashed: 'USDT 98,765',
-// hardwareReq: {
-// vCpu: 0,
-// vGpu: 0,
-// enclave: '',
-// minStake: 0
-// },
-// jobs:{
-// total:300,
-// active:0,
-// unMatched:0,
-// }
-// };
-
+use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::LocalAskStore;
-use crate::generator_lib::generator_store::GeneratorStore;
+use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
 use crate::models::WelcomeResponse;
-use crate::utility::{address_token_pair_to_token_amount, random_usize, TokenAmount, TokenTracker};
+use crate::utility::{
+    address_to_string, address_token_pair_to_token_amount, random_usize, TokenAmount, TokenTracker,
+    USDC_TOKEN,
+};
 use actix_web::web::{self, Data};
 use actix_web::HttpResponse;
 use ethers::types::U256;
@@ -50,6 +34,15 @@ struct Jobs {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+struct RegisteredGenerator {
+    details: GeneratorMeta,
+    address: String,
+    delegations: Vec<TokenAmount>,
+    time: String,
+    cost: TokenAmount,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct SingleMarketResponse {
     registered_generators: usize,
     slashing_penalty: Vec<TokenAmount>,
@@ -61,6 +54,20 @@ struct SingleMarketResponse {
     min_stake: Vec<TokenAmount>,
     jobs: Jobs,
     market_setup_data: MarketSetupData,
+    registered_generator_list: Vec<RegisteredGenerator>,
+    unmatched_jobs: Vec<Job>,
+    completed_jobs: Vec<Job>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Job {
+    requestor: String,
+    time: String,
+    cost: TokenAmount,
+    ask_id: String,
+    inputs: String,
+    generator: Option<String>,
+    status: AskState,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -285,5 +292,73 @@ async fn recompute_single_market_response<'a>(
             },
         },
         market_setup_data: marketmetadata.deserialize_market_bytes(),
+        registered_generator_list: local_generator_store
+            .get_all_by_market_id(&market_id)
+            .iter()
+            .filter_map(|element| {
+                // Attempt to retrieve generator_info. If None, skip this element.
+                local_generator_store
+                    .get_by_address(&element.address)
+                    .map(|generator_info| RegisteredGenerator {
+                        details: generator_info.deserialize_generator_bytes(),
+                        address: address_to_string(&element.address),
+                        delegations: generator_info.total_stake.to_token_amount(),
+                        time: element.proposed_time.to_string(),
+                        cost: TokenAmount {
+                            token: address_to_string(&USDC_TOKEN),
+                            amount: element.proof_generation_cost.to_string(),
+                        },
+                    })
+            })
+            .collect::<Vec<RegisteredGenerator>>(),
+        unmatched_jobs: local_ask_store
+            .get_by_ask_state_except_complete(AskState::Create)
+            .result()
+            .map(|mut asks| {
+                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                let local_asks = asks.into_iter().collect::<Vec<LocalAsk>>();
+
+                local_asks
+                    .into_iter()
+                    .map(|a| Job {
+                        ask_id: a.ask_id.to_string(),
+                        requestor: address_to_string(&a.prover_refund_address),
+                        cost: TokenAmount {
+                            token: address_to_string(&USDC_TOKEN),
+                            amount: a.reward.to_string(),
+                        },
+                        time: (a.deadline - a.created_on).to_string(),
+                        inputs: a.prover_data.to_string(),
+                        generator: None,
+                        status: AskState::Create,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+
+        completed_jobs: local_ask_store
+            .get_by_ask_state_except_complete(AskState::Complete)
+            .result()
+            .map(|mut asks| {
+                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                let local_asks = asks.into_iter().collect::<Vec<LocalAsk>>();
+
+                local_asks
+                    .into_iter()
+                    .map(|a| Job {
+                        ask_id: a.ask_id.to_string(),
+                        requestor: address_to_string(&a.prover_refund_address),
+                        cost: TokenAmount {
+                            token: address_to_string(&USDC_TOKEN),
+                            amount: a.reward.to_string(),
+                        },
+                        time: (a.deadline - a.created_on).to_string(),
+                        inputs: a.prover_data.to_string(),
+                        generator: None,
+                        status: AskState::Create,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
     })
 }
