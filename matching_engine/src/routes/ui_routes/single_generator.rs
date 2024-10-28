@@ -147,8 +147,8 @@ struct Market {
     earnings_to_date: String,
     proofs_missed: String,
     proofs_generated: String,
-    slashing_penalties_incured: String,
     pending_proofs: String,
+    slashing_penalties_incured: String,
     min_hardware_requirement: MinHardware,
     enclave_key: Option<Key>,
 }
@@ -331,30 +331,15 @@ async fn recompute_single_generator_response<'a>(
                     .get_earning_per_market(&generator_id, &info.market_id)
                     .unwrap_or_default()
                     .to_string(),
-                proofs_missed: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.proofs_slashed)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
-                proofs_generated: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.proofs_submitted)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
+                proofs_missed: info.proofs_slashed.to_string(),
+                proofs_generated: info.proofs_submitted.to_string(),
                 slashing_penalties_incured: all_markets_of_generator
                     .clone()
                     .into_iter()
                     .map(|info| info.proofs_slashed)
                     .fold(U256::zero(), |a, x| a + x)
                     .to_string(),
-                pending_proofs: all_markets_of_generator
-                    .clone()
-                    .into_iter()
-                    .map(|info| info.active_requests)
-                    .fold(U256::zero(), |a, x| a + x)
-                    .to_string(),
+                pending_proofs: info.active_requests.to_string(),
                 min_hardware_requirement: MinHardware {
                     instance_type: "todo".into(),
                     vcpus: random_usize(),
@@ -366,7 +351,7 @@ async fn recompute_single_generator_response<'a>(
             .get_by_ask_state_except_complete(AskState::Assigned)
             .result()
             .map(|mut asks| {
-                asks.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
+                asks.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
                 let local_asks = asks
                     .into_iter()
                     .filter(|ask| match &ask.generator {
