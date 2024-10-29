@@ -70,7 +70,7 @@ pub struct MarketSetupData {
     privacy_policy_url: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MarketMetadata {
     pub market_id: U256,
     pub verifier: Address,
@@ -190,32 +190,12 @@ impl MarketMetadataStore {
         self.market_by_id.get(market_id).cloned()
     }
 
-    pub fn get_slashing_penalty_by_market_id(
-        &self,
-        market_id: &U256,
-    ) -> Option<Vec<AddressTokenPair>> {
+    pub fn get_slashing_penalty_by_market_id(&self, market_id: &U256) -> Vec<AddressTokenPair> {
         // Safely access market metadata to retrieve the slashing penalty
         self.market_by_id
             .get(market_id)
             .map(|metadata| metadata.slashing_penalty.to_address_token_pair())
-    }
-
-    #[allow(unused)]
-    pub fn decode_market_verification_url_by_id(&self, market_id: &U256) -> Option<String> {
-        let market_metadata = self.market_by_id.get(market_id)?;
-
-        let metadata_str = market_metadata.metadata.to_string();
-        let metadata_trim: Vec<_> = metadata_str.split('x').collect();
-        let market_metadata_decoded = hex::decode(metadata_trim[1]).ok()?;
-        let metadata_bytes: Bytes = market_metadata_decoded.into();
-
-        let received_url = String::from_utf8(metadata_bytes.0.to_vec()).ok();
-        if let Some(url) = received_url {
-            log::debug!("URL: {:?}", url);
-            Some(url)
-        } else {
-            None
-        }
+            .unwrap_or_default()
     }
 }
 

@@ -234,8 +234,7 @@ async fn recompute_single_market_response<'a>(
     let local_generator_store_arc = Arc::new(local_generator_store.clone());
 
     let slashing_penalty = local_market_store
-        .get_slashing_penalty_by_market_id(&market_id)
-        .unwrap_or_default() // Simplified unwrapping
+        .get_slashing_penalty_by_market_id(&market_id) // Simplified unwrapping
         .into_iter() // Convert Vec into an iterator
         .map(address_token_pair_to_token_amount) // Apply the transformation
         .collect::<Vec<TokenAmount>>();

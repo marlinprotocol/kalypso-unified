@@ -283,6 +283,8 @@ impl LogParser {
 
     #[cfg(not(feature = "disable_match_creation"))]
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
+        use crate::utility::TokenTracker;
+
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
         let generator_store = { self.shared_generator_store.read().await };
@@ -339,8 +341,6 @@ impl LogParser {
                     random_pending_ask.reward,
                 )
                 .await;
-            log::warn!("idle generators: {}", &idle_generators.len());
-            log::debug!("Fetched idle generators");
 
             if idle_generators.is_empty() {
                 log::warn!(
@@ -350,6 +350,8 @@ impl LogParser {
                 );
                 continue;
             }
+
+            log::info!("idle generators: {}", &idle_generators.len());
 
             let key_store = { self.shared_key_store.read().await };
             let idle_generator =
@@ -393,15 +395,23 @@ impl LogParser {
                     stash_required
                 );
 
-                if stash_required > cached_stake_value {
+                if cached_stake_value
+                    .has_more_than_or_eq_in_at_least_one(&stash_required.to_address_token_pair())
+                {
+                    let selected_token = cached_stake_value
+                        .get_random_less_pair(&stash_required.to_address_token_pair());
+                    if selected_token.is_some() {
+                        cached_stake.insert(
+                            idle_generator.address,
+                            cached_stake_value.sub(TokenTracker::from_address_token_pair(
+                                selected_token.unwrap(),
+                            )),
+                        );
+                    }
+                } else {
                     log::warn!(
                         "Possible insuff stash if ask: {} is assigned, hence skipping",
                         random_pending_ask.ask_id
-                    );
-                } else {
-                    cached_stake.insert(
-                        idle_generator.address,
-                        cached_stake_value.sub(stash_required),
                     );
                 }
             }
@@ -596,9 +606,9 @@ impl LogParser {
         let generator_store = generator_store.read().await;
         let market_metadata_store = market_store.read().await;
         let key_store = key_store.read().await;
-        let slashing_penalty = market_metadata_store
-            .get_slashing_penalty_by_market_id(&random_pending_ask.market_id)
-            .unwrap();
+        let slashing_penalty =
+            market_metadata_store.get_slashing_penalty_by_market_id(&random_pending_ask.market_id);
+
         let idle_generators = {
             let generator_query = {
                 if random_pending_ask.has_private_inputs {

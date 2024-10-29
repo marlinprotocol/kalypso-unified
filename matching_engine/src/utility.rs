@@ -1,5 +1,6 @@
 use ethers::abi::{encode, Token};
-use ethers::core::rand;
+use ethers::core::rand::seq::SliceRandom;
+use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
 use ethers::types::{Address, Signature, SignatureError, H160, U256};
 use ethers::utils::keccak256;
@@ -142,6 +143,14 @@ impl TokenTracker {
         }
     }
 
+    pub fn from_address_token_pair(pair: AddressTokenPair) -> Self {
+        let mut token_tracker = TokenTracker::new();
+
+        token_tracker.add_token(&pair.0, &pair.1);
+
+        token_tracker
+    }
+
     pub fn from_address_string_and_dec_string(
         addresses: Vec<String>,
         values: Vec<String>,
@@ -268,6 +277,48 @@ impl TokenTracker {
         false
     }
 
+    pub fn has_more_than_or_eq_across_multiple(
+        &self,
+        address_token_pairs: &Vec<AddressTokenPair>,
+    ) -> bool {
+        // Iterate over each pair and ensure all satisfy the `has_more_than_or_eq` condition
+        address_token_pairs
+            .iter()
+            .all(|pair| self.has_more_than_or_eq(pair))
+    }
+
+    pub fn has_more_than_or_eq_in_at_least_one(
+        &self,
+        address_token_pairs: &Vec<AddressTokenPair>,
+    ) -> bool {
+        // Iterate over each pair and check if any satisfy the `has_more_than_or_eq` condition
+        address_token_pairs
+            .iter()
+            .any(|pair| self.has_more_than_or_eq(pair))
+    }
+
+    pub fn get_random_less_pair(
+        &self,
+        address_token_pairs: &Vec<AddressTokenPair>,
+    ) -> Option<AddressTokenPair> {
+        // Collect all pairs where the tracker has less than the specified amount
+        let less_pairs: Vec<&AddressTokenPair> = address_token_pairs
+            .iter()
+            .filter(|pair| self.has_less_than_or_eq(pair))
+            .collect();
+
+        // If no pairs satisfy the condition, return None
+        if less_pairs.is_empty() {
+            return None;
+        }
+
+        // Initialize the random number generator
+        let mut rng = thread_rng();
+
+        // Select a random pair from the filtered list and clone it
+        less_pairs.choose(&mut rng).cloned().cloned() // Ensure AddressTokenPair implements `Clone`
+    }
+
     // Check if the tracker has less or equal amount than the given address-token pair
     pub fn has_less_than_or_eq(&self, address_token_pair: &AddressTokenPair) -> bool {
         let (address, amount) = address_token_pair;
@@ -276,36 +327,15 @@ impl TokenTracker {
         }
         false
     }
-}
 
-impl TokenTracker {
-    fn sorted_tokens(&self) -> Vec<(Address, U256)> {
-        let mut tokens_vec: Vec<(Address, U256)> =
-            self.tokens.iter().map(|(k, v)| (*k, *v)).collect();
-        // Sort the vector first by address, then by value
-        tokens_vec.sort_by(|a, b| {
-            let addr_cmp = a.0.cmp(&b.0); // Compare addresses
-            if addr_cmp == Ordering::Equal {
-                a.1.cmp(&b.1) // If addresses are equal, compare values
-            } else {
-                addr_cmp
-            }
-        });
-        tokens_vec
-    }
-}
-
-use std::cmp::Ordering;
-// Implement the Ord and PartialOrd traits for TokenTracker
-impl Ord for TokenTracker {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.sorted_tokens().cmp(&other.sorted_tokens())
-    }
-}
-
-impl PartialOrd for TokenTracker {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+    pub fn has_less_than_or_eq_across_multiple(
+        &self,
+        address_token_pairs: &Vec<AddressTokenPair>,
+    ) -> bool {
+        // Iterate over each pair and ensure all satisfy the `has_less_than_or_eq` condition
+        address_token_pairs
+            .iter()
+            .all(|pair| self.has_less_than_or_eq(pair))
     }
 }
 

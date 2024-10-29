@@ -290,7 +290,6 @@ pub async fn process_proof_market_place_logs(
         {
             market_store.write().await.insert(market.clone());
         }
-        // let verification_url = market_store.decode_market_verification_url_by_id(&market_id);
 
         log::debug!("Market added to store: {:?}", market.market_id);
 
