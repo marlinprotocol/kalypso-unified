@@ -1,0 +1,119 @@
+# .github/workflows/workflow_musl_arm.yaml
+
+name: Rust CI - MUSL ARM
+
+on:
+  push:
+    branches: [ "main", "listener-refined" ]
+  pull_request:
+    branches: [ "main", "listener-refined" ]
+
+jobs:
+  check:
+    name: Check (MUSL ARM)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install ARM MUSL target
+        run: rustup target add aarch64-unknown-linux-musl
+
+      - name: Install musl-tools and cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          cargo install cross || echo "cross already installed"
+
+      - name: Cache Cargo registry and git index
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-git-
+
+      - name: Cache Cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-musl-arm-${{ hashFiles('**/Cargo.lock') }}-v2
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-musl-arm-
+            ${{ runner.os }}-cargo-build-
+
+      - name: Remove .cargo/config.toml if exists
+        run: rm -f .cargo/config.toml
+
+      - name: Update dependencies
+        run: cargo update
+
+  test:
+    name: Test Suite (MUSL ARM)
+    runs-on: ubuntu-latest
+    needs: check
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install ARM MUSL target
+        run: rustup target add aarch64-unknown-linux-musl
+
+      - name: Install musl-tools and cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          cargo install cross || echo "cross already installed"
+
+      - name: Cache Cargo registry and git index
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-git-
+
+      - name: Cache Cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-musl-arm-${{ hashFiles('**/Cargo.lock') }}-v2
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-musl-arm-
+            ${{ runner.os }}-cargo-build-
+
+      - name: Remove .cargo/config.toml if exists
+        run: rm -f .cargo/config.toml
+
+      - name: Update dependencies
+        run: cargo update
+
+      - name: Verify Installed Targets
+        run: rustup target list --installed
+
+      - name: Run cargo test
+        env:
+          RUST_BACKTRACE: 1
+        run: cargo test --target aarch64-unknown-linux-musl
