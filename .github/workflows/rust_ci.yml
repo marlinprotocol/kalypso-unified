@@ -19,12 +19,11 @@ jobs:
           x86_64-pc-windows-msvc,     # Windows default
           x86_64-apple-darwin          # macOS default
         ]
-      # Exclude incompatible combinations
-      exclude:
-        - os: windows-latest
-          target: x86_64-unknown-linux-musl
-        - os: macos-latest
-          target: x86_64-unknown-linux-musl
+        exclude:
+          - os: windows-latest
+            target: x86_64-unknown-linux-musl
+          - os: macos-latest
+            target: x86_64-unknown-linux-musl
 
     name: Build on ${{ matrix.os }} with target ${{ matrix.target }}
 
@@ -47,27 +46,27 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-${{ matrix.target }}-registry-
 
-      # Cache Cargo index
-      - name: Cache Cargo index
+      # Cache Cargo git index
+      - name: Cache Cargo git index
         uses: actions/cache@v3
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-git-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-git-
+            ${{ runner.os }}-cargo-${{ matrix.target }}-git-
 
       # Cache Cargo build
       - name: Cache Cargo build
         uses: actions/cache@v3
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-build-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-build-
+            ${{ runner.os }}-cargo-${{ matrix.target }}-build-
 
       # Set environment variables for rustflags if needed
       - name: Set environment variables
@@ -84,10 +83,8 @@ jobs:
 
       # Build the project
       - name: Build project
-        run: |
-          cargo build --verbose --target ${{ matrix.target }}
+        run: cargo build --verbose --target ${{ matrix.target }}
 
       # Run tests
       - name: Run tests
-        run: |
-          cargo test --verbose --target ${{ matrix.target }}
+        run: cargo test --verbose --target ${{ matrix.target }}
