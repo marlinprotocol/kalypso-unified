@@ -15,8 +15,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-          - os: macos-latest
-            target: x86_64-apple-darwin
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -74,8 +72,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-          - os: macos-latest
-            target: x86_64-apple-darwin
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
