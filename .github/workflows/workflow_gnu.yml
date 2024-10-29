@@ -4,9 +4,9 @@ name: Rust CI - GNU
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main", "listener-refined" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main", "listener-refined" ]
 
 jobs:
   check:

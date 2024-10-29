@@ -4,9 +4,9 @@ name: Rust CI - MUSL
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "master", "listener-refined" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main", "listener-refined" ]
 
 jobs:
   check:
