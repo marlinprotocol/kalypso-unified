@@ -10,7 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
+      include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-musl
+        - os: windows-latest
+          target: x86_64-pc-windows-msvc
+        - os: macos-latest
+          target: x86_64-apple-darwin
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -29,6 +37,10 @@ jobs:
       - name: Install musl-tools
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
+      
+      - name: Remove .cargo/config.toml if not musl build
+        if: matrix.target != 'x86_64-unknown-linux-musl'
+        run: rm -f .cargo/config.toml
 
       - name: Cache Cargo registry
         uses: actions/cache@v3
@@ -54,21 +66,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
-      - name: Verify Installed Targets
-        run: rustup target list --installed
-
-      - name: Run cargo check
+      - name: Run cargo fmt
         uses: actions-rs/cargo@v1
         with:
-          command: check
-          args: --target ${{ matrix.target }}
+          command: fmt
+          args: --all -- --check
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
 
   test:
     name: Test Suite
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
+        target: [stable-x86_64-unknown-linux-gnu, x86_64-unknown-linux-musl]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
