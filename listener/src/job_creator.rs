@@ -196,6 +196,57 @@ impl JobCreator {
     }
 
     #[allow(clippy::too_many_arguments)]
+    pub fn simple_listener_for_non_confidential_prover_with_multiple_generators(
+        generator_configs: Vec<GeneratorConfigModel>,
+        http_rpc_url: String,
+        gas_key: String,
+        proof_market_place: String,
+        generator_registry: String,
+        start_block: u64,
+        chain_id: u64,
+        prover_gateway_url: String,
+        ivs_url: String,
+        enable_logging_server: bool,
+        max_threads: usize,
+    ) -> Self {
+        let config = Config {
+            generator_config: generator_configs,
+        };
+    
+        let runtime_config_model = RuntimeConfigModel {
+            ws_url: None,
+            http_url: http_rpc_url,
+            private_key: gas_key,
+            proof_market_place,
+            generator_registry,
+            start_block,
+            chain_id,
+            markets: {
+                let mut markets = HashMap::new();
+                for generator in config.generator_config.iter() {
+                    for market in &generator.supported_markets {
+                        markets.insert(
+                            market.clone(),
+                            MarketDetails {
+                                port: None,
+                                ivs_url: Some(ivs_url.clone()),
+                                prover_gateway_url: Some(prover_gateway_url.clone()),
+                            },
+                        );
+                    }
+                }
+                markets
+            },
+        };
+    
+        let runtime_config = RuntimeConfig {
+            runtime_config: runtime_config_model,
+        };
+    
+        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
+    }
+
+    #[allow(clippy::too_many_arguments)]
     pub fn simple_listener_for_confidential_prover(
         generator_address: String,
         ecies_private_key: String,
