@@ -8,7 +8,6 @@ use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
-use crate::utility::random_u256;
 use crate::utility::random_usize;
 use crate::utility::TokenAmount;
 use crate::utility::TEST_TOKEN_ADDRESS_ONE;
@@ -152,6 +151,7 @@ struct Market {
     slashing_penalties_incured: String,
     min_hardware_requirement: MinHardware,
     enclave_key: Option<Key>,
+    kalypso_points: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -296,7 +296,10 @@ async fn recompute_single_generator_response<'a>(
             address: address_to_string(&generator_id),
         },
         details: generator_data.deserialize_generator_bytes(),
-        kalypso_points: random_u256().to_string(),
+        kalypso_points: local_generator_store
+            .get_kalypso_points(&generator_id)
+            .unwrap_or_default()
+            .to_string(),
         reward_address: address_to_string(&generator_data.reward_address),
         active_jobs: all_markets_of_generator
             .clone()
@@ -340,6 +343,10 @@ async fn recompute_single_generator_response<'a>(
                     instance_type: "todo".into(),
                     vcpus: random_usize(),
                 },
+                kalypso_points: local_generator_store
+                    .get_kalypso_points_per_market(&generator_id, &info.market_id)
+                    .unwrap_or_default()
+                    .to_string(),
                 enclave_key: local_key_store.get_by_address(&info.address, info.market_id.as_u64()),
             })
             .collect(),

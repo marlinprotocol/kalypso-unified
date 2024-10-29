@@ -15,6 +15,9 @@ use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
 
+static KALYPSO_POINTS_PER_PROOF: Lazy<U256> =
+    Lazy::new(|| U256::from_dec_str("11").unwrap().pow(18.into()));
+
 #[derive(Debug, Clone)]
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
@@ -28,6 +31,8 @@ pub struct GeneratorStore {
     slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
     slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
     delegation_store: DelegationStore,
+    kalypso_points: HashMap<Address, U256>,
+    kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -174,6 +179,8 @@ impl GeneratorStore {
             slashing_per_generator_per_market: HashMap::new(),
             slashing_records: HashMap::new(),
             delegation_store: DelegationStore::new(),
+            kalypso_points: HashMap::new(),
+            kalypso_points_per_market: HashMap::new(),
         }
     }
 
@@ -403,6 +410,18 @@ impl GeneratorStore {
             .entry(*market_id)
             .and_modify(|e| *e = e.saturating_add(*earning))
             .or_insert(*earning);
+
+        self.kalypso_points
+            .entry(*address)
+            .and_modify(|e| *e = e.saturating_add(*KALYPSO_POINTS_PER_PROOF))
+            .or_insert(*KALYPSO_POINTS_PER_PROOF);
+
+        self.kalypso_points_per_market
+            .entry(*address)
+            .or_insert_with(HashMap::new)
+            .entry(*market_id)
+            .and_modify(|e| *e = e.saturating_add(*KALYPSO_POINTS_PER_PROOF))
+            .or_insert(*KALYPSO_POINTS_PER_PROOF);
     }
 
     pub fn update_on_slashing(
@@ -748,9 +767,24 @@ impl GeneratorStore {
     }
 
     // Get earnings for a specific address and market
-    #[allow(unused)]
     pub fn get_earning_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
         self.earnings_per_market
+            .get(address)
+            .and_then(|market_earnings| market_earnings.get(market_id).cloned())
+    }
+
+    // Get total earnings for a specific address
+    pub fn get_kalypso_points(&self, address: &Address) -> Option<U256> {
+        self.kalypso_points.get(address).cloned()
+    }
+
+    // Get earnings for a specific address and market
+    pub fn get_kalypso_points_per_market(
+        &self,
+        address: &Address,
+        market_id: &U256,
+    ) -> Option<U256> {
+        self.kalypso_points_per_market
             .get(address)
             .and_then(|market_earnings| market_earnings.get(market_id).cloned())
     }
