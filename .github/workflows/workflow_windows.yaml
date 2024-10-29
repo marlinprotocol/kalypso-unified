@@ -1,6 +1,6 @@
-# .github/workflows/workflow_gnu.yaml
+# .github/workflows/workflow_windows.yaml
 
-name: Rust CI - GNU
+name: Rust CI - Windows
 
 on:
   push:
@@ -10,8 +10,8 @@ on:
 
 jobs:
   check:
-    name: Check (GNU)
-    runs-on: ubuntu-latest
+    name: Check (Windows)
+    runs-on: windows-latest
 
     steps:
       - name: Checkout sources
@@ -22,42 +22,42 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          target: x86_64-pc-windows-msvc
           override: true
 
-      - name: Cache Cargo registry
+      - name: Install Windows target
+        run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Cache Cargo registry and git index
         uses: actions/cache@v3
         with:
-          path: ~/.cargo/registry
+          path: |
+            C:\Users\runneradmin\.cargo\registry
+            C:\Users\runneradmin\.cargo\git
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Cargo git index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
             ${{ runner.os }}-cargo-git-
 
       - name: Cache Cargo build
         uses: actions/cache@v3
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-gnu-${{ hashFiles('**/Cargo.lock') }}-v2
+          key: ${{ runner.os }}-cargo-build-windows-${{ hashFiles('**/Cargo.lock') }}-v2
           restore-keys: |
-            ${{ runner.os }}-cargo-build-gnu-
+            ${{ runner.os }}-cargo-build-windows-
             ${{ runner.os }}-cargo-build-
 
       - name: Remove .cargo/config.toml if exists
-        run: rm -f .cargo/config.toml
+        shell: powershell
+        run: Remove-Item -Path .\.cargo\config.toml -ErrorAction SilentlyContinue
 
       - name: Update dependencies
         run: cargo update
 
   test:
-    name: Test Suite (GNU)
-    runs-on: ubuntu-latest
+    name: Test Suite (Windows)
+    runs-on: windows-latest
     needs: check
 
     steps:
@@ -69,35 +69,35 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+          target: x86_64-pc-windows-msvc
           override: true
 
-      - name: Cache Cargo registry
+      - name: Install Windows target
+        run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Cache Cargo registry and git index
         uses: actions/cache@v3
         with:
-          path: ~/.cargo/registry
+          path: |
+            C:\Users\runneradmin\.cargo\registry
+            C:\Users\runneradmin\.cargo\git
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
-
-      - name: Cache Cargo git index
-        uses: actions/cache@v3
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
             ${{ runner.os }}-cargo-git-
 
       - name: Cache Cargo build
         uses: actions/cache@v3
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-gnu-${{ hashFiles('**/Cargo.lock') }}-v2
+          key: ${{ runner.os }}-cargo-build-windows-${{ hashFiles('**/Cargo.lock') }}-v2
           restore-keys: |
-            ${{ runner.os }}-cargo-build-gnu-
+            ${{ runner.os }}-cargo-build-windows-
             ${{ runner.os }}-cargo-build-
 
       - name: Remove .cargo/config.toml if exists
-        run: rm -f .cargo/config.toml
+        shell: powershell
+        run: Remove-Item -Path .\.cargo\config.toml -ErrorAction SilentlyContinue
 
       - name: Update dependencies
         run: cargo update
@@ -108,4 +108,4 @@ jobs:
       - name: Run cargo test
         env:
           RUST_BACKTRACE: 1
-        run: cargo test --target x86_64-unknown-linux-gnu
+        run: cargo test --target x86_64-pc-windows-msvc

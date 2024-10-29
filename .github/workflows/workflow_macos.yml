@@ -114,4 +114,4 @@ jobs:
       - name: Run cargo test
         env:
           RUST_BACKTRACE: 1
-        run: cargo test --target x86_64-apple-darwin --verbose
+        run: cargo test --target x86_64-apple-darwin
