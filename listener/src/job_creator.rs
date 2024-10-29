@@ -23,13 +23,62 @@ use crate::{ask, generator_store, proof_generator};
 use warp::Filter;
 
 #[derive(Debug, Serialize, Deserialize)]
-struct GeneratorConfigModel {
+pub struct GeneratorConfigModel {
     address: String,
     ecies_private_key: Option<String>,
     data: Option<String>,
     supported_markets: Vec<String>,
     staked_amount: Option<U256>,
     min_reward: Option<U256>,
+}
+
+impl GeneratorConfigModel {
+    pub fn new(
+        address: String,
+        ecies_private_key: Option<String>,
+        data: Option<String>,
+        supported_markets: Vec<String>,
+    ) -> Self {
+        Self {
+            address,
+            ecies_private_key,
+            data,
+            supported_markets,
+            staked_amount: None,
+            min_reward: None,
+        }
+    }
+
+    pub fn new_multiple(
+        address: Vec<String>,
+        ecies_private_key: Vec<Option<String>>,
+        data: Vec<Option<String>>,
+        supported_markets: Vec<Vec<String>>,
+    ) -> anyhow::Result<Vec<Self>> {
+        // Check that all vectors have the same length
+        let len = address.len();
+        if ecies_private_key.len() != len || data.len() != len || supported_markets.len() != len {
+            return Err(anyhow::anyhow!(
+                "Arity mismatch: All input vectors must have the same length."
+            ));
+        }
+
+        // Initialize a vector to hold the instances
+        let mut instances = Vec::with_capacity(len);
+
+        // Iterate over the indices and create instances
+        for i in 0..len {
+            let instance = Self::new(
+                address[i].clone(),
+                ecies_private_key[i].clone(),
+                data[i].clone(),
+                supported_markets[i].clone(),
+            );
+            instances.push(instance);
+        }
+
+        Ok(instances)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -212,7 +261,7 @@ impl JobCreator {
         let config = Config {
             generator_config: generator_configs,
         };
-    
+
         let runtime_config_model = RuntimeConfigModel {
             ws_url: None,
             http_url: http_rpc_url,
@@ -238,11 +287,11 @@ impl JobCreator {
                 markets
             },
         };
-    
+
         let runtime_config = RuntimeConfig {
             runtime_config: runtime_config_model,
         };
-    
+
         Self::initialize(config, runtime_config, enable_logging_server, max_threads)
     }
 
