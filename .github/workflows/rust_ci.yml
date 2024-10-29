@@ -2,9 +2,9 @@ name: Rust CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master, listener-refined ]
   pull_request:
-    branches: [ main ]
+    branches: [ master, listener-refined ]
 
 jobs:
   build:
