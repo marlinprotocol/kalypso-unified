@@ -191,7 +191,7 @@ impl LogParser {
                             if log.address.eq(&proof_marketplace_address) {
                                 log_processor::pm::process_proof_market_place_logs(
                                     log,
-                                    self.proof_marketplace.clone(),
+                                    &self.proof_marketplace,
                                     &self.shared_local_ask_store,
                                     &self.shared_generator_store,
                                     &self.shared_market_store,
@@ -207,7 +207,7 @@ impl LogParser {
                             if log.address.eq(&generator_registry_address) {
                                 log_processor::gr::process_generator_registry_logs(
                                     log,
-                                    self.generator_registry.clone(),
+                                    &self.generator_registry,
                                     &self.shared_generator_store,
                                 )
                                 .await
@@ -219,7 +219,7 @@ impl LogParser {
                             if log.address.eq(&entity_key_registry_address) {
                                 log_processor::er::process_entity_key_registry_logs(
                                     log,
-                                    self.entity_registry.clone(),
+                                    &self.entity_registry,
                                     &self.shared_key_store,
                                 )
                                 .await
@@ -395,22 +395,21 @@ impl LogParser {
                     stash_required
                 );
 
-                if cached_stake_value
-                    .has_more_than_or_eq_in_at_least_one(&stash_required.to_address_token_pair())
-                {
-                    let selected_token = cached_stake_value
-                        .get_random_less_pair(&stash_required.to_address_token_pair());
-                    if selected_token.is_some() {
+                let address_token_pairs = stash_required.to_address_token_pair();
+
+                if cached_stake_value.has_more_than_or_eq_in_at_least_one(&address_token_pairs) {
+                    if let Some(selected_token) =
+                        cached_stake_value.get_random_less_pair(&address_token_pairs)
+                    {
                         cached_stake.insert(
                             idle_generator.address,
-                            cached_stake_value.sub(TokenTracker::from_address_token_pair(
-                                selected_token.unwrap(),
-                            )),
+                            cached_stake_value
+                                .sub(TokenTracker::from_address_token_pair(selected_token)),
                         );
                     }
                 } else {
                     log::warn!(
-                        "Possible insuff stash if ask: {} is assigned, hence skipping",
+                        "Possible insuff stash if ask: {} is assigned",
                         random_pending_ask.ask_id
                     );
                 }

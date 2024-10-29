@@ -8,7 +8,7 @@ use crate::utility::{tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE};
 
 pub async fn process_generator_registry_logs(
     log: &Log,
-    genertor_registry: bindings::generator_registry::GeneratorRegistry<
+    genertor_registry: &bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,

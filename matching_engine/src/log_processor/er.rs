@@ -7,7 +7,7 @@ use tokio::sync::RwLock;
 
 pub async fn process_entity_key_registry_logs(
     log: &Log,
-    entity_key_registry: bindings::entity_key_registry::EntityKeyRegistry<
+    entity_key_registry: &bindings::entity_key_registry::EntityKeyRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     key_store: &Arc<RwLock<key_store::KeyStore>>,

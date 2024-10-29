@@ -21,7 +21,9 @@ use super::constants;
 #[allow(clippy::too_many_arguments)]
 pub async fn process_proof_market_place_logs(
     log: &Log,
-    proof_market_place: pmp::ProofMarketplace<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+    proof_market_place: &pmp::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+    >,
     local_ask_store: &Arc<RwLock<LocalAskStore>>,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
     market_store: &Arc<RwLock<MarketMetadataStore>>,
