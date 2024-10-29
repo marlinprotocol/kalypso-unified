@@ -1,0 +1,111 @@
+# .github/workflows/workflow_macos.yaml
+
+name: Rust CI - macOS
+
+on:
+  push:
+    branches: [ "main", "listener-refined" ]
+  pull_request:
+    branches: [ "main", "listener-refined" ]
+
+jobs:
+  check:
+    name: Check (macOS)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache Cargo git index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-git-
+
+      - name: Cache Cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-macos-${{ hashFiles('**/Cargo.lock') }}-v2
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-macos-
+            ${{ runner.os }}-cargo-build-
+
+      - name: Remove .cargo/config.toml if exists
+        run: rm -f .cargo/config.toml
+
+      - name: Update dependencies
+        run: cargo update
+
+  test:
+    name: Test Suite (macOS)
+    runs-on: macos-latest
+    needs: check
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache Cargo git index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-git-
+
+      - name: Cache Cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-macos-${{ hashFiles('**/Cargo.lock') }}-v2
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-macos-
+            ${{ runner.os }}-cargo-build-
+
+      - name: Remove .cargo/config.toml if exists
+        run: rm -f .cargo/config.toml
+
+      - name: Update dependencies
+        run: cargo update
+
+      - name: Verify Installed Targets
+        run: rustup target list --installed
+
+      - name: Run cargo test
+        env:
+          RUST_BACKTRACE: 1
+        run: cargo test --target x86_64-apple-darwin --verbose
