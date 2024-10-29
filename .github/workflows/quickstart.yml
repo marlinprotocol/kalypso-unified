@@ -54,11 +54,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
+      - name: Verify Installed Targets
+        run: rustup target list --installed
+
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
           command: check
-          target: ${{ matrix.target }}
+          args: --target ${{ matrix.target }}
 
   test:
     name: Test Suite
@@ -109,11 +112,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
+      - name: Verify Installed Targets
+        run: rustup target list --installed
+
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          target: ${{ matrix.target }}
+          args: --target ${{ matrix.target }}
 
   lints:
     name: Lints
@@ -165,16 +171,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-
 
+      - name: Verify Installed Targets
+        run: rustup target list --installed
+
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
-          target: ${{ matrix.target }}
+          args: --all -- --check --target ${{ matrix.target }}
 
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
-          target: ${{ matrix.target }}
+          args: -- -D warnings --target ${{ matrix.target }}
