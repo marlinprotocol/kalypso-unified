@@ -27,10 +27,10 @@ jobs:
       - name: Install ARM MUSL target
         run: rustup target add aarch64-unknown-linux-musl
 
-      - name: Install musl-tools and cross
+      - name: Install musl-tools and aarch64-linux-musl-gcc
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y musl-tools gcc-aarch64-linux-musl
           cargo install cross || echo "cross already installed"
 
       - name: Cache Cargo registry and git index
@@ -78,10 +78,10 @@ jobs:
       - name: Install ARM MUSL target
         run: rustup target add aarch64-unknown-linux-musl
 
-      - name: Install musl-tools and cross
+      - name: Install musl-tools and aarch64-linux-musl-gcc
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y musl-tools gcc-aarch64-linux-musl
           cargo install cross || echo "cross already installed"
 
       - name: Cache Cargo registry and git index
