@@ -15,8 +15,49 @@ use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
 
-static KALYPSO_POINTS_PER_PROOF: Lazy<U256> =
-    Lazy::new(|| U256::from_dec_str("11").unwrap().pow(18.into()));
+/// Represents a range of blocks and the points associated with that range.
+struct KalypsoPointRange {
+    start_block: u64, // Inclusive start of the block range
+    end_block: u64,   // Inclusive end of the block range
+    points: U256,     // Points associated with this block range
+}
+
+static POINTS_RANGES: Lazy<Vec<KalypsoPointRange>> = Lazy::new(|| {
+    let block_ranges = vec![
+        KalypsoPointRange {
+            start_block: 0,
+            end_block: 7930000,
+            points: U256::from_dec_str("11").unwrap().pow(18.into()),
+        },
+        KalypsoPointRange {
+            start_block: 8930000,
+            end_block: 9930000,
+            points: U256::from_dec_str("12").unwrap().pow(18.into()),
+        },
+        KalypsoPointRange {
+            start_block: 9930000,
+            end_block: 10930000,
+            points: U256::from_dec_str("13").unwrap().pow(18.into()),
+        },
+        KalypsoPointRange {
+            start_block: 9930000,
+            end_block: u64::MAX,
+            points: U256::from_dec_str("14").unwrap().pow(18.into()),
+        }, // Add more KalypsoPointRange entries as needed
+    ];
+
+    block_ranges
+});
+
+fn get_points(block_number: u64) -> U256 {
+    for range in POINTS_RANGES.iter() {
+        if block_number >= range.start_block && block_number <= range.end_block {
+            return range.points;
+        }
+    }
+    // If block_number doesn't fall within any range, return zero points.
+    U256::zero()
+}
 
 #[derive(Debug, Clone)]
 pub struct GeneratorStore {
@@ -391,7 +432,13 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_on_submit_proof(&mut self, address: &Address, market_id: &U256, earning: &U256) {
+    pub fn update_on_submit_proof(
+        &mut self,
+        address: &Address,
+        market_id: &U256,
+        earning: &U256,
+        block_number: &U64,
+    ) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.sub_assign(U256::one());
             generator_market.proofs_submitted.add_assign(U256::one());
@@ -411,17 +458,18 @@ impl GeneratorStore {
             .and_modify(|e| *e = e.saturating_add(*earning))
             .or_insert(*earning);
 
+        let kalypso_points_per_proof = get_points(block_number.as_u64());
         self.kalypso_points
             .entry(*address)
-            .and_modify(|e| *e = e.saturating_add(*KALYPSO_POINTS_PER_PROOF))
-            .or_insert(*KALYPSO_POINTS_PER_PROOF);
+            .and_modify(|e| *e = e.saturating_add(kalypso_points_per_proof))
+            .or_insert(kalypso_points_per_proof);
 
         self.kalypso_points_per_market
             .entry(*address)
             .or_insert_with(HashMap::new)
             .entry(*market_id)
-            .and_modify(|e| *e = e.saturating_add(*KALYPSO_POINTS_PER_PROOF))
-            .or_insert(*KALYPSO_POINTS_PER_PROOF);
+            .and_modify(|e| *e = e.saturating_add(kalypso_points_per_proof))
+            .or_insert(kalypso_points_per_proof);
     }
 
     pub fn update_on_slashing(

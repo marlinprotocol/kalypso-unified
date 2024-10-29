@@ -190,7 +190,7 @@ impl LogParser {
 
                             if log.address.eq(&proof_marketplace_address) {
                                 log_processor::pm::process_proof_market_place_logs(
-                                    vec![log.clone()],
+                                    log,
                                     self.proof_marketplace.clone(),
                                     &self.shared_local_ask_store,
                                     &self.shared_generator_store,
@@ -206,7 +206,7 @@ impl LogParser {
                             }
                             if log.address.eq(&generator_registry_address) {
                                 log_processor::gr::process_generator_registry_logs(
-                                    vec![log.clone()],
+                                    log,
                                     self.generator_registry.clone(),
                                     &self.shared_generator_store,
                                 )
@@ -218,7 +218,7 @@ impl LogParser {
 
                             if log.address.eq(&entity_key_registry_address) {
                                 log_processor::er::process_entity_key_registry_logs(
-                                    vec![log.clone()],
+                                    log,
                                     self.entity_registry.clone(),
                                     &self.shared_key_store,
                                 )

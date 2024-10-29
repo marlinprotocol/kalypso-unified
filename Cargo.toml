@@ -11,3 +11,9 @@ members = [
     "generator_client",
     "integration_checks",
 ]
+
+[profile.release]
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1

@@ -4,13 +4,19 @@ use std::{collections::HashSet, str::FromStr};
 
 // Define the lazy_static set
 lazy_static! {
-    pub static ref TOPICS_TO_SKIP: HashSet<H256> = {
+    static ref TOPICS_TO_SKIP: HashSet<H256> = {
         let mut set = HashSet::new();
         // Initialize your set here
         set.insert(H256::from_str("bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b").unwrap()); // UUPS.Upgraded
         set.insert(H256::from_str("2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d").unwrap()); // AccessControl.RoleGranted
+        set.insert(H256::from_str("f6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b").unwrap()); // AccessControl.RoleRevoked
         set.insert(H256::from_str("bd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff").unwrap()); // AccessControl.RoleAdminChanged
-        set.insert(H256::from_str("7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498").unwrap()); // Initializable.Initialized
+        set.insert(H256::from_str("7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498").unwrap()); // Initializable.Initialized(uint8)
+        set.insert(H256::from_str("c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2").unwrap()); // Initializable.Initialized(uint64)
         set
     };
+
+    pub static ref PROOF_MARKET_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
+    pub static ref GENERATOR_REGISTRY_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
+    pub static ref ENTITY_KEY_REGISTRY_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
 }
