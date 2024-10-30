@@ -366,7 +366,7 @@ impl LogParser {
                 );
                 if idle_generator.compute_required_per_request > cached_compute_value {
                     log::warn!(
-                        "Possible insuff compute if ask: {} is assigned, hence skipping",
+                        "Possible insuff compute if ask: {} is assigned",
                         random_pending_ask.ask_id
                     );
                 } else {
@@ -377,7 +377,7 @@ impl LogParser {
                 }
             }
 
-            if let Some(cached_stake_value) = cached_stake.get(&idle_generator.address).cloned() {
+            if let Some(cached_stake_value) = cached_stake.get(&idle_generator.address) {
                 let market_id = random_pending_ask.market_id;
                 let stash_required = {
                     self.shared_market_store
@@ -401,11 +401,16 @@ impl LogParser {
                     if let Some(selected_token) =
                         cached_stake_value.get_random_less_pair(&address_token_pairs)
                     {
-                        cached_stake.insert(
+                        let updated_cached_stake = cached_stake_value
+                            .clone()
+                            .sub(TokenTracker::from_address_token_pair(selected_token));
+
+                        log::info!(
+                            "Updated cached stake of generator: {} = {}",
                             idle_generator.address,
-                            cached_stake_value
-                                .sub(TokenTracker::from_address_token_pair(selected_token)),
+                            updated_cached_stake
                         );
+                        cached_stake.insert(idle_generator.address, updated_cached_stake);
                     }
                 } else {
                     log::warn!(
