@@ -1,6 +1,6 @@
 use crate::job_creator::MarketDetails;
+use bindings::proof_marketplace::Ask;
 use bindings::proof_marketplace::{AskCreatedFilter, ProofMarketplace};
-use bindings::shared_types::Ask;
 use confidential_provers::ConfidentialProver;
 use ethers::prelude::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
