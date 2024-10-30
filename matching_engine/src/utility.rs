@@ -297,14 +297,14 @@ impl TokenTracker {
             .any(|pair| self.has_more_than_or_eq(pair))
     }
 
-    pub fn get_random_less_pair(
+    pub fn select_one_random_stakable_pair(
         &self,
         address_token_pairs: &Vec<AddressTokenPair>,
     ) -> Option<AddressTokenPair> {
         // Collect all pairs where the tracker has less than the specified amount
         let less_pairs: Vec<&AddressTokenPair> = address_token_pairs
             .iter()
-            .filter(|pair| self.has_less_than_or_eq(pair))
+            .filter(|pair| self.has_more_than_or_eq(pair))
             .collect();
 
         // If no pairs satisfy the condition, return None

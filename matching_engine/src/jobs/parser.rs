@@ -399,7 +399,7 @@ impl LogParser {
 
                 if cached_stake_value.has_more_than_or_eq_in_at_least_one(&address_token_pairs) {
                     if let Some(selected_token) =
-                        cached_stake_value.get_random_less_pair(&address_token_pairs)
+                        cached_stake_value.select_one_random_stakable_pair(&address_token_pairs)
                     {
                         let updated_cached_stake = cached_stake_value
                             .clone()

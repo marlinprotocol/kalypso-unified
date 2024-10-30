@@ -149,7 +149,7 @@ pub async fn single_market(
     };
 
     if cached_response.is_some() {
-        return Ok(HttpResponse::Ok().json(cached_response));
+        return Ok(HttpResponse::Ok().json(cached_response.unwrap()));
     }
 
     let local_ask_store = {
@@ -199,14 +199,16 @@ pub async fn single_market(
         }));
     }
 
+    let new_response = new_response.unwrap();
+
     match SINGLE_MARKET_RESPONSE.try_write() {
-        Ok(mut data) => data.store(&market_query, new_response.clone().unwrap()),
+        Ok(mut data) => data.store(&market_query, new_response.clone()),
         _ => {
             log::warn!("Failed Caching Single Market response");
         }
     }
 
-    return Ok(HttpResponse::Ok().json(new_response.unwrap()));
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_single_market_response<'a>(
@@ -234,9 +236,9 @@ async fn recompute_single_market_response<'a>(
     let local_generator_store_arc = Arc::new(local_generator_store.clone());
 
     let slashing_penalty = local_market_store
-        .get_slashing_penalty_by_market_id(&market_id) // Simplified unwrapping
-        .into_iter() // Convert Vec into an iterator
-        .map(address_token_pair_to_token_amount) // Apply the transformation
+        .get_slashing_penalty_by_market_id(&market_id)
+        .into_iter()
+        .map(address_token_pair_to_token_amount)
         .collect::<Vec<TokenAmount>>();
 
     Some(SingleMarketResponse {
@@ -328,7 +330,7 @@ async fn recompute_single_market_response<'a>(
                             token: address_to_string(&USDC_TOKEN),
                             amount: a.reward.to_string(),
                         },
-                        time: (a.deadline - a.created_on).to_string(),
+                        time: (a.deadline.saturating_sub(a.created_on)).to_string(),
                         inputs: a.prover_data.to_string(),
                         generator: None,
                         status: AskState::Create,
