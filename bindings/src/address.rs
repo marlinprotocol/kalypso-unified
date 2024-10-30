@@ -16,41 +16,19 @@ pub mod address {
             constructor: ::core::option::Option::None,
             functions: ::std::collections::BTreeMap::new(),
             events: ::std::collections::BTreeMap::new(),
-            errors: ::core::convert::From::from([
-                (
-                    ::std::borrow::ToOwned::to_owned("AddressEmptyCode"),
-                    ::std::vec![::ethers::core::abi::ethabi::AbiError {
-                        name: ::std::borrow::ToOwned::to_owned("AddressEmptyCode"),
-                        inputs: ::std::vec![::ethers::core::abi::ethabi::Param {
-                            name: ::std::borrow::ToOwned::to_owned("target"),
-                            kind: ::ethers::core::abi::ethabi::ParamType::Address,
-                            internal_type: ::core::option::Option::Some(
-                                ::std::borrow::ToOwned::to_owned("address"),
-                            ),
-                        },],
+            errors: ::core::convert::From::from([(
+                ::std::borrow::ToOwned::to_owned("AddressEmptyCode"),
+                ::std::vec![::ethers::core::abi::ethabi::AbiError {
+                    name: ::std::borrow::ToOwned::to_owned("AddressEmptyCode"),
+                    inputs: ::std::vec![::ethers::core::abi::ethabi::Param {
+                        name: ::std::borrow::ToOwned::to_owned("target"),
+                        kind: ::ethers::core::abi::ethabi::ParamType::Address,
+                        internal_type: ::core::option::Option::Some(
+                            ::std::borrow::ToOwned::to_owned("address"),
+                        ),
                     },],
-                ),
-                (
-                    ::std::borrow::ToOwned::to_owned("AddressInsufficientBalance"),
-                    ::std::vec![::ethers::core::abi::ethabi::AbiError {
-                        name: ::std::borrow::ToOwned::to_owned("AddressInsufficientBalance",),
-                        inputs: ::std::vec![::ethers::core::abi::ethabi::Param {
-                            name: ::std::borrow::ToOwned::to_owned("account"),
-                            kind: ::ethers::core::abi::ethabi::ParamType::Address,
-                            internal_type: ::core::option::Option::Some(
-                                ::std::borrow::ToOwned::to_owned("address"),
-                            ),
-                        },],
-                    },],
-                ),
-                (
-                    ::std::borrow::ToOwned::to_owned("FailedInnerCall"),
-                    ::std::vec![::ethers::core::abi::ethabi::AbiError {
-                        name: ::std::borrow::ToOwned::to_owned("FailedInnerCall"),
-                        inputs: ::std::vec![],
-                    },],
-                ),
-            ]),
+                },],
+            )]),
             receive: false,
             fallback: false,
         }
@@ -59,12 +37,12 @@ pub mod address {
     pub static ADDRESS_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xB3\xC4\x8D\xE8\xAA\xF7o\x9D\x1C\x8D1\x80>\x0E\x9D\xC0<\x0Ce\xB6\x06\xDDi\xAD\xC0:P\x13\xF8\xEC\xFE\xD8dsolcC\0\x08\x14\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x06\x84J\xE0:' \xB1\x81\xA0A\xD6O,\xDD\xCB\xDE\xAFR$\xF6\x89\xC5 \x90$\x91$m\xF1r\xE1dsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
     pub static ADDRESS_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xB3\xC4\x8D\xE8\xAA\xF7o\x9D\x1C\x8D1\x80>\x0E\x9D\xC0<\x0Ce\xB6\x06\xDDi\xAD\xC0:P\x13\xF8\xEC\xFE\xD8dsolcC\0\x08\x14\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x06\x84J\xE0:' \xB1\x81\xA0A\xD6O,\xDD\xCB\xDE\xAFR$\xF6\x89\xC5 \x90$\x91$m\xF1r\xE1dsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
     pub static ADDRESS_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
@@ -166,145 +144,5 @@ pub mod address {
     #[etherror(name = "AddressEmptyCode", abi = "AddressEmptyCode(address)")]
     pub struct AddressEmptyCode {
         pub target: ::ethers::core::types::Address,
-    }
-    ///Custom Error type `AddressInsufficientBalance` with signature `AddressInsufficientBalance(address)` and selector `0xcd786059`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthError,
-        ::ethers::contract::EthDisplay,
-        serde::Serialize,
-        serde::Deserialize,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    #[etherror(
-        name = "AddressInsufficientBalance",
-        abi = "AddressInsufficientBalance(address)"
-    )]
-    pub struct AddressInsufficientBalance {
-        pub account: ::ethers::core::types::Address,
-    }
-    ///Custom Error type `FailedInnerCall` with signature `FailedInnerCall()` and selector `0x1425ea42`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthError,
-        ::ethers::contract::EthDisplay,
-        serde::Serialize,
-        serde::Deserialize,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    #[etherror(name = "FailedInnerCall", abi = "FailedInnerCall()")]
-    pub struct FailedInnerCall;
-    ///Container type for all of the contract's custom errors
-    #[derive(
-        Clone,
-        ::ethers::contract::EthAbiType,
-        serde::Serialize,
-        serde::Deserialize,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    pub enum AddressErrors {
-        AddressEmptyCode(AddressEmptyCode),
-        AddressInsufficientBalance(AddressInsufficientBalance),
-        FailedInnerCall(FailedInnerCall),
-        /// The standard solidity revert string, with selector
-        /// Error(string) -- 0x08c379a0
-        RevertString(::std::string::String),
-    }
-    impl ::ethers::core::abi::AbiDecode for AddressErrors {
-        fn decode(
-            data: impl AsRef<[u8]>,
-        ) -> ::core::result::Result<Self, ::ethers::core::abi::AbiError> {
-            let data = data.as_ref();
-            if let Ok(decoded) =
-                <::std::string::String as ::ethers::core::abi::AbiDecode>::decode(data)
-            {
-                return Ok(Self::RevertString(decoded));
-            }
-            if let Ok(decoded) = <AddressEmptyCode as ::ethers::core::abi::AbiDecode>::decode(data)
-            {
-                return Ok(Self::AddressEmptyCode(decoded));
-            }
-            if let Ok(decoded) =
-                <AddressInsufficientBalance as ::ethers::core::abi::AbiDecode>::decode(data)
-            {
-                return Ok(Self::AddressInsufficientBalance(decoded));
-            }
-            if let Ok(decoded) = <FailedInnerCall as ::ethers::core::abi::AbiDecode>::decode(data) {
-                return Ok(Self::FailedInnerCall(decoded));
-            }
-            Err(::ethers::core::abi::Error::InvalidData.into())
-        }
-    }
-    impl ::ethers::core::abi::AbiEncode for AddressErrors {
-        fn encode(self) -> ::std::vec::Vec<u8> {
-            match self {
-                Self::AddressEmptyCode(element) => ::ethers::core::abi::AbiEncode::encode(element),
-                Self::AddressInsufficientBalance(element) => {
-                    ::ethers::core::abi::AbiEncode::encode(element)
-                }
-                Self::FailedInnerCall(element) => ::ethers::core::abi::AbiEncode::encode(element),
-                Self::RevertString(s) => ::ethers::core::abi::AbiEncode::encode(s),
-            }
-        }
-    }
-    impl ::ethers::contract::ContractRevert for AddressErrors {
-        fn valid_selector(selector: [u8; 4]) -> bool {
-            match selector {
-                [0x08, 0xc3, 0x79, 0xa0] => true,
-                _ if selector == <AddressEmptyCode as ::ethers::contract::EthError>::selector() => {
-                    true
-                }
-                _ if selector
-                    == <AddressInsufficientBalance as ::ethers::contract::EthError>::selector() =>
-                {
-                    true
-                }
-                _ if selector == <FailedInnerCall as ::ethers::contract::EthError>::selector() => {
-                    true
-                }
-                _ => false,
-            }
-        }
-    }
-    impl ::core::fmt::Display for AddressErrors {
-        fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-            match self {
-                Self::AddressEmptyCode(element) => ::core::fmt::Display::fmt(element, f),
-                Self::AddressInsufficientBalance(element) => ::core::fmt::Display::fmt(element, f),
-                Self::FailedInnerCall(element) => ::core::fmt::Display::fmt(element, f),
-                Self::RevertString(s) => ::core::fmt::Display::fmt(s, f),
-            }
-        }
-    }
-    impl ::core::convert::From<::std::string::String> for AddressErrors {
-        fn from(value: String) -> Self {
-            Self::RevertString(value)
-        }
-    }
-    impl ::core::convert::From<AddressEmptyCode> for AddressErrors {
-        fn from(value: AddressEmptyCode) -> Self {
-            Self::AddressEmptyCode(value)
-        }
-    }
-    impl ::core::convert::From<AddressInsufficientBalance> for AddressErrors {
-        fn from(value: AddressInsufficientBalance) -> Self {
-            Self::AddressInsufficientBalance(value)
-        }
-    }
-    impl ::core::convert::From<FailedInnerCall> for AddressErrors {
-        fn from(value: FailedInnerCall) -> Self {
-            Self::FailedInnerCall(value)
-        }
     }
 }

@@ -15,51 +15,7 @@ pub mod erc1967_utils {
         ::ethers::core::abi::ethabi::Contract {
             constructor: ::core::option::Option::None,
             functions: ::std::collections::BTreeMap::new(),
-            events: ::core::convert::From::from([
-                (
-                    ::std::borrow::ToOwned::to_owned("AdminChanged"),
-                    ::std::vec![::ethers::core::abi::ethabi::Event {
-                        name: ::std::borrow::ToOwned::to_owned("AdminChanged"),
-                        inputs: ::std::vec![
-                            ::ethers::core::abi::ethabi::EventParam {
-                                name: ::std::borrow::ToOwned::to_owned("previousAdmin"),
-                                kind: ::ethers::core::abi::ethabi::ParamType::Address,
-                                indexed: false,
-                            },
-                            ::ethers::core::abi::ethabi::EventParam {
-                                name: ::std::borrow::ToOwned::to_owned("newAdmin"),
-                                kind: ::ethers::core::abi::ethabi::ParamType::Address,
-                                indexed: false,
-                            },
-                        ],
-                        anonymous: false,
-                    },],
-                ),
-                (
-                    ::std::borrow::ToOwned::to_owned("BeaconUpgraded"),
-                    ::std::vec![::ethers::core::abi::ethabi::Event {
-                        name: ::std::borrow::ToOwned::to_owned("BeaconUpgraded"),
-                        inputs: ::std::vec![::ethers::core::abi::ethabi::EventParam {
-                            name: ::std::borrow::ToOwned::to_owned("beacon"),
-                            kind: ::ethers::core::abi::ethabi::ParamType::Address,
-                            indexed: true,
-                        },],
-                        anonymous: false,
-                    },],
-                ),
-                (
-                    ::std::borrow::ToOwned::to_owned("Upgraded"),
-                    ::std::vec![::ethers::core::abi::ethabi::Event {
-                        name: ::std::borrow::ToOwned::to_owned("Upgraded"),
-                        inputs: ::std::vec![::ethers::core::abi::ethabi::EventParam {
-                            name: ::std::borrow::ToOwned::to_owned("implementation"),
-                            kind: ::ethers::core::abi::ethabi::ParamType::Address,
-                            indexed: true,
-                        },],
-                        anonymous: false,
-                    },],
-                ),
-            ]),
+            events: ::std::collections::BTreeMap::new(),
             errors: ::core::convert::From::from([
                 (
                     ::std::borrow::ToOwned::to_owned("ERC1967InvalidAdmin"),
@@ -116,12 +72,12 @@ pub mod erc1967_utils {
     pub static ERC1967UTILS_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 D\x9A\xC6\x98\xB3\x0C\xEF\0Z\x14W)\xBCs\xD7\x9A8\xB0\x19\x04\xE4\xA2(\xCDN\xA3~\xBF\x87\xF9}\xDDdsolcC\0\x08\x14\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xD8\x83r\x0E\xCA\xF3\xBA\x88%S\x845\xFBg8\x80\xFEv\xA7\xB7\xCA\x03a*r~\n1\xCF\x19LJdsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
     pub static ERC1967UTILS_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 D\x9A\xC6\x98\xB3\x0C\xEF\0Z\x14W)\xBCs\xD7\x9A8\xB0\x19\x04\xE4\xA2(\xCDN\xA3~\xBF\x87\xF9}\xDDdsolcC\0\x08\x14\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xD8\x83r\x0E\xCA\xF3\xBA\x88%S\x845\xFBg8\x80\xFEv\xA7\xB7\xCA\x03a*r~\n1\xCF\x19LJdsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
     pub static ERC1967UTILS_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
@@ -200,34 +156,6 @@ pub mod erc1967_utils {
             let deployer = factory.deploy(constructor_args)?;
             let deployer = ::ethers::contract::ContractDeployer::new(deployer);
             Ok(deployer)
-        }
-        ///Gets the contract's `AdminChanged` event
-        pub fn admin_changed_filter(
-            &self,
-        ) -> ::ethers::contract::builders::Event<::std::sync::Arc<M>, M, AdminChangedFilter>
-        {
-            self.0.event()
-        }
-        ///Gets the contract's `BeaconUpgraded` event
-        pub fn beacon_upgraded_filter(
-            &self,
-        ) -> ::ethers::contract::builders::Event<::std::sync::Arc<M>, M, BeaconUpgradedFilter>
-        {
-            self.0.event()
-        }
-        ///Gets the contract's `Upgraded` event
-        pub fn upgraded_filter(
-            &self,
-        ) -> ::ethers::contract::builders::Event<::std::sync::Arc<M>, M, UpgradedFilter> {
-            self.0.event()
-        }
-        /// Returns an `Event` builder for all the events of this contract.
-        pub fn events(
-            &self,
-        ) -> ::ethers::contract::builders::Event<::std::sync::Arc<M>, M, ERC1967UtilsEvents>
-        {
-            self.0
-                .event_with_filter(::core::default::Default::default())
         }
     }
     impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>> for ERC1967Utils<M> {
@@ -438,113 +366,6 @@ pub mod erc1967_utils {
     impl ::core::convert::From<ERC1967NonPayable> for ERC1967UtilsErrors {
         fn from(value: ERC1967NonPayable) -> Self {
             Self::ERC1967NonPayable(value)
-        }
-    }
-    #[derive(
-        Clone,
-        ::ethers::contract::EthEvent,
-        ::ethers::contract::EthDisplay,
-        serde::Serialize,
-        serde::Deserialize,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    #[ethevent(name = "AdminChanged", abi = "AdminChanged(address,address)")]
-    pub struct AdminChangedFilter {
-        pub previous_admin: ::ethers::core::types::Address,
-        pub new_admin: ::ethers::core::types::Address,
-    }
-    #[derive(
-        Clone,
-        ::ethers::contract::EthEvent,
-        ::ethers::contract::EthDisplay,
-        serde::Serialize,
-        serde::Deserialize,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    #[ethevent(name = "BeaconUpgraded", abi = "BeaconUpgraded(address)")]
-    pub struct BeaconUpgradedFilter {
-        #[ethevent(indexed)]
-        pub beacon: ::ethers::core::types::Address,
-    }
-    #[derive(
-        Clone,
-        ::ethers::contract::EthEvent,
-        ::ethers::contract::EthDisplay,
-        serde::Serialize,
-        serde::Deserialize,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    #[ethevent(name = "Upgraded", abi = "Upgraded(address)")]
-    pub struct UpgradedFilter {
-        #[ethevent(indexed)]
-        pub implementation: ::ethers::core::types::Address,
-    }
-    ///Container type for all of the contract's events
-    #[derive(
-        Clone,
-        ::ethers::contract::EthAbiType,
-        serde::Serialize,
-        serde::Deserialize,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    pub enum ERC1967UtilsEvents {
-        AdminChangedFilter(AdminChangedFilter),
-        BeaconUpgradedFilter(BeaconUpgradedFilter),
-        UpgradedFilter(UpgradedFilter),
-    }
-    impl ::ethers::contract::EthLogDecode for ERC1967UtilsEvents {
-        fn decode_log(
-            log: &::ethers::core::abi::RawLog,
-        ) -> ::core::result::Result<Self, ::ethers::core::abi::Error> {
-            if let Ok(decoded) = AdminChangedFilter::decode_log(log) {
-                return Ok(ERC1967UtilsEvents::AdminChangedFilter(decoded));
-            }
-            if let Ok(decoded) = BeaconUpgradedFilter::decode_log(log) {
-                return Ok(ERC1967UtilsEvents::BeaconUpgradedFilter(decoded));
-            }
-            if let Ok(decoded) = UpgradedFilter::decode_log(log) {
-                return Ok(ERC1967UtilsEvents::UpgradedFilter(decoded));
-            }
-            Err(::ethers::core::abi::Error::InvalidData)
-        }
-    }
-    impl ::core::fmt::Display for ERC1967UtilsEvents {
-        fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-            match self {
-                Self::AdminChangedFilter(element) => ::core::fmt::Display::fmt(element, f),
-                Self::BeaconUpgradedFilter(element) => ::core::fmt::Display::fmt(element, f),
-                Self::UpgradedFilter(element) => ::core::fmt::Display::fmt(element, f),
-            }
-        }
-    }
-    impl ::core::convert::From<AdminChangedFilter> for ERC1967UtilsEvents {
-        fn from(value: AdminChangedFilter) -> Self {
-            Self::AdminChangedFilter(value)
-        }
-    }
-    impl ::core::convert::From<BeaconUpgradedFilter> for ERC1967UtilsEvents {
-        fn from(value: BeaconUpgradedFilter) -> Self {
-            Self::BeaconUpgradedFilter(value)
-        }
-    }
-    impl ::core::convert::From<UpgradedFilter> for ERC1967UtilsEvents {
-        fn from(value: UpgradedFilter) -> Self {
-            Self::UpgradedFilter(value)
         }
     }
 }

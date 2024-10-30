@@ -134,9 +134,9 @@ pub mod uups_upgradeable {
                     },],
                 ),
                 (
-                    ::std::borrow::ToOwned::to_owned("FailedInnerCall"),
+                    ::std::borrow::ToOwned::to_owned("FailedCall"),
                     ::std::vec![::ethers::core::abi::ethabi::AbiError {
-                        name: ::std::borrow::ToOwned::to_owned("FailedInnerCall"),
+                        name: ::std::borrow::ToOwned::to_owned("FailedCall"),
                         inputs: ::std::vec![],
                     },],
                 ),
@@ -324,7 +324,7 @@ pub mod uups_upgradeable {
     )]
     #[etherror(name = "ERC1967NonPayable", abi = "ERC1967NonPayable()")]
     pub struct ERC1967NonPayable;
-    ///Custom Error type `FailedInnerCall` with signature `FailedInnerCall()` and selector `0x1425ea42`
+    ///Custom Error type `FailedCall` with signature `FailedCall()` and selector `0xd6bda275`
     #[derive(
         Clone,
         ::ethers::contract::EthError,
@@ -337,8 +337,8 @@ pub mod uups_upgradeable {
         Eq,
         Hash,
     )]
-    #[etherror(name = "FailedInnerCall", abi = "FailedInnerCall()")]
-    pub struct FailedInnerCall;
+    #[etherror(name = "FailedCall", abi = "FailedCall()")]
+    pub struct FailedCall;
     ///Custom Error type `InvalidInitialization` with signature `InvalidInitialization()` and selector `0xf92ee8a9`
     #[derive(
         Clone,
@@ -422,7 +422,7 @@ pub mod uups_upgradeable {
         AddressEmptyCode(AddressEmptyCode),
         ERC1967InvalidImplementation(ERC1967InvalidImplementation),
         ERC1967NonPayable(ERC1967NonPayable),
-        FailedInnerCall(FailedInnerCall),
+        FailedCall(FailedCall),
         InvalidInitialization(InvalidInitialization),
         NotInitializing(NotInitializing),
         UUPSUnauthorizedCallContext(UUPSUnauthorizedCallContext),
@@ -454,8 +454,8 @@ pub mod uups_upgradeable {
             {
                 return Ok(Self::ERC1967NonPayable(decoded));
             }
-            if let Ok(decoded) = <FailedInnerCall as ::ethers::core::abi::AbiDecode>::decode(data) {
-                return Ok(Self::FailedInnerCall(decoded));
+            if let Ok(decoded) = <FailedCall as ::ethers::core::abi::AbiDecode>::decode(data) {
+                return Ok(Self::FailedCall(decoded));
             }
             if let Ok(decoded) =
                 <InvalidInitialization as ::ethers::core::abi::AbiDecode>::decode(data)
@@ -486,7 +486,7 @@ pub mod uups_upgradeable {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::ERC1967NonPayable(element) => ::ethers::core::abi::AbiEncode::encode(element),
-                Self::FailedInnerCall(element) => ::ethers::core::abi::AbiEncode::encode(element),
+                Self::FailedCall(element) => ::ethers::core::abi::AbiEncode::encode(element),
                 Self::InvalidInitialization(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
@@ -519,9 +519,7 @@ pub mod uups_upgradeable {
                 {
                     true
                 }
-                _ if selector == <FailedInnerCall as ::ethers::contract::EthError>::selector() => {
-                    true
-                }
+                _ if selector == <FailedCall as ::ethers::contract::EthError>::selector() => true,
                 _ if selector
                     == <InvalidInitialization as ::ethers::contract::EthError>::selector() =>
                 {
@@ -554,7 +552,7 @@ pub mod uups_upgradeable {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::ERC1967NonPayable(element) => ::core::fmt::Display::fmt(element, f),
-                Self::FailedInnerCall(element) => ::core::fmt::Display::fmt(element, f),
+                Self::FailedCall(element) => ::core::fmt::Display::fmt(element, f),
                 Self::InvalidInitialization(element) => ::core::fmt::Display::fmt(element, f),
                 Self::NotInitializing(element) => ::core::fmt::Display::fmt(element, f),
                 Self::UUPSUnauthorizedCallContext(element) => ::core::fmt::Display::fmt(element, f),
@@ -585,9 +583,9 @@ pub mod uups_upgradeable {
             Self::ERC1967NonPayable(value)
         }
     }
-    impl ::core::convert::From<FailedInnerCall> for UUPSUpgradeableErrors {
-        fn from(value: FailedInnerCall) -> Self {
-            Self::FailedInnerCall(value)
+    impl ::core::convert::From<FailedCall> for UUPSUpgradeableErrors {
+        fn from(value: FailedCall) -> Self {
+            Self::FailedCall(value)
         }
     }
     impl ::core::convert::From<InvalidInitialization> for UUPSUpgradeableErrors {
