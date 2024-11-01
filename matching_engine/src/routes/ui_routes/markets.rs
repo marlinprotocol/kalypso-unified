@@ -56,11 +56,16 @@ pub async fn total_market_info(
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
 
-    if let Some(response) = MARKET_RESPONSE
-        .try_read()
-        .unwrap()
-        .get_if_valid(Duration::from_secs(10))
-    {
+    let market_cache = match MARKET_RESPONSE.try_read() {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                status: "Resource Busy".into(),
+            }))
+        }
+    };
+
+    if let Some(response) = market_cache.get_if_valid(Duration::from_secs(10)) {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
