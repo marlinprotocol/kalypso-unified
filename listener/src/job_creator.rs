@@ -118,6 +118,7 @@ pub struct JobCreator {
     max_threads: usize,
     shared_latest_block: Arc<tokio::sync::Mutex<U64>>,
     should_stop: Arc<AtomicBool>,
+    skip_input_verification: bool,
 }
 
 impl JobCreator {
@@ -126,14 +127,22 @@ impl JobCreator {
         runtime_config: RuntimeConfig,
         max_threads: usize,
         enable_logging_server: bool,
+        skip_input_verification: bool,
     ) -> Self {
-        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
+        Self::initialize(
+            config,
+            runtime_config,
+            enable_logging_server,
+            skip_input_verification,
+            max_threads,
+        )
     }
 
     fn initialize(
         config: Config,
         runtime_config: RuntimeConfig,
         enable_logging_server: bool,
+        skip_input_verification: bool,
         max_threads: usize,
     ) -> Self {
         let service_name = Uuid::new_v4().to_string();
@@ -162,6 +171,7 @@ impl JobCreator {
                 max_threads,
                 shared_latest_block,
                 should_stop,
+                skip_input_verification,
             }
         } else {
             Self {
@@ -171,6 +181,7 @@ impl JobCreator {
                 max_threads,
                 shared_latest_block,
                 should_stop,
+                skip_input_verification,
             }
         }
     }
@@ -202,6 +213,7 @@ impl JobCreator {
         ivs_url: String,
         enable_logging_server: bool,
         max_threads: usize,
+        skip_input_verification: bool,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -241,7 +253,13 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
+        Self::initialize(
+            config,
+            runtime_config,
+            enable_logging_server,
+            skip_input_verification,
+            max_threads,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -257,6 +275,7 @@ impl JobCreator {
         ivs_url: String,
         enable_logging_server: bool,
         max_threads: usize,
+        skip_input_verification: bool,
     ) -> Self {
         let config = Config {
             generator_config: generator_configs,
@@ -292,7 +311,13 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
+        Self::initialize(
+            config,
+            runtime_config,
+            enable_logging_server,
+            skip_input_verification,
+            max_threads,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -309,6 +334,7 @@ impl JobCreator {
         prover_port: String,
         enable_logging_server: bool,
         max_threads: usize,
+        skip_input_verification: bool,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -348,7 +374,13 @@ impl JobCreator {
             runtime_config: runtime_config_model,
         };
 
-        Self::initialize(config, runtime_config, enable_logging_server, max_threads)
+        Self::initialize(
+            config,
+            runtime_config,
+            enable_logging_server,
+            skip_input_verification,
+            max_threads,
+        )
     }
 
     pub fn from_config_paths(
@@ -356,6 +388,7 @@ impl JobCreator {
         runtime_config_path: &str,
         enable_logging_server: bool,
         max_threads: usize,
+        skip_input_verification: bool,
     ) -> anyhow::Result<Self> {
         let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
@@ -367,6 +400,7 @@ impl JobCreator {
             config,
             runtime_config,
             enable_logging_server,
+            skip_input_verification,
             max_threads,
         ))
     }
@@ -594,6 +628,7 @@ impl JobCreator {
                     let proof_semaphore = proof_semaphore.clone();
                     let transaction_semaphore = transaction_semaphore.clone();
 
+                    let skip_input_verification = self.skip_input_verification.clone();
                     tokio::spawn(async move {
                         log::info!(
                             "Spin up new thread from proof generation of ask: {}",
@@ -609,6 +644,7 @@ impl JobCreator {
                             end_block: &latest_block,
                             markets: &markets_clone,
                             slave_ecies_private_keys: binding.as_ref(),
+                            skip_input_verification,
                         };
 
                         let proof_permit = proof_semaphore

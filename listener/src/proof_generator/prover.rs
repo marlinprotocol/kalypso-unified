@@ -22,7 +22,14 @@ pub trait Prover {
         proof: &[u8],
     ) -> Result<ivs::models::VerifyInputAndProofResponse, Box<dyn Error>>;
 
+    fn should_skip_input_verification(&self) -> bool;
+
     async fn get_proof(&self) -> Result<Proof, Box<dyn Error>> {
+        if self.should_skip_input_verification() {
+            let proof = self.generate_proof().await?;
+            return Ok(Proof::ValidProof(proof.proof.into()));
+        }
+
         let check_input = self.check_inputs().await?;
         if check_input.valid {
             let proof = self.generate_proof().await?;
