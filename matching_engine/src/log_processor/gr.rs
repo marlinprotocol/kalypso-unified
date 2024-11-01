@@ -442,7 +442,7 @@ pub async fn process_generator_registry_logs(
     {
         let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
 
-        let captured_timestamp = symbiotic_complete_snapshot_log.capture_timestamp;
+        let capture_timestamp = symbiotic_complete_snapshot_log.capture_timestamp;
         let known_tokens: Vec<Address> = vec![
             TEST_TOKEN_ADDRESS_ONE.clone(),
             TEST_TOKEN_ADDRESS_TWO.clone(),
@@ -452,15 +452,8 @@ pub async fn process_generator_registry_logs(
         for stake_token in known_tokens {
             for operator in all_generators.clone().into_iter() {
                 // if this fails, system breaks. TODO
-                log::error!("latest vault snapshot amount is being fetched as place holder");
-                log::error!(
-                    "matches won't work unless captured_timestamp: {} is used",
-                    captured_timestamp
-                );
-                log::error!("ask team to make Symbiotic.operatorStakeAmount public");
-
                 let vault_snapshot_amount = symbiotic_staking
-                    .get_operator_stake_amount(stake_token, operator)
+                    .get_operator_stake_amount_at(capture_timestamp, stake_token, operator)
                     .call()
                     .await
                     .unwrap();

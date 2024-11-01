@@ -25,12 +25,12 @@ pub mod binding_generator {
     pub static BINDING_GENERATOR_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`\x80`@R4\x80\x15`\x0FW`\0\x80\xFD[P`?\x80`\x1D`\09`\0\xF3\xFE`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xB5\x18nB2\xAA&\xEB\xA9\x93>\xBB:\x9B\x0E\xE5\xD9\x94\x95Q\x15\x01\xA7\xC7\x0E2K\xBBn\xBB|\xDAdsolcC\0\x08\x1C\x003";
+    const __BYTECODE: &[u8] = b"`\x80`@R4\x80\x15`\x0FW`\0\x80\xFD[P`?\x80`\x1D`\09`\0\xF3\xFE`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 Y\xEEh\xE5m\x85\xAD\xF3\xFC\t\xF1\xD1\x1F\x8C\xFD`Qm\xAB\xC0\x7F\x13jAp\xED\xE8\x021\xA1\x9CkdsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
     pub static BINDING_GENERATOR_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xB5\x18nB2\xAA&\xEB\xA9\x93>\xBB:\x9B\x0E\xE5\xD9\x94\x95Q\x15\x01\xA7\xC7\x0E2K\xBBn\xBB|\xDAdsolcC\0\x08\x1C\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 Y\xEEh\xE5m\x85\xAD\xF3\xFC\t\xF1\xD1\x1F\x8C\xFD`Qm\xAB\xC0\x7F\x13jAp\xED\xE8\x021\xA1\x9CkdsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
     pub static BINDING_GENERATOR_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
