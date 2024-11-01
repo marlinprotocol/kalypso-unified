@@ -79,6 +79,7 @@ pub struct GeneratorStore {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
 pub struct SlashingRecord {
     pub ask_id: U256,
+    pub slashing_timestamp: U64,
     pub market_id: U256,
     pub slashing_tx: String,
     pub price_offered: U256,
@@ -482,6 +483,7 @@ impl GeneratorStore {
         slashing_tx: String,
         price_offered: &U256,
         deadline: &U256,
+        slashing_timestamp: &U64,
     ) {
         if let Some(generator_market) = self
             .generator_markets
@@ -521,6 +523,7 @@ impl GeneratorStore {
                 price_offered: price_offered.clone(),
                 expected_time: deadline.clone(),
                 slashing_penalty: (token_address.clone(), slashing.clone()),
+                slashing_timestamp: slashing_timestamp.clone(),
             });
     }
 

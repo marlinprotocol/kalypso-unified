@@ -116,7 +116,6 @@ struct Slash {
     market: MarketInfo,
     request: String, // Transaction Hash
     price_offered: String,
-    expected_time: String,
     slashing_penalty: TokenAmount,
 }
 
@@ -432,7 +431,7 @@ async fn recompute_single_generator_response<'a>(
             .get_slashing_records(&generator_id)
             .into_iter()
             .map(|record| Slash {
-                timestamp: record.expected_time.to_string(),
+                timestamp: record.slashing_timestamp.to_string(),
                 market: MarketInfo {
                     name: None,
                     id: record.market_id.to_string(),
@@ -443,7 +442,6 @@ async fn recompute_single_generator_response<'a>(
                 },
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),
-                expected_time: record.expected_time.to_string(),
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
             })
             .collect(),
