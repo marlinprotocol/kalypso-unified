@@ -262,15 +262,17 @@ pub async fn single_generator(
         }));
     }
 
+    let new_response = new_response.unwrap();
+
     match SINGLE_GENERATOR_RESPONSE.try_write() {
-        Ok(mut data) => data.store(&generator_query, new_response.clone().unwrap()),
+        Ok(mut data) => data.store(&generator_query, new_response.clone()),
         _ => {
             log::warn!("Failed Caching Single Generator response");
         }
     }
 
     // Return the newly computed response
-    return Ok(HttpResponse::Ok().json(new_response.unwrap()));
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_single_generator_response<'a>(
@@ -420,7 +422,7 @@ async fn recompute_single_generator_response<'a>(
                 proof: Some(
                     local_ask_store
                         .get_proof_by_ask_id(&ask.ask_id)
-                        .unwrap()
+                        .unwrap_or_default()
                         .to_string(),
                 ),
                 proof_transaction: local_ask_store.get_proof_transaction(&ask.ask_id),

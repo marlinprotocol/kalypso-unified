@@ -85,18 +85,19 @@ pub async fn process_generator_registry_logs(
         return Ok(());
     }
 
-    if let Ok(parsed_deregistered_generator_log) =
-        genertor_registry.decode_event::<bindings::generator_registry::DeregisteredGeneratorFilter>(
-            "DeregisteredGenerator",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
-        log::debug!(
-            "Deregistering Generator: {:?}",
-            parsed_deregistered_generator_log.generator
-        );
-        let address = parsed_deregistered_generator_log.generator.into();
+    if let Ok(parsed_deregistered_generator_log) = genertor_registry.decode_event_raw(
+        "DeregisteredGenerator",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        let generator_address = {
+            let generator_address_token = parsed_deregistered_generator_log.first().unwrap();
+            let generator_address = generator_address_token.clone().into_address().unwrap();
+            generator_address
+        };
+
+        log::debug!("Deregistering Generator: {:?}", generator_address);
+        let address = generator_address.into();
 
         generator_store.remove_by_address(&address);
         return Ok(());
