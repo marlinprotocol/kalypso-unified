@@ -1,4 +1,4 @@
-pub use helper::*;
+pub use strings::*;
 /// This module was auto-generated with ethers-rs Abigen.
 /// More information at: <https://github.com/gakonst/ethers-rs>
 #[allow(
@@ -9,56 +9,77 @@ pub use helper::*;
     dead_code,
     non_camel_case_types
 )]
-pub mod helper {
+pub mod strings {
     #[allow(deprecated)]
     fn __abi() -> ::ethers::core::abi::Abi {
         ::ethers::core::abi::ethabi::Contract {
             constructor: ::core::option::Option::None,
             functions: ::std::collections::BTreeMap::new(),
             events: ::std::collections::BTreeMap::new(),
-            errors: ::std::collections::BTreeMap::new(),
+            errors: ::core::convert::From::from([(
+                ::std::borrow::ToOwned::to_owned("StringsInsufficientHexLength"),
+                ::std::vec![::ethers::core::abi::ethabi::AbiError {
+                    name: ::std::borrow::ToOwned::to_owned("StringsInsufficientHexLength",),
+                    inputs: ::std::vec![
+                        ::ethers::core::abi::ethabi::Param {
+                            name: ::std::borrow::ToOwned::to_owned("value"),
+                            kind: ::ethers::core::abi::ethabi::ParamType::Uint(256usize,),
+                            internal_type: ::core::option::Option::Some(
+                                ::std::borrow::ToOwned::to_owned("uint256"),
+                            ),
+                        },
+                        ::ethers::core::abi::ethabi::Param {
+                            name: ::std::borrow::ToOwned::to_owned("length"),
+                            kind: ::ethers::core::abi::ethabi::ParamType::Uint(256usize,),
+                            internal_type: ::core::option::Option::Some(
+                                ::std::borrow::ToOwned::to_owned("uint256"),
+                            ),
+                        },
+                    ],
+                },],
+            )]),
             receive: false,
             fallback: false,
         }
     }
     ///The parsed JSON ABI of the contract.
-    pub static HELPER_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
+    pub static STRINGS_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x0F\xBB\x17@9xa\xA3TFu\x0B\xD9\x10\xD5\xCC\x08D=\xBE\x06\x99y\x93g\x1Am\x82\xF2cVbdsolcC\0\x08\x1C\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x04\xB3*<\x15\x19\xB5SkJ\xA5\x08\xBBx1W\xF4\x94U\xEE\x8D\xC4\x94O\x04G\\\x1D\xE4\xDAd\xA8dsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
-    pub static HELPER_BYTECODE: ::ethers::core::types::Bytes =
+    pub static STRINGS_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x0F\xBB\x17@9xa\xA3TFu\x0B\xD9\x10\xD5\xCC\x08D=\xBE\x06\x99y\x93g\x1Am\x82\xF2cVbdsolcC\0\x08\x1C\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x04\xB3*<\x15\x19\xB5SkJ\xA5\x08\xBBx1W\xF4\x94U\xEE\x8D\xC4\x94O\x04G\\\x1D\xE4\xDAd\xA8dsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
-    pub static HELPER_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
+    pub static STRINGS_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
-    pub struct HELPER<M>(::ethers::contract::Contract<M>);
-    impl<M> ::core::clone::Clone for HELPER<M> {
+    pub struct Strings<M>(::ethers::contract::Contract<M>);
+    impl<M> ::core::clone::Clone for Strings<M> {
         fn clone(&self) -> Self {
             Self(::core::clone::Clone::clone(&self.0))
         }
     }
-    impl<M> ::core::ops::Deref for HELPER<M> {
+    impl<M> ::core::ops::Deref for Strings<M> {
         type Target = ::ethers::contract::Contract<M>;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
-    impl<M> ::core::ops::DerefMut for HELPER<M> {
+    impl<M> ::core::ops::DerefMut for Strings<M> {
         fn deref_mut(&mut self) -> &mut Self::Target {
             &mut self.0
         }
     }
-    impl<M> ::core::fmt::Debug for HELPER<M> {
+    impl<M> ::core::fmt::Debug for Strings<M> {
         fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-            f.debug_tuple(::core::stringify!(HELPER))
+            f.debug_tuple(::core::stringify!(Strings))
                 .field(&self.address())
                 .finish()
         }
     }
-    impl<M: ::ethers::providers::Middleware> HELPER<M> {
+    impl<M: ::ethers::providers::Middleware> Strings<M> {
         /// Creates a new contract instance with the specified `ethers` client at
         /// `address`. The contract derefs to a `ethers::Contract` object.
         pub fn new<T: Into<::ethers::core::types::Address>>(
@@ -67,7 +88,7 @@ pub mod helper {
         ) -> Self {
             Self(::ethers::contract::Contract::new(
                 address.into(),
-                HELPER_ABI.clone(),
+                STRINGS_ABI.clone(),
                 client,
             ))
         }
@@ -102,8 +123,8 @@ pub mod helper {
             ::ethers::contract::ContractError<M>,
         > {
             let factory = ::ethers::contract::ContractFactory::new(
-                HELPER_ABI.clone(),
-                HELPER_BYTECODE.clone().into(),
+                STRINGS_ABI.clone(),
+                STRINGS_BYTECODE.clone().into(),
                 client,
             );
             let deployer = factory.deploy(constructor_args)?;
@@ -111,9 +132,30 @@ pub mod helper {
             Ok(deployer)
         }
     }
-    impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>> for HELPER<M> {
+    impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>> for Strings<M> {
         fn from(contract: ::ethers::contract::Contract<M>) -> Self {
             Self::new(contract.address(), contract.client())
         }
+    }
+    ///Custom Error type `StringsInsufficientHexLength` with signature `StringsInsufficientHexLength(uint256,uint256)` and selector `0xe22e27eb`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthError,
+        ::ethers::contract::EthDisplay,
+        serde::Serialize,
+        serde::Deserialize,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+    )]
+    #[etherror(
+        name = "StringsInsufficientHexLength",
+        abi = "StringsInsufficientHexLength(uint256,uint256)"
+    )]
+    pub struct StringsInsufficientHexLength {
+        pub value: ::ethers::core::types::U256,
+        pub length: ::ethers::core::types::U256,
     }
 }

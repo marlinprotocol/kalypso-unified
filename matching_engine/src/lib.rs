@@ -11,6 +11,7 @@ mod log_processor;
 mod routes;
 
 use ask_lib::ask_store::LocalAskStore;
+use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use market_metadata::MarketMetadataStore;
 
 use costs::CostStore;
@@ -107,6 +108,7 @@ pub struct MatchingEngineConfig {
     pub proof_market_place: String,
     pub generator_registry: String,
     pub entity_registry: String,
+    pub symbiotic_staking: String,
     pub start_block: String,
 }
 
@@ -132,6 +134,7 @@ impl MatchingEngine {
         proof_market_place: String,
         generator_registry: String,
         entity_registry: String,
+        symbiotic_staking: String,
         start_block: String,
     ) -> Self {
         let config: MatchingEngineConfig = MatchingEngineConfig {
@@ -142,6 +145,7 @@ impl MatchingEngine {
             proof_market_place,
             generator_registry,
             entity_registry,
+            symbiotic_staking,
             start_block,
         };
 
@@ -154,6 +158,7 @@ impl MatchingEngine {
         let key_list_store = KeyStore::new();
         let cost_store = CostStore::new();
         let market_list_store = MarketMetadataStore::new();
+        let symbiotic_staking_store = SymbioticStakeStore::new();
 
         // wrapping around is case to shared across threads
         let shared_local_ask_store = Arc::new(RwLock::new(local_ask_store));
@@ -161,6 +166,8 @@ impl MatchingEngine {
         let shared_market_store = Arc::new(RwLock::new(market_list_store));
         let shared_key_store = Arc::new(RwLock::new(key_list_store));
         let shared_cost_store = Arc::new(RwLock::new(cost_store));
+        let shared_staking_store = Arc::new(RwLock::new(symbiotic_staking_store));
+
         let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));
 
         let rpc_url = self.config.clone().rpc_url;
@@ -228,6 +235,13 @@ impl MatchingEngine {
         let shared_entity_key = Arc::new(RwLock::new(shared_entity_key_registry));
         let shared_entity_key_registry = Arc::clone(&shared_entity_key);
 
+        let symbiotic_staking_var = self.config.clone().symbiotic_staking;
+        let symbiotic_staking_address = Address::from_str(&symbiotic_staking_var).unwrap();
+        let shared_symbiotic_staking = bindings::symbiotic_staking::SymbioticStaking::new(
+            symbiotic_staking_address,
+            client.clone(),
+        );
+
         let shared_parsed_block_number_store = Arc::new(RwLock::new(
             U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
         ));
@@ -288,6 +302,7 @@ impl MatchingEngine {
             proof_marketplace.clone(),
             generator_registry,
             entity_key_registry,
+            shared_symbiotic_staking,
             matching_engine_key,
             vec![], //TODO! fetch these slave keys using Oyster KMS
             shared_local_ask_store.clone(),
@@ -295,6 +310,7 @@ impl MatchingEngine {
             shared_market_store.clone(),
             shared_key_store,
             shared_cost_store,
+            shared_staking_store,
             chain_id,
         ));
 

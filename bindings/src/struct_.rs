@@ -1,4 +1,4 @@
-pub use bindgin_matching_engine::*;
+pub use struct_::*;
 /// This module was auto-generated with ethers-rs Abigen.
 /// More information at: <https://github.com/gakonst/ethers-rs>
 #[allow(
@@ -9,7 +9,7 @@ pub use bindgin_matching_engine::*;
     dead_code,
     non_camel_case_types
 )]
-pub mod bindgin_matching_engine {
+pub mod struct_ {
     #[allow(deprecated)]
     fn __abi() -> ::ethers::core::abi::Abi {
         ::ethers::core::abi::ethabi::Contract {
@@ -22,43 +22,43 @@ pub mod bindgin_matching_engine {
         }
     }
     ///The parsed JSON ABI of the contract.
-    pub static BINDGINMATCHINGENGINE_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
+    pub static STRUCT_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`\x80`@R4\x80\x15`\x0FW`\0\x80\xFD[P`?\x80`\x1D`\09`\0\xF3\xFE`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 ~}jb\x9A\x16q\x837\x94\xC7\x90\x91\x9F-\x18\xDDW\xDF\xA4f\xCA\xA9ou\x99G\x17\xA4<@\x11dsolcC\0\x08\x1C\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xA6\xAB\x1DJT\xADL\x93\xB8s\xD8\xC0\xAF\xB4\xF3\xCD\x99+a\xB0\x10\x08\xDCP\xA9\xF6\xA84*\x91\x98\x1CdsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
-    pub static BINDGINMATCHINGENGINE_BYTECODE: ::ethers::core::types::Bytes =
+    pub static STRUCT_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 ~}jb\x9A\x16q\x837\x94\xC7\x90\x91\x9F-\x18\xDDW\xDF\xA4f\xCA\xA9ou\x99G\x17\xA4<@\x11dsolcC\0\x08\x1C\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xA6\xAB\x1DJT\xADL\x93\xB8s\xD8\xC0\xAF\xB4\xF3\xCD\x99+a\xB0\x10\x08\xDCP\xA9\xF6\xA84*\x91\x98\x1CdsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
-    pub static BINDGINMATCHINGENGINE_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
+    pub static STRUCT_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
-    pub struct BindginMatchingEngine<M>(::ethers::contract::Contract<M>);
-    impl<M> ::core::clone::Clone for BindginMatchingEngine<M> {
+    pub struct Struct<M>(::ethers::contract::Contract<M>);
+    impl<M> ::core::clone::Clone for Struct<M> {
         fn clone(&self) -> Self {
             Self(::core::clone::Clone::clone(&self.0))
         }
     }
-    impl<M> ::core::ops::Deref for BindginMatchingEngine<M> {
+    impl<M> ::core::ops::Deref for Struct<M> {
         type Target = ::ethers::contract::Contract<M>;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
-    impl<M> ::core::ops::DerefMut for BindginMatchingEngine<M> {
+    impl<M> ::core::ops::DerefMut for Struct<M> {
         fn deref_mut(&mut self) -> &mut Self::Target {
             &mut self.0
         }
     }
-    impl<M> ::core::fmt::Debug for BindginMatchingEngine<M> {
+    impl<M> ::core::fmt::Debug for Struct<M> {
         fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-            f.debug_tuple(::core::stringify!(BindginMatchingEngine))
+            f.debug_tuple(::core::stringify!(Struct))
                 .field(&self.address())
                 .finish()
         }
     }
-    impl<M: ::ethers::providers::Middleware> BindginMatchingEngine<M> {
+    impl<M: ::ethers::providers::Middleware> Struct<M> {
         /// Creates a new contract instance with the specified `ethers` client at
         /// `address`. The contract derefs to a `ethers::Contract` object.
         pub fn new<T: Into<::ethers::core::types::Address>>(
@@ -67,7 +67,7 @@ pub mod bindgin_matching_engine {
         ) -> Self {
             Self(::ethers::contract::Contract::new(
                 address.into(),
-                BINDGINMATCHINGENGINE_ABI.clone(),
+                STRUCT_ABI.clone(),
                 client,
             ))
         }
@@ -102,8 +102,8 @@ pub mod bindgin_matching_engine {
             ::ethers::contract::ContractError<M>,
         > {
             let factory = ::ethers::contract::ContractFactory::new(
-                BINDGINMATCHINGENGINE_ABI.clone(),
-                BINDGINMATCHINGENGINE_BYTECODE.clone().into(),
+                STRUCT_ABI.clone(),
+                STRUCT_BYTECODE.clone().into(),
                 client,
             );
             let deployer = factory.deploy(constructor_args)?;
@@ -111,9 +111,7 @@ pub mod bindgin_matching_engine {
             Ok(deployer)
         }
     }
-    impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>>
-        for BindginMatchingEngine<M>
-    {
+    impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>> for Struct<M> {
         fn from(contract: ::ethers::contract::Contract<M>) -> Self {
             Self::new(contract.address(), contract.client())
         }

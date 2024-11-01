@@ -569,35 +569,6 @@ pub mod error {
                     },],
                 ),
                 (
-                    ::std::borrow::ToOwned::to_owned("TeeVerifierEnclaveKeyNotVerified"),
-                    ::std::vec![::ethers::core::abi::ethabi::AbiError {
-                        name: ::std::borrow::ToOwned::to_owned("TeeVerifierEnclaveKeyNotVerified",),
-                        inputs: ::std::vec![
-                            ::ethers::core::abi::ethabi::Param {
-                                name: ::std::borrow::ToOwned::to_owned("PCR0"),
-                                kind: ::ethers::core::abi::ethabi::ParamType::Bytes,
-                                internal_type: ::core::option::Option::Some(
-                                    ::std::borrow::ToOwned::to_owned("bytes"),
-                                ),
-                            },
-                            ::ethers::core::abi::ethabi::Param {
-                                name: ::std::borrow::ToOwned::to_owned("PCR1"),
-                                kind: ::ethers::core::abi::ethabi::ParamType::Bytes,
-                                internal_type: ::core::option::Option::Some(
-                                    ::std::borrow::ToOwned::to_owned("bytes"),
-                                ),
-                            },
-                            ::ethers::core::abi::ethabi::Param {
-                                name: ::std::borrow::ToOwned::to_owned("PCR2"),
-                                kind: ::ethers::core::abi::ethabi::ParamType::Bytes,
-                                internal_type: ::core::option::Option::Some(
-                                    ::std::borrow::ToOwned::to_owned("bytes"),
-                                ),
-                            },
-                        ],
-                    },],
-                ),
-                (
                     ::std::borrow::ToOwned::to_owned("UnstakeRequestNotInPlace"),
                     ::std::vec![::ethers::core::abi::ethabi::AbiError {
                         name: ::std::borrow::ToOwned::to_owned("UnstakeRequestNotInPlace",),
@@ -613,12 +584,12 @@ pub mod error {
     pub static ERROR_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xAAYoT \xF8\xB5\x13\xB3\x8Eh\\\xD8\xF7\xE0\xD5#\x1B\x0B@\xE9.\x0F\xFA\xFAy\x9D\x8E&\x9CW\xFBdsolcC\0\x08\x1C\x003";
+    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x19/\x1E\xF8\xE1\x9C\xEB\x94\xA2\r\x1C\xE9\xF21DEfy\\\x89\x8A\x16'\xA7\x08\xCC\x9C\xBD\xC6#*\x0FdsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
     pub static ERROR_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xAAYoT \xF8\xB5\x13\xB3\x8Eh\\\xD8\xF7\xE0\xD5#\x1B\x0B@\xE9.\x0F\xFA\xFAy\x9D\x8E&\x9CW\xFBdsolcC\0\x08\x1C\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x19/\x1E\xF8\xE1\x9C\xEB\x94\xA2\r\x1C\xE9\xF21DEfy\\\x89\x8A\x16'\xA7\x08\xCC\x9C\xBD\xC6#*\x0FdsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
     pub static ERROR_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
@@ -1688,28 +1659,6 @@ pub mod error {
     pub struct ShouldBeInCrossedDeadlineState {
         pub ask_id: ::ethers::core::types::U256,
     }
-    ///Custom Error type `TeeVerifierEnclaveKeyNotVerified` with signature `TeeVerifierEnclaveKeyNotVerified(bytes,bytes,bytes)` and selector `0xda7977ba`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthError,
-        ::ethers::contract::EthDisplay,
-        serde::Serialize,
-        serde::Deserialize,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-    )]
-    #[etherror(
-        name = "TeeVerifierEnclaveKeyNotVerified",
-        abi = "TeeVerifierEnclaveKeyNotVerified(bytes,bytes,bytes)"
-    )]
-    pub struct TeeVerifierEnclaveKeyNotVerified {
-        pub pcr0: ::ethers::core::types::Bytes,
-        pub pcr1: ::ethers::core::types::Bytes,
-        pub pcr2: ::ethers::core::types::Bytes,
-    }
     ///Custom Error type `UnstakeRequestNotInPlace` with signature `UnstakeRequestNotInPlace()` and selector `0xb28c1c0e`
     #[derive(
         Clone,
@@ -1795,7 +1744,6 @@ pub mod error {
         ShouldBeInAssignedState(ShouldBeInAssignedState),
         ShouldBeInCreateState(ShouldBeInCreateState),
         ShouldBeInCrossedDeadlineState(ShouldBeInCrossedDeadlineState),
-        TeeVerifierEnclaveKeyNotVerified(TeeVerifierEnclaveKeyNotVerified),
         UnstakeRequestNotInPlace(UnstakeRequestNotInPlace),
         /// The standard solidity revert string, with selector
         /// Error(string) -- 0x08c379a0
@@ -2079,11 +2027,6 @@ pub mod error {
                 return Ok(Self::ShouldBeInCrossedDeadlineState(decoded));
             }
             if let Ok(decoded) =
-                <TeeVerifierEnclaveKeyNotVerified as ::ethers::core::abi::AbiDecode>::decode(data)
-            {
-                return Ok(Self::TeeVerifierEnclaveKeyNotVerified(decoded));
-            }
-            if let Ok(decoded) =
                 <UnstakeRequestNotInPlace as ::ethers::core::abi::AbiDecode>::decode(data)
             {
                 return Ok(Self::UnstakeRequestNotInPlace(decoded));
@@ -2230,9 +2173,6 @@ pub mod error {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::ShouldBeInCrossedDeadlineState(element) => {
-                    ::ethers::core::abi::AbiEncode::encode(element)
-                }
-                Self::TeeVerifierEnclaveKeyNotVerified(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::UnstakeRequestNotInPlace(element) => {
@@ -2475,10 +2415,6 @@ pub mod error {
                     true
                 }
                 _ if selector
-                    == <TeeVerifierEnclaveKeyNotVerified as ::ethers::contract::EthError>::selector() => {
-                    true
-                }
-                _ if selector
                     == <UnstakeRequestNotInPlace as ::ethers::contract::EthError>::selector() => {
                     true
                 }
@@ -2569,9 +2505,6 @@ pub mod error {
                 Self::ShouldBeInAssignedState(element) => ::core::fmt::Display::fmt(element, f),
                 Self::ShouldBeInCreateState(element) => ::core::fmt::Display::fmt(element, f),
                 Self::ShouldBeInCrossedDeadlineState(element) => {
-                    ::core::fmt::Display::fmt(element, f)
-                }
-                Self::TeeVerifierEnclaveKeyNotVerified(element) => {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::UnstakeRequestNotInPlace(element) => ::core::fmt::Display::fmt(element, f),
@@ -2872,11 +2805,6 @@ pub mod error {
     impl ::core::convert::From<ShouldBeInCrossedDeadlineState> for ErrorErrors {
         fn from(value: ShouldBeInCrossedDeadlineState) -> Self {
             Self::ShouldBeInCrossedDeadlineState(value)
-        }
-    }
-    impl ::core::convert::From<TeeVerifierEnclaveKeyNotVerified> for ErrorErrors {
-        fn from(value: TeeVerifierEnclaveKeyNotVerified) -> Self {
-            Self::TeeVerifierEnclaveKeyNotVerified(value)
         }
     }
     impl ::core::convert::From<UnstakeRequestNotInPlace> for ErrorErrors {

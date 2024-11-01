@@ -369,3 +369,18 @@ pub static TEST_TOKEN_ADDRESS_TWO: Lazy<Address> =
     Lazy::new(|| TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap());
 
 pub static USDC_TOKEN: Lazy<Address> = Lazy::new(|| USDC_TOKEN_STRING.parse::<Address>().unwrap());
+
+// list all possible slashing_penalties here
+pub static SLASHING_PENALTY_ONE: Lazy<(Address, U256)> = Lazy::new(|| {
+    (
+        TEST_TOKEN_ADDRESS_ONE_STRING.parse::<Address>().unwrap(),
+        U256::from_dec_str("100000000000000").unwrap(),
+    )
+});
+
+pub static SLASHING_PENALTY_TWO: Lazy<(Address, U256)> = Lazy::new(|| {
+    (
+        TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap(),
+        U256::from_dec_str("200000000000000").unwrap(),
+    )
+});

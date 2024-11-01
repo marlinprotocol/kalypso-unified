@@ -4,7 +4,8 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
 use crate::utility::tx_to_string;
 use crate::utility::TokenTracker;
-use crate::utility::TEST_TOKEN_ADDRESS_ONE;
+use crate::utility::SLASHING_PENALTY_ONE;
+use crate::utility::SLASHING_PENALTY_TWO;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 
 use std::sync::Arc;
@@ -284,7 +285,8 @@ pub async fn process_proof_market_place_logs(
             prover_image_id: market.1,
             slashing_penalty: {
                 let mut slashing_penalty = TokenTracker::new();
-                slashing_penalty.add_token(&TEST_TOKEN_ADDRESS_ONE, &market.2);
+                slashing_penalty.add_token(&SLASHING_PENALTY_ONE.0, &SLASHING_PENALTY_ONE.1);
+                slashing_penalty.add_token(&SLASHING_PENALTY_TWO.0, &SLASHING_PENALTY_TWO.1);
                 slashing_penalty
             },
             activation_block: market.3,

@@ -1,4 +1,4 @@
-pub use helper::*;
+pub use binding_generator::*;
 /// This module was auto-generated with ethers-rs Abigen.
 /// More information at: <https://github.com/gakonst/ethers-rs>
 #[allow(
@@ -9,7 +9,7 @@ pub use helper::*;
     dead_code,
     non_camel_case_types
 )]
-pub mod helper {
+pub mod binding_generator {
     #[allow(deprecated)]
     fn __abi() -> ::ethers::core::abi::Abi {
         ::ethers::core::abi::ethabi::Contract {
@@ -22,43 +22,43 @@ pub mod helper {
         }
     }
     ///The parsed JSON ABI of the contract.
-    pub static HELPER_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
+    pub static BINDING_GENERATOR_ABI: ::ethers::contract::Lazy<::ethers::core::abi::Abi> =
         ::ethers::contract::Lazy::new(__abi);
     #[rustfmt::skip]
-    const __BYTECODE: &[u8] = b"`V`7`\x0B\x82\x82\x829\x80Q`\0\x1A`s\x14`*WcNH{q`\xE0\x1B`\0R`\0`\x04R`$`\0\xFD[0`\0R`s\x81S\x82\x81\xF3\xFEs\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x0F\xBB\x17@9xa\xA3TFu\x0B\xD9\x10\xD5\xCC\x08D=\xBE\x06\x99y\x93g\x1Am\x82\xF2cVbdsolcC\0\x08\x1C\x003";
+    const __BYTECODE: &[u8] = b"`\x80`@R4\x80\x15`\x0FW`\0\x80\xFD[P`?\x80`\x1D`\09`\0\xF3\xFE`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xB5\x18nB2\xAA&\xEB\xA9\x93>\xBB:\x9B\x0E\xE5\xD9\x94\x95Q\x15\x01\xA7\xC7\x0E2K\xBBn\xBB|\xDAdsolcC\0\x08\x1C\x003";
     /// The bytecode of the contract.
-    pub static HELPER_BYTECODE: ::ethers::core::types::Bytes =
+    pub static BINDING_GENERATOR_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__BYTECODE);
     #[rustfmt::skip]
-    const __DEPLOYED_BYTECODE: &[u8] = b"s\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x000\x14`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \x0F\xBB\x17@9xa\xA3TFu\x0B\xD9\x10\xD5\xCC\x08D=\xBE\x06\x99y\x93g\x1Am\x82\xF2cVbdsolcC\0\x08\x1C\x003";
+    const __DEPLOYED_BYTECODE: &[u8] = b"`\x80`@R`\0\x80\xFD\xFE\xA2dipfsX\"\x12 \xB5\x18nB2\xAA&\xEB\xA9\x93>\xBB:\x9B\x0E\xE5\xD9\x94\x95Q\x15\x01\xA7\xC7\x0E2K\xBBn\xBB|\xDAdsolcC\0\x08\x1C\x003";
     /// The deployed bytecode of the contract.
-    pub static HELPER_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
+    pub static BINDING_GENERATOR_DEPLOYED_BYTECODE: ::ethers::core::types::Bytes =
         ::ethers::core::types::Bytes::from_static(__DEPLOYED_BYTECODE);
-    pub struct HELPER<M>(::ethers::contract::Contract<M>);
-    impl<M> ::core::clone::Clone for HELPER<M> {
+    pub struct binding_generator<M>(::ethers::contract::Contract<M>);
+    impl<M> ::core::clone::Clone for binding_generator<M> {
         fn clone(&self) -> Self {
             Self(::core::clone::Clone::clone(&self.0))
         }
     }
-    impl<M> ::core::ops::Deref for HELPER<M> {
+    impl<M> ::core::ops::Deref for binding_generator<M> {
         type Target = ::ethers::contract::Contract<M>;
         fn deref(&self) -> &Self::Target {
             &self.0
         }
     }
-    impl<M> ::core::ops::DerefMut for HELPER<M> {
+    impl<M> ::core::ops::DerefMut for binding_generator<M> {
         fn deref_mut(&mut self) -> &mut Self::Target {
             &mut self.0
         }
     }
-    impl<M> ::core::fmt::Debug for HELPER<M> {
+    impl<M> ::core::fmt::Debug for binding_generator<M> {
         fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-            f.debug_tuple(::core::stringify!(HELPER))
+            f.debug_tuple(::core::stringify!(binding_generator))
                 .field(&self.address())
                 .finish()
         }
     }
-    impl<M: ::ethers::providers::Middleware> HELPER<M> {
+    impl<M: ::ethers::providers::Middleware> binding_generator<M> {
         /// Creates a new contract instance with the specified `ethers` client at
         /// `address`. The contract derefs to a `ethers::Contract` object.
         pub fn new<T: Into<::ethers::core::types::Address>>(
@@ -67,7 +67,7 @@ pub mod helper {
         ) -> Self {
             Self(::ethers::contract::Contract::new(
                 address.into(),
-                HELPER_ABI.clone(),
+                BINDING_GENERATOR_ABI.clone(),
                 client,
             ))
         }
@@ -102,8 +102,8 @@ pub mod helper {
             ::ethers::contract::ContractError<M>,
         > {
             let factory = ::ethers::contract::ContractFactory::new(
-                HELPER_ABI.clone(),
-                HELPER_BYTECODE.clone().into(),
+                BINDING_GENERATOR_ABI.clone(),
+                BINDING_GENERATOR_BYTECODE.clone().into(),
                 client,
             );
             let deployer = factory.deploy(constructor_args)?;
@@ -111,7 +111,9 @@ pub mod helper {
             Ok(deployer)
         }
     }
-    impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>> for HELPER<M> {
+    impl<M: ::ethers::providers::Middleware> From<::ethers::contract::Contract<M>>
+        for binding_generator<M>
+    {
         fn from(contract: ::ethers::contract::Contract<M>) -> Self {
             Self::new(contract.address(), contract.client())
         }

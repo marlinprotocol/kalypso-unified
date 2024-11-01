@@ -2,6 +2,7 @@ use crate::ask_lib::ask_status::{get_ask_state, AskState};
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
 use crate::generator_lib::generator_store;
+use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketMetadataStore;
 use anyhow::Result;
 use ethers::prelude::*;
@@ -42,6 +43,10 @@ type GeneratorRegistryInstance = bindings::generator_registry::GeneratorRegistry
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
 >;
 
+type SymbioticStakingInstance = bindings::symbiotic_staking::SymbioticStaking<
+    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+>;
+
 pub struct LogParser {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
@@ -50,6 +55,7 @@ pub struct LogParser {
     proof_marketplace: ProofMarketplaceInstance,
     generator_registry: GeneratorRegistryInstance,
     entity_registry: EntityRegistryInstance,
+    symbiotic_staking: SymbioticStakingInstance,
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
     matching_engine_slave_keys: Vec<Vec<u8>>,
@@ -58,6 +64,7 @@ pub struct LogParser {
     shared_market_store: Arc<RwLock<MarketMetadataStore>>,
     shared_key_store: Arc<RwLock<KeyStore>>,
     shared_cost_store: Arc<RwLock<CostStore>>,
+    shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
     chain_id: String,
     max_tasks_size: usize,
 }
@@ -74,6 +81,7 @@ impl LogParser {
         proof_marketplace: ProofMarketplaceInstance,
         generator_registry: GeneratorRegistryInstance,
         entity_registry: EntityRegistryInstance,
+        symbiotic_staking: SymbioticStakingInstance,
         matching_engine_key: String,
         matching_engine_slave_keys: Vec<String>,
         shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
@@ -81,6 +89,7 @@ impl LogParser {
         shared_market_store: Arc<RwLock<MarketMetadataStore>>,
         shared_key_store: Arc<RwLock<KeyStore>>,
         shared_cost_store: Arc<RwLock<CostStore>>,
+        shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
         chain_id: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
@@ -96,6 +105,7 @@ impl LogParser {
             proof_marketplace,
             generator_registry,
             entity_registry,
+            symbiotic_staking,
             provider_http,
             matching_engine_key: hex::decode(matching_engine_key).unwrap(),
             matching_engine_slave_keys: matching_engine_slave_keys
@@ -107,6 +117,7 @@ impl LogParser {
             shared_market_store,
             shared_key_store,
             shared_cost_store,
+            shared_symbiotic_stake_store,
             chain_id,
             max_tasks_size: 10, // TODO: dynamically adjust latter
         }
@@ -208,7 +219,9 @@ impl LogParser {
                                 log_processor::gr::process_generator_registry_logs(
                                     log,
                                     &self.generator_registry,
+                                    &self.symbiotic_staking,
                                     &self.shared_generator_store,
+                                    &self.shared_symbiotic_stake_store,
                                 )
                                 .await
                                 .unwrap();
