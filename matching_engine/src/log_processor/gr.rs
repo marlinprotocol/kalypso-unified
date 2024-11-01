@@ -86,18 +86,19 @@ pub async fn process_generator_registry_logs(
         return Ok(());
     }
 
-    if let Ok(parsed_deregistered_generator_log) =
-        genertor_registry.decode_event::<bindings::generator_registry::DeregisteredGeneratorFilter>(
-            "DeregisteredGenerator",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
-        log::debug!(
-            "Deregistering Generator: {:?}",
-            parsed_deregistered_generator_log.generator
-        );
-        let address = parsed_deregistered_generator_log.generator.into();
+    if let Ok(parsed_deregistered_generator_log) = genertor_registry.decode_event_raw(
+        "DeregisteredGenerator",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        let generator_address = {
+            let generator_address_token = parsed_deregistered_generator_log.first().unwrap();
+            let generator_address = generator_address_token.clone().into_address().unwrap();
+            generator_address
+        };
+
+        log::debug!("Deregistering Generator: {:?}", generator_address);
+        let address = generator_address.into();
 
         generator_store.remove_by_address(&address);
         return Ok(());
@@ -228,6 +229,7 @@ pub async fn process_generator_registry_logs(
             log.transaction_index.unwrap(),
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
+            delegation::Source::Native,
         );
 
         return Ok(());
@@ -282,6 +284,7 @@ pub async fn process_generator_registry_logs(
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
             delegation::Operation::UnDelegate,
+            delegation::Source::Native,
         );
         generator_store.resume_assignments_accross_all_markets(&address);
         generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
@@ -424,6 +427,7 @@ pub async fn process_generator_registry_logs(
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
             delegation::Operation::Slash,
+            delegation::Source::Native,
         );
         return Ok(());
     }
@@ -435,8 +439,8 @@ pub async fn process_generator_registry_logs(
                 log.topics.clone(),
                 log.data.clone(),
             )
-            {
-        let symbiotic_stake_store = { symbiotic_stake_store.write().await };
+    {
+        let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
 
         let captured_timestamp = symbiotic_complete_snapshot_log.capture_timestamp;
         let known_tokens: Vec<Address> = vec![
@@ -444,11 +448,55 @@ pub async fn process_generator_registry_logs(
             TEST_TOKEN_ADDRESS_TWO.clone(),
         ];
         let all_generators = generator_store.all_generators_address();
-        
+
         for stake_token in known_tokens {
             for operator in all_generators.clone().into_iter() {
                 // if this fails, system breaks. TODO
-                let vault_snapshot = symbiotic_staking.get_operator_stake_amount(stake_token, operator).call().await.unwrap();
+                log::error!("latest vault snapshot amount is being fetched as place holder");
+                log::error!(
+                    "matches won't work unless captured_timestamp: {} is used",
+                    captured_timestamp
+                );
+                log::error!("ask team to make Symbiotic.operatorStakeAmount public");
+
+                let vault_snapshot_amount = symbiotic_staking
+                    .get_operator_stake_amount(stake_token, operator)
+                    .call()
+                    .await
+                    .unwrap();
+
+                // before updating in symbiotic, do these steps
+                let last_stored_staking_info =
+                    symbiotic_stake_store.get_latest_stake_info(&operator, &stake_token);
+
+                if vault_snapshot_amount.gt(&last_stored_staking_info) {
+                    generator_store.add_extra_stake(
+                        &operator,
+                        &stake_token,
+                        &(vault_snapshot_amount - last_stored_staking_info),
+                        log.block_number.unwrap(),
+                        log.transaction_index.unwrap(),
+                        log.log_index.unwrap(),
+                        tx_to_string(&log.transaction_hash.unwrap()),
+                        delegation::Source::Symbiotic,
+                    );
+                } else if vault_snapshot_amount.lt(&last_stored_staking_info) {
+                    generator_store.remove_stake(
+                        &operator,
+                        &stake_token,
+                        &(last_stored_staking_info - vault_snapshot_amount),
+                        log.block_number.unwrap(),
+                        log.transaction_index.unwrap(),
+                        log.log_index.unwrap(),
+                        tx_to_string(&log.transaction_hash.unwrap()),
+                        delegation::Operation::UnDelegate,
+                        delegation::Source::Symbiotic,
+                    );
+                } else {
+                    log::debug!("No change in symbiotic stake noticed");
+                }
+
+                symbiotic_stake_store.upsert_stake(&operator, &stake_token, &vault_snapshot_amount);
             }
         }
 

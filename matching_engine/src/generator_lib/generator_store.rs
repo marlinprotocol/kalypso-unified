@@ -331,6 +331,7 @@ impl GeneratorStore {
         transaction_index: U64,
         log_index: U256,
         tx: String,
+        source: super::delegation::Source,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
             generator.total_stake.add_token(token_address, amount);
@@ -338,7 +339,7 @@ impl GeneratorStore {
                 generator_address,
                 Delegation {
                     delegation: (*token_address, *amount),
-                    source: super::delegation::Source::Native,
+                    source,
                     operation: super::delegation::Operation::Delegate,
                     block_number,
                     transaction_index,
@@ -365,6 +366,7 @@ impl GeneratorStore {
         log_index: U256,
         tx: String,
         operation: super::delegation::Operation,
+        source: super::delegation::Source,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
             generator
@@ -375,7 +377,7 @@ impl GeneratorStore {
                 generator_address,
                 Delegation {
                     delegation: (*token_address, *amount),
-                    source: super::delegation::Source::Native,
+                    source,
                     operation,
                     block_number,
                     transaction_index,
@@ -961,6 +963,7 @@ mod tests {
             0.into(),
             0.into(),
             "".into(),
+            crate::generator_lib::delegation::Source::Native,
         );
 
         assert_eq!(
@@ -984,6 +987,7 @@ mod tests {
             0.into(),
             "".into(),
             crate::generator_lib::delegation::Operation::UnDelegate,
+            crate::generator_lib::delegation::Source::Native,
         );
 
         assert_eq!(
@@ -1006,6 +1010,7 @@ mod tests {
             0.into(),
             0.into(),
             "".into(),
+            crate::generator_lib::delegation::Source::Native,
         );
 
         assert_eq!(

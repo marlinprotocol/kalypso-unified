@@ -384,3 +384,14 @@ pub static SLASHING_PENALTY_TWO: Lazy<(Address, U256)> = Lazy::new(|| {
         U256::from_dec_str("200000000000000").unwrap(),
     )
 });
+
+impl TokenTracker {
+    pub fn get_balance(&self, address: &Address) -> U256 {
+        let balance = self.tokens.get(address);
+        if balance.is_none() {
+            return 0.into();
+        }
+
+        return balance.unwrap().clone();
+    }
+}
