@@ -1,0 +1,152 @@
+{
+  "prompts": [
+    {
+      "field": "private_key",
+      "prompt": "Enter your private key",
+      "secret": true,
+      "env_var": "PRIVATE_KEY"
+    },
+    {
+      "field": "rpc_url",
+      "prompt": "Enter RPC URL",
+      "secret": false,
+      "env_var": "RPC_URL"
+    },
+    {
+      "field": "chain_id",
+      "prompt": "Enter Chain ID",
+      "secret": false,
+      "env_var": "CHAIN_ID"
+    },
+    {
+      "field": "market_id",
+      "prompt": "Enter Market ID",
+      "secret": false,
+      "env_var": "MARKET_ID"
+    },
+    {
+      "field": "generator_registry",
+      "prompt": "Enter Generator Registry Contract Address",
+      "secret": false,
+      "env_var": "GENERATOR_REGISTRY_ADDRESS"
+    },
+    {
+      "field": "proof_marketplace",
+      "prompt": "Enter Proof Marketplace Contract Address",
+      "secret": false,
+      "env_var": "PROOF_MARKETPLACE_ADDRESS"
+    },
+    {
+      "field": "reward_address",
+      "prompt": "Enter Reward Address",
+      "secret": false,
+      "env_var": "REWARD_ADDRESS"
+    },
+    {
+      "field": "stake",
+      "prompt": "Enter Stake",
+      "secret": false,
+      "env_var": "STAKE"
+    },
+    {
+      "field": "declared_compute",
+      "prompt": "Enter compute you wish to provide",
+      "secret": false,
+      "env_var": "DECLARED_COMPUTE"
+    },
+    {
+      "field": "compute_per_request",
+      "prompt": "Enter compute your machine requires per request",
+      "secret": false,
+      "env_var": "COMPUTE_PER_REQUEST"
+    },
+    {
+      "field": "proof_generation_cost",
+      "prompt": "Enter proof generation cost per request",
+      "secret": false,
+      "env_var": "PROOF_GENERATION_COST"
+    },
+    {
+      "field": "proposed_time",
+      "prompt": "Enter Maximum Time (in blocks) in which you can submit the proof",
+      "secret": false,
+      "env_var": "PROPOSED_TIME"
+    },
+    {
+      "field": "staking_address",
+      "prompt": "Enter Address to which you want to deposit stake",
+      "secret": false,
+      "env_var": "STAKING_ADDRESS"
+    },
+    {
+      "field": "staking_token",
+      "prompt": "Enter the staking token address",
+      "secret": false,
+      "env_var": "STAKING_TOKEN"
+    }
+  ],
+  "operations": [
+    {
+      "name": "Register",
+      "description": "Registers a new user",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "reward_address",
+        "declared_compute"
+      ]
+    },
+    {
+      "name": "Join Marketplace",
+      "description": "Joins a new marketplace",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "proof_marketplace",
+        "market_id",
+        "compute_per_request",
+        "proof_generation_cost",
+        "proposed_time"
+      ]
+    },
+    {
+      "name": "Request To Leave Marketplace",
+      "description": "Request Kalypso To Leave Marketplace. If there are not requests operator will automatically exit. Otherwise, operator will have to call 'Leave Marketplace' after some time",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "market_id"
+      ]
+    },
+    {
+      "name": "Leave Marketplace",
+      "description": "Leave Marketplace",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "market_id"
+      ]
+    },
+    {
+      "name": "Stake",
+      "description": "Stake for a generator",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "staking_token",
+        "generator_registry",
+        "staking_address",
+        "stake"
+      ]
+    }
+  ]
+}
