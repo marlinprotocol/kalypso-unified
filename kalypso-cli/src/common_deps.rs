@@ -367,3 +367,89 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct MarketCreateInfo {
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub prover_pcrs: Vec<u8>,
+    pub ivs_pcrs: Vec<u8>,
+    pub payment_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub verifier_wrapper: Address,
+}
+
+impl CommonDeps {
+    pub fn market_create_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<MarketCreateInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "prover_image_id", prover_pcrs);
+        get_config_ref!(config, "verification_image_id", ivs_pcrs);
+        get_config_ref!(config, "verifier_wrapper", verifier_wrapper);
+        get_config_ref!(config, "payment_token", payment_token);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let prover_pcrs = {
+            let trimmed_key = if prover_pcrs.starts_with("0x") || prover_pcrs.starts_with("0X") {
+                &prover_pcrs[2..]
+            } else {
+                prover_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        let ivs_pcrs = {
+            let trimmed_key = if ivs_pcrs.starts_with("0x") || ivs_pcrs.starts_with("0X") {
+                &ivs_pcrs[2..]
+            } else {
+                ivs_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid IVS PCRs: {}", e))?
+        };
+
+        let (payment_token, _) =
+            get_token_instance(private_key, chain_id, &payment_token, rpc_url)?;
+
+        let verifier_wrapper = verifier_wrapper
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Verifier Wrapper Address: {}", e))?;
+
+        Ok(MarketCreateInfo {
+            private_key_signer,
+            proof_marketplace,
+            prover_pcrs,
+            ivs_pcrs,
+            verifier_wrapper,
+            payment_token,
+        })
+    }
+}
+
+pub struct ComputePcrsInfo {
+    pub attestation_utility: String,
+    pub attestation_verifier: String,
+}
+
+impl CommonDeps {
+    pub fn compute_pcrs_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ComputePcrsInfo, String> {
+        get_config_ref!(config, "attestation_server_url", attestation_server_url);
+        get_config_ref!(config, "attestion_verifier_url", attestion_verifier_url);
+
+        Ok(ComputePcrsInfo {
+            attestation_utility: attestation_server_url.to_string(),
+            attestation_verifier: attestion_verifier_url.to_string(),
+        })
+    }
+}

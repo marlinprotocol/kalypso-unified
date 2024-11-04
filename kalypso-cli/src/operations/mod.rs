@@ -1,9 +1,12 @@
 // src/operations/mod.rs
 
 pub mod complete_registration;
+pub mod compute_pcrs;
+pub mod create_marketplace;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
 pub mod stake;
+
 // ... Add other operation modules here
 
 use async_trait::async_trait;
@@ -46,6 +49,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Leave Marketplace" => Some(Box::new(
             leave_or_request_leave_marketplace::LeaveMarketPlace,
         )),
+        "Create Marketplace" => Some(Box::new(create_marketplace::CreateMarketplace)),
+        "Compute PCRs" => Some(Box::new(compute_pcrs::ComputePcrs)),
         _ => unimplemented!(),
     }
 }

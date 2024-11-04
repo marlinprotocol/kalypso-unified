@@ -83,6 +83,42 @@
       "prompt": "Enter the staking token address",
       "secret": false,
       "env_var": "STAKING_TOKEN"
+    },
+    {
+      "field": "payment_token",
+      "prompt": "Enter the payment token address",
+      "secret": false,
+      "env_var": "PAYMENT_TOKEN"
+    },
+    {
+      "field": "prover_image_id",
+      "prompt": "Enter the prover image pcrs",
+      "secret": false,
+      "env_var": "PROVER_IMAGE_PCRS"
+    },
+    {
+      "field": "verification_image_id",
+      "prompt": "Enter the input_verification image pcrs",
+      "secret": false,
+      "env_var": "IVS_IMAGE_PCRS"
+    },
+    {
+      "field": "verifier_wrapper",
+      "prompt": "Enter Proof Verifier Contract Address (refer to Kalypso Standard Wrapper Contract)",
+      "secret": false,
+      "env_var": "VERIFIER_WRAPPER_ADDRESS"
+    },
+    {
+      "field": "attestation_server_url",
+      "prompt": "Enter Attestation Server URL",
+      "secret": false,
+      "env_var": "ATTESTATION_UTILITY_URL"
+    },
+    {
+      "field": "attestion_verifier_url",
+      "prompt": "Enter Attestation VERIFIER URL",
+      "secret": false,
+      "env_var": "ATTESTATION_VERIFIER_URL"
     }
   ],
   "operations": [
@@ -146,6 +182,28 @@
         "generator_registry",
         "staking_address",
         "stake"
+      ]
+    },
+    {
+      "name": "Create Marketplace",
+      "description": "Create a new market place in kalypso",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "prover_image_id",
+        "verification_image_id",
+        "verifier_wrapper",
+        "payment_token"
+      ]
+    },
+    {
+      "name": "Compute PCRs",
+      "description": "Compute PCRs of a given enclave from it's attestation server",
+      "required_prompts": [
+        "attestation_server_url",
+        "attestion_verifier_url"
       ]
     }
   ]

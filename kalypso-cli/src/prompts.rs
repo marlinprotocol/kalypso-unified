@@ -43,6 +43,13 @@ impl<'a> Prompter<'a> {
 
         validators.insert("staking_address".into(), validate_eth_address);
         validators.insert("staking_token".to_string(), validate_eth_address);
+        validators.insert("payment_token".to_string(), validate_eth_address);
+
+        validators.insert("prover_image_id".to_string(), validate_image_id);
+        validators.insert("verification_image_id".to_string(), validate_image_id);
+        validators.insert("verifier_wrapper".to_string(), validate_eth_address);
+        validators.insert("attestation_server_url".to_string(), validate_rpc_url);
+        validators.insert("attestion_verifier_url".to_string(), validate_rpc_url);
 
         validators.insert(
             "confirmation".to_string(),
@@ -181,5 +188,86 @@ fn validate_eth_address(key: &str) -> Result<(), String> {
             e
         )),
     }
+}
+
+fn validate_image_id(key: &str) -> Result<(), String> {
+    let trimmed_key = if key.starts_with("0x") || key.starts_with("0X") {
+        &key[2..]
+    } else {
+        key
+    };
+    if trimmed_key.len() % 2 != 0 {
+        return Err("Hex string has an invalid length".to_string());
+    }
+
+    let pcrs = hex::decode(trimmed_key)
+        .map_err(|_| "Invalid Image ID: Hex decoding failed".to_string())?;
+    let _image_id =
+        get_image_id_from_pcrs(&pcrs).map_err(|e| format!("Error computing image ID: {}", e))?;
+
+    Ok(())
+}
+
+// --- try to find some lib functions for these below rather than writting your own ------------ //
+use ethers::abi::{decode, ParamType, Token};
+
+fn get_image_id_from_pcrs(pcrs: &[u8]) -> Result<[u8; 32], Box<dyn Error>> {
+    // Define the expected types: three dynamic bytes arrays
+    let types = vec![ParamType::Bytes, ParamType::Bytes, ParamType::Bytes];
+
+    // Decode the input `pcrs` according to the specified types
+    let tokens = decode(&types, pcrs)?;
+
+    if tokens.len() != 3 {
+        return Err("Expected three PCRs after decoding".into());
+    }
+
+    // Extract each PCR as a byte vector
+    let pcr0 = match &tokens[0] {
+        Token::Bytes(b) => b,
+        _ => return Err("PCR0 is not of type bytes".into()),
+    };
+
+    let pcr1 = match &tokens[1] {
+        Token::Bytes(b) => b,
+        _ => return Err("PCR1 is not of type bytes".into()),
+    };
+
+    let pcr2 = match &tokens[2] {
+        Token::Bytes(b) => b,
+        _ => return Err("PCR2 is not of type bytes".into()),
+    };
+
+    // Compute the image ID using the inner function
+    let image_id = get_image_id_from_pcrs_inner(pcr0, pcr1, pcr2)?;
+
+    Ok(image_id)
+}
+
+use sha3::{Digest, Keccak256};
+
+fn get_image_id_from_pcrs_inner(
+    pcr0: &[u8],
+    pcr1: &[u8],
+    pcr2: &[u8],
+) -> Result<[u8; 32], Box<dyn Error>> {
+    // Initialize the Keccak-256 hasher
+    let mut hasher = Keccak256::new();
+
+    // Update the hasher with each PCR
+    hasher.update(pcr0);
+    hasher.update(pcr1);
+    hasher.update(pcr2);
+
+    // Finalize the hash computation
+    let result = hasher.finalize();
+
+    // Convert the hash result into a fixed-size array
+    let image_id: [u8; 32] = result
+        .as_slice()
+        .try_into()
+        .map_err(|_| "Hash output is not 32 bytes")?;
+
+    Ok(image_id)
 }
 // Add more validators as needed
