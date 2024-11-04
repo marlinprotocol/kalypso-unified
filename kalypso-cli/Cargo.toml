@@ -5,14 +5,18 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.64" 
+bytes = "1.0"
 bindings = { path = "../bindings", package = "foundry-contracts" }
 dotenv = "0.15.0"
 dialoguer = "0.10.3"
 env_logger = "0.11"
+futures = "0.3"
 ethers = { version = "2", features = ["rustls"] }
 hex = "0.4.3"
 log = "0.4"
+reqwest = { version = "0.11", features = ["stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sha3 = "0.10"
 tokio = { version = "1.15.0", features = ["full"] }
 url = "2.3.1"
