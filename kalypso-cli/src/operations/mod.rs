@@ -3,7 +3,6 @@
 pub mod complete_registration;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
-pub mod stake;
 // ... Add other operation modules here
 
 use async_trait::async_trait;
@@ -39,7 +38,6 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
     match name {
         "Register" => Some(Box::new(complete_registration::CompleteRegistration)),
         "Join Marketplace" => Some(Box::new(join_marketplace::JoinMarketplace)),
-        "Stake" => Some(Box::new(stake::Stake)),
         "Request To Leave Marketplace" => Some(Box::new(
             leave_or_request_leave_marketplace::RequestMarketPlaceExit,
         )),

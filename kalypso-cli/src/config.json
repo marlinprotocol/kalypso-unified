@@ -134,19 +134,6 @@
         "generator_registry",
         "market_id"
       ]
-    },
-    {
-      "name": "Stake",
-      "description": "Stake for a generator",
-      "required_prompts": [
-        "private_key",
-        "rpc_url",
-        "chain_id",
-        "staking_token",
-        "generator_registry",
-        "staking_address",
-        "stake"
-      ]
     }
   ]
 }

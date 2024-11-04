@@ -35,16 +35,6 @@ pub struct GeneratorJoinMarket {
     pub proposed_time: U256,
 }
 
-pub struct StakeForGenerator {
-    pub private_key_signer: LocalWallet,
-    pub generator_registry: bindings::generator_registry::GeneratorRegistry<
-        SignerMiddleware<Provider<Http>, LocalWallet>,
-    >,
-    pub staking_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
-    pub staking_address: Address,
-    pub stake: U256,
-}
-
 pub struct CommonDeps;
 
 impl CommonDeps {
@@ -72,43 +62,6 @@ impl CommonDeps {
             "Transaction: {}",
             hex::encode(receipt.transaction_hash)
         ))
-    }
-
-    pub fn stake_for_generator(
-        config: &std::collections::HashMap<String, String>,
-    ) -> Result<StakeForGenerator, String> {
-        get_config_ref!(config, "private_key", private_key);
-        get_config_ref!(config, "rpc_url", rpc_url);
-        get_config_ref!(config, "generator_registry", generator_registry_address);
-        get_config_ref!(config, "staking_address", staking_address);
-        get_config_ref!(config, "stake", stake);
-        get_config_ref!(config, "chain_id", chain_id);
-        get_config_ref!(config, "staking_token", staking_token);
-
-        let (generator_registry, private_key_signer) = get_generator_registry_instance(
-            private_key,
-            chain_id,
-            generator_registry_address,
-            rpc_url,
-        )?;
-
-        let staking_address = staking_address
-            .parse::<Address>()
-            .map_err(|e| format!("Invalid Staking Address: {}", e))?;
-
-        let stake =
-            U256::from_dec_str(stake.as_str()).map_err(|e| format!("Invalid Stake: {}", e))?;
-
-        let (staking_token, _) =
-            get_token_instance(private_key, chain_id, &staking_token, rpc_url)?;
-
-        Ok(StakeForGenerator {
-            private_key_signer,
-            generator_registry,
-            staking_address,
-            stake,
-            staking_token,
-        })
     }
 
     pub fn generator_join_market_instance(
@@ -290,6 +243,7 @@ fn get_proof_marketplace_instance(
     Ok((proof_marketplace, private_key_signer))
 }
 
+#[allow(unused)] //will be required latter
 fn get_token_instance(
     private_key: &str,
     chain_id: &str,

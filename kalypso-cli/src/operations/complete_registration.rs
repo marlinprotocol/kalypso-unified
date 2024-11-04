@@ -31,7 +31,6 @@ impl Operation for CompleteRegistration {
                             .register(
                                 generator_info.reward_address,
                                 generator_info.declared_compute,
-                                0.into(),
                                 vec![12, 23].into(),
                             )
                             .send(),
