@@ -432,17 +432,20 @@ pub async fn process_generator_registry_logs(
         return Ok(());
     }
 
-    if let Ok(symbiotic_complete_snapshot_log) =
-        symbiotic_staking
-            .decode_event::<bindings::generator_registry::SymbioticCompleteSnapshotFilter>(
-                "SymbioticCompleteSnapshot",
-                log.topics.clone(),
-                log.data.clone(),
-            )
-    {
+    if let Ok(symbiotic_complete_snapshot_log) = genertor_registry.decode_event_raw(
+        "SymbioticCompleteSnapshot",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("Processing SymbioticCompleteSnapshot");
         let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
 
-        let capture_timestamp = symbiotic_complete_snapshot_log.capture_timestamp;
+        let capture_timestamp = {
+            let capture_timestamp_token = symbiotic_complete_snapshot_log.first().unwrap();
+            let capture_timestamp = capture_timestamp_token.clone().into_uint().unwrap();
+            capture_timestamp
+        };
+
         let known_tokens: Vec<Address> = vec![
             TEST_TOKEN_ADDRESS_ONE.clone(),
             TEST_TOKEN_ADDRESS_TWO.clone(),
