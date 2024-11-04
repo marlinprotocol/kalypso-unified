@@ -9,7 +9,8 @@ members = [
     "ivs_client",
     "generator", 
     "generator_client",
-    "integration_checks",
+    "integration_checks", 
+    "kalypso-cli",
 ]
 resolver = "2"
 

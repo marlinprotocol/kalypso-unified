@@ -6,6 +6,7 @@ use super::prover::{post_request, Prover};
 pub struct ExternalConfidentialProver {
     base: ConfidentialProver,
     encryption_key: Vec<u8>,
+    skip_input_verification: bool,
 }
 
 impl ExternalConfidentialProver {
@@ -20,6 +21,7 @@ impl ExternalConfidentialProver {
         public: Bytes,
         secrets: Bytes,
         encryption_key: Vec<u8>,
+        skip_input_verification: bool,
     ) -> Self {
         ExternalConfidentialProver {
             base: ConfidentialProver::new(
@@ -30,8 +32,10 @@ impl ExternalConfidentialProver {
                 ask_id,
                 public,
                 secrets,
+                skip_input_verification,
             ),
             encryption_key,
+            skip_input_verification,
         }
     }
 
@@ -52,6 +56,10 @@ impl ExternalConfidentialProver {
 }
 
 impl Prover for ExternalConfidentialProver {
+    fn should_skip_input_verification(&self) -> bool {
+        self.skip_input_verification
+    }
+
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, Box<dyn Error>> {
         let (public, secrets, acl) = self.prepare_payload();
         let payload = generator::models::InputPayload::from_encrypted_secrets(
@@ -123,6 +131,7 @@ pub struct ConfidentialProver {
     public: Bytes,
     secrets: Bytes,
     client: reqwest::Client,
+    skip_input_verification: bool,
 }
 
 impl ConfidentialProver {
@@ -134,6 +143,7 @@ impl ConfidentialProver {
         ask_id: U256,
         public: Bytes,
         secrets: Bytes,
+        skip_input_verification: bool,
     ) -> Self {
         Self {
             input_verification_executable_check_input_url,
@@ -144,6 +154,7 @@ impl ConfidentialProver {
             public,
             secrets,
             client: reqwest::Client::new(),
+            skip_input_verification,
         }
     }
 
@@ -155,6 +166,10 @@ impl ConfidentialProver {
 type BoxError = Box<dyn Error>;
 
 impl Prover for ConfidentialProver {
+    fn should_skip_input_verification(&self) -> bool {
+        self.skip_input_verification
+    }
+
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
         let (public, secrets) = self.prepare_payload();
         let payload = generator::models::InputPayload::from_plain_secrets(public, secrets.unwrap());

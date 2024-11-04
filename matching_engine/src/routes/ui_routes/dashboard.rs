@@ -60,11 +60,16 @@ pub async fn get_dashboard(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    if let Some(response) = DASHBOARD_RESPONSE
-        .try_read()
-        .unwrap()
-        .get_if_valid(Duration::from_secs(10))
-    {
+    let dashboard_cache = match DASHBOARD_RESPONSE.try_read() {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                status: "Resource Busy".into(),
+            }))
+        }
+    };
+
+    if let Some(response) = dashboard_cache.get_if_valid(Duration::from_secs(10)) {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }

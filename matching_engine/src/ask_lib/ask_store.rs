@@ -34,6 +34,12 @@ impl Display for Proof {
     }
 }
 
+impl Default for Proof {
+    fn default() -> Self {
+        Proof::FailedProofGeneration
+    }
+}
+
 pub struct LocalAskStore {
     asks_by_id: HashMap<U256, LocalAsk>,
     market_id_index: HashMap<U256, Vec<LocalAsk>>,

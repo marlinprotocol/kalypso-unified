@@ -32,6 +32,7 @@ pub struct GenerateProofParams<'a> {
     pub end_block: &'a U64,
     pub markets: &'a HashMap<String, MarketDetails>,
     pub slave_ecies_private_keys: &'a Vec<ecies::SecretKey>,
+    pub skip_input_verification: bool,
 }
 
 //Generating proof for the input
@@ -75,6 +76,7 @@ pub async fn generate_proof(
             decoded_secret_input
                 .expect("Unable to decode secret for confidential markets")
                 .into(),
+            generate_proof_params.skip_input_verification,
         );
 
         confidential_prover.get_proof().await
@@ -96,6 +98,7 @@ pub async fn generate_proof(
             generator_url.clone().unwrap().clone(),
             parsed_ask_created_log.ask_id,
             public_inputs.into(),
+            generate_proof_params.skip_input_verification,
         );
 
         non_confidential_prover.get_proof().await
@@ -121,6 +124,7 @@ async fn fetch_decoded_secret(
         new_acl,
         markets,
         slave_ecies_private_keys,
+        skip_input_verification: _,
     } = generate_proof_params;
     let client = proof_market_place_contract_http.client();
     let list_of_ask: &Ask = &proof_market_place_contract_http

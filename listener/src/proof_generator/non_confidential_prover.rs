@@ -11,6 +11,7 @@ pub struct NonConfidentialProver {
     ask_id: U256,
     public: Bytes,
     client: reqwest::Client,
+    skip_input_verification: bool,
 }
 
 impl NonConfidentialProver {
@@ -21,6 +22,7 @@ impl NonConfidentialProver {
         prover_executable_generate_proof_url: String,
         ask_id: U256,
         public: Bytes,
+        skip_input_verification: bool,
     ) -> Self {
         Self {
             input_verification_executable_check_input_url,
@@ -30,6 +32,7 @@ impl NonConfidentialProver {
             ask_id,
             public,
             client: reqwest::Client::new(),
+            skip_input_verification,
         }
     }
 
@@ -41,6 +44,9 @@ impl NonConfidentialProver {
 type BoxError = Box<dyn Error>;
 
 impl Prover for NonConfidentialProver {
+    fn should_skip_input_verification(&self) -> bool {
+        self.skip_input_verification
+    }
     async fn check_inputs(&self) -> Result<ivs::models::CheckInputResponse, BoxError> {
         let (public, _) = self.prepare_payload();
         let payload = generator::models::InputPayload::only_public_inputs(public);

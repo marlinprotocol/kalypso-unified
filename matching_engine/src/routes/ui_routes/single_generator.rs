@@ -116,7 +116,6 @@ struct Slash {
     market: MarketInfo,
     request: String, // Transaction Hash
     price_offered: String,
-    expected_time: String,
     slashing_penalty: TokenAmount,
 }
 
@@ -262,15 +261,17 @@ pub async fn single_generator(
         }));
     }
 
+    let new_response = new_response.unwrap();
+
     match SINGLE_GENERATOR_RESPONSE.try_write() {
-        Ok(mut data) => data.store(&generator_query, new_response.clone().unwrap()),
+        Ok(mut data) => data.store(&generator_query, new_response.clone()),
         _ => {
             log::warn!("Failed Caching Single Generator response");
         }
     }
 
     // Return the newly computed response
-    return Ok(HttpResponse::Ok().json(new_response.unwrap()));
+    return Ok(HttpResponse::Ok().json(new_response));
 }
 
 async fn recompute_single_generator_response<'a>(
@@ -420,7 +421,7 @@ async fn recompute_single_generator_response<'a>(
                 proof: Some(
                     local_ask_store
                         .get_proof_by_ask_id(&ask.ask_id)
-                        .unwrap()
+                        .unwrap_or_default()
                         .to_string(),
                 ),
                 proof_transaction: local_ask_store.get_proof_transaction(&ask.ask_id),
@@ -430,7 +431,7 @@ async fn recompute_single_generator_response<'a>(
             .get_slashing_records(&generator_id)
             .into_iter()
             .map(|record| Slash {
-                timestamp: record.expected_time.to_string(),
+                timestamp: record.slashing_timestamp.to_string(),
                 market: MarketInfo {
                     name: None,
                     id: record.market_id.to_string(),
@@ -441,7 +442,6 @@ async fn recompute_single_generator_response<'a>(
                 },
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),
-                expected_time: record.expected_time.to_string(),
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
             })
             .collect(),

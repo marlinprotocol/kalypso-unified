@@ -487,10 +487,13 @@ impl LogParser {
                 );
                 {
                     // previous ref of ask store won't work because it was readonly, create a write only one that drops here only.
-                    self.shared_local_ask_store
-                        .try_write()
-                        .unwrap()
-                        .modify_state(&random_pending_ask.ask_id, ask_state);
+                    match self.shared_local_ask_store.try_write() {
+                        Ok(mut store) => store.modify_state(&random_pending_ask.ask_id, ask_state),
+                        Err(err) => {
+                            log::error!("{}", err);
+                            log::error!("Failed updating ask store. If repeated issue, there may be another matching running in parallel");
+                        }
+                    }
                 }
                 continue;
             }

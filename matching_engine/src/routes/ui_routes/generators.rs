@@ -52,11 +52,16 @@ pub async fn get_generators_all(
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
 
-    if let Some(response) = GENERATOR_RESPONSE
-        .try_read()
-        .unwrap()
-        .get_if_valid(Duration::from_secs(10))
-    {
+    let generator_cache = match GENERATOR_RESPONSE.try_read() {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                status: "Resource Busy".into(),
+            }))
+        }
+    };
+
+    if let Some(response) = generator_cache.get_if_valid(Duration::from_secs(10)) {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }

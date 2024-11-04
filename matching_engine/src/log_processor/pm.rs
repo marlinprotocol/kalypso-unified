@@ -442,6 +442,7 @@ pub async fn process_proof_market_place_logs(
                     tx_to_string(&log.transaction_hash.unwrap()),
                     &ask.reward,
                     &ask.deadline,
+                    &log.block_number.unwrap_or_default(),
                 );
             }
         }
