@@ -201,17 +201,24 @@
     {
       "name": "Compute PCRs",
       "description": "Compute PCRs of a given enclave from it's attestation server",
-      "required_prompts": [
-        "attestation_server_url",
-        "attestion_verifier_url"
-      ]
+      "required_prompts": ["attestation_server_url", "attestion_verifier_url"]
     },
     {
       "name": "Non-Confidential Market PCRS",
       "description": "Get PCRs for non confidential market",
+      "required_prompts": []
+    },
+    {
+      "name": "Claim Rewards",
+      "description": "Claim accumulated rewards",
       "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "payment_token",
+        "reward_address"
       ]
     }
-
   ]
 }
