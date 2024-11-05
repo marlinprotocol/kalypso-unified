@@ -191,3 +191,41 @@ pub async fn get_image_id(
 
     Ok(format!("0x{}", hex::encode(encoded)))
 }
+
+pub struct ReadAttestation;
+
+#[async_trait]
+impl Operation for ReadAttestation {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let read_attestation_info = CommonDeps::read_attestation_info(&config)?;
+
+        let attestation_stream =
+            build_attestation(&read_attestation_info.attestation_utility, false)
+                .await
+                .map_err(|_| "Failed Building Attestations.".to_string())?;
+
+        let attestation_data: Vec<u8> = attestation_stream
+            .fold(Vec::new(), |mut acc, item| async {
+                match item {
+                    Ok(bytes) => {
+                        acc.extend_from_slice(&bytes);
+                        acc
+                    }
+                    Err(e) => {
+                        println!("Error while receiving data: {}", e);
+                        acc
+                    }
+                }
+            })
+            .await;
+
+        println!("Attestation Data Length: {}\n", attestation_data.len());
+
+        let attestation_data = format!("0x{}", hex::encode(attestation_data));
+
+        print!("Attestation: \n{}", attestation_data);
+
+        println!("\n\nSave Image For Further");
+        Ok(())
+    }
+}

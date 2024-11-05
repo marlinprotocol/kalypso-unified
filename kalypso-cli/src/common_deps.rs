@@ -539,3 +539,18 @@ fn get_native_staking_instance(
 
     Ok((native_staking, private_key_signer))
 }
+pub struct ReadAttestationInfo {
+    pub attestation_utility: String,
+}
+
+impl CommonDeps {
+    pub fn read_attestation_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ReadAttestationInfo, String> {
+        get_config_ref!(config, "attestation_server_url", attestation_server_url);
+
+        Ok(ReadAttestationInfo {
+            attestation_utility: attestation_server_url.to_string(),
+        })
+    }
+}
