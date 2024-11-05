@@ -107,6 +107,24 @@
       "prompt": "Enter Attestation VERIFIER URL",
       "secret": false,
       "env_var": "ATTESTATION_VERIFIER_URL"
+    },
+    {
+      "field": "staking_amount",
+      "prompt": "Enter the amount to stake",
+      "secret": false,
+      "env_var": "STAKING_AMOUNT"
+    },
+    {
+      "field": "native_staking",
+      "prompt": "Enter Native Staking Contract Address",
+      "secret": false,
+      "env_var": "NATIVE_STAKING_ADDRESS"
+    },
+    {
+      "field": "operator_address",
+      "prompt": "Enter Operator Address",
+      "secret": false,
+      "env_var": "OPERATOR_ADDRESS"
     }
   ],
   "operations": [
@@ -193,6 +211,19 @@
         "proof_marketplace",
         "payment_token",
         "reward_address"
+      ]
+    },
+    {
+      "name": "Native Stake",
+      "description": "Stake Your Own Tokens",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "native_staking",
+        "staking_token",
+        "staking_amount",
+        "operator_address"
       ]
     }
   ]

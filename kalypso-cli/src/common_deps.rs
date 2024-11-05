@@ -452,3 +452,90 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct NativeStakeInfo {
+    pub private_key_signer: LocalWallet,
+    pub native_staking:
+        bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub staking_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub staking_amount: U256,
+    pub operator_address: Address,
+}
+
+impl CommonDeps {
+    pub fn native_staking_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<NativeStakeInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "native_staking", native_staking_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "staking_token", staking_token);
+        get_config_ref!(config, "staking_amount", staking_amount);
+        get_config_ref!(config, "operator_address", operator_address);
+
+        let (staking_token, _) =
+            get_token_instance(private_key, chain_id, &staking_token, rpc_url)?;
+
+        let (native_staking, private_key_signer) =
+            get_native_staking_instance(private_key, chain_id, native_staking_address, rpc_url)?;
+
+        let staking_amount = U256::from_dec_str(staking_amount.as_str())
+            .map_err(|e| format!("Invalid Staking Amount: {}", e))?;
+
+        let operator_address = operator_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Operator Address: {}", e))?;
+
+        Ok(NativeStakeInfo {
+            private_key_signer,
+            native_staking,
+            staking_token,
+            staking_amount,
+            operator_address,
+        })
+    }
+}
+
+fn get_native_staking_instance(
+    private_key: &str,
+    chain_id: &str,
+    native_staking_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let native_staking_address = native_staking_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Native Staking address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let native_staking =
+        bindings::native_staking::NativeStaking::new(native_staking_address, client_arc.clone());
+
+    Ok((native_staking, private_key_signer))
+}
