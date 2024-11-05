@@ -1,9 +1,39 @@
 use crate::common_deps::CommonDeps;
 use crate::operations::Operation;
 use async_trait::async_trait;
+use bytes::Bytes;
 use ethers::types::U256;
+use futures::{Stream, StreamExt};
+use hex::decode;
+use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::error::Error;
+
+pub struct NonConfidentialMarketPcrs;
+
+#[async_trait]
+impl Operation for NonConfidentialMarketPcrs {
+    async fn execute(&self, _config: HashMap<String, String>) -> Result<(), String> {
+        let pcr0_vec = vec![0; 48];
+        let pcr1_vec = vec![0; 48];
+        let pcr2_vec = vec![0; 48];
+
+        let encoded = encode(&[
+            Token::Bytes(pcr0_vec),
+            Token::Bytes(pcr1_vec),
+            Token::Bytes(pcr2_vec),
+        ]);
+
+        let image_id = format!("0x{}", hex::encode(encoded));
+
+        print!("Image ID: \n{}", image_id);
+
+        println!("\n\nSave Image For Further");
+
+        Ok(())
+    }
+}
 
 pub struct ComputePcrs;
 
@@ -47,12 +77,6 @@ impl Operation for ComputePcrs {
         Ok(())
     }
 }
-
-use bytes::Bytes;
-use futures::{Stream, StreamExt};
-use hex::decode;
-use reqwest::Client;
-use std::error::Error;
 
 pub async fn build_attestation(
     base_url: &str,

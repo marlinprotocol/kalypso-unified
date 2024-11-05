@@ -51,6 +51,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         )),
         "Create Marketplace" => Some(Box::new(create_marketplace::CreateMarketplace)),
         "Compute PCRs" => Some(Box::new(compute_pcrs::ComputePcrs)),
+        "Non-Confidential Market PCRS" => Some(Box::new(compute_pcrs::NonConfidentialMarketPcrs)),
         _ => unimplemented!(),
     }
 }
