@@ -204,6 +204,11 @@
       "required_prompts": ["attestation_server_url", "attestion_verifier_url"]
     },
     {
+      "name": "Read Attestation",
+      "description": "Read the attestation of the enclave from it's attestation server",
+      "required_prompts": ["attestation_server_url"]
+    },
+    {
       "name": "Non-Confidential Market PCRS",
       "description": "Get PCRs for non confidential market",
       "required_prompts": []

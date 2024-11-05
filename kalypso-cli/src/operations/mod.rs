@@ -51,6 +51,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
             leave_or_request_leave_marketplace::LeaveMarketPlace,
         )),
         "Create Marketplace" => Some(Box::new(create_marketplace::CreateMarketplace)),
+        "Read Attestation" => Some(Box::new(compute_pcrs::ReadAttestation)),
         "Compute PCRs" => Some(Box::new(compute_pcrs::ComputePcrs)),
         "Non-Confidential Market PCRS" => Some(Box::new(compute_pcrs::NonConfidentialMarketPcrs)),
         "Claim Rewards" => Some(Box::new(claim_rewards::ClaimRewardsInfo)),
