@@ -407,3 +407,48 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct ClaimRewardsInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    #[allow(unused)]
+    pub payment_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub reward_address: Address,
+}
+
+impl CommonDeps {
+    pub fn claim_rewards_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ClaimRewardsInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "reward_address", reward_address);
+        get_config_ref!(config, "payment_token", payment_token);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let reward_address = reward_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Reward Address: {}", e))?;
+
+        let (payment_token, _) =
+            get_token_instance(private_key, chain_id, &payment_token, rpc_url)?;
+
+        Ok(ClaimRewardsInfo {
+            private_key_signer,
+            proof_marketplace,
+            payment_token,
+            reward_address,
+        })
+    }
+}
