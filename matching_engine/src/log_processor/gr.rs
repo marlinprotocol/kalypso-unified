@@ -461,6 +461,13 @@ pub async fn process_generator_registry_logs(
                     .await
                     .unwrap();
 
+                log::debug!(
+                    "operator:{}, snapshot token:{}, amount: {}",
+                    &operator,
+                    &stake_token,
+                    vault_snapshot_amount.to_string()
+                );
+
                 // before updating in symbiotic, do these steps
                 let last_stored_staking_info =
                     symbiotic_stake_store.get_latest_stake_info(&operator, &stake_token);
