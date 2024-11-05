@@ -455,10 +455,12 @@ impl CommonDeps {
 }
 
 pub struct ClaimRewardsInfo {
+    #[allow(unused)]
     pub private_key_signer: LocalWallet,
     pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
+    #[allow(unused)]
     pub payment_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub reward_address: Address,
 }
