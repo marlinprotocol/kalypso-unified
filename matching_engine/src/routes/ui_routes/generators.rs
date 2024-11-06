@@ -2,7 +2,8 @@ use super::cache::CachedResponse;
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::models::WelcomeResponse;
 use crate::utility::{
-    address_to_string, TokenAmount, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_TWO,
+    address_to_string, TokenAmount, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_THREE,
+    TEST_TOKEN_ADDRESS_TWO,
 };
 use actix_web::web::Data;
 use actix_web::HttpResponse;
@@ -153,6 +154,7 @@ async fn recompute_generator_response<'a>(
                 token: vec![
                     address_to_string(&TEST_TOKEN_ADDRESS_ONE),
                     address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                    address_to_string(&TEST_TOKEN_ADDRESS_THREE),
                 ],
                 id: info_per_market.market_id.to_string(),
             };

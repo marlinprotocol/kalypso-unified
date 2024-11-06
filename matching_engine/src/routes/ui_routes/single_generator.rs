@@ -11,6 +11,7 @@ use crate::utility::bytes_to_string;
 use crate::utility::random_usize;
 use crate::utility::TokenAmount;
 use crate::utility::TEST_TOKEN_ADDRESS_ONE;
+use crate::utility::TEST_TOKEN_ADDRESS_THREE;
 use crate::utility::TEST_TOKEN_ADDRESS_TWO;
 use actix_web::web;
 use actix_web::HttpResponse;
@@ -378,6 +379,7 @@ async fn recompute_single_generator_response<'a>(
                             token: vec![
                                 address_to_string(&TEST_TOKEN_ADDRESS_ONE),
                                 address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                                address_to_string(&TEST_TOKEN_ADDRESS_THREE),
                             ],
                         },
                         requestor: address_to_string(&a.prover_refund_address),
@@ -406,6 +408,7 @@ async fn recompute_single_generator_response<'a>(
                     token: vec![
                         address_to_string(&TEST_TOKEN_ADDRESS_ONE),
                         address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                        address_to_string(&TEST_TOKEN_ADDRESS_THREE),
                     ],
                 },
                 requestor: address_to_string(&ask.prover_refund_address),
@@ -438,6 +441,7 @@ async fn recompute_single_generator_response<'a>(
                     token: vec![
                         address_to_string(&TEST_TOKEN_ADDRESS_ONE),
                         address_to_string(&TEST_TOKEN_ADDRESS_TWO),
+                        address_to_string(&TEST_TOKEN_ADDRESS_THREE),
                     ],
                 },
                 request: record.slashing_tx,
