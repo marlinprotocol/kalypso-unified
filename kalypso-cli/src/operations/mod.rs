@@ -4,6 +4,7 @@ pub mod claim_rewards;
 pub mod complete_registration;
 pub mod compute_pcrs;
 pub mod create_marketplace;
+pub mod create_request;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
 pub mod stake;
@@ -55,6 +56,9 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Compute PCRs" => Some(Box::new(compute_pcrs::ComputePcrs)),
         "Non-Confidential Market PCRS" => Some(Box::new(compute_pcrs::NonConfidentialMarketPcrs)),
         "Claim Rewards" => Some(Box::new(claim_rewards::ClaimRewardsInfo)),
+        "Create Proof Request (non confidential market)" => {
+            Some(Box::new(create_request::NonConfidentialRequest))
+        }
         _ => unimplemented!(),
     }
 }

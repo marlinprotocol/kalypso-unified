@@ -50,6 +50,9 @@ impl<'a> Prompter<'a> {
         validators.insert("verifier_wrapper".to_string(), validate_eth_address);
         validators.insert("attestation_server_url".to_string(), validate_rpc_url);
         validators.insert("attestion_verifier_url".to_string(), validate_rpc_url);
+        validators.insert("max_proof_generation_cost".to_string(), validate_dec_str_id);
+        validators.insert("inputs".to_string(), validate_inputs);
+        validators.insert("max_proof_generation_time".to_string(), validate_dec_str_id);
 
         validators.insert(
             "confirmation".to_string(),
@@ -188,6 +191,21 @@ fn validate_eth_address(key: &str) -> Result<(), String> {
             e
         )),
     }
+}
+
+fn validate_inputs(key: &str) -> Result<(), String> {
+    let trimmed_key = if key.starts_with("0x") || key.starts_with("0X") {
+        &key[2..]
+    } else {
+        key
+    };
+    if trimmed_key.len() % 2 != 0 {
+        return Err("Hex string has an invalid length".to_string());
+    }
+
+    hex::decode(trimmed_key).map_err(|_| "Invalid Input Bytes".to_string())?;
+
+    Ok(())
 }
 
 fn validate_image_id(key: &str) -> Result<(), String> {

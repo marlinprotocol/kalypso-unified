@@ -119,6 +119,24 @@
       "prompt": "Enter Attestation VERIFIER URL",
       "secret": false,
       "env_var": "ATTESTATION_VERIFIER_URL"
+    },
+    {
+      "field": "max_proof_generation_cost",
+      "prompt": "Enter Maximum number of payments token to pay",
+      "secret": false,
+      "env_var": "MAX_PROOF_GENERATION_COST"
+    },
+    {
+      "field": "max_proof_generation_time",
+      "prompt": "Enter Maximum time in blocks you can wait for proof to be generated",
+      "secret": false,
+      "env_var": "MAX_PROOF_GENERATION_TIME"
+    },
+    {
+      "field": "inputs",
+      "prompt": "Enter inputs in hex string",
+      "secret": false,
+      "env_var": "INPUTS"
     }
   ],
   "operations": [
@@ -223,6 +241,21 @@
         "proof_marketplace",
         "payment_token",
         "reward_address"
+      ]
+    },
+    {
+      "name": "Create Proof Request (non confidential market)",
+      "description": "Create a proof request for  non confidential market",
+      "required_prompts":[
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id",
+        "payment_token",
+        "max_proof_generation_cost",
+        "max_proof_generation_time",
+        "inputs"
       ]
     }
   ]
