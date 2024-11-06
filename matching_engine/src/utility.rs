@@ -360,6 +360,7 @@ impl AddAssign for TokenTracker {
 pub const USDC_TOKEN_STRING: &str = "0x8230d71d809718132C2054704F5E3aF1b86B669C";
 pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0xB5570D4D39dD20F61dEf7C0d6846790360b89a18";
 pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x854493FB9F844c8632140ffF9B66207B10027E8d";
+pub const TEST_TOKEN_ADDRESS_THREE_STRING: &str = "0x5E478CB7576906fe2a443684aDcD9A0dfc547abD";
 
 use once_cell::sync::Lazy;
 pub static TEST_TOKEN_ADDRESS_ONE: Lazy<Address> =
@@ -367,6 +368,9 @@ pub static TEST_TOKEN_ADDRESS_ONE: Lazy<Address> =
 
 pub static TEST_TOKEN_ADDRESS_TWO: Lazy<Address> =
     Lazy::new(|| TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap());
+
+pub static TEST_TOKEN_ADDRESS_THREE: Lazy<Address> =
+    Lazy::new(|| TEST_TOKEN_ADDRESS_THREE_STRING.parse::<Address>().unwrap());
 
 pub static USDC_TOKEN: Lazy<Address> = Lazy::new(|| USDC_TOKEN_STRING.parse::<Address>().unwrap());
 

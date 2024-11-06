@@ -4,7 +4,10 @@ use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::log_processor::constants;
-use crate::utility::{tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_TWO};
+use crate::utility::{
+    tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_THREE,
+    TEST_TOKEN_ADDRESS_TWO,
+};
 
 pub async fn process_generator_registry_logs(
     log: &Log,
@@ -449,6 +452,7 @@ pub async fn process_generator_registry_logs(
         let known_tokens: Vec<Address> = vec![
             TEST_TOKEN_ADDRESS_ONE.clone(),
             TEST_TOKEN_ADDRESS_TWO.clone(),
+            TEST_TOKEN_ADDRESS_THREE.clone(),
         ];
         let all_generators = generator_store.all_generators_address();
 
