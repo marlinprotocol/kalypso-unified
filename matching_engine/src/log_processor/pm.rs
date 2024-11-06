@@ -5,6 +5,7 @@ use crate::costs::CostStore;
 use crate::utility::tx_to_string;
 use crate::utility::TokenTracker;
 use crate::utility::SLASHING_PENALTY_ONE;
+use crate::utility::SLASHING_PENALTY_THREE;
 use crate::utility::SLASHING_PENALTY_TWO;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 
@@ -287,6 +288,7 @@ pub async fn process_proof_market_place_logs(
                 let mut slashing_penalty = TokenTracker::new();
                 slashing_penalty.add_token(&SLASHING_PENALTY_ONE.0, &SLASHING_PENALTY_ONE.1);
                 slashing_penalty.add_token(&SLASHING_PENALTY_TWO.0, &SLASHING_PENALTY_TWO.1);
+                slashing_penalty.add_token(&SLASHING_PENALTY_THREE.0, &SLASHING_PENALTY_THREE.1);
                 slashing_penalty
             },
             activation_block: market.3,

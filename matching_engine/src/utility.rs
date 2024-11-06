@@ -389,6 +389,13 @@ pub static SLASHING_PENALTY_TWO: Lazy<(Address, U256)> = Lazy::new(|| {
     )
 });
 
+pub static SLASHING_PENALTY_THREE: Lazy<(Address, U256)> = Lazy::new(|| {
+    (
+        TEST_TOKEN_ADDRESS_THREE_STRING.parse::<Address>().unwrap(),
+        U256::from_dec_str("300000").unwrap(),
+    )
+});
+
 impl TokenTracker {
     pub fn get_balance(&self, address: &Address) -> U256 {
         let balance = self.tokens.get(address);
