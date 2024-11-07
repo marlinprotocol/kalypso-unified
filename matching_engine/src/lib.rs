@@ -108,8 +108,15 @@ pub struct MatchingEngineConfig {
     pub proof_market_place: String,
     pub generator_registry: String,
     pub entity_registry: String,
+    #[serde(default = "default_symbiotic_staking")]
     pub symbiotic_staking: String,
     pub start_block: String,
+}
+
+// Default function for symbiotic_staking
+// Adding the to avoid changes in ME Client for now
+fn default_symbiotic_staking() -> String {
+    "0xE7136641cB2c94d318779c3B6BEb997dC5B2E574".to_string()
 }
 
 pub struct MatchingEngine {
