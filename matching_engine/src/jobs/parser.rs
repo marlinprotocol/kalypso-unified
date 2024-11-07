@@ -60,6 +60,7 @@ pub struct LogParser {
     shared_cost_store: Arc<RwLock<CostStore>>,
     chain_id: String,
     max_tasks_size: usize,
+    rpc_url: String,
 }
 
 impl LogParser {
@@ -109,6 +110,7 @@ impl LogParser {
             shared_cost_store,
             chain_id,
             max_tasks_size: 10, // TODO: dynamically adjust latter
+            rpc_url,
         }
     }
 
@@ -198,6 +200,7 @@ impl LogParser {
                                     &self.shared_cost_store,
                                     &self.matching_engine_key,
                                     &self.matching_engine_slave_keys,
+                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();
@@ -209,6 +212,7 @@ impl LogParser {
                                     log,
                                     &self.generator_registry,
                                     &self.shared_generator_store,
+                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();

@@ -5,6 +5,7 @@ use tokio::sync::RwLock;
 use crate::generator_lib::*;
 use crate::log_processor::constants;
 use crate::utility::{tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE};
+use crate::utility::get_l1_block_from_l2_block;
 
 pub async fn process_generator_registry_logs(
     log: &Log,
@@ -12,6 +13,7 @@ pub async fn process_generator_registry_logs(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
+    rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::GENERATOR_REGISTRY_TOPICS_SKIP
         .get(&log.topics[0])
@@ -216,11 +218,14 @@ pub async fn process_generator_registry_logs(
         let address = added_stake_log.generator;
         let amount = added_stake_log.amount;
 
+        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2).await?;
+
         generator_store.add_extra_stake(
             &address,
             &TEST_TOKEN_ADDRESS_ONE,
             &amount,
-            log.block_number.unwrap(),
+            U64::from(block_l1.as_u64()),
             log.transaction_index.unwrap(),
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
@@ -263,11 +268,14 @@ pub async fn process_generator_registry_logs(
         let address = remove_stake_log.generator;
         let amount = remove_stake_log.amount;
 
+        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2).await?;
+
         generator_store.remove_stake(
             &address,
             &TEST_TOKEN_ADDRESS_ONE,
             &amount,
-            log.block_number.unwrap(),
+            U64::from(block_l1.as_u64()),
             log.transaction_index.unwrap(),
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
@@ -402,11 +410,14 @@ pub async fn process_generator_registry_logs(
         let address = stake_slash_logs.generator;
         let stake_slashed = stake_slash_logs.stake;
 
+        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2).await?;
+
         generator_store.remove_stake(
             &address,
             &TEST_TOKEN_ADDRESS_ONE,
             &stake_slashed,
-            log.block_number.unwrap(),
+            U64::from(block_l1.as_u64()),
             log.transaction_index.unwrap(),
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
