@@ -35,6 +35,7 @@ impl Operation for ClaimRewardsInfo {
         .map_err(|e| format!("Claim Reward Transaction failed: {}", e))?;
 
         println!("Claim Reward Transaction: {}", claim_reward_transaction);
-        unimplemented!()
+
+        Ok(())
     }
 }
