@@ -670,3 +670,101 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct WhitelistProverImageInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub prover_image_id: Bytes,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn whitelist_prover_image_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<WhitelistProverImageInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "prover_image_id", prover_pcrs);
+        get_config_ref!(config, "market_id", market_id);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let prover_pcrs = {
+            let trimmed_key = if prover_pcrs.starts_with("0x") || prover_pcrs.starts_with("0X") {
+                &prover_pcrs[2..]
+            } else {
+                prover_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(WhitelistProverImageInfo {
+            private_key_signer,
+            proof_marketplace,
+            prover_image_id: prover_pcrs.into(),
+            market_id,
+        })
+    }
+}
+
+pub struct WhitelistVerificationImageInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub verification_image_id: Bytes,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn whitelist_verification_image_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<WhitelistVerificationImageInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "verification_image_id", ivs_pcrs);
+        get_config_ref!(config, "market_id", market_id);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let ivs_pcrs = {
+            let trimmed_key = if ivs_pcrs.starts_with("0x") || ivs_pcrs.starts_with("0X") {
+                &ivs_pcrs[2..]
+            } else {
+                ivs_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(WhitelistVerificationImageInfo {
+            private_key_signer,
+            proof_marketplace,
+            verification_image_id: ivs_pcrs.into(),
+            market_id,
+        })
+    }
+}
