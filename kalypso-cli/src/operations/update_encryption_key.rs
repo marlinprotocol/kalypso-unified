@@ -47,7 +47,14 @@ impl Operation for AddIvsKey {
 
         let enclave_signature = get_attestation_signature(
             hex::encode(&verified_attestation).as_ref(),
-            hex::encode(add_ivs_key_info.private_key_signer.address()).as_ref(),
+            hex::encode(
+                add_ivs_key_info
+                    .private_key_signer
+                    .address()
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .as_ref(),
             false,
             &add_ivs_key_info.enclave_client_url,
             headers,
@@ -114,7 +121,14 @@ impl Operation for UpdateEncryptionKey {
 
         let enclave_signature = get_attestation_signature(
             hex::encode(&verified_attestation).as_ref(),
-            hex::encode(update_encryption_info.private_key_signer.address()).as_ref(),
+            hex::encode(
+                update_encryption_info
+                    .private_key_signer
+                    .address()
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .as_ref(),
             false,
             &update_encryption_info.enclave_client_url,
             headers,
@@ -174,14 +188,20 @@ pub async fn get_address_signature(
         println!("Fetching signature from URL: {}", full_url);
     }
 
-    let payload = serde_json::json!({ "address": address });
+    let payload = serde_json::json!({ "address": format!("0x{}", address) });
     let client = reqwest::Client::new();
     let response = client
         .post(&full_url)
         .headers(headers)
         .json(&payload)
         .send()
-        .await?;
+        .await
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to send request: {}", e),
+            )) as Box<dyn Error>
+        })?;
 
     if !response.status().is_success() {
         return Err(format!("Error: {}", response.status()).into());
@@ -228,14 +248,20 @@ pub async fn get_attestation_signature(
         println!("Fetching signature from URL: {}", full_url);
     }
 
-    let payload = serde_json::json!({ "attestation": attestation, "address": address });
+    let payload = serde_json::json!({ "attestation": format!("0x{}",attestation), "address": format!("0x{}", address) });
     let client = reqwest::Client::new();
     let response = client
         .post(&full_url)
         .headers(headers)
         .json(&payload)
         .send()
-        .await?;
+        .await
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to send request: {}", e),
+            )) as Box<dyn Error>
+        })?;
 
     if !response.status().is_success() {
         return Err(format!("Error: {}", response.status()).into());

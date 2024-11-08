@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use bytes::Bytes;
 use ethers::types::U256;
 use futures::{Stream, StreamExt};
-use hex::decode;
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -19,10 +18,10 @@ impl Operation for NonConfidentialMarketPcrs {
         let pcr1_vec = vec![0; 48];
         let pcr2_vec = vec![0; 48];
 
-        let encoded = encode(&[
-            Token::Bytes(pcr0_vec),
-            Token::Bytes(pcr1_vec),
-            Token::Bytes(pcr2_vec),
+        let encoded = ethers::abi::encode(&[
+            ethers::abi::Token::Bytes(pcr0_vec),
+            ethers::abi::Token::Bytes(pcr1_vec),
+            ethers::abi::Token::Bytes(pcr2_vec),
         ]);
 
         let image_id = format!("0x{}", hex::encode(encoded));
@@ -109,21 +108,13 @@ fn utility_url(base_url: &str, path: &str) -> String {
 
 #[derive(Debug, Deserialize)]
 struct AttestationVerifierResponse {
-    #[allow(unused)]
-    secp256k1_public: String,
-    #[allow(unused)]
     signature: String,
-    #[allow(unused)]
+    secp256k1_public: String,
     pcr0: String,
-    #[allow(unused)]
     pcr1: String,
-    #[allow(unused)]
     pcr2: String,
-    #[allow(unused)]
-    timestamp: u64,
+    timestamp: usize,
 }
-
-use ethers::abi::{encode, Token};
 
 // Function to get attestation by sending attestation_data to the verifier
 pub async fn get_image_id(
@@ -170,23 +161,24 @@ pub async fn get_image_id(
     }
 
     // Decode hex strings to bytes
-    let signature_bytes = decode(&verifier_response.signature.trim_start_matches("0x"))?;
-    let pcr0_bytes = decode(&verifier_response.pcr0.trim_start_matches("0x"))?;
-    let pcr1_bytes = decode(&verifier_response.pcr1.trim_start_matches("0x"))?;
-    let pcr2_bytes = decode(&verifier_response.pcr2.trim_start_matches("0x"))?;
+    let signature_bytes = hex::decode(&verifier_response.signature.trim_start_matches("0x"))?;
+    let pcr0_bytes = hex::decode(&verifier_response.pcr0.trim_start_matches("0x"))?;
+    let pcr1_bytes = hex::decode(&verifier_response.pcr1.trim_start_matches("0x"))?;
+    let pcr2_bytes = hex::decode(&verifier_response.pcr2.trim_start_matches("0x"))?;
 
     let _timestamp_u256 = U256::from(verifier_response.timestamp);
     let _signature_vec = signature_bytes;
-    let _ecies_pubkey_vec = decode(&verifier_response.secp256k1_public.trim_start_matches("0x"))?;
+    let _ecies_pubkey_vec =
+        hex::decode(&verifier_response.secp256k1_public.trim_start_matches("0x"))?;
 
     let pcr0_vec = pcr0_bytes;
     let pcr1_vec = pcr1_bytes;
     let pcr2_vec = pcr2_bytes;
 
-    let encoded = encode(&[
-        Token::Bytes(pcr0_vec),
-        Token::Bytes(pcr1_vec),
-        Token::Bytes(pcr2_vec),
+    let encoded = ethers::abi::encode(&[
+        ethers::abi::Token::Bytes(pcr0_vec.into()),
+        ethers::abi::Token::Bytes(pcr1_vec.into()),
+        ethers::abi::Token::Bytes(pcr2_vec.into()),
     ]);
 
     Ok(format!("0x{}", hex::encode(encoded)))
@@ -275,26 +267,27 @@ pub async fn get_verified_attestation(
     }
 
     // Decode hex strings to bytes
-    let signature_bytes = decode(&verifier_response.signature.trim_start_matches("0x"))?;
-    let pcr0_bytes = decode(&verifier_response.pcr0.trim_start_matches("0x"))?;
-    let pcr1_bytes = decode(&verifier_response.pcr1.trim_start_matches("0x"))?;
-    let pcr2_bytes = decode(&verifier_response.pcr2.trim_start_matches("0x"))?;
+    let signature_bytes = hex::decode(&verifier_response.signature.trim_start_matches("0x"))?;
+    let pcr0_bytes = hex::decode(&verifier_response.pcr0.trim_start_matches("0x"))?;
+    let pcr1_bytes = hex::decode(&verifier_response.pcr1.trim_start_matches("0x"))?;
+    let pcr2_bytes = hex::decode(&verifier_response.pcr2.trim_start_matches("0x"))?;
 
     let timestamp_u256 = U256::from(verifier_response.timestamp);
     let signature_vec = signature_bytes;
-    let ecies_pubkey_vec = decode(&verifier_response.secp256k1_public.trim_start_matches("0x"))?;
+    let ecies_pubkey_vec =
+        hex::decode(&verifier_response.secp256k1_public.trim_start_matches("0x"))?;
 
     let pcr0_vec = pcr0_bytes;
     let pcr1_vec = pcr1_bytes;
     let pcr2_vec = pcr2_bytes;
 
-    let encoded = encode(&[
-        Token::Bytes(signature_vec),
-        Token::Bytes(ecies_pubkey_vec),
-        Token::Bytes(pcr0_vec),
-        Token::Bytes(pcr1_vec),
-        Token::Bytes(pcr2_vec),
-        Token::Uint(timestamp_u256),
+    let encoded = ethers::abi::encode(&[
+        ethers::abi::Token::Bytes(signature_vec.into()),
+        ethers::abi::Token::Bytes(ecies_pubkey_vec.into()),
+        ethers::abi::Token::Bytes(pcr0_vec.into()),
+        ethers::abi::Token::Bytes(pcr1_vec.into()),
+        ethers::abi::Token::Bytes(pcr2_vec.into()),
+        ethers::abi::Token::Uint(timestamp_u256),
     ]);
 
     Ok(encoded)
