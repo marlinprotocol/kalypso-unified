@@ -56,6 +56,7 @@ impl<'a> Prompter<'a> {
         validators.insert("inputs".to_string(), validate_inputs);
         validators.insert("max_proof_generation_time".to_string(), validate_dec_str_id);
         validators.insert("ask_id".to_string(), validate_dec_str_id);
+        validators.insert("enclave_client_url".to_string(), validate_rpc_url);
 
         validators.insert(
             "confirmation".to_string(),

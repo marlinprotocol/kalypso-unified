@@ -768,3 +768,59 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct UpdateEncryptionKeyInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub generator_registry: bindings::generator_registry::GeneratorRegistry<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub attestation_utility: String,
+    pub attestation_verifier: String,
+    pub enclave_client_url: String,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn update_encryption_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<UpdateEncryptionKeyInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "generator_registry", generator_registry_address);
+        get_config_ref!(config, "chain_id", chain_id);
+
+        get_config_ref!(config, "attestation_server_url", attestation_server_url);
+        get_config_ref!(config, "attestion_verifier_url", attestion_verifier_url);
+        get_config_ref!(config, "enclave_client_url", enclave_client_url);
+        get_config_ref!(config, "market_id", market_id);
+
+        let (generator_registry, private_key_signer) = get_generator_registry_instance(
+            private_key,
+            chain_id,
+            generator_registry_address,
+            rpc_url,
+        )?;
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(UpdateEncryptionKeyInfo {
+            private_key_signer,
+            generator_registry,
+            attestation_utility: attestation_server_url.to_string(),
+            attestation_verifier: attestion_verifier_url.to_string(),
+            enclave_client_url: enclave_client_url.to_string(),
+            market_id,
+        })
+    }
+}
+
+pub type AddIvsKeyInfo = UpdateEncryptionKeyInfo;
+impl CommonDeps {
+    pub fn add_ivs_key_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<AddIvsKeyInfo, String> {
+        CommonDeps::update_encryption_info(config)
+    }
+}

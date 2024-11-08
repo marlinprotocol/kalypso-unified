@@ -149,6 +149,12 @@
       "prompt": "Enter Ask ID/ Request ID",
       "secret": false,
       "env_var": "ASK_ID"
+    },
+    {
+      "field": "enclave_client_url",
+      "prompt": "Enter enclave client URL",
+      "secret": false,
+      "env_var": "ENCLAVE_CLIENT_URL"
     }
   ],
   "operations": [
@@ -303,6 +309,34 @@
         "proof_marketplace",
         "market_id",
         "verification_image_id"
+      ]
+    },
+    {
+      "name": "Update Encryption Key",
+      "description": "Update Encryption Key for confidential markets",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "market_id",
+        "attestation_server_url", 
+        "attestion_verifier_url",
+        "enclave_client_url"
+      ]
+    },
+    {
+      "name": "Add IVS Key",
+      "description": "Adds IVS Enclave key and register respective keys with the market",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "market_id",
+        "attestation_server_url", 
+        "attestion_verifier_url",
+        "enclave_client_url"
       ]
     }
   ]
