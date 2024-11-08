@@ -181,7 +181,13 @@ pub async fn get_address_signature(
         .headers(headers)
         .json(&payload)
         .send()
-        .await?;
+        .await
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to send request: {}", e),
+            )) as Box<dyn Error>
+        })?;
 
     if !response.status().is_success() {
         return Err(format!("Error: {}", response.status()).into());
@@ -235,7 +241,13 @@ pub async fn get_attestation_signature(
         .headers(headers)
         .json(&payload)
         .send()
-        .await?;
+        .await
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Failed to send request: {}", e),
+            )) as Box<dyn Error>
+        })?;
 
     if !response.status().is_success() {
         return Err(format!("Error: {}", response.status()).into());
