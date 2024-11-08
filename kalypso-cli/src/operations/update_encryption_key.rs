@@ -174,7 +174,7 @@ pub async fn get_address_signature(
         println!("Fetching signature from URL: {}", full_url);
     }
 
-    let payload = serde_json::json!({ "address": address });
+    let payload = serde_json::json!({ "address": format!("0x{}", address) });
     let client = reqwest::Client::new();
     let response = client
         .post(&full_url)
@@ -234,7 +234,7 @@ pub async fn get_attestation_signature(
         println!("Fetching signature from URL: {}", full_url);
     }
 
-    let payload = serde_json::json!({ "attestation": attestation, "address": address });
+    let payload = serde_json::json!({ "attestation": format!("0x{}",attestation), "address": format!("0x{}", address) });
     let client = reqwest::Client::new();
     let response = client
         .post(&full_url)
