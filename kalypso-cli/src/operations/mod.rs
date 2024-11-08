@@ -9,6 +9,7 @@ pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
 pub mod request;
 pub mod stake;
+pub mod update_encryption_key;
 pub mod whitelist;
 
 // ... Add other operation modules here
@@ -64,6 +65,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Discard Request" => Some(Box::new(request::DiscardRequest)),
         "Whitelist Prover Image" => Some(Box::new(whitelist::WhitelistProverImage)),
         "Whitelist IVS Image" => Some(Box::new(whitelist::WhitelistVerificationImage)),
+        "Update Encryption Key" => Some(Box::new(update_encryption_key::UpdateEncryptionKey)),
+        "Add IVS Key" => Some(Box::new(update_encryption_key::AddIvsKey)),
         _ => unimplemented!(),
     }
 }

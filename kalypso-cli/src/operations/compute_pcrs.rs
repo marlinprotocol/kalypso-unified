@@ -229,3 +229,73 @@ impl Operation for ReadAttestation {
         Ok(())
     }
 }
+
+// Function to get attestation by sending attestation_data to the verifier
+pub async fn get_verified_attestation(
+    base_url: &str,
+    attestation_data: Vec<u8>,
+    print_logs: bool,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    // Construct the verify endpoint URL
+    let verify_endpoint = utility_url(base_url, "/verify/raw");
+
+    if print_logs {
+        println!("Sending attestation data to {}", verify_endpoint);
+    }
+
+    let client = Client::new();
+    let response = client
+        .post(&verify_endpoint)
+        .header("Content-Type", "application/octet-stream")
+        .body(attestation_data)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        if print_logs {
+            println!(
+                "Attestation verifier responded with status: {}",
+                response.status()
+            );
+        }
+        return Err("Failed to verify attestation".into());
+    }
+
+    let verifier_response: AttestationVerifierResponse = response.json().await?;
+
+    if print_logs {
+        println!("Fetched attestation successfully");
+        println!("Verifier response: {:?}", verifier_response);
+    }
+
+    // Extract and process secp256k1_public
+    let ecies_pubkey = format!("0x{}", verifier_response.secp256k1_public);
+    if ecies_pubkey.len() != 130 {
+        return Err("secp pub key length incorrect".into());
+    }
+
+    // Decode hex strings to bytes
+    let signature_bytes = decode(&verifier_response.signature.trim_start_matches("0x"))?;
+    let pcr0_bytes = decode(&verifier_response.pcr0.trim_start_matches("0x"))?;
+    let pcr1_bytes = decode(&verifier_response.pcr1.trim_start_matches("0x"))?;
+    let pcr2_bytes = decode(&verifier_response.pcr2.trim_start_matches("0x"))?;
+
+    let timestamp_u256 = U256::from(verifier_response.timestamp);
+    let signature_vec = signature_bytes;
+    let ecies_pubkey_vec = decode(&verifier_response.secp256k1_public.trim_start_matches("0x"))?;
+
+    let pcr0_vec = pcr0_bytes;
+    let pcr1_vec = pcr1_bytes;
+    let pcr2_vec = pcr2_bytes;
+
+    let encoded = encode(&[
+        Token::Bytes(signature_vec),
+        Token::Bytes(ecies_pubkey_vec),
+        Token::Bytes(pcr0_vec),
+        Token::Bytes(pcr1_vec),
+        Token::Bytes(pcr2_vec),
+        Token::Uint(timestamp_u256),
+    ]);
+
+    Ok(encoded)
+}
