@@ -7,6 +7,7 @@ pub mod create_marketplace;
 pub mod create_request;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
+pub mod request;
 pub mod stake;
 // ... Add other operation modules here
 
@@ -58,6 +59,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Create Proof Request (non confidential market)" => {
             Some(Box::new(create_request::NonConfidentialRequest))
         }
+        "Discard Request" => Some(Box::new(request::DiscardRequest)),
         _ => unimplemented!(),
     }
 }

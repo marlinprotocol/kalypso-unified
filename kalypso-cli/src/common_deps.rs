@@ -633,3 +633,40 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct DiscardRequestInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub ask_id: U256,
+}
+
+impl CommonDeps {
+    pub fn discard_request_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<DiscardRequestInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "ask_id", ask_id);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let ask_id =
+            U256::from_dec_str(&ask_id.as_str()).map_err(|e| format!("Invalid Ask Id: {}", e))?;
+
+        Ok(DiscardRequestInfo {
+            private_key_signer,
+            proof_marketplace,
+            ask_id,
+        })
+    }
+}
