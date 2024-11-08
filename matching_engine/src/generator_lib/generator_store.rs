@@ -478,10 +478,10 @@ impl GeneratorStore {
     pub fn update_on_slashing(
         &mut self,
         generator_address: &Address,
-        token_address: &Address,
+        token_addresses: Vec<Address>,
         ask_id: &U256,
         market_id: &U256,
-        slashing: &U256,
+        slashings: Vec<U256>,
         slashing_tx: String,
         price_offered: &U256,
         deadline: &U256,
@@ -495,38 +495,44 @@ impl GeneratorStore {
             generator_market.proofs_slashed.add_assign(U256::one());
         }
 
-        self.slashings
-            .entry(*generator_address)
-            .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing entry
-            .or_insert({
-                let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
-                tracker.add_token(token_address, slashing); // Add the slashing amount
-                tracker
-            });
+        for (token_address, slashing) in token_addresses.iter().zip(slashings.iter()) {
+            // Update the slashing tracker for each token
+            self.slashings
+                .entry(*generator_address)
+                .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing entry
+                .or_insert_with(|| {
+                    let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
+                    tracker.add_token(token_address, slashing); // Add the slashing amount
+                    tracker
+                });
 
-        self.slashing_per_generator_per_market
-            .entry(*generator_address)
-            .or_insert_with(HashMap::new) // Create the inner HashMap if it doesn't exist
-            .entry(*market_id)
-            .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing TokenTracker
-            .or_insert({
-                let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
-                tracker.add_token(token_address, slashing); // Add the slashing amount
-                tracker
-            });
+            self.slashing_per_generator_per_market
+                .entry(*generator_address)
+                .or_insert_with(HashMap::new) // Create the inner HashMap if it doesn't exist
+                .entry(*market_id)
+                .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing TokenTracker
+                .or_insert_with(|| {
+                    let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
+                    tracker.add_token(token_address, slashing); // Add the slashing amount
+                    tracker
+                });
+        }
 
-        self.slashing_records
-            .entry(*generator_address)
-            .or_insert_with(Vec::new)
-            .push(SlashingRecord {
-                ask_id: ask_id.clone(),
-                market_id: market_id.clone(),
-                slashing_tx,
-                price_offered: price_offered.clone(),
-                expected_time: deadline.clone(),
-                slashing_penalty: (token_address.clone(), slashing.clone()),
-                slashing_timestamp: slashing_timestamp.clone(),
-            });
+        // Record the slashing event
+        for (token_address, slashing) in token_addresses.iter().zip(slashings.iter()) {
+            self.slashing_records
+                .entry(*generator_address)
+                .or_insert_with(Vec::new)
+                .push(SlashingRecord {
+                    ask_id: ask_id.clone(),
+                    market_id: market_id.clone(),
+                    slashing_tx: slashing_tx.clone(),
+                    price_offered: price_offered.clone(),
+                    expected_time: deadline.clone(),
+                    slashing_penalty: (token_address.clone(), slashing.clone()),
+                    slashing_timestamp: slashing_timestamp.clone(),
+                });
+        }
     }
 
     pub fn update_on_stake_locked(
