@@ -137,6 +137,12 @@
       "prompt": "Enter inputs in hex string",
       "secret": false,
       "env_var": "INPUTS"
+    },
+    {
+      "field": "ask_id",
+      "prompt": "Enter Ask ID/ Request ID",
+      "secret": false,
+      "env_var": "ASK_ID"
     }
   ],
   "operations": [
@@ -256,6 +262,17 @@
         "max_proof_generation_cost",
         "max_proof_generation_time",
         "inputs"
+      ]
+    },
+    {
+      "name": "Discard Request",
+      "description": "Discard your own request using Request ID",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "ask_id"
       ]
     }
   ]

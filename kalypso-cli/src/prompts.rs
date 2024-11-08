@@ -53,6 +53,7 @@ impl<'a> Prompter<'a> {
         validators.insert("max_proof_generation_cost".to_string(), validate_dec_str_id);
         validators.insert("inputs".to_string(), validate_inputs);
         validators.insert("max_proof_generation_time".to_string(), validate_dec_str_id);
+        validators.insert("ask_id".to_string(), validate_dec_str_id);
 
         validators.insert(
             "confirmation".to_string(),
