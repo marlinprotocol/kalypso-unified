@@ -252,7 +252,7 @@
     {
       "name": "Create Proof Request (non confidential market)",
       "description": "Create a proof request for  non confidential market",
-      "required_prompts":[
+      "required_prompts": [
         "private_key",
         "rpc_url",
         "chain_id",
@@ -273,6 +273,30 @@
         "chain_id",
         "proof_marketplace",
         "ask_id"
+      ]
+    },
+    {
+      "name": "Whitelist Prover Image",
+      "description": "Whitelist Prover Image/PCRs for a market",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id",
+        "prover_image_id"
+      ]
+    },
+    {
+      "name": "Whitelist IVS Image",
+      "description": "Whitelist IVS Image/PCRs for a market",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id",
+        "verification_image_id"
       ]
     }
   ]

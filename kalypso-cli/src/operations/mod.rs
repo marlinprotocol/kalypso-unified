@@ -9,6 +9,7 @@ pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
 pub mod request;
 pub mod stake;
+pub mod whitelist;
 
 // ... Add other operation modules here
 
@@ -61,6 +62,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
             Some(Box::new(create_request::NonConfidentialRequest))
         }
         "Discard Request" => Some(Box::new(request::DiscardRequest)),
+        "Whitelist Prover Image" => Some(Box::new(whitelist::WhitelistProverImage)),
+        "Whitelist IVS Image" => Some(Box::new(whitelist::WhitelistVerificationImage)),
         _ => unimplemented!(),
     }
 }
