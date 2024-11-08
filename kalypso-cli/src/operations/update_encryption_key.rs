@@ -47,7 +47,14 @@ impl Operation for AddIvsKey {
 
         let enclave_signature = get_attestation_signature(
             hex::encode(&verified_attestation).as_ref(),
-            hex::encode(add_ivs_key_info.private_key_signer.address()).as_ref(),
+            hex::encode(
+                add_ivs_key_info
+                    .private_key_signer
+                    .address()
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .as_ref(),
             false,
             &add_ivs_key_info.enclave_client_url,
             headers,
@@ -114,7 +121,14 @@ impl Operation for UpdateEncryptionKey {
 
         let enclave_signature = get_attestation_signature(
             hex::encode(&verified_attestation).as_ref(),
-            hex::encode(update_encryption_info.private_key_signer.address()).as_ref(),
+            hex::encode(
+                update_encryption_info
+                    .private_key_signer
+                    .address()
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .as_ref(),
             false,
             &update_encryption_info.enclave_client_url,
             headers,
