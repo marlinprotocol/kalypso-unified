@@ -425,25 +425,25 @@ pub async fn process_proof_market_place_logs(
         let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
         local_ask_store.remove_ask_only_if_completed(&ask_id);
 
-        {
-            for (slashing_token, slashing_amount) in market_data
-                .unwrap()
-                .slashing_penalty
-                .to_address_token_pair()
-            {
-                generator_store.write().await.update_on_slashing(
-                    &generator_address,
-                    &slashing_token,
-                    &ask_id,
-                    &ask.market_id,
-                    &slashing_amount,
-                    tx_to_string(&log.transaction_hash.unwrap()),
-                    &ask.reward,
-                    &ask.deadline,
-                    &log.block_number.unwrap_or_default(),
-                );
-            }
-        }
+        let slashing_token_pairs = market_data
+            .unwrap()
+            .slashing_penalty
+            .to_address_token_pair();
+
+        let (slashing_tokens, slashings): (Vec<Address>, Vec<U256>) =
+            slashing_token_pairs.into_iter().unzip();
+
+        generator_store.write().await.update_on_slashing(
+            &generator_address,
+            slashing_tokens,
+            &ask_id,
+            &ask.market_id,
+            slashings,
+            tx_to_string(&log.transaction_hash.unwrap()),
+            &ask.reward,
+            &ask.deadline,
+            &log.block_number.unwrap_or_default(),
+        );
 
         log::warn!("Complete Proof not Generated");
         return Ok(());
