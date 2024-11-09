@@ -528,6 +528,28 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
+    if let Ok(operator_reward_log) = proof_market_place
+        .decode_event::<pmp::OperatorFeeRewardAddedFilter>(
+            "OperatorFeeRewardAdded",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::debug!("Operator Fee Reward Added: {}", operator_reward_log);
+        return Ok(());
+    }
+
+    if let Ok(transmitter_reward_log) = proof_market_place
+        .decode_event::<pmp::TransmitterFeeRewardAddedFilter>(
+            "TransmitterFeeRewardAdded",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::debug!("Transmitter Fee Reward Added: {}", transmitter_reward_log);
+        return Ok(());
+    }
+
     log::error!("unhandled log in proof market place {:?}", log);
     return Err("Unhandled log in proof market place".into());
 }
