@@ -824,3 +824,58 @@ impl CommonDeps {
         CommonDeps::update_encryption_info(config)
     }
 }
+
+pub struct ReadProofInfo {
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<Provider<Http>>,
+    pub provider_http: Provider<Http>,
+    pub ask_id: U256,
+}
+
+impl CommonDeps {
+    pub fn read_proof_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ReadProofInfo, String> {
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "ask_id", ask_id);
+
+        let ask_id =
+            U256::from_dec_str(&ask_id.as_str()).map_err(|e| format!("Invalid Ask Id: {}", e))?;
+
+        let (proof_marketplace, provider_http) =
+            get_proof_marketplace_instance_without_signer(proof_marketplace_address, rpc_url)?;
+
+        Ok(ReadProofInfo {
+            proof_marketplace,
+            provider_http,
+            ask_id,
+        })
+    }
+}
+
+fn get_proof_marketplace_instance_without_signer(
+    proof_marketplace_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::proof_marketplace::ProofMarketplace<Provider<Http>>,
+        Provider<Http>,
+    ),
+    String,
+> {
+    let proof_marketplace_address = proof_marketplace_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Proof Marketplace address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let proof_marketplace = bindings::proof_marketplace::ProofMarketplace::new(
+        proof_marketplace_address,
+        provider_http.clone().into(),
+    );
+
+    Ok((proof_marketplace, provider_http))
+}

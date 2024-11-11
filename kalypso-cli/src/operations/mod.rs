@@ -7,6 +7,7 @@ pub mod create_marketplace;
 pub mod create_request;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
+pub mod read_proof;
 pub mod request;
 pub mod stake;
 pub mod update_encryption_key;
@@ -67,6 +68,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Whitelist IVS Image" => Some(Box::new(whitelist::WhitelistVerificationImage)),
         "Update Encryption Key" => Some(Box::new(update_encryption_key::UpdateEncryptionKey)),
         "Add IVS Key" => Some(Box::new(update_encryption_key::AddIvsKey)),
+        "Read Proof Bytes (beta)" => Some(Box::new(read_proof::ReadProof)),
         _ => unimplemented!(),
     }
 }

@@ -1,9 +1,11 @@
-use ethers::prelude::*;
-use ethers::abi::{encode, Token, AbiParser, Address};
+use ethers::abi::{encode, AbiParser, Address, Token};
 use ethers::core::rand::seq::SliceRandom;
 use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
-use ethers::types::{Address as OtherAddress, Signature, SignatureError, H160, U256, TransactionRequest, Bytes};
+use ethers::prelude::*;
+use ethers::types::{
+    Address as OtherAddress, Bytes, Signature, SignatureError, TransactionRequest, H160, U256,
+};
 use ethers::utils::keccak256;
 use hex::decode;
 use im::HashMap;
@@ -371,32 +373,38 @@ pub async fn get_l1_block_from_l2_block(
     let provider = Provider::<Http>::try_from(rpc_url)?;
 
     // Define ABI for blockL1Num function
-    let abi = AbiParser::default().parse(&[
-        "function blockL1Num(uint64 l2BlockNum) view returns (uint256)"
-    ])?;
-    
+    let abi = AbiParser::default()
+        .parse(&["function blockL1Num(uint64 l2BlockNum) view returns (uint256)"])?;
+
     // Retrieve the function
     let function = abi.function("blockL1Num")?;
-    
+
     // Encode the data for the function call
     let data = function.encode_input(&[Token::Uint(l2_block_num)])?;
-    
+
     // NodeInterface special address for the call
-    let node_interface_address = "0x00000000000000000000000000000000000000c8".parse::<OtherAddress>()?;
-    
+    let node_interface_address =
+        "0x00000000000000000000000000000000000000c8".parse::<OtherAddress>()?;
+
     let data_bytes = Bytes::from(data);
-    
+
     // Create a TransactionRequest
     let tx_request = TransactionRequest::new()
         .to(node_interface_address)
         .data(data_bytes);
-    
+
     // Call the function via the provider
     let result = provider.call(&tx_request.into(), None).await?;
-    
+
     // Decode the result
-    let decoded_result: U256 = function.decode_output(&result)?.get(0).cloned().unwrap().into_uint().unwrap();
-    
+    let decoded_result: U256 = function
+        .decode_output(&result)?
+        .get(0)
+        .cloned()
+        .unwrap()
+        .into_uint()
+        .unwrap();
+
     Ok(decoded_result)
 }
 
