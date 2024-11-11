@@ -314,7 +314,7 @@
         "chain_id",
         "generator_registry",
         "market_id",
-        "attestation_server_url", 
+        "attestation_server_url",
         "attestion_verifier_url",
         "enclave_client_url"
       ]
@@ -328,9 +328,19 @@
         "chain_id",
         "generator_registry",
         "market_id",
-        "attestation_server_url", 
+        "attestation_server_url",
         "attestion_verifier_url",
         "enclave_client_url"
+      ]
+    },
+    {
+      "name": "Read Proof Bytes (beta)",
+      "description": "Read Proof Bytes (beta, operation development in progress).",
+      "required_prompts": [
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "ask_id"
       ]
     }
   ]

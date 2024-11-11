@@ -4,8 +4,8 @@ use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::log_processor::constants;
-use crate::utility::{tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE};
 use crate::utility::get_l1_block_from_l2_block;
+use crate::utility::{tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE};
 
 pub async fn process_generator_registry_logs(
     log: &Log,
