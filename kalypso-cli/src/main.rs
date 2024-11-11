@@ -22,8 +22,16 @@ async fn main() {
     let config = Config::new();
 
     // Retrieve all operations from the configuration
-    let operations = config.get_operations();
+    let operations = {
+        let operations = config.get_operations();
+        let mut operations = operations.clone();
 
+        operations.sort();
+
+        operations
+
+    };
+    
     if operations.is_empty() {
         error!("No operations defined in config.json.");
         eprintln!("Error: No operations available. Please check your configuration.");
