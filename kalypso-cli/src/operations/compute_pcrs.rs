@@ -14,18 +14,7 @@ pub struct NonConfidentialMarketPcrs;
 #[async_trait]
 impl Operation for NonConfidentialMarketPcrs {
     async fn execute(&self, _config: HashMap<String, String>) -> Result<(), String> {
-        let pcr0_vec = vec![0; 48];
-        let pcr1_vec = vec![0; 48];
-        let pcr2_vec = vec![0; 48];
-
-        let encoded = ethers::abi::encode(&[
-            ethers::abi::Token::Bytes(pcr0_vec),
-            ethers::abi::Token::Bytes(pcr1_vec),
-            ethers::abi::Token::Bytes(pcr2_vec),
-        ]);
-
-        let image_id = format!("0x{}", hex::encode(encoded));
-
+        let image_id = non_confidential_market_pcrs();
         print!("Image ID: \n{}", image_id);
 
         println!("\n\nSave Image For Further");
@@ -291,4 +280,48 @@ pub async fn get_verified_attestation(
     ]);
 
     Ok(encoded)
+}
+
+pub fn non_confidential_market_pcrs() -> String {
+    let non_confidential_pcrs = non_confidential_pcrs();
+
+    let encoded = ethers::abi::encode(&[
+        ethers::abi::Token::Bytes(non_confidential_pcrs.pcr0_vec),
+        ethers::abi::Token::Bytes(non_confidential_pcrs.pcr1_vec),
+        ethers::abi::Token::Bytes(non_confidential_pcrs.pcr2_vec),
+    ]);
+
+    let image_id = format!("0x{}", hex::encode(encoded));
+
+    image_id
+}
+
+pub struct PCRS {
+    pub pcr0_vec: Vec<u8>,
+    pub pcr1_vec: Vec<u8>,
+    pub pcr2_vec: Vec<u8>,
+}
+pub fn non_confidential_pcrs() -> PCRS {
+    let pcr0_vec = vec![0; 48];
+    let pcr1_vec = vec![0; 48];
+    let pcr2_vec = vec![0; 48];
+
+    PCRS {
+        pcr0_vec,
+        pcr1_vec,
+        pcr2_vec,
+    }
+}
+
+use ethers::types::H256;
+use ethers::utils::keccak256;
+
+pub fn get_kalypso_image_id_from_pcrs(pcr0: Bytes, pcr1: Bytes, pcr2: Bytes) -> H256 {
+    let mut data = Vec::new();
+    data.extend_from_slice(&pcr0);
+    data.extend_from_slice(&pcr1);
+    data.extend_from_slice(&pcr2);
+
+    // Compute the keccak256 hash
+    keccak256(data).into()
 }

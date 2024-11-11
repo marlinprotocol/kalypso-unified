@@ -839,3 +839,107 @@ fn get_proof_marketplace_instance_without_signer(
 
     Ok((proof_marketplace, provider_http))
 }
+
+pub struct ConfidentialRequest {
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub payment_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub max_proof_generation_cost: U256,
+    pub max_proof_generation_time: U256,
+    pub inputs: ethers::types::Bytes,
+    pub private_inputs: ethers::types::Bytes,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn confidential_request_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ConfidentialRequest, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "payment_token", payment_token);
+        get_config_ref!(config, "inputs", inputs);
+        get_config_ref!(config, "market_id", market_id);
+        get_config_ref!(config, "private_inputs", private_inputs);
+
+        get_config_ref!(
+            config,
+            "max_proof_generation_cost",
+            max_proof_generation_cost
+        );
+        get_config_ref!(
+            config,
+            "max_proof_generation_time",
+            max_proof_generation_time
+        );
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let (payment_token, _) =
+            get_token_instance(private_key, chain_id, &payment_token, rpc_url)?;
+
+        let max_proof_generation_cost = U256::from_dec_str(max_proof_generation_cost.as_str())
+            .map_err(|e| format!("Max Proof Generation Cost: {}", e))?;
+
+        let max_proof_generation_time = U256::from_dec_str(max_proof_generation_time.as_str())
+            .map_err(|e| format!("Max Proof Generation Time: {}", e))?;
+
+        let inputs = {
+            let trimmed_inputs = if inputs.starts_with("0x") || inputs.starts_with("0X") {
+                &inputs[2..]
+            } else {
+                inputs
+            };
+            if trimmed_inputs.len() % 2 != 0 {
+                return Err("Hex string has an invalid length".to_string());
+            }
+
+            let inputs = hex::decode(trimmed_inputs)
+                .map_err(|e| format!("Invalid Input Bytes: {}", e))?
+                .into();
+
+            inputs
+        };
+
+        let private_inputs = {
+            let trimmed_inputs =
+                if private_inputs.starts_with("0x") || private_inputs.starts_with("0X") {
+                    &private_inputs[2..]
+                } else {
+                    private_inputs
+                };
+            if trimmed_inputs.len() % 2 != 0 {
+                return Err("Hex string has an invalid length".to_string());
+            }
+
+            let private_inputs = hex::decode(trimmed_inputs)
+                .map_err(|e| format!("Invalid Input Bytes: {}", e))?
+                .into();
+
+            private_inputs
+        };
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(ConfidentialRequest {
+            private_key_signer,
+            proof_marketplace,
+            payment_token,
+            max_proof_generation_cost,
+            max_proof_generation_time,
+            inputs,
+            market_id,
+            private_inputs,
+        })
+    }
+}

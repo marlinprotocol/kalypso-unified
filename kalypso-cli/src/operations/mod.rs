@@ -63,6 +63,9 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Create Proof Request (non confidential market)" => {
             Some(Box::new(create_request::NonConfidentialRequest))
         }
+        "Create Proof Request (confidential market)" => {
+            Some(Box::new(create_request::ConfidentialRequest))
+        }
         "Discard Request" => Some(Box::new(request::DiscardRequest)),
         "Whitelist Prover Image" => Some(Box::new(whitelist::WhitelistProverImage)),
         "Whitelist IVS Image" => Some(Box::new(whitelist::WhitelistVerificationImage)),

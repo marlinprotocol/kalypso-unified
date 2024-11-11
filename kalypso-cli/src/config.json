@@ -134,9 +134,15 @@
     },
     {
       "field": "inputs",
-      "prompt": "Enter inputs in hex string",
+      "prompt": "Enter public inputs in hex string. Don't share any secret information in this prompt",
       "secret": false,
       "env_var": "INPUTS"
+    },
+    {
+      "field": "private_inputs",
+      "prompt": "Enter private inputs in hex string",
+      "secret": true,
+      "env_var": "PRIVATE_INPUTS"
     },
     {
       "field": "ask_id",
@@ -268,6 +274,22 @@
         "max_proof_generation_cost",
         "max_proof_generation_time",
         "inputs"
+      ]
+    },
+    {
+      "name": "Create Proof Request (confidential market)",
+      "description": "Create a proof request for confidential market. Private Inputs in this markets are shared with TEE directly and ensured that they don't go chain",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id",
+        "payment_token",
+        "max_proof_generation_cost",
+        "max_proof_generation_time",
+        "inputs",
+        "private_inputs"
       ]
     },
     {

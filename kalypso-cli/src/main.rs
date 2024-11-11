@@ -29,9 +29,8 @@ async fn main() {
         operations.sort();
 
         operations
-
     };
-    
+
     if operations.is_empty() {
         error!("No operations defined in config.json.");
         eprintln!("Error: No operations available. Please check your configuration.");
