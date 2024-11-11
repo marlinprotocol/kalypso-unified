@@ -3,9 +3,22 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use ethers::{signers::Signer, types::U256};
 
-use crate::common_deps::CommonDeps;
+use crate::{
+    common_deps::CommonDeps,
+    operations::compute_pcrs::{get_kalypso_image_id_from_pcrs, non_confidential_pcrs},
+};
 
 use super::Operation;
+
+pub struct ConfidentialRequest;
+
+#[async_trait]
+impl Operation for ConfidentialRequest {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let _confidential_request = CommonDeps::confidential_request_info(&config)?;
+        unimplemented!()
+    }
+}
 
 pub struct NonConfidentialRequest;
 
@@ -13,10 +26,23 @@ pub struct NonConfidentialRequest;
 impl Operation for NonConfidentialRequest {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let non_confidential_request_info = CommonDeps::non_confidential_request_info(&config)?;
+        let non_confidential_pcrs = non_confidential_pcrs();
+        let non_confidential_market_kalypso_image_id = get_kalypso_image_id_from_pcrs(
+            non_confidential_pcrs.pcr0_vec.into(),
+            non_confidential_pcrs.pcr1_vec.into(),
+            non_confidential_pcrs.pcr2_vec.into(),
+        );
 
-        // let market_data = non_confidential_request_info.proof_marketplace.market_data(non_confidential_request_info.market_id).call().await.map_err(|_| {
-        //     "Failed making call to proof marketplace contract.".to_string()
-        // })?;
+        let market_data = non_confidential_request_info
+            .proof_marketplace
+            .market_data(non_confidential_request_info.market_id)
+            .call()
+            .await
+            .map_err(|_| "Failed making call to proof marketplace contract.".to_string())?;
+
+        if market_data.1 != non_confidential_market_kalypso_image_id.0 {
+            return Err("This market is not a confidential market".to_string());
+        }
 
         let token_balance = non_confidential_request_info
             .payment_token
