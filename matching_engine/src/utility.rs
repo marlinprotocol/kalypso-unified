@@ -1,8 +1,9 @@
-use ethers::abi::{encode, Token};
+use ethers::prelude::*;
+use ethers::abi::{encode, Token, AbiParser, Address};
 use ethers::core::rand::seq::SliceRandom;
 use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
-use ethers::types::{Address, Signature, SignatureError, H160, U256};
+use ethers::types::{Address as OtherAddress, Signature, SignatureError, H160, U256, TransactionRequest, Bytes};
 use ethers::utils::keccak256;
 use hex::decode;
 use im::HashMap;
@@ -361,6 +362,43 @@ pub const USDC_TOKEN_STRING: &str = "0x8230d71d809718132C2054704F5E3aF1b86B669C"
 pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0xB5570D4D39dD20F61dEf7C0d6846790360b89a18";
 pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x854493FB9F844c8632140ffF9B66207B10027E8d";
 pub const TEST_TOKEN_ADDRESS_THREE_STRING: &str = "0x5E478CB7576906fe2a443684aDcD9A0dfc547abD";
+
+pub async fn get_l1_block_from_l2_block(
+    rpc_url: &str,
+    l2_block_num: U256,
+) -> Result<U256, Box<dyn Error>> {
+    // Connect to Arbitrum's L2 endpoint
+    let provider = Provider::<Http>::try_from(rpc_url)?;
+
+    // Define ABI for blockL1Num function
+    let abi = AbiParser::default().parse(&[
+        "function blockL1Num(uint64 l2BlockNum) view returns (uint256)"
+    ])?;
+    
+    // Retrieve the function
+    let function = abi.function("blockL1Num")?;
+    
+    // Encode the data for the function call
+    let data = function.encode_input(&[Token::Uint(l2_block_num)])?;
+    
+    // NodeInterface special address for the call
+    let node_interface_address = "0x00000000000000000000000000000000000000c8".parse::<OtherAddress>()?;
+    
+    let data_bytes = Bytes::from(data);
+    
+    // Create a TransactionRequest
+    let tx_request = TransactionRequest::new()
+        .to(node_interface_address)
+        .data(data_bytes);
+    
+    // Call the function via the provider
+    let result = provider.call(&tx_request.into(), None).await?;
+    
+    // Decode the result
+    let decoded_result: U256 = function.decode_output(&result)?.get(0).cloned().unwrap().into_uint().unwrap();
+    
+    Ok(decoded_result)
+}
 
 use once_cell::sync::Lazy;
 pub static TEST_TOKEN_ADDRESS_ONE: Lazy<Address> =

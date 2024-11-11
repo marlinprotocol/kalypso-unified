@@ -67,6 +67,7 @@ pub struct LogParser {
     shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
     chain_id: String,
     max_tasks_size: usize,
+    rpc_url: String,
 }
 
 impl LogParser {
@@ -120,6 +121,7 @@ impl LogParser {
             shared_symbiotic_stake_store,
             chain_id,
             max_tasks_size: 10, // TODO: dynamically adjust latter
+            rpc_url,
         }
     }
 
@@ -209,6 +211,7 @@ impl LogParser {
                                     &self.shared_cost_store,
                                     &self.matching_engine_key,
                                     &self.matching_engine_slave_keys,
+                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();
@@ -222,6 +225,7 @@ impl LogParser {
                                     &self.symbiotic_staking,
                                     &self.shared_generator_store,
                                     &self.shared_symbiotic_stake_store,
+                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();

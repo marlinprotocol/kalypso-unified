@@ -7,6 +7,7 @@ use crate::utility::TokenTracker;
 use crate::utility::SLASHING_PENALTY_ONE;
 use crate::utility::SLASHING_PENALTY_THREE;
 use crate::utility::SLASHING_PENALTY_TWO;
+use crate::utility::get_l1_block_from_l2_block;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 
 use std::sync::Arc;
@@ -32,6 +33,7 @@ pub async fn process_proof_market_place_logs(
     cost_store: &Arc<RwLock<CostStore>>,
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
+    rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::PROOF_MARKET_TOPICS_SKIP
         .get(&log.topics[0])
@@ -96,7 +98,9 @@ pub async fn process_proof_market_place_logs(
             .call()
             .await
             .unwrap();
+        
         let created_on: U256 = log.block_number.unwrap().as_u64().into();
+        let created_on_l1: U256 = get_l1_block_from_l2_block(rpc_url, created_on).await?;
 
         let mut ask_to_store = LocalAsk {
             ask_id: parsed_ask_created_log.ask_id,
@@ -112,7 +116,7 @@ pub async fn process_proof_market_place_logs(
             state: Some(AskState::Create),
             generator: None,
             invalid_secret_flag: false,
-            created_on,
+            created_on: created_on_l1,
         };
 
         if parsed_ask_created_log.has_private_inputs {
@@ -210,7 +214,9 @@ pub async fn process_proof_market_place_logs(
         let proof = parsed_proof_created_log.proof;
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
+        let proof_cycle_completed_on_l1: U256 = get_l1_block_from_l2_block(rpc_url, proof_cycle_completed_on).await?;
+        
+        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&ask_id, AskState::Complete);
 
         let (generator_address, market_id) = {
@@ -229,7 +235,7 @@ pub async fn process_proof_market_place_logs(
             });
 
         let created_on = { local_ask_store.get_by_ask_id(&ask_id).unwrap().created_on };
-        let proof_time = proof_cycle_completed_on.saturating_sub(created_on);
+        let proof_time = proof_cycle_completed_on_l1.saturating_sub(created_on);
 
         local_ask_store.store_valid_proof(
             &ask_id,
@@ -245,7 +251,7 @@ pub async fn process_proof_market_place_logs(
                 &generator_address,
                 &market_id,
                 &proof_generator_cost,
-                &proof_cycle_completed_on.as_u64().into(),
+                &proof_cycle_completed_on_l1.as_u64().into(),
             );
         }
 
@@ -376,9 +382,11 @@ pub async fn process_proof_market_place_logs(
         let mut local_ask_store = { local_ask_store.write().await };
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
+        let proof_cycle_completed_on_l1: U256 = get_l1_block_from_l2_block(rpc_url, proof_cycle_completed_on).await?;
+
         local_ask_store.update_proof_proof_cycle_completed_on(
             &ask_cancelled_log.ask_id,
-            proof_cycle_completed_on,
+            proof_cycle_completed_on_l1,
         );
         local_ask_store.modify_state(&ask_cancelled_log.ask_id, AskState::Complete);
         local_ask_store.remove_ask_only_if_completed(&ask_cancelled_log.ask_id);
@@ -406,7 +414,9 @@ pub async fn process_proof_market_place_logs(
         let mut local_ask_store = { local_ask_store.write().await };
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
+        let proof_cycle_completed_on_l1: U256 = get_l1_block_from_l2_block(rpc_url, proof_cycle_completed_on).await?;
+
+        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&ask_id, AskState::Complete);
         local_ask_store.note_proof_denied(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
 
@@ -446,7 +456,7 @@ pub async fn process_proof_market_place_logs(
             tx_to_string(&log.transaction_hash.unwrap()),
             &ask.reward,
             &ask.deadline,
-            &log.block_number.unwrap_or_default(),
+            &U64::from(proof_cycle_completed_on_l1.as_u64()),
         );
 
         log::warn!("Complete Proof not Generated");
@@ -475,7 +485,8 @@ pub async fn process_proof_market_place_logs(
         let mut local_ask_store = { local_ask_store.write().await };
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on);
+        let proof_cycle_completed_on_l1: U256 = get_l1_block_from_l2_block(rpc_url, proof_cycle_completed_on).await?;
+        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&ask_id, AskState::Complete);
         local_ask_store.note_invalid_inputs(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
 
@@ -501,7 +512,7 @@ pub async fn process_proof_market_place_logs(
                 &generator_address,
                 &market_id,
                 &proof_generator_cost,
-                &proof_cycle_completed_on.as_u64().into(),
+                &proof_cycle_completed_on_l1.as_u64().into(),
             );
         }
         log::warn!("Complete: invalid input attestation event operation");
