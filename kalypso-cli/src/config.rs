@@ -13,11 +13,24 @@ pub struct PromptConfig {
 }
 
 /// Struct representing each operation's configuration
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq, Clone)]
 pub struct OperationConfig {
     pub name: String,
     pub description: String,
     pub required_prompts: Vec<String>,
+}
+
+// Implement sorting by `name`
+impl Ord for OperationConfig {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.name.cmp(&other.name)
+    }
+}
+
+impl PartialOrd for OperationConfig {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 /// Struct representing the overall configuration file
