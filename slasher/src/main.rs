@@ -38,6 +38,7 @@ pub struct SlashingInstance {
     #[allow(unused)]
     config: SlashingInstanceConfig,
     proof_marketplace: ProofMarketplaceInstance,
+    #[allow(unused)]
     reward_address: Address,
 }
 
@@ -140,7 +141,7 @@ impl SlashingInstance {
                     if ask_state == AskState::DeadlineCrossed {
                         let slashing_transaction = self
                             .proof_marketplace
-                            .slash_generator(ask_id, self.reward_address);
+                            .slash_generator(ask_id);
 
                         let slashing_transaction = match slashing_transaction.send().await {
                             Ok(data) => data.confirmations(10),
