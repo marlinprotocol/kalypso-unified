@@ -891,6 +891,9 @@ pub struct ConfidentialRequest {
     pub inputs: ethers::types::Bytes,
     pub private_inputs: ethers::types::Bytes,
     pub market_id: U256,
+    pub entity_registry: bindings::entity_key_registry::EntityKeyRegistry<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
 }
 
 impl CommonDeps {
@@ -905,6 +908,7 @@ impl CommonDeps {
         get_config_ref!(config, "inputs", inputs);
         get_config_ref!(config, "market_id", market_id);
         get_config_ref!(config, "private_inputs", private_inputs);
+        get_config_ref!(config, "entity_registry", entity_key_registry_address);
 
         get_config_ref!(
             config,
@@ -971,6 +975,13 @@ impl CommonDeps {
         let market_id = U256::from_dec_str(market_id.as_str())
             .map_err(|e| format!("Invalid Market Id: {}", e))?;
 
+        let (entity_registry, _) = get_entity_key_registry_instance(
+            private_key,
+            chain_id,
+            entity_key_registry_address,
+            rpc_url,
+        )?;
+
         Ok(ConfidentialRequest {
             private_key_signer,
             proof_marketplace,
@@ -980,6 +991,54 @@ impl CommonDeps {
             inputs,
             market_id,
             private_inputs,
+            entity_registry,
         })
     }
+}
+
+fn get_entity_key_registry_instance(
+    private_key: &str,
+    chain_id: &str,
+    entity_key_registry_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::entity_key_registry::EntityKeyRegistry<
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+        >,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let entity_key_registry_address = entity_key_registry_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Entity Key Registry address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let entity_key_registry = bindings::entity_key_registry::EntityKeyRegistry::new(
+        entity_key_registry_address,
+        client_arc.clone(),
+    );
+
+    Ok((entity_key_registry, private_key_signer))
 }
