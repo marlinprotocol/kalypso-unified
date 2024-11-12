@@ -70,6 +70,8 @@ pub async fn total_market_info(
         return Ok(HttpResponse::Ok().json(response));
     }
 
+    drop(market_cache);
+
     let local_ask_store = {
         match _local_ask_store.try_read() {
             Ok(data) => data,
