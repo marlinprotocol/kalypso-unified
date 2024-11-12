@@ -122,14 +122,16 @@ impl SlashingInstance {
                     );
                     let ask_id = match U256::from_dec_str(&active_request.ask_id) {
                         Ok(data) => data,
-                        _ => {
+                        Err(err) => {
+                            log::error!("{}", err.to_string());
                             log::error!("Invalid Ask ID received");
                             continue;
                         }
                     };
                     let ask_state = match self.proof_marketplace.get_ask_state(ask_id).await {
                         Ok(data) => data,
-                        _ => {
+                        Err(err) => {
+                            log::error!("{}", err.to_string());
                             log::error!("Failed Fetching Ask State");
                             continue;
                         }
@@ -143,9 +145,9 @@ impl SlashingInstance {
                             .proof_marketplace
                             .slash_generator(ask_id, self.reward_address);
 
-                            if cfg!(feature = "force_transactions") {
-                                slashing_transaction = slashing_transaction.gas(10_000_000);
-                            }
+                        if cfg!(feature = "force_transactions") {
+                            slashing_transaction = slashing_transaction.gas(10_000_000);
+                        }
 
                         let slashing_transaction = match slashing_transaction.send().await {
                             Ok(data) => data.confirmations(10),
@@ -158,7 +160,8 @@ impl SlashingInstance {
 
                         let slashing_transaction = match slashing_transaction.await {
                             Ok(data) => data,
-                            _ => {
+                            Err(err) => {
+                                log::error!("{}", err.to_string());
                                 log::error!("Failed broadcasting transaction");
                                 continue;
                             }
