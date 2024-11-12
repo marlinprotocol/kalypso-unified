@@ -360,6 +360,15 @@ impl AddAssign for TokenTracker {
     }
 }
 
+#[cfg(not(feature = "use_l1_block_numbers"))]
+pub async fn get_l1_block_from_l2_block(
+    _: &str,
+    l2_block_num: U256,
+) -> Result<U256, Box<dyn Error>> {
+    Ok(l2_block_num)
+}
+
+#[cfg(feature = "use_l1_block_numbers")]
 pub async fn get_l1_block_from_l2_block(
     rpc_url: &str,
     l2_block_num: U256,
