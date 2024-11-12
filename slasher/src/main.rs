@@ -23,7 +23,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config: SlashingInstanceConfig = serde_json::from_str(&file_content)?;
     // slashing_config and matching_engine config are same, hence using same config...
 
-    let slashing_instance = SlashingInstance::new("http://13.201.131.193:3000", config);
+    let indexer_url = std::env::var("INDEXER_URL").expect(&format!("{} is not set", "INDEXER_URL"));
+    let slashing_instance = SlashingInstance::new(indexer_url.as_ref(), config);
 
     let _ = slashing_instance.run().await?;
     Ok(())
