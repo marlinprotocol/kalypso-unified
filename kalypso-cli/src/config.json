@@ -37,6 +37,12 @@
       "env_var": "PROOF_MARKETPLACE_ADDRESS"
     },
     {
+      "field": "entity_registry",
+      "prompt": "Enter Entity Key Registry Contract Address",
+      "secret": false,
+      "env_var": "ENTITY_KEY_REGISTRY_ADDRESS"
+    },
+    {
       "field": "reward_address",
       "prompt": "Enter Reward Address",
       "secret": false,
@@ -284,6 +290,7 @@
         "rpc_url",
         "chain_id",
         "proof_marketplace",
+        "entity_registry",
         "market_id",
         "payment_token",
         "max_proof_generation_cost",

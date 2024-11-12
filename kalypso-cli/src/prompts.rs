@@ -56,6 +56,7 @@ impl<'a> Prompter<'a> {
         validators.insert("ask_id".to_string(), validate_dec_str_id);
         validators.insert("enclave_client_url".to_string(), validate_rpc_url);
         validators.insert("private_inputs".to_string(), validate_inputs);
+        validators.insert("entity_registry".to_string(), validate_eth_address);
 
         validators.insert(
             "confirmation".to_string(),
@@ -90,12 +91,18 @@ impl<'a> Prompter<'a> {
                     // Prompt the user with optional validation
                     let input = if prompt_config.secret {
                         Password::new()
-                            .with_prompt(&prompt_config.prompt)
+                            .with_prompt(format!(
+                                "[env_var = {}] {}",
+                                &prompt_config.env_var, &prompt_config.prompt
+                            ))
                             .interact()
                             .map_err(|e| format!("Failed to read input for '{}': {}", field, e))?
                     } else {
                         Input::new()
-                            .with_prompt(&prompt_config.prompt)
+                            .with_prompt(format!(
+                                "[env_var = {}] {}",
+                                &prompt_config.env_var, &prompt_config.prompt
+                            ))
                             .interact_text()
                             .map_err(|e| format!("Failed to read input for '{}': {}", field, e))?
                     };
