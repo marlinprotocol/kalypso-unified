@@ -15,3 +15,7 @@ reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.178", features = ["derive"] }
 serde_json = "1.0.104"
 tokio = { version = "1.15.0", features = ["full"] }
+
+[features]
+default = []
+force_transactions = []
