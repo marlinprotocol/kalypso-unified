@@ -1,11 +1,20 @@
-use ethers::abi::{encode, AbiParser, Address, Token};
+use ethers::abi::{encode, Address, Token};
+
+#[cfg(feature = "use_l1_block_numbers")]
+use ethers::abi::AbiParser;
+
 use ethers::core::rand::seq::SliceRandom;
 use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
+
+#[cfg(feature = "use_l1_block_numbers")]
 use ethers::prelude::*;
-use ethers::types::{
-    Address as OtherAddress, Bytes, Signature, SignatureError, TransactionRequest, H160, U256,
-};
+
+#[cfg(feature = "use_l1_block_numbers")]
+use ethers::types::{Address as OtherAddress, Bytes, TransactionRequest};
+
+use ethers::types::{Signature, SignatureError, H160, U256};
+
 use ethers::utils::keccak256;
 use hex::decode;
 use im::HashMap;
@@ -365,6 +374,15 @@ pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0xB5570D4D39dD20F61dEf7C0d68467
 pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x854493FB9F844c8632140ffF9B66207B10027E8d";
 pub const TEST_TOKEN_ADDRESS_THREE_STRING: &str = "0x5E478CB7576906fe2a443684aDcD9A0dfc547abD";
 
+#[cfg(not(feature = "use_l1_block_numbers"))]
+pub async fn get_l1_block_from_l2_block(
+    _: &str,
+    l2_block_num: U256,
+) -> Result<U256, Box<dyn Error>> {
+    Ok(l2_block_num)
+}
+
+#[cfg(feature = "use_l1_block_numbers")]
 pub async fn get_l1_block_from_l2_block(
     rpc_url: &str,
     l2_block_num: U256,
