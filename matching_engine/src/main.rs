@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .or_else(|_| fs::read_to_string(&alt_matching_engine_config_path))?;
     let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
 
-    let matching_engine = MatchingEngine::from_config(config);
+    let matching_engine = MatchingEngine::from_config(config, None);
     let _ = matching_engine.run().await;
 
     Ok(())

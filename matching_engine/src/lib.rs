@@ -116,10 +116,10 @@ pub struct MatchingEngine {
 }
 
 impl MatchingEngine {
-    pub fn from_config(config: MatchingEngineConfig) -> Self {
+    pub fn from_config(config: MatchingEngineConfig, matching_engine_port: Option<u16>) -> Self {
         Self {
             config,
-            matching_engine_port: 3000,
+            matching_engine_port: matching_engine_port.unwrap_or(3000),
         }
     }
 
@@ -133,6 +133,7 @@ impl MatchingEngine {
         generator_registry: String,
         entity_registry: String,
         start_block: String,
+        matching_engine_port: Option<u16>,
     ) -> Self {
         let config: MatchingEngineConfig = MatchingEngineConfig {
             rpc_url,
@@ -145,7 +146,7 @@ impl MatchingEngine {
             start_block,
         };
 
-        Self::from_config(config)
+        Self::from_config(config, matching_engine_port)
     }
 
     pub async fn run(&self) -> anyhow::Result<()> {
