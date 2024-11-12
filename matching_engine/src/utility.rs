@@ -1,11 +1,20 @@
-use ethers::abi::{encode, AbiParser, Address, Token};
+use ethers::abi::{encode, Address, Token};
+
+#[cfg(feature = "use_l1_block_numbers")]
+use ethers::abi::AbiParser;
+
 use ethers::core::rand::seq::SliceRandom;
 use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
+
+#[cfg(feature = "use_l1_block_numbers")]
 use ethers::prelude::*;
-use ethers::types::{
-    Address as OtherAddress, Bytes, Signature, SignatureError, TransactionRequest, H160, U256,
-};
+
+#[cfg(feature = "use_l1_block_numbers")]
+use ethers::types::{Address as OtherAddress, Bytes, TransactionRequest};
+
+use ethers::types::{Signature, SignatureError, H160, U256};
+
 use ethers::utils::keccak256;
 use hex::decode;
 use im::HashMap;
