@@ -4,9 +4,9 @@ name: Rust CI - MUSL
 
 on:
   push:
-    branches: [ "master", "listener-refined" ]
+    branches: [ "listener-refined", "symbotic-bindings" ]
   pull_request:
-    branches: [ "main", "listener-refined" ]
+    branches: [ "listener-refined", "symbotic-bindings" ]
 
 jobs:
   check:

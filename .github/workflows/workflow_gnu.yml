@@ -4,9 +4,9 @@ name: Rust CI - GNU
 
 on:
   push:
-    branches: [ "main", "listener-refined" ]
+    branches: [ "listener-refined", "symbotic-bindings" ]
   pull_request:
-    branches: [ "main", "listener-refined" ]
+    branches: [ "listener-refined", "symbotic-bindings" ]
 
 jobs:
   check:
