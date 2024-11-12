@@ -1,6 +1,7 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::delegation::Operation;
+use crate::generator_lib::delegation::Source;
 use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::key_store::Key;
 use crate::generator_lib::key_store::KeyStore;
@@ -10,6 +11,7 @@ use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
 use crate::utility::random_usize;
 use crate::utility::TokenAmount;
+use crate::utility::TokenTracker;
 use crate::utility::TEST_TOKEN_ADDRESS_ONE;
 use crate::utility::TEST_TOKEN_ADDRESS_THREE;
 use crate::utility::TEST_TOKEN_ADDRESS_TWO;
@@ -98,6 +100,7 @@ pub struct GeneratorResponse {
     available_stake: Vec<TokenAmount>,
     stake_locked: Vec<TokenAmount>,
     delegations: Vec<DelegateOperation>,
+    my_delegations: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -467,5 +470,23 @@ async fn recompute_single_generator_response<'a>(
                 tx: element.tx.clone(),
             })
             .collect(),
+        my_delegations: {
+            let mut token_tracker = TokenTracker::new();
+
+            local_generator_store
+                .get_delegations(
+                    &generator_id,
+                    vec![Operation::Delegate, Operation::UnDelegate],
+                    None,
+                    Some(usize::MAX),
+                )
+                .into_iter()
+                .filter(|delegation| delegation.source == Source::Native)
+                .for_each(|delegation| {
+                    token_tracker.add_token(&delegation.delegation.0, &delegation.delegation.1)
+                });
+
+            token_tracker.to_token_amount()
+        },
     })
 }

@@ -74,6 +74,8 @@ pub async fn get_dashboard(
         return Ok(HttpResponse::Ok().json(response));
     }
 
+    drop(dashboard_cache);
+
     let local_ask_store = {
         match _local_ask_store.try_read() {
             Ok(data) => data,

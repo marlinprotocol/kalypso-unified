@@ -152,6 +152,8 @@ pub async fn single_market(
         return Ok(HttpResponse::Ok().json(cached_response.unwrap()));
     }
 
+    drop(cached_response);
+
     let local_ask_store = {
         match _local_ask_store.try_read() {
             Ok(data) => data,

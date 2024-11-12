@@ -67,6 +67,8 @@ pub async fn get_generators_all(
         return Ok(HttpResponse::Ok().json(response));
     }
 
+    drop(generator_cache);
+
     let local_generator_store = {
         match _local_generator_store.try_read() {
             Ok(data) => data,
