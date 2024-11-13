@@ -164,9 +164,7 @@ pub async fn market_info(
                     market_id: ask.market_id,
                     reward: ask.reward,
                     expiry: ask.expiry,
-                    proving_time: local_ask_store
-                        .get_proving_time(&ask.ask_id)
-                        .unwrap_or_else(|| U256::zero()),
+                    proving_time: local_ask_store.get_overall_proving_time(&ask.ask_id),
                     deadline: ask.deadline,
                     has_private_inputs: ask.has_private_inputs,
                     state: ask.state,

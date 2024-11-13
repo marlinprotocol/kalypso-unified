@@ -71,7 +71,7 @@ pub struct AskInfoToSend {
     pub market_id: U256,
     pub reward: U256,
     pub expiry: U256,
-    pub proving_time: U256,
+    pub proving_time: Option<U256>,
     pub deadline: U256,
     pub has_private_inputs: bool,
     pub state: Option<AskState>,
