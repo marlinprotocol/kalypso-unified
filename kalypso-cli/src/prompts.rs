@@ -59,6 +59,10 @@ impl<'a> Prompter<'a> {
         validators.insert("enclave_client_url".to_string(), validate_rpc_url);
         validators.insert("private_inputs".to_string(), validate_inputs);
         validators.insert("entity_registry".to_string(), validate_eth_address);
+        validators.insert("display_name".to_string(), validate_string);
+        validators.insert("display_description".to_string(), validate_string);
+        validators.insert("website".to_string(), validate_string);
+        validators.insert("twitter".to_string(), validate_string);
 
         validators.insert(
             "confirmation".to_string(),
@@ -301,3 +305,11 @@ fn get_image_id_from_pcrs_inner(
     Ok(image_id)
 }
 // Add more validators as needed
+
+fn validate_string(key: &str) -> Result<(), String> {
+    if key.len() > 0 {
+        return Ok(());
+    }
+
+    return Err("cannot be empty".into());
+}

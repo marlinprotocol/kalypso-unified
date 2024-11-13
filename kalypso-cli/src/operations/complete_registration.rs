@@ -5,6 +5,7 @@ use crate::operations::Operation;
 use async_trait::async_trait;
 use ethers::signers::Signer;
 use ethers::types::Address;
+use serde::Serialize;
 use std::collections::HashMap;
 
 /// Struct representing the "Complete Registration" operation
@@ -16,6 +17,26 @@ impl Operation for CompleteRegistration {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         // Initialize common dependencies
         let generator_info = CommonDeps::generator_registration_instance(&config)?;
+
+        #[derive(Serialize)]
+        struct Generator {
+            display_name: String,
+            display_description: String,
+            website: String,
+            twitter: String,
+        }
+
+        let generator = Generator {
+            display_name: generator_info.display_name,
+            display_description: generator_info.display_description,
+            website: generator_info.website,
+            twitter: generator_info.twitter,
+        };
+
+        let generator_json = serde_json::to_string(&generator)
+            .map_err(|_| "Failed composing generator metadata".to_string())?;
+
+        let generator_metadata = generator_json.as_bytes();
 
         match generator_info
             .generator_registry
@@ -31,7 +52,7 @@ impl Operation for CompleteRegistration {
                             .register(
                                 generator_info.reward_address,
                                 generator_info.declared_compute,
-                                vec![12, 23].into(),
+                                generator_metadata.to_vec().into(),
                             )
                             .send(),
                     )

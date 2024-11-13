@@ -142,9 +142,8 @@ impl SlashingInstance {
                         matching_engine_helpers::ask_lib::ask_status::get_ask_state(ask_state);
 
                     if ask_state == AskState::DeadlineCrossed || ask_state == AskState::Assigned {
-                        let mut slashing_transaction = self
-                            .proof_marketplace
-                            .slash_generator(ask_id);
+                        let mut slashing_transaction =
+                            self.proof_marketplace.slash_generator(ask_id);
 
                         if cfg!(feature = "force_transactions") {
                             slashing_transaction = slashing_transaction.gas(10_000_000);

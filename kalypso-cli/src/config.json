@@ -167,6 +167,30 @@
       "prompt": "Enter enclave client URL",
       "secret": false,
       "env_var": "ENCLAVE_CLIENT_URL"
+    },
+    {
+      "field": "display_name",
+      "prompt": "Enter Display Name",
+      "secret": false,
+      "env_var": "DISPLAY_NAME"
+    },
+    {
+      "field": "display_description",
+      "prompt": "A brief description of the generator",
+      "secret": false,
+      "env_var": "DESCRIPTION"
+    },
+    {
+      "field": "website",
+      "prompt": "Website",
+      "secret": false,
+      "env_var": "WEBSITE"
+    },
+    {
+      "field": "twitter",
+      "prompt": "Twitter",
+      "secret": false,
+      "env_var": "TWITTER"
     }
   ],
   "operations": [
@@ -179,7 +203,11 @@
         "chain_id",
         "generator_registry",
         "reward_address",
-        "declared_compute"
+        "declared_compute",
+        "display_name",
+        "display_description",
+        "website",
+        "twitter"
       ]
     },
     {

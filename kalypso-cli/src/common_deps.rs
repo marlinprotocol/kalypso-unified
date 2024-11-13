@@ -18,6 +18,10 @@ pub struct GeneratorRegister {
     >,
     pub reward_address: Address,
     pub declared_compute: U256,
+    pub display_name: String,
+    pub display_description: String,
+    pub website: String,
+    pub twitter: String,
 }
 
 pub struct GeneratorJoinMarket {
@@ -126,6 +130,11 @@ impl CommonDeps {
         get_config_ref!(config, "chain_id", chain_id);
         get_config_ref!(config, "declared_compute", declared_compute);
 
+        get_config_ref!(config, "display_name", display_name);
+        get_config_ref!(config, "display_description", display_description);
+        get_config_ref!(config, "website", website);
+        get_config_ref!(config, "twitter", twitter);
+
         let (generator_registry, private_key_signer) = get_generator_registry_instance(
             private_key,
             chain_id,
@@ -145,6 +154,10 @@ impl CommonDeps {
             generator_registry,
             reward_address,
             declared_compute,
+            display_name: display_name.into(),
+            display_description: display_description.into(),
+            website: website.into(),
+            twitter: twitter.into(),
         })
     }
 }
