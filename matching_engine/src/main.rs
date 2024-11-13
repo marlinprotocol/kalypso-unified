@@ -16,7 +16,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .or_else(|_| fs::read_to_string(&alt_matching_engine_config_path))?;
     let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
 
-    let matching_engine = MatchingEngine::from_config(config, None);
+    let indexer_port = std::env::var("INDEXER_PORT").expect(&format!("{} is not set", "INDEXER_PORT"));
+    let indexer_port: Option<u16> = indexer_port.parse().ok();
+    
+    let matching_engine = MatchingEngine::from_config(config, indexer_port);
     let _ = matching_engine.run().await;
 
     Ok(())
