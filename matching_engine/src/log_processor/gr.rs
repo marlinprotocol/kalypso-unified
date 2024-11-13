@@ -219,7 +219,9 @@ pub async fn process_generator_registry_logs(
         let amount = added_stake_log.amount;
 
         let block_l2: U256 = log.block_number.unwrap().as_u64().into();
-        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2).await?;
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
+            .await
+            .unwrap_or_default();
 
         generator_store.add_extra_stake(
             &address,
@@ -269,7 +271,9 @@ pub async fn process_generator_registry_logs(
         let amount = remove_stake_log.amount;
 
         let block_l2: U256 = log.block_number.unwrap().as_u64().into();
-        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2).await?;
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
+            .await
+            .unwrap_or_default();
 
         generator_store.remove_stake(
             &address,
@@ -411,7 +415,9 @@ pub async fn process_generator_registry_logs(
         let stake_slashed = stake_slash_logs.stake;
 
         let block_l2: U256 = log.block_number.unwrap().as_u64().into();
-        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2).await?;
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
+            .await
+            .unwrap_or_default();
 
         generator_store.remove_stake(
             &address,

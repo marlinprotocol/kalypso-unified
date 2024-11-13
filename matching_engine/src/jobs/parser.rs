@@ -570,7 +570,7 @@ impl LogParser {
 
         // todo!("create and broad cast tx");
         // // Assign batch task here
-        let batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
+        let mut batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
             ask_ids.clone(),
             generators.clone(),
             new_acls.clone(),
@@ -578,6 +578,10 @@ impl LogParser {
         );
 
         log::debug!("Tx created at {:?}", std::time::Instant::now());
+
+        if cfg!(feature = "force_transactions") {
+            batch_relay_tx_pending = batch_relay_tx_pending.gas(10_000_000);
+        }
 
         let batch_relay_tx = match batch_relay_tx_pending.send().await {
             Ok(data) => data.confirmations(10),

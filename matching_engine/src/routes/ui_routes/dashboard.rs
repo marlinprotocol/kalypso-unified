@@ -1,6 +1,6 @@
 use super::cache::CachedResponse;
 use crate::models::WelcomeResponse;
-use crate::utility::{address_to_string, bytes_to_string};
+use crate::utility::{address_to_string, bytes_to_string, convert_to_option_string};
 use crate::{
     ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
     market_metadata::MarketMetadataStore,
@@ -39,6 +39,9 @@ struct RecentProof {
     time: String,
     cost: String,
     proof_link: String,
+    created_on_timestamp: Option<String>,
+    matched_on_timestamp: Option<String>,
+    proof_created_on_timestamp: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -238,6 +241,15 @@ async fn recompute_dashboard_response<'a>(
             time,
             cost,
             proof_link,
+            created_on_timestamp: convert_to_option_string(
+                local_ask_store.get_job_created_on_timestamp(&ask_request.ask_id),
+            ),
+            matched_on_timestamp: convert_to_option_string(
+                local_ask_store.get_job_matched_on_timestamp(&ask_request.ask_id),
+            ),
+            proof_created_on_timestamp: convert_to_option_string(
+                local_ask_store.get_job_completed_on_timestamp(&ask_request.ask_id),
+            ),
         };
 
         recent_proofs.push(proof);
