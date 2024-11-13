@@ -5,8 +5,8 @@ use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
 use crate::models::WelcomeResponse;
 use crate::utility::{
-    address_to_string, address_token_pair_to_token_amount, random_usize, TokenAmount, TokenTracker,
-    USDC_TOKEN,
+    address_to_string, address_token_pair_to_token_amount, convert_to_option_string, random_usize,
+    TokenAmount, TokenTracker, USDC_TOKEN,
 };
 use actix_web::web::{self, Data};
 use actix_web::HttpResponse;
@@ -70,6 +70,9 @@ struct Job {
     inputs: String,
     generator: Option<String>,
     status: AskState,
+    created_on_timestamp: Option<String>,
+    matched_on_timestamp: Option<String>,
+    proof_created_on_timestamp: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -336,6 +339,15 @@ async fn recompute_single_market_response<'a>(
                         inputs: a.prover_data.to_string(),
                         generator: None,
                         status: AskState::Create,
+                        created_on_timestamp: convert_to_option_string(
+                            local_ask_store.get_job_created_on_timestamp(&a.ask_id),
+                        ),
+                        matched_on_timestamp: convert_to_option_string(
+                            local_ask_store.get_job_matched_on_timestamp(&a.ask_id),
+                        ),
+                        proof_created_on_timestamp: convert_to_option_string(
+                            local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
+                        ),
                     })
                     .collect()
             })
@@ -364,6 +376,15 @@ async fn recompute_single_market_response<'a>(
                     }
                 },
                 status: AskState::Complete,
+                created_on_timestamp: convert_to_option_string(
+                    local_ask_store.get_job_created_on_timestamp(&a.ask_id),
+                ),
+                matched_on_timestamp: convert_to_option_string(
+                    local_ask_store.get_job_matched_on_timestamp(&a.ask_id),
+                ),
+                proof_created_on_timestamp: convert_to_option_string(
+                    local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
+                ),
             })
             .collect(),
     })

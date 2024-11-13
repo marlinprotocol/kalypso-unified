@@ -1,16 +1,16 @@
 use ethers::abi::{encode, Address, Token};
 
-#[cfg(feature = "use_l1_block_numbers")]
+#[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
 use ethers::abi::AbiParser;
 
 use ethers::core::rand::seq::SliceRandom;
 use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
 
-#[cfg(feature = "use_l1_block_numbers")]
+#[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
 use ethers::prelude::*;
 
-#[cfg(feature = "use_l1_block_numbers")]
+#[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
 use ethers::types::{Address as OtherAddress, Bytes, TransactionRequest};
 
 use ethers::types::{Signature, SignatureError, H160, U256};
@@ -374,6 +374,36 @@ pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0xB5570D4D39dD20F61dEf7C0d68467
 pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x854493FB9F844c8632140ffF9B66207B10027E8d";
 pub const TEST_TOKEN_ADDRESS_THREE_STRING: &str = "0x5E478CB7576906fe2a443684aDcD9A0dfc547abD";
 
+#[cfg(not(feature = "add_timestamp_to_asks"))]
+pub async fn get_timestamp_from_l2block_number(_: &str, _: &U256) -> Option<U256> {
+    None
+}
+
+#[cfg(feature = "add_timestamp_to_asks")]
+pub async fn get_timestamp_from_l2block_number(rpc_url: &str, l2_block_num: &U256) -> Option<U256> {
+    let provider = match Provider::<Http>::try_from(rpc_url) {
+        Ok(data) => data,
+        _ => return None,
+    };
+
+    let timestamp = {
+        let block = provider.get_block(l2_block_num.as_u64()).await;
+        if block.is_err() {
+            None
+        } else {
+            let block = block.unwrap();
+            if block.is_none() {
+                None
+            } else {
+                let block = block.unwrap();
+                Some(block.timestamp)
+            }
+        }
+    };
+
+    timestamp
+}
+
 #[cfg(not(feature = "use_l1_block_numbers"))]
 pub async fn get_l1_block_from_l2_block(
     _: &str,
@@ -383,26 +413,25 @@ pub async fn get_l1_block_from_l2_block(
 }
 
 #[cfg(feature = "use_l1_block_numbers")]
-pub async fn get_l1_block_from_l2_block(
-    rpc_url: &str,
-    l2_block_num: U256,
-) -> Result<U256, Box<dyn Error>> {
+pub async fn get_l1_block_from_l2_block(rpc_url: &str, l2_block_num: U256) -> Option<U256> {
     // Connect to Arbitrum's L2 endpoint
-    let provider = Provider::<Http>::try_from(rpc_url)?;
+    let provider = Provider::<Http>::try_from(rpc_url).ok()?;
 
     // Define ABI for blockL1Num function
     let abi = AbiParser::default()
-        .parse(&["function blockL1Num(uint64 l2BlockNum) view returns (uint256)"])?;
+        .parse(&["function blockL1Num(uint64 l2BlockNum) view returns (uint256)"])
+        .ok()?;
 
     // Retrieve the function
-    let function = abi.function("blockL1Num")?;
+    let function = abi.function("blockL1Num").ok()?;
 
     // Encode the data for the function call
-    let data = function.encode_input(&[Token::Uint(l2_block_num)])?;
+    let data = function.encode_input(&[Token::Uint(l2_block_num)]).ok()?;
 
     // NodeInterface special address for the call
-    let node_interface_address =
-        "0x00000000000000000000000000000000000000c8".parse::<OtherAddress>()?;
+    let node_interface_address = "0x00000000000000000000000000000000000000c8"
+        .parse::<OtherAddress>()
+        .ok()?;
 
     let data_bytes = Bytes::from(data);
 
@@ -412,18 +441,17 @@ pub async fn get_l1_block_from_l2_block(
         .data(data_bytes);
 
     // Call the function via the provider
-    let result = provider.call(&tx_request.into(), None).await?;
+    let result = provider.call(&tx_request.into(), None).await.ok()?;
 
     // Decode the result
     let decoded_result: U256 = function
-        .decode_output(&result)?
+        .decode_output(&result)
+        .ok()?
         .get(0)
-        .cloned()
-        .unwrap()
-        .into_uint()
-        .unwrap();
+        .cloned()?
+        .into_uint()?;
 
-    Ok(decoded_result)
+    Some(decoded_result)
 }
 
 use once_cell::sync::Lazy;
@@ -469,4 +497,14 @@ impl TokenTracker {
 
         return balance.unwrap().clone();
     }
+}
+
+pub fn convert_to_option_string(timestamp: Option<U256>) -> Option<String> {
+    timestamp.and_then(|ts| {
+        if ts == U256::zero() {
+            None
+        } else {
+            Some(ts.to_string())
+        }
+    })
 }

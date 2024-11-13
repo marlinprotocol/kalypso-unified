@@ -9,6 +9,7 @@ use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
+use crate::utility::convert_to_option_string;
 use crate::utility::random_usize;
 use crate::utility::TokenAmount;
 use crate::utility::TokenTracker;
@@ -116,11 +117,12 @@ struct DelegateOperation {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Slash {
-    timestamp: String,
+    timestamp: Option<String>,
     market: MarketInfo,
     request: String, // Transaction Hash
     price_offered: String,
     slashing_penalty: TokenAmount,
+    block_number: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -437,7 +439,8 @@ async fn recompute_single_generator_response<'a>(
             .get_slashing_records(&generator_id)
             .into_iter()
             .map(|record| Slash {
-                timestamp: record.slashing_timestamp.to_string(),
+                block_number: record.slashing_block_number.to_string(),
+                timestamp: convert_to_option_string(Some(record.slashing_timestamp)),
                 market: MarketInfo {
                     name: None,
                     id: record.market_id.to_string(),

@@ -53,6 +53,9 @@ pub struct LocalAskStore {
     failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
     completed_proofs: CompletedProofs,
     proof_cycle_completed_on: HashMap<U256, U256>,
+    job_created_on_timestamp: HashMap<U256, U256>,
+    job_matched_on_timestamp: HashMap<U256, U256>,
+    job_completed_on_timestamp: HashMap<U256, U256>,
 }
 
 pub struct AskQueryResult {
@@ -206,6 +209,9 @@ impl LocalAskStore {
             failed_request_counter_by_market: GenericCounters::new(),
             completed_proofs: CompletedProofs::new(),
             proof_cycle_completed_on: HashMap::new(),
+            job_created_on_timestamp: HashMap::new(),
+            job_matched_on_timestamp: HashMap::new(),
+            job_completed_on_timestamp: HashMap::new(),
         }
     }
 
@@ -479,5 +485,38 @@ impl LocalAskStore {
     pub fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256) {
         self.proof_cycle_completed_on
             .insert(ask_id.clone(), submitted_on);
+    }
+}
+
+impl LocalAskStore {
+    pub fn get_job_completed_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+        self.job_completed_on_timestamp.get(ask_id).cloned()
+    }
+
+    pub fn update_job_completed_on_timestamp(
+        &mut self,
+        ask_id: &U256,
+        completed_on_timestamp: U256,
+    ) {
+        self.job_completed_on_timestamp
+            .insert(ask_id.clone(), completed_on_timestamp);
+    }
+
+    pub fn get_job_matched_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+        self.job_matched_on_timestamp.get(ask_id).cloned()
+    }
+
+    pub fn update_job_matched_on_timestamp(&mut self, ask_id: &U256, matched_on_timestamp: U256) {
+        self.job_matched_on_timestamp
+            .insert(ask_id.clone(), matched_on_timestamp);
+    }
+
+    pub fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+        self.job_created_on_timestamp.get(ask_id).cloned()
+    }
+
+    pub fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256) {
+        self.job_created_on_timestamp
+            .insert(ask_id.clone(), created_on_timestamp);
     }
 }
