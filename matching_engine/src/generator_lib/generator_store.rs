@@ -291,7 +291,8 @@ impl GeneratorStore {
             .push(market_id);
 
         self.generator_markets
-            .insert((address, market_id), generator_market);
+            .entry((address, market_id))
+            .or_insert(generator_market);
     }
 
     pub fn get_by_address_and_market(
@@ -316,6 +317,13 @@ impl GeneratorStore {
                     .sum_of_compute_allocations
                     .sub_assign(compute_allocation);
                 generator.active_market_places.sub_assign(U256::one());
+            }
+        }
+
+        if let Some(vec) = self.address_index.get_mut(&address) {
+            vec.retain(|&id| id != market_id.clone());
+            if vec.is_empty() {
+                self.address_index.remove(&address);
             }
         }
     }
