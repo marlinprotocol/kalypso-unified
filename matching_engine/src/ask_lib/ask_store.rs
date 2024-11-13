@@ -519,4 +519,10 @@ impl LocalAskStore {
         self.job_created_on_timestamp
             .insert(ask_id.clone(), created_on_timestamp);
     }
+
+    pub fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256> {
+        let created_on = self.get_job_created_on_timestamp(ask_id)?;
+        let completed_on = self.get_job_completed_on_timestamp(ask_id)?;
+        Some(completed_on.saturating_sub(created_on))
+    }
 }
