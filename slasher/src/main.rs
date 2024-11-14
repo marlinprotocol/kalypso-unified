@@ -181,6 +181,47 @@ impl SlashingInstance {
                             slashing_transaction.transaction_hash
                         );
                     }
+
+                    if ask_state == AskState::UnAssigned {
+                        let mut cancellation_transaction =
+                            self.proof_marketplace.cancel_ask(ask_id);
+
+                        if cfg!(feature = "force_transactions") {
+                            cancellation_transaction = cancellation_transaction.gas(10_000_000);
+                        }
+
+                        let cancellation_transaction = match cancellation_transaction.send().await {
+                            Ok(data) => data.confirmations(10),
+                            Err(err) => {
+                                log::error!("{}", err);
+                                log::error!("failed sending the transaction");
+                                continue;
+                            }
+                        };
+
+                        let cancellation_transaction = match cancellation_transaction.await {
+                            Ok(data) => data,
+                            Err(err) => {
+                                log::error!("{}", err.to_string());
+                                log::error!("Failed broadcasting transaction");
+                                continue;
+                            }
+                        };
+
+                        let cancellation_transaction = match cancellation_transaction {
+                            Some(data) => data,
+                            _ => {
+                                log::warn!("Broadcasted transaction, but failed getting receipt");
+                                continue;
+                            }
+                        };
+
+                        log::info!(
+                            "Cancelled Ask: {}, tx: {:?}",
+                            ask_id,
+                            cancellation_transaction.transaction_hash
+                        );
+                    }
                 }
             }
             sleep(Duration::from_secs(10)).await;
