@@ -10,6 +10,7 @@ pub mod leave_or_request_leave_marketplace;
 pub mod read_proof;
 pub mod request;
 pub mod stake;
+pub mod symbiotic_opt_in;
 pub mod update_encryption_key;
 pub mod whitelist;
 
@@ -72,6 +73,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Update Encryption Key" => Some(Box::new(update_encryption_key::UpdateEncryptionKey)),
         "Add IVS Key" => Some(Box::new(update_encryption_key::AddIvsKey)),
         "Read Proof Bytes (beta)" => Some(Box::new(read_proof::ReadProof)),
+        "Request Symbiotic Stake" => Some(Box::new(symbiotic_opt_in::SymbioticOptIn)),
         _ => unimplemented!(),
     }
 }

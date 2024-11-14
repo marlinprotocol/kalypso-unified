@@ -1055,3 +1055,65 @@ fn get_entity_key_registry_instance(
 
     Ok((entity_key_registry, private_key_signer))
 }
+
+pub struct SymbioticOptInInfo {
+    pub signer: LocalWallet,
+    pub symbiotic_rpc_url: String,
+    pub vault_opt_in_service: Address,
+    pub network_opt_in_service: Address,
+    pub vault_address: Address,
+    pub network_address: Address,
+}
+
+impl CommonDeps {
+    pub fn symbiotic_opt_in_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<SymbioticOptInInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "symbiotic_rpc_url", symbiotic_rpc_url);
+        get_config_ref!(config, "symbiotic_chain_id", symbiotic_chain_id);
+        get_config_ref!(config, "vault_opt_in_service", vault_opt_in_service_address);
+        get_config_ref!(
+            config,
+            "network_opt_in_service",
+            network_opt_in_service_address
+        );
+
+        get_config_ref!(config, "vault_address", vault_address);
+        get_config_ref!(config, "network_address", network_address);
+
+        let signer = private_key
+            .parse::<LocalWallet>()
+            .map_err(|e| format!("Failed to parse private key: {}", e))?
+            .with_chain_id(
+                symbiotic_chain_id
+                    .parse::<u64>()
+                    .map_err(|e| format!("Invalid symbiotic_chain_id: {}", e))?,
+            );
+
+        let vault_opt_in_service = vault_opt_in_service_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Vault Opt In Service Address: {}", e))?;
+
+        let network_opt_in_service = network_opt_in_service_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Network Opt In Service Address: {}", e))?;
+
+        let vault_address = vault_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Vault Address: {}", e))?;
+
+        let network_address = network_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Network Address: {}", e))?;
+
+        Ok(SymbioticOptInInfo {
+            signer,
+            symbiotic_rpc_url: symbiotic_rpc_url.into(),
+            vault_opt_in_service,
+            network_opt_in_service,
+            vault_address,
+            network_address,
+        })
+    }
+}

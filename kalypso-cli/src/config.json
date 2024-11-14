@@ -191,6 +191,43 @@
       "prompt": "Twitter",
       "secret": false,
       "env_var": "TWITTER"
+    },
+    {
+      "field": "symbiotic_rpc_url",
+      "prompt": "RPC URL of the chain on which symbiotic exists",
+      "secret": false,
+      "env_var": "SYMBIOTIC_RPC_URL"
+    },
+    {
+      "field": "symbiotic_chain_id",
+      "prompt": "Chain Id of the chain on which symbiotic exists",
+      "secret": false,
+      "env_var": "SYMBIOTIC_CHAIN_ID"
+    },
+    {
+      "field": "vault_opt_in_service",
+      "prompt": "Address of the symbiotic vault opt in contract",
+      "secret": false,
+      "env_var": "VAULT_OPT_IN_SERVICE"
+    },
+    {
+      "field": "network_opt_in_service",
+      "prompt": "Address of the symbiotic network opt in contract",
+      "secret": false,
+      "env_var": "NETWORK_OPT_IN_SERVICE"
+    }
+    ,
+    {
+      "field": "vault_address",
+      "prompt": "Address of the vault to opt in",
+      "secret": false,
+      "env_var": "VAULT_ADDRESS"
+    },
+    {
+      "field": "network_address",
+      "prompt": "Address of the network to opt in",
+      "secret": false,
+      "env_var": "NETWORK_ADDRESS"
     }
   ],
   "operations": [
@@ -404,6 +441,19 @@
         "chain_id",
         "proof_marketplace",
         "ask_id"
+      ]
+    },
+    {
+      "name": "Request Symbiotic Stake",
+      "description": "Request delegation from symbiotic",
+      "required_prompts": [
+        "private_key",
+        "symbiotic_rpc_url",
+        "symbiotic_chain_id",
+        "vault_opt_in_service",
+        "vault_address",
+        "network_opt_in_service",
+        "network_address"
       ]
     }
   ]
