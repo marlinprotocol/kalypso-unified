@@ -310,7 +310,9 @@ async fn recompute_single_market_response<'a>(
                     .map(|generator_info| RegisteredGenerator {
                         details: generator_info.deserialize_generator_bytes(),
                         address: address_to_string(&element.address),
-                        delegations: generator_info.total_stake.to_token_amount(),
+                        delegations: (generator_info.total_native_stake
+                            + generator_info.total_symbiotic_stake)
+                            .to_token_amount(),
                         time: element.proposed_time.to_string(),
                         cost: TokenAmount {
                             token: address_to_string(&USDC_TOKEN),

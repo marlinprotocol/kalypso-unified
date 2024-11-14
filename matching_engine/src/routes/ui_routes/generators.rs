@@ -146,7 +146,8 @@ async fn recompute_generator_response<'a>(
     let mut total_stake = TokenTracker::new();
 
     for (_, operator_data, all_markets_of_generator, total_earning) in generator_details {
-        total_stake += operator_data.clone().total_stake;
+        total_stake +=
+            operator_data.clone().total_native_stake + operator_data.clone().total_symbiotic_stake;
 
         // Construct the markets
         let mut markets = Vec::with_capacity(all_markets_of_generator.len());
@@ -174,11 +175,10 @@ async fn recompute_generator_response<'a>(
             pending_proofs += info.active_requests;
         }
 
-        let delegations = operator_data
-            .total_stake
-            .clone()
-            .to_token_amount()
-            .to_owned();
+        let delegations = (operator_data.total_native_stake.clone()
+            + operator_data.total_symbiotic_stake.clone())
+        .to_token_amount()
+        .to_owned();
         let current_stake = delegations.clone();
         // Construct the Operator struct
         let operator = Operator {

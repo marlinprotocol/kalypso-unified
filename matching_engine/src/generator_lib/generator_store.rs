@@ -106,10 +106,12 @@ pub struct GeneratorInfoPerMarket {
 pub struct Generator {
     pub address: Address,
     pub reward_address: Address,
-    pub total_stake: TokenTracker,
+    pub total_native_stake: TokenTracker,
+    pub total_symbiotic_stake: TokenTracker,
     pub sum_of_compute_allocations: U256,
     pub compute_consumed: U256,
-    pub stake_locked: TokenTracker,
+    pub native_stake_locked: TokenTracker,
+    pub symbiotic_stake_locked: TokenTracker,
     pub active_market_places: U256,
     pub declared_compute: U256,
     pub intended_stake_util: U256,
@@ -252,7 +254,7 @@ impl GeneratorStore {
     pub fn total_stake_across_all_generators(&self) -> TokenTracker {
         self.generators
             .par_iter()
-            .map(|(_, data)| data.total_stake.clone()) // Clone if TokenTracker isn't Copy
+            .map(|(_, data)| data.total_native_stake.clone() + data.total_symbiotic_stake.clone()) // Clone if TokenTracker isn't Copy
             .reduce(
                 || TokenTracker::new(),      // Identity element
                 |acc, stake| acc.add(stake), // Combine function
@@ -344,7 +346,15 @@ impl GeneratorStore {
         source: super::delegation::Source,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
-            generator.total_stake.add_token(token_address, amount);
+            match source {
+                super::delegation::Source::Native => generator
+                    .total_native_stake
+                    .add_token(token_address, amount),
+                super::delegation::Source::Symbiotic => generator
+                    .total_symbiotic_stake
+                    .add_token(token_address, amount),
+            };
+
             self.delegation_store.add_delegation(
                 generator_address,
                 Delegation {
@@ -379,9 +389,14 @@ impl GeneratorStore {
         source: super::delegation::Source,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
-            generator
-                .total_stake
-                .sub_token_saturating(token_address, amount);
+            match source {
+                super::delegation::Source::Native => generator
+                    .total_native_stake
+                    .sub_token_saturating(token_address, amount),
+                super::delegation::Source::Symbiotic => generator
+                    .total_symbiotic_stake
+                    .sub_token_saturating(token_address, amount),
+            }
 
             self.delegation_store.add_delegation(
                 generator_address,
@@ -551,11 +566,17 @@ impl GeneratorStore {
         generator_address: &Address,
         token_address: &Address,
         stake_locked: U256,
+        source: super::delegation::Source,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
-            generator
-                .stake_locked
-                .add_token(token_address, &stake_locked);
+            match source {
+                super::delegation::Source::Native => generator
+                    .native_stake_locked
+                    .add_token(token_address, &stake_locked),
+                super::delegation::Source::Symbiotic => generator
+                    .symbiotic_stake_locked
+                    .add_token(token_address, &stake_locked),
+            }
         }
     }
 
@@ -564,11 +585,17 @@ impl GeneratorStore {
         generator_address: &Address,
         token_address: &Address,
         stake_released: U256,
+        source: super::delegation::Source,
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
-            generator
-                .stake_locked
-                .sub_token_saturating(token_address, &stake_released);
+            match source {
+                super::delegation::Source::Native => generator
+                    .native_stake_locked
+                    .sub_token_saturating(token_address, &stake_released),
+                super::delegation::Source::Symbiotic => generator
+                    .symbiotic_stake_locked
+                    .sub_token_saturating(token_address, &stake_released),
+            }
         }
     }
 
@@ -636,17 +663,16 @@ impl GeneratorStore {
 
     pub fn get_available_stake(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.generators.get(&generator_address).map(|generator| {
-            generator
-                .total_stake
-                .clone()
-                .sub(generator.stake_locked.clone())
+            generator.total_native_stake.clone() + generator.total_symbiotic_stake.clone()
+                - generator.native_stake_locked.clone()
+                - generator.symbiotic_stake_locked.clone()
         })
     }
 
     pub fn get_stake_locked(&self, generator_address: &Address) -> Option<TokenTracker> {
-        self.generators
-            .get(&generator_address)
-            .map(|generator| generator.stake_locked.clone())
+        self.generators.get(&generator_address).map(|generator| {
+            generator.native_stake_locked.clone() + generator.symbiotic_stake_locked.clone()
+        })
     }
 
     pub fn get_all_by_market_id(&self, market_id: &U256) -> Vec<GeneratorInfoPerMarket> {
@@ -777,9 +803,15 @@ impl GeneratorStore {
                 // Try to get the generator from the store
                 if let Some(generator) = self.generators.get(&elem.address) {
                     let remaining_stake = generator
-                        .total_stake
+                        .total_native_stake
                         .clone()
-                        .sub(generator.stake_locked.clone());
+                        .add(generator.total_symbiotic_stake.clone())
+                        .sub(
+                            generator
+                                .native_stake_locked
+                                .clone()
+                                .add(generator.symbiotic_stake_locked.clone()),
+                        );
 
                     // Check if at least one of the AddressTokenPairs in min_stake meets the condition
                     let is_valid = min_stake
@@ -909,18 +941,20 @@ mod tests {
         let generator1 = Generator {
             address: Address::random(),
             reward_address: Address::random(),
-            total_stake: TokenTracker::from_address_string_and_dec_string(
+            total_native_stake: TokenTracker::from_address_string_and_dec_string(
                 vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["123123".into()],
             )
             .unwrap(),
+            total_symbiotic_stake: TokenTracker::new(),
             sum_of_compute_allocations: U256::from_dec_str("12312312").unwrap(),
             compute_consumed: U256::from_dec_str("12312").unwrap(),
-            stake_locked: TokenTracker::from_address_string_and_dec_string(
+            native_stake_locked: TokenTracker::from_address_string_and_dec_string(
                 vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["123123".into()],
             )
             .unwrap(),
+            symbiotic_stake_locked: TokenTracker::new(),
             active_market_places: U256::from_dec_str("12").unwrap(),
             declared_compute: U256::from_dec_str("123123").unwrap(),
             intended_stake_util: U256::from_dec_str("123123").unwrap(),
@@ -942,7 +976,7 @@ mod tests {
 
         // Perform your stake and compute operations on `generator`
         assert_eq!(
-            random_generator.total_stake,
+            random_generator.total_native_stake + random_generator.total_symbiotic_stake,
             TokenTracker::from_address_string_and_dec_string(
                 vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["100".into()],
@@ -990,7 +1024,11 @@ mod tests {
             generator_store
                 .get_by_address(&random_generator.address)
                 .unwrap()
-                .total_stake,
+                .total_native_stake
+                + generator_store
+                    .get_by_address(&random_generator.address)
+                    .unwrap()
+                    .total_symbiotic_stake,
             TokenTracker::from_address_string_and_dec_string(
                 vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["105".into()],
@@ -1014,7 +1052,11 @@ mod tests {
             generator_store
                 .get_by_address(&random_generator.address)
                 .unwrap()
-                .total_stake,
+                .total_native_stake
+                + generator_store
+                    .get_by_address(&random_generator.address)
+                    .unwrap()
+                    .total_symbiotic_stake,
             TokenTracker::from_address_string_and_dec_string(
                 vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                 vec!["90".into()],
@@ -1037,7 +1079,11 @@ mod tests {
             generator_store
                 .get_by_address(&random_generator.address)
                 .unwrap()
-                .total_stake,
+                .total_native_stake
+                + generator_store
+                    .get_by_address(&random_generator.address)
+                    .unwrap()
+                    .total_symbiotic_stake,
             TokenTracker::from_address_string_and_dec_string(
                 vec![
                     TEST_TOKEN_ADDRESS_ONE_STRING.to_string(),
@@ -1297,6 +1343,7 @@ mod tests {
                     &idle_generator.address,
                     &TEST_TOKEN_ADDRESS_ONE,
                     U256::from_dec_str(stake_locked_on_request).unwrap(),
+                    crate::generator_lib::delegation::Source::Native,
                 );
             }
         }
@@ -1355,19 +1402,21 @@ mod tests {
             let generator = Generator {
                 address: Address::random(),
                 reward_address: Address::random(),
-                total_stake: TokenTracker::from_address_string_and_dec_string(
+                total_native_stake: TokenTracker::from_address_string_and_dec_string(
                     vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                     vec![default_total_stake.clone()],
                 )
                 .unwrap(),
+                total_symbiotic_stake: TokenTracker::new(),
                 sum_of_compute_allocations: U256::from_dec_str(&default_sum_of_compute_allocations)
                     .unwrap(),
                 compute_consumed: U256::from_dec_str("0").unwrap(),
-                stake_locked: TokenTracker::from_address_string_and_dec_string(
+                native_stake_locked: TokenTracker::from_address_string_and_dec_string(
                     vec![TEST_TOKEN_ADDRESS_ONE_STRING.to_string()],
                     vec!["0".into()],
                 )
                 .unwrap(),
+                symbiotic_stake_locked: TokenTracker::new(),
                 active_market_places: U256::from_dec_str("0").unwrap(),
                 declared_compute: U256::from_dec_str(&default_declared_compute).unwrap(),
                 intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),

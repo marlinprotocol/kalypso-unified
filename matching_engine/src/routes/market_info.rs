@@ -188,8 +188,10 @@ pub async fn market_info(
                 count += 1;
                 generators.push(GeneratorInfo {
                     generator_address: generator,
-                    stake_locked: generator_data.stake_locked,
-                    total_stake: generator_data.total_stake,
+                    stake_locked: generator_data.native_stake_locked
+                        + generator_data.symbiotic_stake_locked,
+                    total_stake: generator_data.total_native_stake
+                        + generator_data.total_symbiotic_stake,
                     compute_consumed: generator_data.compute_consumed,
                     declared_compute: generator_data.declared_compute,
                     compute_required_per_request: generator_info.compute_required_per_request,

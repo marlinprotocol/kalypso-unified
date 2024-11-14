@@ -323,7 +323,9 @@ async fn recompute_single_generator_response<'a>(
             .get_total_slashing(&generator_id)
             .unwrap_or_default()
             .to_token_amount(),
-        total_delegations: generator_data.total_stake.to_token_amount(),
+        total_delegations: (generator_data.total_native_stake
+            + generator_data.total_symbiotic_stake)
+            .to_token_amount(),
         available_stake: local_generator_store
             .get_available_stake(&generator_id)
             .unwrap_or_default()

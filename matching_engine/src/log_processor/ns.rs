@@ -156,7 +156,12 @@ pub async fn process_native_staking_logs(
         let stake_locked = stake_lock_logs.amount;
         let token_address = stake_lock_logs.token;
 
-        generator_store.update_on_stake_locked(&address, &token_address, stake_locked);
+        generator_store.update_on_stake_locked(
+            &address,
+            &token_address,
+            stake_locked,
+            delegation::Source::Native,
+        );
         return Ok(());
     }
 
@@ -171,7 +176,12 @@ pub async fn process_native_staking_logs(
         let address = stake_lock_logs.operator;
         let stake_released = stake_lock_logs.amount;
         let token_address = stake_lock_logs.token;
-        generator_store.update_on_stake_released(&address, &token_address, stake_released);
+        generator_store.update_on_stake_released(
+            &address,
+            &token_address,
+            stake_released,
+            delegation::Source::Native,
+        );
         return Ok(());
     }
 
