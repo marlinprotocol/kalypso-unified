@@ -19,4 +19,6 @@ lazy_static! {
     pub static ref PROOF_MARKET_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
     pub static ref GENERATOR_REGISTRY_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
     pub static ref ENTITY_KEY_REGISTRY_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
+    pub static ref NATIVE_STAKING_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
+    pub static ref SYMBIOTIC_STAKING_TOPICS_SKIP: HashSet<H256> = TOPICS_TO_SKIP.clone();
 }

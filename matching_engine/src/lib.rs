@@ -110,6 +110,8 @@ pub struct MatchingEngineConfig {
     pub entity_registry: String,
     #[serde(default = "default_symbiotic_staking")]
     pub symbiotic_staking: String,
+    #[serde(default = "default_native_staking")]
+    pub native_staking: String,
     pub start_block: String,
 }
 
@@ -117,6 +119,10 @@ pub struct MatchingEngineConfig {
 // Adding the to avoid changes in ME Client for now
 fn default_symbiotic_staking() -> String {
     "0xE7136641cB2c94d318779c3B6BEb997dC5B2E574".to_string()
+}
+
+fn default_native_staking() -> String {
+    "0xe9d2Bcc597f943ddA9EDf356DAC7C6A713dDE113".to_string()
 }
 
 pub struct MatchingEngine {
@@ -142,6 +148,7 @@ impl MatchingEngine {
         generator_registry: String,
         entity_registry: String,
         symbiotic_staking: String,
+        native_staking: String,
         start_block: String,
         matching_engine_port: Option<u16>,
     ) -> Self {
@@ -154,6 +161,7 @@ impl MatchingEngine {
             generator_registry,
             entity_registry,
             symbiotic_staking,
+            native_staking,
             start_block,
         };
 
@@ -250,6 +258,11 @@ impl MatchingEngine {
             client.clone(),
         );
 
+        let native_staking_var = self.config.clone().native_staking;
+        let native_staking_address = Address::from_str(&native_staking_var).unwrap();
+        let shared_native_staking =
+            bindings::native_staking::NativeStaking::new(native_staking_address, client.clone());
+
         let shared_parsed_block_number_store = Arc::new(RwLock::new(
             U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
         ));
@@ -311,6 +324,7 @@ impl MatchingEngine {
             generator_registry,
             entity_key_registry,
             shared_symbiotic_staking,
+            shared_native_staking,
             matching_engine_key,
             vec![], //TODO! fetch these slave keys using Oyster KMS
             shared_local_ask_store.clone(),

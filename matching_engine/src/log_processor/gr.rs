@@ -4,23 +4,19 @@ use tokio::sync::RwLock;
 
 use crate::generator_lib::*;
 use crate::log_processor::constants;
-use crate::utility::get_l1_block_from_l2_block;
-use crate::utility::{
-    tx_to_string, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_THREE,
-    TEST_TOKEN_ADDRESS_TWO,
-};
+use crate::utility::TokenTracker;
 
 pub async fn process_generator_registry_logs(
     log: &Log,
     genertor_registry: &bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    symbiotic_staking: &bindings::symbiotic_staking::SymbioticStaking<
+    _: &bindings::symbiotic_staking::SymbioticStaking<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
-    symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
-    rpc_url: &str,
+    _: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
+    _: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::GENERATOR_REGISTRY_TOPICS_SKIP
         .get(&log.topics[0])
@@ -222,26 +218,8 @@ pub async fn process_generator_registry_logs(
             "Added stake to Generator: {:?}",
             added_stake_log.generator_address
         );
-        let address = added_stake_log.generator_address;
-        let amount = added_stake_log.amount;
-        let token_address = added_stake_log.token;
 
-        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
-        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
-            .await
-            .unwrap_or_default();
-
-        generator_store.add_extra_stake(
-            &address,
-            &token_address,
-            &amount,
-            U64::from(block_l1.as_u64()),
-            log.transaction_index.unwrap(),
-            log.log_index.unwrap(),
-            tx_to_string(&log.transaction_hash.unwrap()),
-            delegation::Source::Native,
-        );
-
+        log::warn!("Add Stake is now handled in native staking");
         return Ok(());
     }
 
@@ -256,16 +234,9 @@ pub async fn process_generator_registry_logs(
             request_stake_decrease_log.generator_address
         );
 
-        let address = request_stake_decrease_log.generator_address;
-
-        log::warn!("pausing all assignments across all markets");
-        log::warn!("will be unpaused once the request if fully withdrawn");
-
-        generator_store.pause_assignments_across_all_markets(&address);
-
-        log::warn!("Setting new utilization to same value");
-        let new_utilization = 1000000000000000000_i64.into();
-        generator_store.update_intended_stake_util(&address, new_utilization);
+        log::warn!(
+            "RequestStakeDecrease is not processed using native_staking::StakeWithdrawalRequested"
+        );
         return Ok(());
     }
 
@@ -281,28 +252,7 @@ pub async fn process_generator_registry_logs(
             remove_stake_log.generator_address
         );
 
-        let address = remove_stake_log.generator_address;
-        let amount = remove_stake_log.amount;
-        let token_address = remove_stake_log.token;
-
-        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
-        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
-            .await
-            .unwrap_or_default();
-
-        generator_store.remove_stake(
-            &address,
-            &token_address,
-            &amount,
-            U64::from(block_l1.as_u64()),
-            log.transaction_index.unwrap(),
-            log.log_index.unwrap(),
-            tx_to_string(&log.transaction_hash.unwrap()),
-            delegation::Operation::UnDelegate,
-            delegation::Source::Native,
-        );
-        generator_store.resume_assignments_accross_all_markets(&address);
-        generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
+        log::warn!("Request stake decrese in no processed in native_stake::StakeWithdrawn");
 
         return Ok(());
     }
@@ -373,11 +323,7 @@ pub async fn process_generator_registry_logs(
         log.data.clone(),
     ) {
         log::debug!("Stake Lock Imposed: {:?}", stake_lock_logs);
-        let address = stake_lock_logs.generator_address;
-        let stake_locked = stake_lock_logs.stake;
-        let token_address = stake_lock_logs.token;
-
-        generator_store.update_on_stake_locked(&address, &token_address, stake_locked);
+        log::warn!("Stake Lock Imposed is now Handled in native_staking::StakeLocked and symbiotic_staking::StakeLocked separately");
         return Ok(());
     }
 
@@ -401,10 +347,7 @@ pub async fn process_generator_registry_logs(
         log.data.clone(),
     ) {
         log::debug!("Stake Lock Released: {:?}", stake_lock_logs);
-        let address = stake_lock_logs.generator_address;
-        let stake_released = stake_lock_logs.stake;
-        let token_address = stake_lock_logs.token;
-        generator_store.update_on_stake_released(&address, &token_address, stake_released);
+        log::warn!("Stake Lock Released in native_staking::StakeUnlocked and symbiotic_stake::StakeUnlocked separately");
         return Ok(());
     }
 
@@ -429,26 +372,7 @@ pub async fn process_generator_registry_logs(
         )
     {
         log::warn!("Stake Slashed: {:?}", stake_slash_logs);
-        let address = stake_slash_logs.generator_address;
-        let stake_slashed = stake_slash_logs.stake;
-        let token_address = stake_slash_logs.token;
-
-        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
-        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
-            .await
-            .unwrap_or_default();
-
-        generator_store.remove_stake(
-            &address,
-            &token_address,
-            &stake_slashed,
-            U64::from(block_l1.as_u64()),
-            log.transaction_index.unwrap(),
-            log.log_index.unwrap(),
-            tx_to_string(&log.transaction_hash.unwrap()),
-            delegation::Operation::Slash,
-            delegation::Source::Native,
-        );
+        log::warn!("Stake slash is now handled in ns::JobSlashed and ss::JobSlashed separately");
         return Ok(());
     }
 
@@ -457,73 +381,11 @@ pub async fn process_generator_registry_logs(
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::debug!("Processing SymbioticCompleteSnapshot");
-        let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
-
-        let capture_timestamp = {
-            let capture_timestamp_token = symbiotic_complete_snapshot_log.first().unwrap();
-            let capture_timestamp = capture_timestamp_token.clone().into_uint().unwrap();
-            capture_timestamp
-        };
-
-        let known_tokens: Vec<Address> = vec![
-            TEST_TOKEN_ADDRESS_ONE.clone(),
-            TEST_TOKEN_ADDRESS_TWO.clone(),
-            TEST_TOKEN_ADDRESS_THREE.clone(),
-        ];
-        let all_generators = generator_store.all_generators_address();
-
-        for stake_token in known_tokens {
-            for operator in all_generators.clone().into_iter() {
-                // if this fails, system breaks. TODO
-                let vault_snapshot_amount = symbiotic_staking
-                    .get_operator_stake_amount_at(capture_timestamp, stake_token, operator)
-                    .call()
-                    .await
-                    .unwrap();
-
-                log::debug!(
-                    "operator:{}, snapshot token:{}, amount: {}",
-                    &operator,
-                    &stake_token,
-                    vault_snapshot_amount.to_string()
-                );
-
-                // before updating in symbiotic, do these steps
-                let last_stored_staking_info =
-                    symbiotic_stake_store.get_latest_stake_info(&operator, &stake_token);
-
-                if vault_snapshot_amount.gt(&last_stored_staking_info) {
-                    generator_store.add_extra_stake(
-                        &operator,
-                        &stake_token,
-                        &(vault_snapshot_amount - last_stored_staking_info),
-                        log.block_number.unwrap(),
-                        log.transaction_index.unwrap(),
-                        log.log_index.unwrap(),
-                        tx_to_string(&log.transaction_hash.unwrap()),
-                        delegation::Source::Symbiotic,
-                    );
-                } else if vault_snapshot_amount.lt(&last_stored_staking_info) {
-                    generator_store.remove_stake(
-                        &operator,
-                        &stake_token,
-                        &(last_stored_staking_info - vault_snapshot_amount),
-                        log.block_number.unwrap(),
-                        log.transaction_index.unwrap(),
-                        log.log_index.unwrap(),
-                        tx_to_string(&log.transaction_hash.unwrap()),
-                        delegation::Operation::UnDelegate,
-                        delegation::Source::Symbiotic,
-                    );
-                } else {
-                    log::debug!("No change in symbiotic stake noticed");
-                }
-
-                symbiotic_stake_store.upsert_stake(&operator, &stake_token, &vault_snapshot_amount);
-            }
-        }
-
+        log::debug!(
+            "Processing SymbioticCompleteSnapshot: {:?}",
+            symbiotic_complete_snapshot_log
+        );
+        log::warn!("SymbioticCompleteSnapshot is now processed using symbiotic::SnapshotConfirmed");
         return Ok(());
     }
 

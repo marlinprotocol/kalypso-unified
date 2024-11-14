@@ -47,6 +47,9 @@ type SymbioticStakingInstance = bindings::symbiotic_staking::SymbioticStaking<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
 >;
 
+type NativeStakingInstance =
+    bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
+
 pub struct LogParser {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
@@ -56,6 +59,7 @@ pub struct LogParser {
     generator_registry: GeneratorRegistryInstance,
     entity_registry: EntityRegistryInstance,
     symbiotic_staking: SymbioticStakingInstance,
+    native_staking: NativeStakingInstance,
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
     matching_engine_slave_keys: Vec<Vec<u8>>,
@@ -83,6 +87,7 @@ impl LogParser {
         generator_registry: GeneratorRegistryInstance,
         entity_registry: EntityRegistryInstance,
         symbiotic_staking: SymbioticStakingInstance,
+        native_staking: NativeStakingInstance,
         matching_engine_key: String,
         matching_engine_slave_keys: Vec<String>,
         shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
@@ -107,6 +112,7 @@ impl LogParser {
             generator_registry,
             entity_registry,
             symbiotic_staking,
+            native_staking,
             provider_http,
             matching_engine_key: hex::decode(matching_engine_key).unwrap(),
             matching_engine_slave_keys: matching_engine_slave_keys
@@ -161,6 +167,8 @@ impl LogParser {
                 let proof_marketplace_address = self.proof_marketplace.address();
                 let generator_registry_address = self.generator_registry.address();
                 let entity_key_registry_address = self.entity_registry.address();
+                let native_staking_address = self.native_staking.address();
+                let symbiotic_staking_address = self.symbiotic_staking.address();
 
                 let filter = Filter::default()
                     .from_block(start_block)
@@ -169,6 +177,8 @@ impl LogParser {
                         proof_marketplace_address,
                         generator_registry_address,
                         entity_key_registry_address,
+                        native_staking_address,
+                        symbiotic_staking_address,
                     ]);
 
                 let logs = match self.provider_http.get_logs(&filter).await {
@@ -238,6 +248,31 @@ impl LogParser {
                                     log,
                                     &self.entity_registry,
                                     &self.shared_key_store,
+                                )
+                                .await
+                                .unwrap();
+                                continue;
+                            }
+
+                            if log.address.eq(&native_staking_address) {
+                                log_processor::ns::process_native_staking_logs(
+                                    log,
+                                    &self.native_staking,
+                                    &self.shared_generator_store,
+                                    &self.rpc_url,
+                                )
+                                .await
+                                .unwrap();
+                                continue;
+                            }
+
+                            if log.address.eq(&symbiotic_staking_address) {
+                                log_processor::ss::process_symbiotic_staking_logs(
+                                    log,
+                                    &self.symbiotic_staking,
+                                    &self.shared_generator_store,
+                                    &self.shared_symbiotic_stake_store,
+                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();

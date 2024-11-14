@@ -1,0 +1,211 @@
+use std::sync::Arc;
+
+use ethers::prelude::{k256::ecdsa::SigningKey, *};
+use tokio::sync::RwLock;
+
+use crate::{
+    generator_lib::{delegation, generator_store},
+    log_processor::constants,
+    utility::{get_l1_block_from_l2_block, tx_to_string},
+};
+
+pub async fn process_native_staking_logs(
+    log: &Log,
+    native_staking: &bindings::native_staking::NativeStaking<
+        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+    >,
+    generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
+    rpc_url: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if constants::NATIVE_STAKING_TOPICS_SKIP
+        .get(&log.topics[0])
+        .is_some()
+    {
+        log::debug!("standard topic to skip found, ignoring it");
+        return Ok(());
+    }
+    if let Ok(stake_manager_set_log) =
+        native_staking.decode_event_raw("StakingManagerSet", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("Staking Manager Set Logs: {:?}", stake_manager_set_log);
+        return Ok(());
+    }
+
+    if let Ok(event_log) =
+        native_staking.decode_event_raw("StakeTokenAdded", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("StakeTokenAdded Logs: {:?}", event_log);
+        return Ok(());
+    }
+
+    if let Ok(event_log) =
+        native_staking.decode_event_raw("AmountToLockSet", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("AmountToLockSet Logs: {:?}", event_log);
+        return Ok(());
+    }
+
+    let mut generator_store = { generator_store.write().await };
+
+    if let Ok(added_stake_log) = native_staking
+        .decode_event::<bindings::native_staking::StakedFilter>(
+            "Staked",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::debug!(
+            "Native stake Added. Generator: {}",
+            added_stake_log.operator
+        );
+
+        let address = added_stake_log.operator;
+        let amount = added_stake_log.amount;
+        let token_address = added_stake_log.token;
+
+        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
+            .await
+            .unwrap_or_default();
+
+        generator_store.add_extra_stake(
+            &address,
+            &token_address,
+            &amount,
+            U64::from(block_l1.as_u64()),
+            log.transaction_index.unwrap(),
+            log.log_index.unwrap(),
+            tx_to_string(&log.transaction_hash.unwrap()),
+            delegation::Source::Native,
+        );
+
+        return Ok(());
+    }
+
+    if let Ok(request_stake_decrease_log) = native_staking
+        .decode_event::<bindings::native_staking::StakeWithdrawalRequestedFilter>(
+        "StakeWithdrawalRequested",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!(
+            "Request stake decrease for Generator: {:?}",
+            request_stake_decrease_log.operator
+        );
+
+        let address = request_stake_decrease_log.operator;
+
+        log::warn!("pausing all assignments across all markets");
+        log::warn!("will be unpaused once the request if fully withdrawn");
+
+        generator_store.pause_assignments_across_all_markets(&address);
+
+        log::warn!("Setting new utilization to same value");
+        let new_utilization = 1000000000000000000_i64.into();
+        generator_store.update_intended_stake_util(&address, new_utilization);
+        return Ok(());
+    }
+
+    if let Ok(remove_stake_log) = native_staking
+        .decode_event::<bindings::native_staking::StakeWithdrawnFilter>(
+            "StakeWithdrawn",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::debug!(
+            "Remove stake for Generator: {:?}",
+            remove_stake_log.operator
+        );
+
+        let address = remove_stake_log.operator;
+        let amount = remove_stake_log.amount;
+        let token_address = remove_stake_log.token;
+
+        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
+            .await
+            .unwrap_or_default();
+
+        generator_store.remove_stake(
+            &address,
+            &token_address,
+            &amount,
+            U64::from(block_l1.as_u64()),
+            log.transaction_index.unwrap(),
+            log.log_index.unwrap(),
+            tx_to_string(&log.transaction_hash.unwrap()),
+            delegation::Operation::UnDelegate,
+            delegation::Source::Native,
+        );
+        generator_store.resume_assignments_accross_all_markets(&address);
+        generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
+
+        return Ok(());
+    }
+
+    if let Ok(stake_lock_logs) = native_staking
+        .decode_event::<bindings::native_staking::StakeLockedFilter>(
+            "StakeLocked",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::debug!("Stake Locked: {:?}", stake_lock_logs);
+        let address = stake_lock_logs.operator;
+        let stake_locked = stake_lock_logs.amount;
+        let token_address = stake_lock_logs.token;
+
+        generator_store.update_on_stake_locked(&address, &token_address, stake_locked);
+        return Ok(());
+    }
+
+    if let Ok(stake_lock_logs) = native_staking
+        .decode_event::<bindings::native_staking::StakeUnlockedFilter>(
+            "StakeUnlocked",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::debug!("Stake Lock Released: {:?}", stake_lock_logs);
+        let address = stake_lock_logs.operator;
+        let stake_released = stake_lock_logs.amount;
+        let token_address = stake_lock_logs.token;
+        generator_store.update_on_stake_released(&address, &token_address, stake_released);
+        return Ok(());
+    }
+
+    if let Ok(stake_slash_logs) = native_staking
+        .decode_event::<bindings::native_staking::JobSlashedFilter>(
+            "JobSlashed",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        log::warn!("Job/Stake Slashed: {:?}", stake_slash_logs);
+        let address = stake_slash_logs.operator;
+        let stake_slashed = stake_slash_logs.amount;
+        let token_address = stake_slash_logs.token;
+
+        let block_l2: U256 = log.block_number.unwrap().as_u64().into();
+        let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
+            .await
+            .unwrap_or_default();
+
+        generator_store.remove_stake(
+            &address,
+            &token_address,
+            &stake_slashed,
+            U64::from(block_l1.as_u64()),
+            log.transaction_index.unwrap(),
+            log.log_index.unwrap(),
+            tx_to_string(&log.transaction_hash.unwrap()),
+            delegation::Operation::Slash,
+            delegation::Source::Native,
+        );
+        return Ok(());
+    }
+
+    log::error!("unhandled log in native staking {:?}", log);
+    return Err("Unhandled log in native staking".into());
+}
