@@ -630,7 +630,8 @@ impl LogParser {
                     let generator_query = generator_store
                         .query_by_market_id(&random_pending_ask.market_id)
                         .filter_by_state(vec![GeneratorState::Joined, GeneratorState::Wip])
-                        .filter_by_reward(task_reward);
+                        .filter_by_reward(task_reward)
+                        .filter_by_time(random_pending_ask.time_requested_for_proof_generation);
 
                     let generator_with_idle_compute =
                         generator_store.filter_by_has_idle_compute(generator_query);
@@ -645,7 +646,8 @@ impl LogParser {
                     let generator_query = generator_store
                         .query_by_market_id(&random_pending_ask.market_id)
                         .filter_by_state(vec![GeneratorState::Joined, GeneratorState::Wip])
-                        .filter_by_reward(task_reward);
+                        .filter_by_reward(task_reward)
+                        .filter_by_time(random_pending_ask.time_requested_for_proof_generation);
 
                     let generator_with_idle_compute =
                         generator_store.filter_by_has_idle_compute(generator_query);

@@ -23,6 +23,16 @@ impl<'a> GeneratorQueryResult<'a> {
         self
     }
 
+    pub fn filter_by_time(mut self, task_time: U256) -> Self {
+        log::debug!("Filter by time");
+        self.generator_markets = self
+            .generator_markets
+            .into_iter()
+            .filter(|&gen| gen.proposed_time.lt(&task_time))
+            .collect();
+        self
+    }
+
     // Filter by state
     pub fn filter_by_state(mut self, states: Vec<GeneratorState>) -> Self {
         let states_set: std::collections::HashSet<_> = states.into_iter().collect(); // Convert Vec to HashSet for fast lookup

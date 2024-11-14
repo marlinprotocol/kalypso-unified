@@ -11,6 +11,7 @@ pub struct LocalAsk {
     pub reward: U256,
     pub expiry: U256,
     pub deadline: U256,
+    pub time_requested_for_proof_generation: U256,
     pub prover_refund_address: Address,
     pub prover_data: Bytes,
     pub has_private_inputs: bool,
