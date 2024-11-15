@@ -3,6 +3,7 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
 use crate::generator_lib::generator_store;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::stake_manager_store::StakeManagerStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketMetadataStore;
 use anyhow::Result;
@@ -75,6 +76,7 @@ pub struct LogParser {
     shared_cost_store: Arc<RwLock<CostStore>>,
     shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
     shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
+    shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
     chain_id: String,
     max_tasks_size: usize,
     rpc_url: String,
@@ -104,6 +106,7 @@ impl LogParser {
         shared_cost_store: Arc<RwLock<CostStore>>,
         shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
         shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
+        shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         chain_id: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
@@ -135,6 +138,7 @@ impl LogParser {
             shared_cost_store,
             shared_symbiotic_stake_store,
             shared_native_stake_store,
+            shared_stake_manager_store,
             chain_id,
             max_tasks_size: 10, // TODO: dynamically adjust latter
             rpc_url,
@@ -295,6 +299,9 @@ impl LogParser {
                                 log_processor::sm::process_staking_manager_log(
                                     log,
                                     &self.staking_manager,
+                                    &self.shared_stake_manager_store,
+                                    native_staking_address,
+                                    symbiotic_staking_address,
                                 )
                                 .await
                                 .unwrap();

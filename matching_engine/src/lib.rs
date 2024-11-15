@@ -15,6 +15,7 @@ mod macros;
 
 use ask_lib::ask_store::LocalAskStore;
 use generator_lib::native_stake_store::NativeStakingStore;
+use generator_lib::stake_manager_store::StakeManagerStore;
 use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use market_metadata::MarketMetadataStore;
 
@@ -188,6 +189,7 @@ impl MatchingEngine {
         let market_list_store = MarketMetadataStore::new();
         let symbiotic_staking_store = SymbioticStakeStore::new();
         let native_staking_store = NativeStakingStore::new();
+        let stake_manager_store = StakeManagerStore::new();
 
         // wrapping around is case to shared across threads
         let shared_local_ask_store = Arc::new(RwLock::new(local_ask_store));
@@ -197,6 +199,7 @@ impl MatchingEngine {
         let shared_cost_store = Arc::new(RwLock::new(cost_store));
         let shared_symbiotic_staking_store = Arc::new(RwLock::new(symbiotic_staking_store));
         let shared_native_store = Arc::new(RwLock::new(native_staking_store));
+        let shared_stake_manager_store = Arc::new(RwLock::new(stake_manager_store));
 
         let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));
 
@@ -356,6 +359,7 @@ impl MatchingEngine {
             shared_cost_store,
             shared_symbiotic_staking_store,
             shared_native_store,
+            shared_stake_manager_store,
             chain_id,
         ));
 
