@@ -326,14 +326,20 @@ async fn recompute_single_generator_response<'a>(
         total_delegations: (generator_data.total_native_stake
             + generator_data.total_symbiotic_stake)
             .to_token_amount(),
-        available_stake: local_generator_store
-            .get_available_stake(&generator_id)
+        available_stake: (local_generator_store
+            .get_available_native_stake(&generator_id)
             .unwrap_or_default()
-            .to_token_amount(),
-        stake_locked: local_generator_store
-            .get_stake_locked(&generator_id)
+            + local_generator_store
+                .get_available_symbiotic_stake(&generator_id)
+                .unwrap_or_default())
+        .to_token_amount(),
+        stake_locked: (local_generator_store
+            .get_native_stake_locked(&generator_id)
             .unwrap_or_default()
-            .to_token_amount(),
+            + local_generator_store
+                .get_symbiotic_stake_locked(&generator_id)
+                .unwrap_or_default())
+        .to_token_amount(),
         markets: all_markets_of_generator
             .clone()
             .into_iter()

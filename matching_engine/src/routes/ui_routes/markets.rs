@@ -271,8 +271,8 @@ async fn recompute_market_response<'a>(
     MarketResponse {
         result: markets,
         registered_generators: local_generator_store.all_generators_address().len(),
-        total_stake: local_generator_store
-            .total_stake_across_all_generators()
-            .to_token_amount(),
+        total_stake: (local_generator_store.total_native_stake_accross_all_generators()
+            + local_generator_store.total_symbiotic_stake_across_all_generators())
+        .to_token_amount(),
     }
 }
