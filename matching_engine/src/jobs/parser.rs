@@ -2,6 +2,7 @@ use crate::ask_lib::ask_status::{get_ask_state, AskState};
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
 use crate::generator_lib::generator_store;
+use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketMetadataStore;
 use anyhow::Result;
@@ -69,6 +70,7 @@ pub struct LogParser {
     shared_key_store: Arc<RwLock<KeyStore>>,
     shared_cost_store: Arc<RwLock<CostStore>>,
     shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
+    shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
     chain_id: String,
     max_tasks_size: usize,
     rpc_url: String,
@@ -96,6 +98,7 @@ impl LogParser {
         shared_key_store: Arc<RwLock<KeyStore>>,
         shared_cost_store: Arc<RwLock<CostStore>>,
         shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
+        shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
         chain_id: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
@@ -125,6 +128,7 @@ impl LogParser {
             shared_key_store,
             shared_cost_store,
             shared_symbiotic_stake_store,
+            shared_native_stake_store,
             chain_id,
             max_tasks_size: 10, // TODO: dynamically adjust latter
             rpc_url,
@@ -232,10 +236,7 @@ impl LogParser {
                                 log_processor::gr::process_generator_registry_logs(
                                     log,
                                     &self.generator_registry,
-                                    &self.symbiotic_staking,
                                     &self.shared_generator_store,
-                                    &self.shared_symbiotic_stake_store,
-                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();
@@ -259,6 +260,7 @@ impl LogParser {
                                     log,
                                     &self.native_staking,
                                     &self.shared_generator_store,
+                                    &self.shared_native_stake_store,
                                     &self.rpc_url,
                                 )
                                 .await

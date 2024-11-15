@@ -4,7 +4,7 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
-    generator_lib::{delegation, generator_store},
+    generator_lib::{delegation, generator_store, native_stake_store},
     log_processor::constants,
     utility::{get_l1_block_from_l2_block, tx_to_string},
 };
@@ -15,6 +15,7 @@ pub async fn process_native_staking_logs(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
+    native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
     rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::NATIVE_STAKING_TOPICS_SKIP
@@ -31,10 +32,28 @@ pub async fn process_native_staking_logs(
         return Ok(());
     }
 
+    let mut native_store = { native_store.write().await };
+
     if let Ok(event_log) =
         native_staking.decode_event_raw("StakeTokenAdded", log.topics.clone(), log.data.clone())
     {
         log::debug!("StakeTokenAdded Logs: {:?}", event_log);
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        let weight = event_log.get(1).unwrap().clone().into_uint().unwrap();
+
+        log::debug!("Added token: {} with weight: {}", token, weight);
+        native_store.set_lock_token(token, U256::zero());
+        return Ok(());
+    }
+
+    if let Ok(event_log) =
+        native_staking.decode_event_raw("StakeTokenRemoved", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("StakeTokenRemoved Logs: {:?}", event_log);
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+
+        log::debug!("Removed token: {}", token);
+        native_store.remove_lock_token(token);
         return Ok(());
     }
 
@@ -42,6 +61,11 @@ pub async fn process_native_staking_logs(
         native_staking.decode_event_raw("AmountToLockSet", log.topics.clone(), log.data.clone())
     {
         log::debug!("AmountToLockSet Logs: {:?}", event_log);
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        let amount = event_log.get(1).unwrap().clone().into_uint().unwrap();
+
+        log::debug!("AmountToLockSet: Token: {}  Amount: {}", token, amount);
+        native_store.set_lock_token(token, amount);
         return Ok(());
     }
 

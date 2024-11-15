@@ -508,3 +508,13 @@ pub fn convert_to_option_string(timestamp: Option<U256>) -> Option<String> {
         }
     })
 }
+
+impl TokenTracker {
+    pub fn force_set(&mut self, token: Address, amount: U256) {
+        self.tokens.insert(token, amount);
+    }
+
+    pub fn force_remove(&mut self, token: Address) {
+        self.tokens.remove(&token);
+    }
+}

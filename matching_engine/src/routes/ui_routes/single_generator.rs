@@ -6,6 +6,7 @@ use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::key_store::Key;
 use crate::generator_lib::key_store::KeyStore;
 use crate::models::WelcomeResponse;
+use crate::try_read_or_lock;
 use crate::utility::address_to_string;
 use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
@@ -218,38 +219,9 @@ pub async fn single_generator(
         return Ok(HttpResponse::Ok().json(cached_response));
     }
 
-    let local_ask_store = {
-        match _local_ask_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_generator_store = {
-        match _local_generator_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_key_store = {
-        match _local_key_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
+    try_read_or_lock!(_local_ask_store, local_ask_store);
+    try_read_or_lock!(_local_key_store, local_key_store);
+    try_read_or_lock!(_local_generator_store, local_generator_store);
 
     // Step 1: Recompute the response every time
     let new_response = recompute_single_generator_response(

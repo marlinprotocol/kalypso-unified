@@ -1,6 +1,7 @@
 use super::cache::CachedResponse;
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::models::WelcomeResponse;
+use crate::try_read_or_lock;
 use crate::utility::{
     address_to_string, TokenAmount, TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_THREE,
     TEST_TOKEN_ADDRESS_TWO,
@@ -69,16 +70,7 @@ pub async fn get_generators_all(
 
     drop(generator_cache);
 
-    let local_generator_store = {
-        match _local_generator_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
+    try_read_or_lock!(_local_generator_store, local_generator_store);
 
     // Step 2: If the cache is invalid, recompute the response
     let new_response = recompute_generator_response(local_generator_store).await;

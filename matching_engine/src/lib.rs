@@ -10,7 +10,11 @@ mod jobs;
 mod log_processor;
 mod routes;
 
+#[macro_use]
+mod macros;
+
 use ask_lib::ask_store::LocalAskStore;
+use generator_lib::native_stake_store::NativeStakingStore;
 use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use market_metadata::MarketMetadataStore;
 
@@ -175,6 +179,7 @@ impl MatchingEngine {
         let cost_store = CostStore::new();
         let market_list_store = MarketMetadataStore::new();
         let symbiotic_staking_store = SymbioticStakeStore::new();
+        let native_staking_store = NativeStakingStore::new();
 
         // wrapping around is case to shared across threads
         let shared_local_ask_store = Arc::new(RwLock::new(local_ask_store));
@@ -182,7 +187,8 @@ impl MatchingEngine {
         let shared_market_store = Arc::new(RwLock::new(market_list_store));
         let shared_key_store = Arc::new(RwLock::new(key_list_store));
         let shared_cost_store = Arc::new(RwLock::new(cost_store));
-        let shared_staking_store = Arc::new(RwLock::new(symbiotic_staking_store));
+        let shared_symbiotic_staking_store = Arc::new(RwLock::new(symbiotic_staking_store));
+        let shared_native_store = Arc::new(RwLock::new(native_staking_store));
 
         let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));
 
@@ -293,6 +299,8 @@ impl MatchingEngine {
             shared_matching_key_clone,
             shared_entity_key_registry,
             shared_generator_data,
+            shared_native_store.clone(),
+            shared_symbiotic_staking_store.clone(),
             shared_key_store.clone(),
             relayer_key_balance.clone(),
             should_stop.clone(),
@@ -332,7 +340,8 @@ impl MatchingEngine {
             shared_market_store.clone(),
             shared_key_store,
             shared_cost_store,
-            shared_staking_store,
+            shared_symbiotic_staking_store,
+            shared_native_store,
             chain_id,
         ));
 

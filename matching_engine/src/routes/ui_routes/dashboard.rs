@@ -1,6 +1,9 @@
 use super::cache::CachedResponse;
+use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
-use crate::utility::{address_to_string, bytes_to_string, convert_to_option_string};
+use crate::try_read_or_lock;
+use crate::utility::{address_to_string, bytes_to_string, convert_to_option_string, TokenAmount};
 use crate::{
     ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
     market_metadata::MarketMetadataStore,
@@ -20,6 +23,13 @@ struct DashboardResponse {
     proofs_generated: usize,
     markets: Vec<Market>,
     recent_proofs: Vec<RecentProof>,
+    task_assignment_requirements: TaskRequirements,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct TaskRequirements {
+    native: Vec<TokenAmount>,
+    symbiotic: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -62,6 +72,8 @@ pub async fn get_dashboard(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     let dashboard_cache = match DASHBOARD_RESPONSE.try_read() {
         Ok(data) => data,
@@ -79,43 +91,21 @@ pub async fn get_dashboard(
 
     drop(dashboard_cache);
 
-    let local_ask_store = {
-        match _local_ask_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_market_store = {
-        match _local_market_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_generator_store = {
-        match _local_generator_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
+    try_read_or_lock!(_local_ask_store, local_ask_store);
+    try_read_or_lock!(_local_market_store, local_market_store);
+    try_read_or_lock!(_local_generator_store, local_generator_store);
+    try_read_or_lock!(_local_native_store, local_native_store);
+    try_read_or_lock!(_local_symbiotic_store, local_symbiotic_store);
 
     // Step 2: If the cache is invalid, recompute the response (write lock)
-    let new_response =
-        recompute_dashboard_response(local_market_store, local_ask_store, local_generator_store)
-            .await;
+    let new_response = recompute_dashboard_response(
+        local_market_store,
+        local_ask_store,
+        local_generator_store,
+        local_native_store,
+        local_symbiotic_store,
+    )
+    .await;
 
     {
         // Store the newly computed response in the cache
@@ -137,6 +127,8 @@ async fn recompute_dashboard_response<'a>(
     local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
+    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
+    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
 ) -> DashboardResponse {
     // Step 1: Retrieve all market metadata and count of markets
     let (all_markets, count_markets, market_median_map) = {
@@ -265,5 +257,9 @@ async fn recompute_dashboard_response<'a>(
         proofs_generated: total_proof_count,
         markets,
         recent_proofs,
+        task_assignment_requirements: TaskRequirements {
+            native: local_native_store.tokens_to_lock.to_token_amount(),
+            symbiotic: local_symbiotic_store.tokens_to_lock.to_token_amount(),
+        },
     }
 }

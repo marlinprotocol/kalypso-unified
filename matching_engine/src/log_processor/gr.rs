@@ -11,12 +11,7 @@ pub async fn process_generator_registry_logs(
     genertor_registry: &bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    _: &bindings::symbiotic_staking::SymbioticStaking<
-        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-    >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
-    _: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
-    _: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::GENERATOR_REGISTRY_TOPICS_SKIP
         .get(&log.topics[0])

@@ -65,10 +65,30 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
+    let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
+
     if let Ok(event_log) =
         symbiotic_staking.decode_event_raw("StakeTokenAdded", log.topics.clone(), log.data.clone())
     {
         log::debug!("StakeTokenAdded Logs: {:?}", event_log);
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        let weight = event_log.get(1).unwrap().clone().into_uint().unwrap();
+
+        log::debug!("Added token: {} with weight: {}", token, weight);
+        symbiotic_stake_store.set_lock_token(token, U256::zero());
+        return Ok(());
+    }
+
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "StakeTokenRemoved",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("StakeTokenRemoved Logs: {:?}", event_log);
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+
+        log::debug!("Removed token: {}", token);
+        symbiotic_stake_store.remove_lock_token(token);
         return Ok(());
     }
 
@@ -76,6 +96,12 @@ pub async fn process_symbiotic_staking_logs(
         symbiotic_staking.decode_event_raw("AmountToLockSet", log.topics.clone(), log.data.clone())
     {
         log::debug!("AmountToLockSet Logs: {:?}", event_log);
+        log::debug!("AmountToLockSet Logs: {:?}", event_log);
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        let amount = event_log.get(1).unwrap().clone().into_uint().unwrap();
+
+        log::debug!("AmountToLockSet: Token: {}  Amount: {}", token, amount);
+        symbiotic_stake_store.set_lock_token(token, amount);
         return Ok(());
     }
 
@@ -150,7 +176,6 @@ pub async fn process_symbiotic_staking_logs(
         log.data.clone(),
     ) {
         log::debug!("Processing SnapshotConfirmed");
-        let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
 
         let capture_timestamp = {
             let transmitter_token = symbiotic_complete_snapshot_log.get(0).unwrap();

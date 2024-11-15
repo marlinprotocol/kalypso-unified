@@ -3,6 +3,7 @@ use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::market_metadata::MarketSetupData;
 use crate::models::WelcomeResponse;
+use crate::try_read_or_lock;
 use crate::utility::{random_usize, TokenAmount};
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
 use actix_web::web::Data;
@@ -72,38 +73,9 @@ pub async fn total_market_info(
 
     drop(market_cache);
 
-    let local_ask_store = {
-        match _local_ask_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_market_store = {
-        match _local_market_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_generator_store = {
-        match _local_generator_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
+    try_read_or_lock!(_local_ask_store, local_ask_store);
+    try_read_or_lock!(_local_market_store, local_market_store);
+    try_read_or_lock!(_local_generator_store, local_generator_store);
 
     // Step 2: If the cache is invalid, recompute the response
     let new_response =

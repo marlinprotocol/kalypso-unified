@@ -4,6 +4,7 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
 use crate::models::WelcomeResponse;
+use crate::try_read_or_lock;
 use crate::utility::{
     address_to_string, address_token_pair_to_token_amount, convert_to_option_string, random_usize,
     TokenAmount, TokenTracker, USDC_TOKEN,
@@ -157,38 +158,9 @@ pub async fn single_market(
 
     drop(cached_response);
 
-    let local_ask_store = {
-        match _local_ask_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_market_store = {
-        match _local_market_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
-
-    let local_generator_store = {
-        match _local_generator_store.try_read() {
-            Ok(data) => data,
-            _ => {
-                return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                    status: "Resource Busy".into(),
-                }))
-            }
-        }
-    };
+    try_read_or_lock!(_local_ask_store, local_ask_store);
+    try_read_or_lock!(_local_market_store, local_market_store);
+    try_read_or_lock!(_local_generator_store, local_generator_store);
 
     let new_response = recompute_single_market_response(
         market_id,

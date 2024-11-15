@@ -6,12 +6,14 @@ use crate::utility::TokenTracker;
 #[derive(Debug, Clone)]
 pub struct SymbioticStakeStore {
     operators: HashMap<Address, TokenTracker>,
+    pub tokens_to_lock: TokenTracker,
 }
 
 impl SymbioticStakeStore {
     pub fn new() -> Self {
         Self {
             operators: HashMap::new(),
+            tokens_to_lock: TokenTracker::new(),
         }
     }
 }
@@ -49,5 +51,15 @@ impl SymbioticStakeStore {
         let token_tracker = token_tracker.unwrap();
 
         token_tracker.get_balance(token_address)
+    }
+}
+
+impl SymbioticStakeStore {
+    pub fn set_lock_token(&mut self, token: Address, amount: U256) {
+        self.tokens_to_lock.force_set(token, amount);
+    }
+
+    pub fn remove_lock_token(&mut self, token: Address) {
+        self.tokens_to_lock.force_remove(token);
     }
 }
