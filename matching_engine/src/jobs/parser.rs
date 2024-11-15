@@ -398,6 +398,8 @@ impl LogParser {
                     &self.shared_market_store,
                     &self.shared_key_store,
                     random_pending_ask.reward,
+                    &self.shared_native_stake_store,
+                    &self.shared_symbiotic_stake_store,
                 )
                 .await;
 
@@ -668,16 +670,22 @@ impl LogParser {
         &self,
         random_pending_ask: LocalAsk,
         generator_store: &Arc<RwLock<GeneratorStore>>,
-        market_store: &Arc<RwLock<MarketMetadataStore>>,
+        _: &Arc<RwLock<MarketMetadataStore>>,
         key_store: &Arc<RwLock<KeyStore>>,
         task_reward: U256,
+        native_staking_store: &Arc<RwLock<NativeStakingStore>>,
+        symbiotic_staking_store: &Arc<RwLock<SymbioticStakeStore>>,
     ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
         let generator_store = generator_store.read().await;
-        let market_metadata_store = market_store.read().await;
         let key_store = key_store.read().await;
-        let slashing_penalty =
-            market_metadata_store.get_slashing_penalty_by_market_id(&random_pending_ask.market_id);
+        let native_staking_store = native_staking_store.read().await;
+        let symbiotic_staking_store = symbiotic_staking_store.read().await;
+
+        let native_stake_requirements = native_staking_store.tokens_to_lock.to_address_token_pair();
+        let symbiotic_stake_requirements = symbiotic_staking_store
+            .tokens_to_lock
+            .to_address_token_pair();
 
         let idle_generators = {
             let generator_query = {
@@ -691,8 +699,18 @@ impl LogParser {
                     let generator_with_idle_compute =
                         generator_store.filter_by_has_idle_compute(generator_query);
 
+                    let generator_with_available_native_stake = generator_store
+                        .filter_by_available_native_stake(
+                            generator_with_idle_compute,
+                            native_stake_requirements,
+                        );
+
                     let generator_with_available_stake = generator_store
-                        .filter_by_available_stake(generator_with_idle_compute, slashing_penalty);
+                        .filter_by_available_symbiotic_stake(
+                            generator_with_available_native_stake,
+                            symbiotic_stake_requirements,
+                        );
+
                     generator_store.filter_by_has_private_inputs_support(
                         generator_with_available_stake,
                         key_store,
@@ -707,8 +725,16 @@ impl LogParser {
                     let generator_with_idle_compute =
                         generator_store.filter_by_has_idle_compute(generator_query);
 
-                    generator_store
-                        .filter_by_available_stake(generator_with_idle_compute, slashing_penalty)
+                    let generator_with_available_native_stake = generator_store
+                        .filter_by_available_native_stake(
+                            generator_with_idle_compute,
+                            native_stake_requirements,
+                        );
+
+                    generator_store.filter_by_available_symbiotic_stake(
+                        generator_with_available_native_stake,
+                        symbiotic_stake_requirements,
+                    )
                 }
             };
 

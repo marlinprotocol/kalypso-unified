@@ -812,54 +812,6 @@ impl GeneratorStore {
         GeneratorQueryResult::new(generator_result)
     }
 
-    #[deprecated(
-        note = "filter_by_available_native_stake and filter_by_available_symbiotic_stake will be used. filter_by_available_stake will be removed"
-    )]
-    pub fn filter_by_available_stake(
-        &self,
-        generator_query: GeneratorQueryResult,
-        min_stake: Vec<AddressTokenPair>, // Now accepting a vector of AddressTokenPairs
-    ) -> GeneratorQueryResult {
-        let generator_array = generator_query.result();
-
-        // Use rayon's parallel iterator to process in parallel
-        let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
-            .into_par_iter() // Convert the array to a parallel iterator
-            .filter_map(|elem| {
-                // Try to get the generator from the store
-                if let Some(generator) = self.generators.get(&elem.address) {
-                    let remaining_stake = generator
-                        .total_native_stake
-                        .clone()
-                        .add(generator.total_symbiotic_stake.clone())
-                        .sub(
-                            generator
-                                .native_stake_locked
-                                .clone()
-                                .add(generator.symbiotic_stake_locked.clone()),
-                        );
-
-                    // Check if at least one of the AddressTokenPairs in min_stake meets the condition
-                    let is_valid = min_stake
-                        .iter()
-                        .any(|min_stake_pair| remaining_stake.has_more_than_or_eq(min_stake_pair));
-
-                    // If valid, retrieve the generator market and return it
-                    if is_valid {
-                        self.generator_markets.get(&(elem.address, elem.market_id))
-                    } else {
-                        None // Otherwise, filter it out
-                    }
-                } else {
-                    None // If generator doesn't exist, filter it out
-                }
-            })
-            .collect(); // Collect the results into a Vec
-
-        GeneratorQueryResult::new(generator_result)
-    }
-
-    #[allow(unused)]
     pub fn filter_by_available_native_stake(
         &self,
         generator_query: GeneratorQueryResult,
@@ -898,7 +850,6 @@ impl GeneratorStore {
         GeneratorQueryResult::new(generator_result)
     }
 
-    #[allow(unused)]
     pub fn filter_by_available_symbiotic_stake(
         &self,
         generator_query: GeneratorQueryResult,
