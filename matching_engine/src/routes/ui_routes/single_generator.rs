@@ -5,6 +5,8 @@ use crate::generator_lib::delegation::Source;
 use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::key_store::Key;
 use crate::generator_lib::key_store::KeyStore;
+use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::address_to_string;
@@ -14,9 +16,6 @@ use crate::utility::convert_to_option_string;
 use crate::utility::random_usize;
 use crate::utility::TokenAmount;
 use crate::utility::TokenTracker;
-use crate::utility::TEST_TOKEN_ADDRESS_ONE;
-use crate::utility::TEST_TOKEN_ADDRESS_THREE;
-use crate::utility::TEST_TOKEN_ADDRESS_TWO;
 use actix_web::web;
 use actix_web::HttpResponse;
 use ethers::types::Address;
@@ -182,6 +181,8 @@ pub async fn single_generator(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
     _local_key_store: Data<Arc<RwLock<KeyStore>>>,
+    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
     path: web::Path<(String,)>,
     query: web::Query<QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
@@ -222,6 +223,8 @@ pub async fn single_generator(
     try_read_or_lock!(_local_ask_store, local_ask_store);
     try_read_or_lock!(_local_key_store, local_key_store);
     try_read_or_lock!(_local_generator_store, local_generator_store);
+    try_read_or_lock!(_local_native_store, local_native_store);
+    try_read_or_lock!(_local_symbiotic_store, local_symbiotic_store);
 
     // Step 1: Recompute the response every time
     let new_response = recompute_single_generator_response(
@@ -230,6 +233,8 @@ pub async fn single_generator(
         local_ask_store,
         local_generator_store,
         local_key_store,
+        local_native_store,
+        local_symbiotic_store,
     )
     .await;
 
@@ -258,6 +263,8 @@ async fn recompute_single_generator_response<'a>(
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
     local_key_store: RwLockReadGuard<'a, KeyStore>,
+    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
+    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
 ) -> Option<GeneratorResponse> {
     let generator_data = local_generator_store.get_by_address(&generator_id);
 
@@ -268,6 +275,12 @@ async fn recompute_single_generator_response<'a>(
     let generator_data = generator_data.unwrap();
     let all_markets_of_generator =
         local_generator_store.get_all_markets_of_generator(&generator_id);
+
+    let (all_tokens_supported, _): (Vec<Address>, Vec<U256>) =
+        (local_native_store.tokens_to_lock.clone() + local_symbiotic_store.tokens_to_lock.clone())
+            .to_address_token_pair()
+            .into_iter()
+            .unzip();
 
     Some(GeneratorResponse {
         operator: Operator {
@@ -361,11 +374,10 @@ async fn recompute_single_generator_response<'a>(
                         market: MarketInfo {
                             name: None,
                             id: a.market_id.to_string(),
-                            token: vec![
-                                address_to_string(&TEST_TOKEN_ADDRESS_ONE),
-                                address_to_string(&TEST_TOKEN_ADDRESS_TWO),
-                                address_to_string(&TEST_TOKEN_ADDRESS_THREE),
-                            ],
+                            token: all_tokens_supported
+                                .iter()
+                                .map(|a| address_to_string(a))
+                                .collect::<Vec<String>>(),
                         },
                         requestor: address_to_string(&a.prover_refund_address),
                         inputs: bytes_to_string(&a.prover_data),
@@ -390,11 +402,10 @@ async fn recompute_single_generator_response<'a>(
                 market: MarketInfo {
                     name: None,
                     id: ask.market_id.to_string(),
-                    token: vec![
-                        address_to_string(&TEST_TOKEN_ADDRESS_ONE),
-                        address_to_string(&TEST_TOKEN_ADDRESS_TWO),
-                        address_to_string(&TEST_TOKEN_ADDRESS_THREE),
-                    ],
+                    token: all_tokens_supported
+                        .iter()
+                        .map(|a| address_to_string(a))
+                        .collect::<Vec<String>>(),
                 },
                 requestor: address_to_string(&ask.prover_refund_address),
                 inputs: bytes_to_string(&ask.prover_data),
@@ -424,11 +435,10 @@ async fn recompute_single_generator_response<'a>(
                 market: MarketInfo {
                     name: None,
                     id: record.market_id.to_string(),
-                    token: vec![
-                        address_to_string(&TEST_TOKEN_ADDRESS_ONE),
-                        address_to_string(&TEST_TOKEN_ADDRESS_TWO),
-                        address_to_string(&TEST_TOKEN_ADDRESS_THREE),
-                    ],
+                    token: all_tokens_supported
+                        .iter()
+                        .map(|a| address_to_string(a))
+                        .collect::<Vec<String>>(),
                 },
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),

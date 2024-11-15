@@ -972,13 +972,7 @@ impl GeneratorStore {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        generator_lib::generator_helper::select_idle_generators,
-        utility::{
-            TokenTracker, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_ONE_STRING,
-            TEST_TOKEN_ADDRESS_TWO, TEST_TOKEN_ADDRESS_TWO_STRING,
-        },
-    };
+    use crate::{generator_lib::generator_helper::select_idle_generators, utility::TokenTracker};
 
     use super::{Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore};
     use ethers::{
@@ -988,6 +982,20 @@ mod tests {
 
     use rand::Rng;
     use std::time::Instant;
+
+    pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0xB5570D4D39dD20F61dEf7C0d6846790360b89a18";
+    pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x854493FB9F844c8632140ffF9B66207B10027E8d";
+    pub const TEST_TOKEN_ADDRESS_THREE_STRING: &str = "0x5E478CB7576906fe2a443684aDcD9A0dfc547abD";
+
+    use once_cell::sync::Lazy;
+    pub static TEST_TOKEN_ADDRESS_ONE: Lazy<Address> =
+        Lazy::new(|| TEST_TOKEN_ADDRESS_ONE_STRING.parse::<Address>().unwrap());
+
+    pub static TEST_TOKEN_ADDRESS_TWO: Lazy<Address> =
+        Lazy::new(|| TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap());
+
+    pub static TEST_TOKEN_ADDRESS_THREE: Lazy<Address> =
+        Lazy::new(|| TEST_TOKEN_ADDRESS_THREE_STRING.parse::<Address>().unwrap());
 
     #[test]
     fn test_insert_remove_generators() {

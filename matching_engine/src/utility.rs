@@ -370,9 +370,6 @@ impl AddAssign for TokenTracker {
 }
 
 pub const USDC_TOKEN_STRING: &str = "0x8230d71d809718132C2054704F5E3aF1b86B669C";
-pub const TEST_TOKEN_ADDRESS_ONE_STRING: &str = "0xB5570D4D39dD20F61dEf7C0d6846790360b89a18";
-pub const TEST_TOKEN_ADDRESS_TWO_STRING: &str = "0x854493FB9F844c8632140ffF9B66207B10027E8d";
-pub const TEST_TOKEN_ADDRESS_THREE_STRING: &str = "0x5E478CB7576906fe2a443684aDcD9A0dfc547abD";
 
 #[cfg(not(feature = "add_timestamp_to_asks"))]
 pub async fn get_timestamp_from_l2block_number(_: &str, _: &U256) -> Option<U256> {
@@ -455,38 +452,7 @@ pub async fn get_l1_block_from_l2_block(rpc_url: &str, l2_block_num: U256) -> Op
 }
 
 use once_cell::sync::Lazy;
-pub static TEST_TOKEN_ADDRESS_ONE: Lazy<Address> =
-    Lazy::new(|| TEST_TOKEN_ADDRESS_ONE_STRING.parse::<Address>().unwrap());
-
-pub static TEST_TOKEN_ADDRESS_TWO: Lazy<Address> =
-    Lazy::new(|| TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap());
-
-pub static TEST_TOKEN_ADDRESS_THREE: Lazy<Address> =
-    Lazy::new(|| TEST_TOKEN_ADDRESS_THREE_STRING.parse::<Address>().unwrap());
-
 pub static USDC_TOKEN: Lazy<Address> = Lazy::new(|| USDC_TOKEN_STRING.parse::<Address>().unwrap());
-
-// list all possible slashing_penalties here
-pub static SLASHING_PENALTY_ONE: Lazy<(Address, U256)> = Lazy::new(|| {
-    (
-        TEST_TOKEN_ADDRESS_ONE_STRING.parse::<Address>().unwrap(),
-        U256::from_dec_str("0").unwrap(),
-    )
-});
-
-pub static SLASHING_PENALTY_TWO: Lazy<(Address, U256)> = Lazy::new(|| {
-    (
-        TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap(),
-        U256::from_dec_str("0").unwrap(),
-    )
-});
-
-pub static SLASHING_PENALTY_THREE: Lazy<(Address, U256)> = Lazy::new(|| {
-    (
-        TEST_TOKEN_ADDRESS_THREE_STRING.parse::<Address>().unwrap(),
-        U256::from_dec_str("0").unwrap(),
-    )
-});
 
 impl TokenTracker {
     pub fn get_balance(&self, address: &Address) -> U256 {

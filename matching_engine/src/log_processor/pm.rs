@@ -5,10 +5,6 @@ use crate::costs::CostStore;
 use crate::utility::get_l1_block_from_l2_block;
 use crate::utility::get_timestamp_from_l2block_number;
 use crate::utility::tx_to_string;
-use crate::utility::TokenTracker;
-use crate::utility::SLASHING_PENALTY_ONE;
-use crate::utility::SLASHING_PENALTY_THREE;
-use crate::utility::SLASHING_PENALTY_TWO;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 
 use std::sync::Arc;
@@ -32,6 +28,8 @@ pub async fn process_proof_market_place_logs(
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
     market_store: &Arc<RwLock<MarketMetadataStore>>,
     cost_store: &Arc<RwLock<CostStore>>,
+    native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
+    symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
     rpc_url: &str,
@@ -318,13 +316,6 @@ pub async fn process_proof_market_place_logs(
             market_id,
             verifier: market.0,
             prover_image_id: market.1,
-            slashing_penalty: {
-                let mut slashing_penalty = TokenTracker::new();
-                slashing_penalty.add_token(&SLASHING_PENALTY_ONE.0, &SLASHING_PENALTY_ONE.1);
-                slashing_penalty.add_token(&SLASHING_PENALTY_TWO.0, &SLASHING_PENALTY_TWO.1);
-                slashing_penalty.add_token(&SLASHING_PENALTY_THREE.0, &SLASHING_PENALTY_THREE.1);
-                slashing_penalty
-            },
             activation_block: market.3,
             ivs_image_id: market.4,
             metadata: market.6,
@@ -455,28 +446,23 @@ pub async fn process_proof_market_place_logs(
         local_ask_store.note_proof_denied(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
 
         log::debug!("Proof not Generated: update generator state");
-        let (generator_address, market_id) = {
+        let (generator_address, _) = {
             let data = local_ask_store.get_by_ask_id(&ask_id).unwrap();
             let generator_address = data.generator.unwrap().into();
             let market_id = data.market_id;
             (generator_address, market_id)
         };
 
-        let market_data = {
-            market_store
-                .read()
-                .await
-                .get_market_by_market_id(&market_id)
-        };
         log::debug!("Proof not Generated: update on slashing penalty");
 
         let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
         local_ask_store.remove_ask_only_if_completed(&ask_id);
 
-        let slashing_token_pairs = market_data
-            .unwrap()
-            .slashing_penalty
-            .to_address_token_pair();
+        let slashing_token_pairs = {
+            (native_store.read().await.tokens_to_lock.clone()
+                + symbiotic_stake_store.read().await.tokens_to_lock.clone())
+            .to_address_token_pair()
+        };
 
         let (slashing_tokens, slashings): (Vec<Address>, Vec<U256>) =
             slashing_token_pairs.into_iter().unzip();

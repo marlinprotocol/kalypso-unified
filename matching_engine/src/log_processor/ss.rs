@@ -6,10 +6,7 @@ use tokio::sync::RwLock;
 use crate::{
     generator_lib::{delegation, generator_store, symbiotic_stake_store},
     log_processor::constants,
-    utility::{
-        get_l1_block_from_l2_block, tx_to_string, TEST_TOKEN_ADDRESS_ONE, TEST_TOKEN_ADDRESS_THREE,
-        TEST_TOKEN_ADDRESS_TWO,
-    },
+    utility::{get_l1_block_from_l2_block, tx_to_string},
 };
 
 pub async fn process_symbiotic_staking_logs(
@@ -187,11 +184,15 @@ pub async fn process_symbiotic_staking_logs(
             capture_timestamp
         };
 
-        let known_tokens: Vec<Address> = vec![
-            TEST_TOKEN_ADDRESS_ONE.clone(),
-            TEST_TOKEN_ADDRESS_TWO.clone(),
-            TEST_TOKEN_ADDRESS_THREE.clone(),
-        ];
+        let (known_tokens, _): (Vec<Address>, Vec<U256>) = {
+            symbiotic_stake_store
+                .tokens_to_lock
+                .clone()
+                .to_address_token_pair()
+                .into_iter()
+                .unzip()
+        };
+
         let all_generators = generator_store.all_generators_address();
 
         for stake_token in known_tokens {

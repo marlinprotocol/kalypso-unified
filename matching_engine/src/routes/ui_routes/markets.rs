@@ -1,6 +1,8 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
+use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketSetupData;
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
@@ -54,6 +56,8 @@ pub async fn total_market_info(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
 
@@ -76,10 +80,18 @@ pub async fn total_market_info(
     try_read_or_lock!(_local_ask_store, local_ask_store);
     try_read_or_lock!(_local_market_store, local_market_store);
     try_read_or_lock!(_local_generator_store, local_generator_store);
+    try_read_or_lock!(_local_native_store, local_native_store);
+    try_read_or_lock!(_local_symbiotic_store, local_symbiotic_store);
 
     // Step 2: If the cache is invalid, recompute the response
-    let new_response =
-        recompute_market_response(local_market_store, local_ask_store, local_generator_store).await;
+    let new_response = recompute_market_response(
+        local_market_store,
+        local_ask_store,
+        local_generator_store,
+        local_native_store,
+        local_symbiotic_store,
+    )
+    .await;
 
     {
         // Store the newly computed response in the cache
@@ -100,6 +112,8 @@ async fn recompute_market_response<'a>(
     local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
+    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
+    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
 ) -> MarketResponse {
     log::debug!("Starting recompute_market_response");
 
@@ -171,7 +185,8 @@ async fn recompute_market_response<'a>(
             total_earnings_map.insert(market_id.clone(), total_earnings);
 
             // Extract slashing_penalty
-            let slashing_penalty = meta.slashing_penalty.clone();
+            let slashing_penalty = local_native_store.tokens_to_lock.clone()
+                + local_symbiotic_store.tokens_to_lock.clone();
             slashing_penalty_map.insert(market_id.clone(), slashing_penalty);
         }
 

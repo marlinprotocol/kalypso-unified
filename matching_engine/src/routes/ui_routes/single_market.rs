@@ -2,11 +2,13 @@ use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
+use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::{
-    address_to_string, address_token_pair_to_token_amount, convert_to_option_string, random_usize,
+    address_to_string, convert_to_option_string, random_usize,
     TokenAmount, TokenTracker, USDC_TOKEN,
 };
 use actix_web::web::{self, Data};
@@ -126,6 +128,8 @@ pub async fn single_market(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
     path: web::Path<(String,)>,
     // query: web::Query<QueryParams>, // If required add latter
 ) -> actix_web::Result<HttpResponse> {
@@ -161,12 +165,16 @@ pub async fn single_market(
     try_read_or_lock!(_local_ask_store, local_ask_store);
     try_read_or_lock!(_local_market_store, local_market_store);
     try_read_or_lock!(_local_generator_store, local_generator_store);
+    try_read_or_lock!(_local_native_store, local_native_store);
+    try_read_or_lock!(_local_symbiotic_store, local_symbiotic_store);
 
     let new_response = recompute_single_market_response(
         market_id,
         local_market_store,
         local_ask_store,
         local_generator_store,
+        local_native_store,
+        local_symbiotic_store,
     )
     .await;
 
@@ -193,6 +201,8 @@ async fn recompute_single_market_response<'a>(
     local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
     local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
+    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
+    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
 ) -> Option<SingleMarketResponse> {
     let marketmetadata = local_market_store.get_market_by_market_id(&market_id);
 
@@ -212,17 +222,14 @@ async fn recompute_single_market_response<'a>(
 
     let local_generator_store_arc = Arc::new(local_generator_store.clone());
 
-    let slashing_penalty = local_market_store
-        .get_slashing_penalty_by_market_id(&market_id)
-        .into_iter()
-        .map(address_token_pair_to_token_amount)
-        .collect::<Vec<TokenAmount>>();
+    let slashing_penalty =
+        local_native_store.tokens_to_lock.clone() + local_symbiotic_store.tokens_to_lock.clone();
 
     Some(SingleMarketResponse {
         median_cost,
         median_proof_time,
         registered_generators: registered_generators.len(),
-        slashing_penalty: slashing_penalty.clone(),
+        slashing_penalty: slashing_penalty.to_token_amount(),
         total_earnings: local_market_store
             .get_earnings(&market_id)
             .unwrap_or_default()
@@ -243,7 +250,7 @@ async fn recompute_single_market_response<'a>(
             vcpus: random_usize(),
             enclave: true,
         },
-        min_stake: slashing_penalty,
+        min_stake: slashing_penalty.to_token_amount(),
         jobs: Jobs {
             proofs_generated: local_ask_store.get_proof_count(&market_id),
             proofs_pending: {
