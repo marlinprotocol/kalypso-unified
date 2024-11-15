@@ -116,6 +116,8 @@ pub struct MatchingEngineConfig {
     pub symbiotic_staking: String,
     #[serde(default = "default_native_staking")]
     pub native_staking: String,
+    #[serde(default = "default_staking_manager")]
+    pub staking_manager: String,
     pub start_block: String,
 }
 
@@ -127,6 +129,10 @@ fn default_symbiotic_staking() -> String {
 
 fn default_native_staking() -> String {
     "0xe9d2Bcc597f943ddA9EDf356DAC7C6A713dDE113".to_string()
+}
+
+fn default_staking_manager() -> String {
+    "0xCe75C0E25b2c70415b237273345105402aEbe79F".to_string()
 }
 
 pub struct MatchingEngine {
@@ -153,6 +159,7 @@ impl MatchingEngine {
         entity_registry: String,
         symbiotic_staking: String,
         native_staking: String,
+        staking_manager: String,
         start_block: String,
         matching_engine_port: Option<u16>,
     ) -> Self {
@@ -166,6 +173,7 @@ impl MatchingEngine {
             entity_registry,
             symbiotic_staking,
             native_staking,
+            staking_manager,
             start_block,
         };
 
@@ -269,6 +277,11 @@ impl MatchingEngine {
         let shared_native_staking =
             bindings::native_staking::NativeStaking::new(native_staking_address, client.clone());
 
+        let staking_manager_var = self.config.clone().staking_manager;
+        let staking_manager_address = Address::from_str(&staking_manager_var).unwrap();
+        let shared_staking_manager =
+            bindings::staking_manager::StakingManager::new(staking_manager_address, client.clone());
+
         let shared_parsed_block_number_store = Arc::new(RwLock::new(
             U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
         ));
@@ -333,6 +346,7 @@ impl MatchingEngine {
             entity_key_registry,
             shared_symbiotic_staking,
             shared_native_staking,
+            shared_staking_manager,
             matching_engine_key,
             vec![], //TODO! fetch these slave keys using Oyster KMS
             shared_local_ask_store.clone(),

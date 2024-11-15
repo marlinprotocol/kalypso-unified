@@ -51,6 +51,9 @@ type SymbioticStakingInstance = bindings::symbiotic_staking::SymbioticStaking<
 type NativeStakingInstance =
     bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
+type StakingManagerInstance =
+    bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
+
 pub struct LogParser {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
@@ -61,6 +64,7 @@ pub struct LogParser {
     entity_registry: EntityRegistryInstance,
     symbiotic_staking: SymbioticStakingInstance,
     native_staking: NativeStakingInstance,
+    staking_manager: StakingManagerInstance,
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
     matching_engine_slave_keys: Vec<Vec<u8>>,
@@ -90,6 +94,7 @@ impl LogParser {
         entity_registry: EntityRegistryInstance,
         symbiotic_staking: SymbioticStakingInstance,
         native_staking: NativeStakingInstance,
+        staking_manager: StakingManagerInstance,
         matching_engine_key: String,
         matching_engine_slave_keys: Vec<String>,
         shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
@@ -116,6 +121,7 @@ impl LogParser {
             entity_registry,
             symbiotic_staking,
             native_staking,
+            staking_manager,
             provider_http,
             matching_engine_key: hex::decode(matching_engine_key).unwrap(),
             matching_engine_slave_keys: matching_engine_slave_keys
@@ -173,6 +179,7 @@ impl LogParser {
                 let entity_key_registry_address = self.entity_registry.address();
                 let native_staking_address = self.native_staking.address();
                 let symbiotic_staking_address = self.symbiotic_staking.address();
+                let staking_manager_address = self.staking_manager.address();
 
                 let filter = Filter::default()
                     .from_block(start_block)
@@ -183,6 +190,7 @@ impl LogParser {
                         entity_key_registry_address,
                         native_staking_address,
                         symbiotic_staking_address,
+                        staking_manager_address,
                     ]);
 
                 let logs = match self.provider_http.get_logs(&filter).await {
@@ -277,6 +285,16 @@ impl LogParser {
                                     &self.shared_generator_store,
                                     &self.shared_symbiotic_stake_store,
                                     &self.rpc_url,
+                                )
+                                .await
+                                .unwrap();
+                                continue;
+                            }
+
+                            if log.address.eq(&staking_manager_address) {
+                                log_processor::sm::process_staking_manager_log(
+                                    log,
+                                    &self.staking_manager,
                                 )
                                 .await
                                 .unwrap();

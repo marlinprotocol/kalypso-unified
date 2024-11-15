@@ -993,7 +993,7 @@ mod tests {
 
     pub static TEST_TOKEN_ADDRESS_TWO: Lazy<Address> =
         Lazy::new(|| TEST_TOKEN_ADDRESS_TWO_STRING.parse::<Address>().unwrap());
-    
+
     #[allow(unused)]
     pub static TEST_TOKEN_ADDRESS_THREE: Lazy<Address> =
         Lazy::new(|| TEST_TOKEN_ADDRESS_THREE_STRING.parse::<Address>().unwrap());
