@@ -220,6 +220,8 @@ pub async fn single_generator(
         return Ok(HttpResponse::Ok().json(cached_response));
     }
 
+    drop(cached_response);
+
     try_read_or_lock!(_local_ask_store, local_ask_store);
     try_read_or_lock!(_local_key_store, local_key_store);
     try_read_or_lock!(_local_generator_store, local_generator_store);

@@ -2,12 +2,12 @@ use super::cache::CachedResponse;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
-use crate::try_read_or_lock;
 use crate::utility::{address_to_string, bytes_to_string, convert_to_option_string, TokenAmount};
 use crate::{
     ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
     market_metadata::MarketMetadataStore,
 };
+use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::types::U256;
@@ -75,20 +75,7 @@ pub async fn get_dashboard(
     _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    let dashboard_cache = match DASHBOARD_RESPONSE.try_read() {
-        Ok(data) => data,
-        _ => {
-            return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                status: "Resource Busy".into(),
-            }))
-        }
-    };
-
-    if let Some(response) = dashboard_cache.get_if_valid(Duration::from_secs(10)) {
-        // Return the cached response if valid
-        return Ok(HttpResponse::Ok().json(response));
-    }
-
+    try_read_and_get_if_valid!(DASHBOARD_RESPONSE, dashboard_cache, Duration::from_secs(10));
     drop(dashboard_cache);
 
     try_read_or_lock!(_local_ask_store, local_ask_store);

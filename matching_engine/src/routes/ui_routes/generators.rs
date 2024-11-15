@@ -3,8 +3,8 @@ use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
-use crate::try_read_or_lock;
 use crate::utility::{address_to_string, TokenAmount, TokenTracker};
+use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use serde::{Deserialize, Serialize};
@@ -53,22 +53,7 @@ pub async fn get_generators_all(
     _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    // Step 1: Check if there's a cached response (lock for reading)
-
-    let generator_cache = match GENERATOR_RESPONSE.try_read() {
-        Ok(data) => data,
-        _ => {
-            return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                status: "Resource Busy".into(),
-            }))
-        }
-    };
-
-    if let Some(response) = generator_cache.get_if_valid(Duration::from_secs(10)) {
-        // Return the cached response if valid
-        return Ok(HttpResponse::Ok().json(response));
-    }
-
+    try_read_and_get_if_valid!(GENERATOR_RESPONSE, generator_cache, Duration::from_secs(10));
     drop(generator_cache);
 
     try_read_or_lock!(_local_generator_store, local_generator_store);

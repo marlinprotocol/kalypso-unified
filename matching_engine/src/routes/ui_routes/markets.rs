@@ -5,9 +5,9 @@ use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketSetupData;
 use crate::models::WelcomeResponse;
-use crate::try_read_or_lock;
 use crate::utility::{random_usize, TokenAmount};
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
+use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::types::U256;
@@ -60,21 +60,7 @@ pub async fn total_market_info(
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
-
-    let market_cache = match MARKET_RESPONSE.try_read() {
-        Ok(data) => data,
-        _ => {
-            return Ok(HttpResponse::Locked().json(WelcomeResponse {
-                status: "Resource Busy".into(),
-            }))
-        }
-    };
-
-    if let Some(response) = market_cache.get_if_valid(Duration::from_secs(10)) {
-        // Return the cached response if valid
-        return Ok(HttpResponse::Ok().json(response));
-    }
-
+    try_read_and_get_if_valid!(MARKET_RESPONSE, market_cache, Duration::from_secs(10));
     drop(market_cache);
 
     try_read_or_lock!(_local_ask_store, local_ask_store);

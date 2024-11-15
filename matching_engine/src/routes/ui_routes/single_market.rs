@@ -8,8 +8,8 @@ use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::{
-    address_to_string, convert_to_option_string, random_usize,
-    TokenAmount, TokenTracker, USDC_TOKEN,
+    address_to_string, convert_to_option_string, random_usize, TokenAmount, TokenTracker,
+    USDC_TOKEN,
 };
 use actix_web::web::{self, Data};
 use actix_web::HttpResponse;
