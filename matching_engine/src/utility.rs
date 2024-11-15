@@ -1,6 +1,6 @@
 use ethers::abi::{encode, Address, Token};
 
-#[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
+#[cfg(feature = "use_l1_block_numbers")]
 use ethers::abi::AbiParser;
 
 use ethers::core::rand::seq::SliceRandom;
@@ -10,7 +10,7 @@ use ethers::core::utils::hex::FromHex;
 #[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
 use ethers::prelude::*;
 
-#[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
+#[cfg(feature = "use_l1_block_numbers")]
 use ethers::types::{Address as OtherAddress, Bytes, TransactionRequest};
 
 use ethers::types::{Signature, SignatureError, H160, U256};
