@@ -393,12 +393,35 @@ impl LogParser {
         let mut cached_stake = {
             let mut m = HashMap::new();
             for _generator in all_generators.clone() {
-                let available_stake = generator_store
-                    .get_available_native_stake(&_generator)
-                    .unwrap_or_default()
-                    + generator_store
+                let available_stake = {
+                    let available_native_stake = generator_store
+                        .get_available_native_stake(&_generator)
+                        .unwrap_or_default();
+                    let available_symbiotic_stake = generator_store
                         .get_available_symbiotic_stake(&_generator)
                         .unwrap_or_default();
+
+                    let mut available_stake = TokenTracker::new();
+
+                    if self
+                        .shared_stake_manager_store
+                        .read()
+                        .await
+                        .exists(&self.native_staking.address())
+                    {
+                        available_stake += available_native_stake;
+                    }
+
+                    if self
+                        .shared_stake_manager_store
+                        .read()
+                        .await
+                        .exists(&self.symbiotic_staking.address())
+                    {
+                        available_stake += available_symbiotic_stake;
+                    }
+                    available_stake
+                };
                 m.insert(_generator, available_stake);
             }
             m
