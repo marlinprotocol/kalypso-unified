@@ -228,6 +228,12 @@
       "prompt": "Address of the network to opt in",
       "secret": false,
       "env_var": "NETWORK_ADDRESS"
+    },
+    {
+      "field": "indexer_url",
+      "prompt": "Enter the URL or kalypso indexer",
+      "secret": false,
+      "env_var": "INDEXER_URL"
     }
   ],
   "operations": [
@@ -434,13 +440,14 @@
       ]
     },
     {
-      "name": "Read Proof Bytes (beta)",
-      "description": "Read Proof Bytes (beta, operation development in progress).",
+      "name": "Read Proof Bytes",
+      "description": "Read Proof Bytes using kalypso data indexer",
       "required_prompts": [
         "rpc_url",
         "chain_id",
         "proof_marketplace",
-        "ask_id"
+        "ask_id",
+        "indexer_url"
       ]
     },
     {

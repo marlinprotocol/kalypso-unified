@@ -76,6 +76,7 @@ impl<'a> Prompter<'a> {
         validators.insert("network_opt_in_service".to_string(), validate_eth_address);
         validators.insert("vault_address".to_string(), validate_eth_address);
         validators.insert("network_address".to_string(), validate_eth_address);
+        validators.insert("indexer_url".to_string(), validate_rpc_url);
 
         validators.insert(
             "confirmation".to_string(),

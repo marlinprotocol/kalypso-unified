@@ -840,8 +840,10 @@ impl CommonDeps {
 
 pub struct ReadProofInfo {
     pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<Provider<Http>>,
+    #[allow(unused)]
     pub provider_http: Provider<Http>,
     pub ask_id: U256,
+    pub indexer_url: String,
 }
 
 impl CommonDeps {
@@ -851,6 +853,7 @@ impl CommonDeps {
         get_config_ref!(config, "rpc_url", rpc_url);
         get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
         get_config_ref!(config, "ask_id", ask_id);
+        get_config_ref!(config, "indexer_url", indexer_url);
 
         let ask_id =
             U256::from_dec_str(&ask_id.as_str()).map_err(|e| format!("Invalid Ask Id: {}", e))?;
@@ -862,6 +865,7 @@ impl CommonDeps {
             proof_marketplace,
             provider_http,
             ask_id,
+            indexer_url: indexer_url.to_string(),
         })
     }
 }

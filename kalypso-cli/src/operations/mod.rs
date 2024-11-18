@@ -72,7 +72,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Whitelist IVS Image" => Some(Box::new(whitelist::WhitelistVerificationImage)),
         "Update Encryption Key" => Some(Box::new(update_encryption_key::UpdateEncryptionKey)),
         "Add IVS Key" => Some(Box::new(update_encryption_key::AddIvsKey)),
-        "Read Proof Bytes (beta)" => Some(Box::new(read_proof::ReadProof)),
+        "Read Proof Bytes" => Some(Box::new(read_proof::ReadProof)),
         "Request Symbiotic Stake" => Some(Box::new(symbiotic_opt_in::SymbioticOptIn)),
         _ => unimplemented!(),
     }
