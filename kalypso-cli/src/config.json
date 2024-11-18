@@ -270,6 +270,12 @@
       "prompt": "Enter input verification enclave URL. This url helps prover determine whether given inputs are valid using IVS service",
       "secret": false,
       "env_var": "INPUT_VERIFICATION_URL"
+    },
+    {
+      "field": "prover_program_name",
+      "prompt": "name of the program to start in the enclave",
+      "secret": false,
+      "env_var": "PROVER_PROGRAM_NAME"
     }
   ],
   "operations": [
@@ -515,6 +521,22 @@
         "attestation_verifier",
         "entity_registry",
         "internal_prover_port"
+      ]
+    },
+    {
+      "name": "Start Enclave Program",
+      "description": "Starts a program inside enclave",
+      "required_prompts": [
+        "generator_client_url",
+        "prover_program_name"
+      ]
+    },
+    {
+      "name": "Stop Enclave Program",
+      "description": "Stop a program inside enclave",
+      "required_prompts": [
+        "generator_client_url",
+        "prover_program_name"
       ]
     }
   ]

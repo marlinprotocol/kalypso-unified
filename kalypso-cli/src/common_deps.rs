@@ -1184,7 +1184,7 @@ impl CommonDeps {
             .parse::<Address>()
             .map_err(|e| format!("Invalid Entity Key Registry Address: {}", e))?;
 
-            let internal_prover_port = U256::from_dec_str(&&internal_prover_port.as_str())
+        let internal_prover_port = U256::from_dec_str(&&internal_prover_port.as_str())
             .map_err(|e| format!("Internal Prover Port: {}", e))?;
 
         Ok(LoadGeneratorConfigInfo {
@@ -1244,6 +1244,25 @@ impl CommonDeps {
                 }),
             },
             generator_client_url: generator_client_url.to_string(),
+        })
+    }
+}
+
+pub struct ProgramInfo {
+    pub generator_client_url: String,
+    pub prover_program_name: String,
+}
+
+impl CommonDeps {
+    pub fn start_program_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ProgramInfo, String> {
+        get_config_ref!(config, "generator_client_url", generator_client_url);
+        get_config_ref!(config, "prover_program_name", prover_program_name);
+
+        Ok(ProgramInfo {
+            generator_client_url: generator_client_url.to_string(),
+            prover_program_name: prover_program_name.to_string(),
         })
     }
 }

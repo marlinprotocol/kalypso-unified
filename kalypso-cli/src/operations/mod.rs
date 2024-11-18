@@ -8,6 +8,7 @@ pub mod create_request;
 pub mod generator_config;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
+pub mod programs;
 pub mod read_proof;
 pub mod request;
 pub mod stake;
@@ -76,6 +77,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Read Proof Bytes" => Some(Box::new(read_proof::ReadProof)),
         "Request Symbiotic Stake" => Some(Box::new(symbiotic_opt_in::SymbioticOptIn)),
         "Load Generator Config" => Some(Box::new(generator_config::GeneratorConfig)),
+        "Start Enclave Program" => Some(Box::new(programs::StartProgam)),
+        "Stop Enclave Program" => Some(Box::new(programs::StopProgram)),
         _ => unimplemented!(),
     }
 }
