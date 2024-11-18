@@ -77,6 +77,12 @@ impl<'a> Prompter<'a> {
         validators.insert("vault_address".to_string(), validate_eth_address);
         validators.insert("network_address".to_string(), validate_eth_address);
         validators.insert("indexer_url".to_string(), validate_rpc_url);
+        validators.insert("generator_client_url".to_string(), validate_rpc_url);
+        validators.insert("gas_key".to_string(), validate_private_key as Validator);
+        validators.insert("start_block".to_string(), validate_dec_str_id);
+        validators.insert("attestation_verifier".to_string(), validate_eth_address);
+        validators.insert("internal_prover_port".to_string(), validate_dec_str_id);
+        validators.insert("input_verification_url".to_string(), validate_rpc_url);
 
         validators.insert(
             "confirmation".to_string(),

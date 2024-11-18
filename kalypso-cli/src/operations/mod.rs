@@ -5,6 +5,7 @@ pub mod complete_registration;
 pub mod compute_pcrs;
 pub mod create_marketplace;
 pub mod create_request;
+pub mod generator_config;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
 pub mod read_proof;
@@ -74,6 +75,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Add IVS Key" => Some(Box::new(update_encryption_key::AddIvsKey)),
         "Read Proof Bytes" => Some(Box::new(read_proof::ReadProof)),
         "Request Symbiotic Stake" => Some(Box::new(symbiotic_opt_in::SymbioticOptIn)),
+        "Load Generator Config" => Some(Box::new(generator_config::GeneratorConfig)),
         _ => unimplemented!(),
     }
 }

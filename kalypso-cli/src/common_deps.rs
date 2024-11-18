@@ -1121,3 +1121,129 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct LoadGeneratorConfigInfo {
+    pub config: generator_client::model::GeneratorConfigSetupRequestBody,
+    pub generator_client_url: String,
+}
+
+impl CommonDeps {
+    pub fn load_operator_config_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<LoadGeneratorConfigInfo, String> {
+        get_config_ref!(config, "generator_client_url", generator_client_url);
+        get_config_ref!(config, "operator_address", operator_address);
+        get_config_ref!(config, "market_id", market_id);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "generator_registry", generator_registry_address);
+        get_config_ref!(config, "start_block", start_block);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "payment_token", payment_token);
+        get_config_ref!(config, "staking_token", staking_token);
+        get_config_ref!(config, "attestation_verifier", attestation_verifier_address);
+        get_config_ref!(config, "entity_registry", entity_key_registry_address);
+        get_config_ref!(config, "internal_prover_port", internal_prover_port);
+        get_config_ref!(config, "input_verification_url", input_verification_url);
+
+        let operator_address = operator_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Operator Address: {}", e))?;
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        let proof_marketplace_address = proof_marketplace_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Proof Marketplace address: {}", e))?;
+
+        let generator_registry_address = generator_registry_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Generator Registry address: {}", e))?;
+
+        let start_block = U256::from_dec_str(&start_block.as_str())
+            .map_err(|e| format!("Invalid Start Block: {}", e))?;
+
+        let chain_id = U256::from_dec_str(&&chain_id.as_str())
+            .map_err(|e| format!("Invalid Chain ID: {}", e))?;
+
+        let payment_token = payment_token
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Payment Token Address: {}", e))?;
+
+        let staking_token = staking_token
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Staking Token Address: {}", e))?;
+
+        let attestation_verifier_address = attestation_verifier_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Attestation Verifier Address: {}", e))?;
+
+        let entity_key_registry_address = entity_key_registry_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Entity Key Registry Address: {}", e))?;
+
+            let internal_prover_port = U256::from_dec_str(&&internal_prover_port.as_str())
+            .map_err(|e| format!("Internal Prover Port: {}", e))?;
+
+        Ok(LoadGeneratorConfigInfo {
+            config: generator_client::model::GeneratorConfigSetupRequestBody {
+                generator_config: Some(vec![
+                    generator_client::model::SetupRequestBodyGeneratorConfig {
+                        address: Some(format!(
+                            "0x{}",
+                            hex::encode(operator_address.as_bytes().to_vec())
+                        )),
+                        data: Some("Some Data".into()),
+                        supported_markets: Some(vec![market_id.to_string()]),
+                    },
+                ]),
+                runtime_config: Some(generator_client::model::SetupRequestBodyRuntimeConfig {
+                    ws_url: Some("wss:://not_used_so_using_some_dummy_value_to_pass".into()),
+                    http_url: Some(rpc_url.to_string()),
+                    private_key: Some(private_key.to_string()),
+                    proof_market_place: Some(format!(
+                        "0x{}",
+                        hex::encode(proof_marketplace_address.as_bytes().to_vec())
+                    )),
+                    generator_registry: Some(format!(
+                        "0x{}",
+                        hex::encode(generator_registry_address.as_bytes().to_vec())
+                    )),
+                    start_block: Some(start_block.as_u32() as i32),
+                    chain_id: Some(chain_id.as_u32() as i32),
+                    payment_token: Some(format!(
+                        "0x{}",
+                        hex::encode(payment_token.as_bytes().to_vec())
+                    )),
+                    staking_token: Some(format!(
+                        "0x{}",
+                        hex::encode(staking_token.as_bytes().to_vec())
+                    )),
+                    attestation_verifier: Some(format!(
+                        "0x{}",
+                        hex::encode(attestation_verifier_address.as_bytes().to_vec())
+                    )),
+                    entity_registry: Some(format!(
+                        "0x{}",
+                        hex::encode(entity_key_registry_address.as_bytes().to_vec())
+                    )),
+                    markets: {
+                        let mut markets = std::collections::HashMap::new();
+                        // add market details and other info related to it here
+                        markets.insert(
+                            market_id.to_string(),
+                            generator_client::model::MarketDetails {
+                                port: internal_prover_port.to_string(),
+                                ivs_url: input_verification_url.to_string(),
+                            },
+                        );
+                        markets
+                    },
+                }),
+            },
+            generator_client_url: generator_client_url.to_string(),
+        })
+    }
+}

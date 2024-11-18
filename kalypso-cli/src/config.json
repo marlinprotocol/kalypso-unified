@@ -234,6 +234,42 @@
       "prompt": "Enter the URL or kalypso indexer",
       "secret": false,
       "env_var": "INDEXER_URL"
+    },
+    {
+      "field": "generator_client_url",
+      "prompt": "Generator Client URL",
+      "secret": false,
+      "env_var": "GENERATOR_CLIENT_URL"
+    },
+    {
+      "field": "gas_key",
+      "prompt": "Enter gas key. This key will be used to spend gas on chain",
+      "secret": true,
+      "env_var": "GAS_KEY"
+    },
+    {
+      "field": "start_block",
+      "prompt": "Enter Start from which the operations should start",
+      "secret": false,
+      "env_var": "START_BLOCK"
+    },
+    {
+      "field": "attestation_verifier",
+      "prompt": "Enter Attestation Verifier Contract Address",
+      "secret": false,
+      "env_var": "ATTESTATION_VERIFIER_ADDRESS"
+    },
+    {
+      "field": "internal_prover_port",
+      "prompt": "Internal Port number on which proving server is running. It depeneds on market to market",
+      "secret": false,
+      "env_var": "INTERNAL_PROVER_PORT"
+    },
+    {
+      "field": "input_verification_url",
+      "prompt": "Enter input verification enclave URL. This url helps prover determine whether given inputs are valid using IVS service",
+      "secret": false,
+      "env_var": "INPUT_VERIFICATION_URL"
     }
   ],
   "operations": [
@@ -461,6 +497,24 @@
         "vault_address",
         "network_opt_in_service",
         "network_address"
+      ]
+    },
+    {
+      "name": "Load Generator Config",
+      "description": "Load config in confidential generator. (Only works in testnet right now)",
+      "required_prompts": [
+        "generator_client_url",
+        "operator_address",
+        "rpc_url",
+        "market_id",
+        "proof_marketplace",
+        "generator_registry",
+        "chain_id",
+        "payment_token",
+        "staking_token",
+        "attestation_verifier",
+        "entity_registry",
+        "internal_prover_port"
       ]
     }
   ]

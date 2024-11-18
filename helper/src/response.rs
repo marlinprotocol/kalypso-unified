@@ -1,12 +1,12 @@
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Serialize)]
-struct JsonResponse {
-    message: String,
-    data: Option<Value>,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JsonResponse {
+    pub message: String,
+    pub data: Option<Value>,
 }
 
 struct ResponseOptions {

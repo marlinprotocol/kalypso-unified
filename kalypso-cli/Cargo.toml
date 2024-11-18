@@ -9,10 +9,11 @@ bytes = "1.0"
 bindings = { path = "../bindings", package = "foundry-contracts" }
 dotenv = "0.15.0"
 dialoguer = "0.10.3"
+ethers = { version = "2", features = ["rustls"] }
 env_logger = "0.11"
 flate2 = "1.0.28"
 futures = "0.3"
-ethers = { version = "2", features = ["rustls"] }
+generator_client = {path = "../generator_client", package = "generator_client"}
 hex = "0.4.3"
 kalypso_helper = {path = "../helper", package = "helper"}
 log = "0.4"
