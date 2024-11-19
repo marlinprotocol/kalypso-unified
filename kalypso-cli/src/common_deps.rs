@@ -1266,3 +1266,35 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct TestEnclaveConnectionInfo {
+    pub enclave_client_url: String,
+}
+
+impl CommonDeps {
+    pub fn test_connection_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<TestEnclaveConnectionInfo, String> {
+        get_config_ref!(config, "enclave_client_url", enclave_client_url);
+
+        Ok(TestEnclaveConnectionInfo {
+            enclave_client_url: enclave_client_url.to_string(),
+        })
+    }
+}
+
+pub struct BenchmarkInfo {
+    pub benchmark_url: String,
+}
+
+impl CommonDeps {
+    pub fn benchmark_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<BenchmarkInfo, String> {
+        get_config_ref!(config, "benchmark_url", benchmark_url);
+
+        Ok(BenchmarkInfo {
+            benchmark_url: benchmark_url.to_string(),
+        })
+    }
+}

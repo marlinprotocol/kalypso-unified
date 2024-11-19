@@ -276,6 +276,12 @@
       "prompt": "name of the program to start in the enclave",
       "secret": false,
       "env_var": "PROVER_PROGRAM_NAME"
+    },
+    {
+      "field": "benchmark_url",
+      "prompt": "Enter url of the server that does benchmarking and returns benchmark result",
+      "secret": false,
+      "env_var": "BENCHMARK_URL"
     }
   ],
   "operations": [
@@ -537,6 +543,20 @@
       "required_prompts": [
         "generator_client_url",
         "prover_program_name"
+      ]
+    },
+    {
+      "name": "Test Enclave Connection",
+      "description": "Test Enclave Connection",
+      "required_prompts": [
+        "enclave_client_url"
+      ]
+    },
+    {
+      "name": "Benchmark Prover",
+      "description": "Get Benchmark results of prover",
+      "required_prompts": [
+        "benchmark_url"
       ]
     }
   ]

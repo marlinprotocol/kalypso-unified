@@ -84,6 +84,7 @@ impl<'a> Prompter<'a> {
         validators.insert("internal_prover_port".to_string(), validate_dec_str_id);
         validators.insert("input_verification_url".to_string(), validate_rpc_url);
         validators.insert("prover_program_name".to_string(), validate_string);
+        validators.insert("benchmark_url".to_string(), validate_rpc_url);
 
         validators.insert(
             "confirmation".to_string(),

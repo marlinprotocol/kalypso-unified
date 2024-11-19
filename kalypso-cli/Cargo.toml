@@ -14,6 +14,7 @@ env_logger = "0.11"
 flate2 = "1.0.28"
 futures = "0.3"
 generator_client = {path = "../generator_client", package = "generator_client"}
+generator = {path = "../generator", package = "generator"}
 hex = "0.4.3"
 kalypso_helper = {path = "../helper", package = "helper"}
 log = "0.4"

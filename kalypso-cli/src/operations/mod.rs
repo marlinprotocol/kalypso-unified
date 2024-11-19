@@ -79,6 +79,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Load Generator Config" => Some(Box::new(generator_config::GeneratorConfig)),
         "Start Enclave Program" => Some(Box::new(programs::StartProgam)),
         "Stop Enclave Program" => Some(Box::new(programs::StopProgram)),
+        "Test Enclave Connection" => Some(Box::new(programs::TestConnection)),
+        "Benchmark Prover" => Some(Box::new(programs::Benchmark)),
         _ => unimplemented!(),
     }
 }
