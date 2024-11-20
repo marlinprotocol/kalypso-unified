@@ -175,9 +175,11 @@ pub struct GeneratorMeta {
     version: Option<String>,
 
     /// Categories that classify the generator or application.
+    #[serde(default)]
     categories: Vec<String>,
 
     /// Tags for better searchability and organization.
+    #[serde(default)]
     tags: Vec<String>,
 
     /// License information, e.g., MIT, GPL.
