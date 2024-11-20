@@ -121,3 +121,17 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: cargo test --target x86_64-unknown-linux-musl
+      
+      - name: Build Release
+        run: cargo build --release --target x86_64-unknown-linux-musl
+      
+      - name: upx
+        run: |
+          wget https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-amd64_linux.tar.xz -O upx.txz
+          mkdir -p upx && tar -xvf upx.txz --strip-components=1 -C upx
+          sudo mv upx/upx /usr/local/bin/
+
+      - name: upload kalypso-cli
+        run: |
+          sudo upx kalypso-unified/target/x86_64-unknown-linux-musl/release/kalypso-cli
+          AWS_ACCESS_KEY_ID=${{secrets.AWS_ACCESS_KEY_ID}} AWS_SECRET_ACCESS_KEY=${{secrets.AWS_SECRET_ACCESS_KEY}} aws s3 cp --endpoint-url ${{secrets.AWS_S3_ENDPOINT}} kalypso-cli/target/x86_64-unknown-linux-musl/release/kalypso-cli s3://artifacts/kalypso/binaries/kalypso-cli-musl
