@@ -174,9 +174,11 @@ pub struct GeneratorMeta {
     repo_url: Option<String>,
 
     /// Current version of the generator or application.
+    #[serde(default)]
     version: Option<String>,
 
     /// Categories that classify the generator or application.
+    #[serde(default)]
     categories: Vec<String>,
 
     /// Tags for better searchability and organization.

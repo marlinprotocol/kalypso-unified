@@ -50,9 +50,11 @@ pub struct MarketSetupData {
     license: Option<String>,
 
     /// Categories that classify the zkApp.
+    #[serde(default)]
     categories: Vec<String>,
 
     /// Tags for better searchability and organization.
+    #[serde(default)]
     tags: Vec<String>,
 
     /// Contact email for support or inquiries.
