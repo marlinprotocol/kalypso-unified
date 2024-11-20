@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use ethers::{signers::Signer, types::U256};
+use ethers::{core::rand, signers::Signer, types::U256};
 
 use crate::{
     common_deps::CommonDeps,
@@ -230,7 +230,7 @@ fn compress_data(data: &[u8]) -> Result<Vec<u8>, String> {
     Ok(compressed_data)
 }
 
-use openssl::rand;
+use rand::RngCore;
 // for kalypso-specific, market_id is associated data
 fn prepare_encrypted_data(
     data: &[u8],
@@ -238,7 +238,7 @@ fn prepare_encrypted_data(
     associated_data: U256,
 ) -> Result<(Vec<u8>, Vec<u8>), String> {
     let mut cipher = vec![0; 32];
-    rand::rand_bytes(&mut cipher).map_err(|_| "Failed creating cipher".to_string())?;
+    rand::thread_rng().fill_bytes(&mut cipher);
 
     let encrypted_data =
         kalypso_helper::secret_inputs_helpers::encrypt_aes_gcm(data, pubkey, associated_data)

@@ -3,7 +3,7 @@ use ethers::prelude::*;
 use ethers::types::U256;
 use ethers::{abi::Address, providers::Provider};
 use kalypso_helper::custom_logger::CustomLogger;
-use openssl::rand::rand_bytes;
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -462,7 +462,7 @@ impl JobCreator {
             let (ecies_secret, ecies_public) = match &config.ecies_private_key {
                 Some(private_key) => {
                     let mut original_message = vec![0; 32]; // for example, 32 bytes
-                    rand_bytes(&mut original_message).expect("Failed to generate random bytes");
+                    rand::thread_rng().fill_bytes(&mut original_message);
 
                     let private_key = hex::decode(private_key).unwrap();
                     let ecies_secret_key = ecies::SecretKey::parse_slice(&private_key).unwrap();
