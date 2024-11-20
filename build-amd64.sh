@@ -8,4 +8,6 @@ cd /code
 
 rustup target add x86_64-unknown-linux-musl
 
+apt-get install -y musl-dev musl-tools musl-gcc
+
 cargo build --release --target x86_64-unknown-linux-musl
