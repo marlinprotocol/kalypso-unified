@@ -37,20 +37,40 @@ async fn main() {
         process::exit(1);
     }
 
-    // Present a selection menu to the user
-    let operation_names: Vec<&str> = operations.iter().map(|op| op.name.as_str()).collect();
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select an operation")
-        .items(&operation_names)
-        .default(0)
-        .interact()
-        .unwrap_or_else(|e| {
-            error!("Failed to interact with user: {}", e);
-            eprintln!("Error: Failed to select operation.");
-            process::exit(1);
-        });
+    let env_operation = std::env::var("OPERATION_NAME").ok();
 
-    let selected_operation = &operations[selection];
+    // Initialize a variable to hold the selected operation
+    let selected_operation = if let Some(op_name) = env_operation {
+        // Step 2: Validate the operation name from the environment
+        match operations.iter().find(|op| op.name == op_name) {
+            Some(op) => {
+                println!("Using operation from environment variable: {}", op.name);
+                op
+            }
+            None => {
+                // If the operation name from the environment is invalid, log an error and exit
+                error!("Invalid operation name in OPERATION_NAME: {}", op_name);
+                eprintln!("Error: '{}' is not a valid operation.", op_name);
+                process::exit(1);
+            }
+        }
+    } else {
+        // Step 3: Fallback to interactive selection if the environment variable is not set
+        let operation_names: Vec<&str> = operations.iter().map(|op| op.name.as_str()).collect();
+        let selection = Select::with_theme(&ColorfulTheme::default())
+            .with_prompt("Select an operation")
+            .items(&operation_names)
+            .default(0)
+            .interact()
+            .unwrap_or_else(|e| {
+                error!("Failed to interact with user: {}", e);
+                eprintln!("Error: Failed to select operation.");
+                process::exit(1);
+            });
+
+        &operations[selection]
+    };
+
     println!(
         "\nYou selected: {} - {}\n",
         selected_operation.name, selected_operation.description
@@ -60,13 +80,23 @@ async fn main() {
     let prompter = Prompter::new(&config);
 
     // Collect required prompts for the selected operation
-    let final_config: HashMap<String, String> = prompter
-        .prompt(&selected_operation.required_prompts)
-        .unwrap_or_else(|e| {
-            error!("Failed to collect prompts: {}", e);
-            eprintln!("Error: {}", e);
-            process::exit(1);
-        });
+    let final_config: HashMap<String, String> = if std::env::var("OPERATION_NAME").is_ok() {
+        prompter
+            .expect_in_env(&selected_operation.required_prompts)
+            .unwrap_or_else(|e| {
+                error!("Failed to collect prompts: {}", e);
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            })
+    } else {
+        prompter
+            .prompt(&selected_operation.required_prompts)
+            .unwrap_or_else(|e| {
+                error!("Failed to collect prompts: {}", e);
+                eprintln!("Error: {}", e);
+                process::exit(1);
+            })
+    };
 
     // Retrieve the corresponding operation handler
     let operation = get_operation(&selected_operation.name).unwrap_or_else(|| {

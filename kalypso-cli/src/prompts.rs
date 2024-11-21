@@ -149,6 +149,38 @@ impl<'a> Prompter<'a> {
 
         Ok(final_config)
     }
+
+    pub fn expect_in_env(
+        &self,
+        required_fields: &[String],
+    ) -> Result<HashMap<String, String>, Box<dyn Error>> {
+        let mut final_config = HashMap::new();
+
+        for field in required_fields {
+            if let Some(prompt_config) = self.config.get_prompt(field) {
+                // Check if the environment variable is set
+                if let Some(env_val) = self.config.get_env(&prompt_config.env_var) {
+                    println!(
+                        "Using {} from environment variable {}",
+                        prompt_config.field.to_uppercase(),
+                        prompt_config.env_var
+                    );
+                    final_config.insert(prompt_config.field.clone(), env_val);
+                } else {
+                    return Err(format!(
+                        "Not Found {} from environment variable {}",
+                        prompt_config.field.to_uppercase(),
+                        prompt_config.env_var
+                    )
+                    .into());
+                }
+            } else {
+                return Err(format!("Prompt configuration for '{}' not found.", field).into());
+            }
+        }
+
+        Ok(final_config)
+    }
 }
 
 use url::Url;
