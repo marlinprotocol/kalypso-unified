@@ -143,7 +143,7 @@ pub async fn single_market(
     };
 
     let cached_response = match SINGLE_MARKET_RESPONSE.try_read() {
-        Ok(data) => data.get(&market_query, Duration::from_secs(10)),
+        Ok(data) => data.get(&market_query, Duration::from_millis(100)),
         _ => {
             return Ok(HttpResponse::Locked().json(WelcomeResponse {
                 status: "Resource Busy".into(),

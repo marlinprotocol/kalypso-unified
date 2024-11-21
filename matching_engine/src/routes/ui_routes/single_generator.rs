@@ -205,7 +205,7 @@ pub async fn single_generator(
     };
 
     let cached_response = match SINGLE_GENERATOR_RESPONSE.try_read() {
-        Ok(data) => data.get(&generator_query, Duration::from_secs(10)),
+        Ok(data) => data.get(&generator_query, Duration::from_millis(100)),
         _ => {
             return Ok(HttpResponse::Locked().json(WelcomeResponse {
                 status: "Resource Busy".into(),

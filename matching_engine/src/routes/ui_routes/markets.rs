@@ -65,7 +65,7 @@ pub async fn total_market_info(
         }
     };
 
-    if let Some(response) = market_cache.get_if_valid(Duration::from_secs(10)) {
+    if let Some(response) = market_cache.get_if_valid(Duration::from_millis(100)) {
         // Return the cached response if valid
         return Ok(HttpResponse::Ok().json(response));
     }
