@@ -53,7 +53,11 @@ pub async fn get_generators_all(
     _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    try_read_and_get_if_valid!(GENERATOR_RESPONSE, generator_cache, Duration::from_millis(100));
+    try_read_and_get_if_valid!(
+        GENERATOR_RESPONSE,
+        generator_cache,
+        Duration::from_millis(100)
+    );
     drop(generator_cache);
 
     try_read_or_lock!(_local_generator_store, local_generator_store);
