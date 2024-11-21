@@ -75,7 +75,7 @@ pub async fn get_dashboard(
     _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
-    try_read_and_get_if_valid!(DASHBOARD_RESPONSE, dashboard_cache, Duration::from_secs(10));
+    try_read_and_get_if_valid!(DASHBOARD_RESPONSE, dashboard_cache, Duration::from_millis(100));
     drop(dashboard_cache);
 
     try_read_or_lock!(_local_ask_store, local_ask_store);

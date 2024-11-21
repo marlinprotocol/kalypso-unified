@@ -60,7 +60,7 @@ pub async fn total_market_info(
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
-    try_read_and_get_if_valid!(MARKET_RESPONSE, market_cache, Duration::from_secs(10));
+    try_read_and_get_if_valid!(MARKET_RESPONSE, market_cache, Duration::from_millis(100));
     drop(market_cache);
 
     try_read_or_lock!(_local_ask_store, local_ask_store);
