@@ -4,12 +4,11 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use crate::market_metadata::{MarketMetadataStore, MarketSetupData};
+use crate::market_metadata::{MarketMetadataStore, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::{
-    address_to_string, convert_to_option_string, random_usize, TokenAmount, TokenTracker,
-    USDC_TOKEN,
+    address_to_string, convert_to_option_string, TokenAmount, TokenTracker, USDC_TOKEN,
 };
 use actix_web::web::{self, Data};
 use actix_web::HttpResponse;
@@ -23,13 +22,6 @@ use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
 
 const DEFAULT_COUNT: &usize = &100;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct MinHardware {
-    instance_type: String,
-    vcpus: usize,
-    enclave: bool,
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Jobs {
@@ -55,7 +47,7 @@ struct SingleMarketResponse {
     median_proof_time: String,
     total_earnings: String,
     total_slashed: Vec<TokenAmount>,
-    hardware_requirement: MinHardware,
+    hardware_requirement: Option<MinHardware>,
     min_stake: Vec<TokenAmount>,
     jobs: Jobs,
     market_setup_data: MarketSetupData,
@@ -245,11 +237,7 @@ async fn recompute_single_market_response<'a>(
             })
             .reduce(|| TokenTracker::new(), |acc, elem| acc + elem)
             .to_token_amount(),
-        hardware_requirement: MinHardware {
-            instance_type: "todo".into(),
-            vcpus: random_usize(),
-            enclave: true,
-        },
+        hardware_requirement: marketmetadata.deserialize_market_bytes().min_hardware,
         min_stake: slashing_penalty.to_token_amount(),
         jobs: Jobs {
             proofs_generated: local_ask_store.get_proof_count(&market_id),

@@ -10,7 +10,7 @@ use crate::counters::median_counter::MedianCounter;
 pub struct MarketSetupData {
     /// The display name of the zkApp.
     #[serde(alias = "zk_app_name")]
-    zk_app_name: Option<String>,
+    pub zk_app_name: Option<String>,
 
     /// URL to the prover code repository or resource.
     #[serde(alias = "prover_code")]
@@ -67,6 +67,17 @@ pub struct MarketSetupData {
     /// URL to the Privacy Policy.
     #[serde(alias = "privacy_policy_url")]
     privacy_policy_url: Option<String>,
+
+    #[serde(alias = "min_hardware")]
+    pub min_hardware: Option<MinHardware>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct MinHardware {
+    pub instance_type: Option<String>,
+    pub vcpus: Option<usize>,
+    pub vgpus: Option<usize>,
+    pub enclave_required: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

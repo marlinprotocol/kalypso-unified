@@ -3,9 +3,9 @@ use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use crate::market_metadata::MarketSetupData;
+use crate::market_metadata::{MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
-use crate::utility::{random_usize, TokenAmount};
+use crate::utility::TokenAmount;
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
@@ -27,7 +27,7 @@ pub struct MarketResponse {
 pub struct Market {
     market_id: String,
     name: Option<String>,
-    hardware_requirement: MinHardware,
+    hardware_requirement: Option<MinHardware>,
     total_proofs_generated: String,
     requests_in_progress: String,
     median_time_per_proof: String,
@@ -37,12 +37,6 @@ pub struct Market {
     slashing_penalty: Vec<TokenAmount>,
     status: bool,
     market_setup_data: MarketSetupData,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct MinHardware {
-    instance_type: String,
-    vcpus: usize,
 }
 
 type CachedMarketResponse = CachedResponse<MarketResponse>;
@@ -221,10 +215,7 @@ async fn recompute_market_response<'a>(
         let market = Market {
             market_id: market_id.clone().to_string(),
             name: None, // Adjust as needed
-            hardware_requirement: MinHardware {
-                instance_type: "todo".into(), // Replace with actual data
-                vcpus: random_usize(),        // Replace with actual data
-            },
+            hardware_requirement: meta.deserialize_market_bytes().min_hardware,
             total_proofs_generated,
             requests_in_progress: requests_in_progress.to_string(),
             median_time_per_proof,

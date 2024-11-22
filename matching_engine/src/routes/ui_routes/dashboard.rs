@@ -34,7 +34,8 @@ struct TaskRequirements {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Market {
-    name: String,
+    id: String,
+    name: Option<String>,
     token: String,
     median_time: String,
     median_cost: String,
@@ -146,9 +147,11 @@ async fn recompute_dashboard_response<'a>(
     let mut markets = Vec::with_capacity(all_markets.len());
     for meta in &all_markets {
         let market_id = &meta.market_id;
+        let name = &meta.deserialize_market_bytes().zk_app_name;
         if let Some((median_time, median_cost)) = market_median_map.get(market_id) {
             let market = Market {
-                name: market_id.to_string(),
+                id: market_id.to_string(),
+                name: name.clone(),
                 token: "USDC".into(),
                 median_time: median_time.clone(),
                 median_cost: median_cost.clone(),
@@ -157,7 +160,8 @@ async fn recompute_dashboard_response<'a>(
         } else {
             // Handle cases where median data might be missing
             markets.push(Market {
-                name: market_id.to_string(),
+                id: market_id.to_string(),
+                name: name.clone(),
                 token: "USDC".into(),
                 median_time: "0".into(),
                 median_cost: "0".into(),
@@ -184,7 +188,15 @@ async fn recompute_dashboard_response<'a>(
             .unwrap_or(("0".to_string(), "0".to_string())); // Default values if not found
 
         let market = Market {
-            name: market_id.to_string(),
+            id: market_id.to_string(),
+            name: {
+                let result = local_market_store.get_market_by_market_id(market_id);
+                if result.is_none() {
+                    None
+                } else {
+                    result.unwrap().deserialize_market_bytes().zk_app_name
+                }
+            },
             token: "USDC".into(),
             median_time,
             median_cost,
