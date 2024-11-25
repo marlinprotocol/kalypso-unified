@@ -31,7 +31,7 @@ impl Operation for ComputePcrs {
         let compute_pcrs_info = CommonDeps::compute_pcrs_info(&config)?;
         let attestation_stream = build_attestation(&compute_pcrs_info.attestation_utility, false)
             .await
-            .map_err(|_| "Failed Building Attestations.".to_string())?;
+            .map_err(|e| format!("Failed Building Attestations: {}", e))?;
 
         let attestation_data: Vec<u8> = attestation_stream
             .fold(Vec::new(), |mut acc, item| async {
@@ -56,7 +56,7 @@ impl Operation for ComputePcrs {
             false,
         )
         .await
-        .map_err(|_| "Failed Computing Image ID".to_string())?;
+        .map_err(|e| format!("Failed Computing Image ID. {}", e))?;
 
         print!("Image ID: \n{}", image_id);
 
@@ -183,7 +183,7 @@ impl Operation for ReadAttestation {
         let attestation_stream =
             build_attestation(&read_attestation_info.attestation_utility, false)
                 .await
-                .map_err(|_| "Failed Building Attestations.".to_string())?;
+                .map_err(|e| format!("Failed Building Attestations: {}", e))?;
 
         let attestation_data: Vec<u8> = attestation_stream
             .fold(Vec::new(), |mut acc, item| async {

@@ -28,8 +28,8 @@ impl Operation for JoinMarketplace {
                         )
                         .call()
                         .await
-                        .map_err(|_| {
-                            "Failed making call to generator registry contract.".to_string()
+                        .map_err(|e| {
+                            format!("Failed making call to generator registry contract {}", e)
                         })?;
 
                     if info_per_market.0 != 0 {

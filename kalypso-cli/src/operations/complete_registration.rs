@@ -34,7 +34,7 @@ impl Operation for CompleteRegistration {
         };
 
         let generator_json = serde_json::to_string(&generator)
-            .map_err(|_| "Failed composing generator metadata".to_string())?;
+            .map_err(|e| format!("Failed composing generator metadata. {}", e))?;
 
         let generator_metadata = generator_json.as_bytes();
 
@@ -64,9 +64,10 @@ impl Operation for CompleteRegistration {
                     return Err(format!("Generator is already registered"));
                 }
             }
-            Err(_) => {
+            Err(e) => {
                 return Err(format!(
-                    "Failed making call to generator registry contract."
+                    "Failed making call to generator registry contract. {}",
+                    e
                 ));
             }
         }

@@ -15,7 +15,7 @@ impl Operation for CreateMarketplace {
             .balance_of(market_create_info.private_key_signer.address())
             .call()
             .await
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         let market_creation_cost = {
             let result = market_create_info
@@ -23,7 +23,7 @@ impl Operation for CreateMarketplace {
                 .market_creation_cost()
                 .call()
                 .await
-                .map_err(|_| "Failed making call to proof marketplace contract".to_string())?;
+                .map_err(|e| format!("Failed making call to proof marketplace contract {}", e))?;
 
             result + 1
         };
@@ -40,7 +40,7 @@ impl Operation for CreateMarketplace {
             )
             .call()
             .await
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if token_allowance < market_creation_cost {
             let token_approval_transaction = CommonDeps::send_and_confirm(

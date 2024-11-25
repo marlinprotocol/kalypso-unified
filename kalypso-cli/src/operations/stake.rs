@@ -23,7 +23,7 @@ impl Operation for NativeStaking {
             .balance_of(native_stake_info.private_key_signer.address())
             .call()
             .await
-            .map_err(|_| "Failed making call to staking token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to staking token contract {}", e))?;
 
         if token_balance < native_stake_info.staking_amount {
             return Err("Insufficient staking token available".to_string());
@@ -37,7 +37,7 @@ impl Operation for NativeStaking {
             )
             .call()
             .await
-            .map_err(|_| "Failed making call to staking token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to staking token contract {}", e))?;
 
         if token_allowance < native_stake_info.staking_amount {
             let token_approval_transaction = CommonDeps::send_and_confirm(

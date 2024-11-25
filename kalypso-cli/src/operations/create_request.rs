@@ -28,7 +28,7 @@ impl Operation for ConfidentialRequest {
             .market_data(confidential_request_info.market_id)
             .call()
             .await
-            .map_err(|_| "Failed making call to proof marketplace contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to proof marketplace contract {}", e))?;
 
         if market_data.1 == non_confidential_market_kalypso_image_id.0 {
             return Err("This market is a confidential market".to_string());
@@ -39,7 +39,7 @@ impl Operation for ConfidentialRequest {
             .balance_of(confidential_request_info.private_key_signer.address())
             .call()
             .await
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if confidential_request_info.max_proof_generation_cost > token_balance {
             return Err("Insufficient payment token available".to_string());
@@ -53,7 +53,7 @@ impl Operation for ConfidentialRequest {
             )
             .call()
             .await
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if token_allowance < confidential_request_info.max_proof_generation_cost {
             let token_approval_transaction = CommonDeps::send_and_confirm(
@@ -73,7 +73,7 @@ impl Operation for ConfidentialRequest {
 
         let compressed_private_inputs =
             compress_data(&confidential_request_info.private_inputs.to_vec())
-                .map_err(|_| "Failed private input compression.".to_string())?;
+                .map_err(|e| format!("Failed private input compression {}", e))?;
 
         let matching_engine_key = confidential_request_info
             .entity_registry
@@ -94,7 +94,7 @@ impl Operation for ConfidentialRequest {
             &matching_engine_key.to_vec(),
             confidential_request_info.market_id,
         )
-        .map_err(|_| "Failed Encryption".to_string())?;
+        .map_err(|e| format!("Failed Encryption: {}", e))?;
 
         let proof_request_transaction = CommonDeps::send_and_confirm(
             confidential_request_info
@@ -143,7 +143,7 @@ impl Operation for NonConfidentialRequest {
             .market_data(non_confidential_request_info.market_id)
             .call()
             .await
-            .map_err(|_| "Failed making call to proof marketplace contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to proof marketplace contract: {}", e))?;
 
         if market_data.1 != non_confidential_market_kalypso_image_id.0 {
             return Err("This market is not a confidential market".to_string());
@@ -154,7 +154,7 @@ impl Operation for NonConfidentialRequest {
             .balance_of(non_confidential_request_info.private_key_signer.address())
             .call()
             .await
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if non_confidential_request_info.max_proof_generation_cost > token_balance {
             return Err("Insufficient payment token available".to_string());
@@ -168,7 +168,7 @@ impl Operation for NonConfidentialRequest {
             )
             .call()
             .await
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if token_allowance < non_confidential_request_info.max_proof_generation_cost {
             let token_approval_transaction = CommonDeps::send_and_confirm(
@@ -223,10 +223,10 @@ fn compress_data(data: &[u8]) -> Result<Vec<u8>, String> {
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
     encoder
         .write_all(data)
-        .map_err(|_| "Failed Private Input Encoding".to_string())?;
+        .map_err(|e| format!("Failed Private Input Encoding: {}", e))?;
     let compressed_data = encoder
         .finish()
-        .map_err(|_| "Failed private input compression".to_string())?;
+        .map_err(|e| format!("Failed private input compression: {}", e))?;
     Ok(compressed_data)
 }
 
@@ -242,7 +242,7 @@ fn prepare_encrypted_data(
 
     let encrypted_data =
         kalypso_helper::secret_inputs_helpers::encrypt_aes_gcm(data, pubkey, associated_data)
-            .map_err(|_| "Failed making call to payment token contract.".to_string())?;
+            .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
     let acl = kalypso_helper::secret_inputs_helpers::encrypt_ecies(pubkey, &cipher)
         .map_err(|_| "Failed encrypting cipher key".to_string())?;
 

@@ -17,7 +17,7 @@ impl Operation for GeneratorConfig {
             load_generator_config_info.config,
         )
         .await
-        .map_err(|_| "Failed loading generator config into the enclave.".to_string())?;
+        .map_err(|e| format!("Failed loading generator config into the enclave. {}", e))?;
 
         Ok(())
     }

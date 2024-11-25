@@ -50,7 +50,7 @@ impl Operation for SymbioticOptIn {
         let vault_opt_in_transaction_hash =
             CommonDeps::send_and_confirm(vault_service.opt_in(symbiotic_info.vault_address).send())
                 .await
-                .map_err(|_| "Failed making vault opt in operation.".to_string())?;
+                .map_err(|e| format!("Failed making vault opt in operation {}", e))?;
 
         println!(
             "Vault Opt In transaction: {}",
@@ -63,7 +63,7 @@ impl Operation for SymbioticOptIn {
                 .send(),
         )
         .await
-        .map_err(|_| "Failed making network opt in operation.".to_string())?;
+        .map_err(|e| format!("Failed making network opt in operation {}", e))?;
 
         println!(
             "Network Opt In transaction: {}",

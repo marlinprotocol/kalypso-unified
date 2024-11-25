@@ -17,7 +17,7 @@ impl Operation for AddIvsKey {
         let attestation_stream =
             compute_pcrs::build_attestation(&add_ivs_key_info.attestation_utility, false)
                 .await
-                .map_err(|_| "Failed Building Attestations.".to_string())?;
+                .map_err(|e| format!("Failed Building Attestations {}", e))?;
 
         let attestation_data: Vec<u8> = attestation_stream
             .fold(Vec::new(), |mut acc, item| async {
@@ -40,7 +40,7 @@ impl Operation for AddIvsKey {
             false,
         )
         .await
-        .map_err(|_| "Failed Verifying attestation".to_string())?;
+        .map_err(|e| format!("Failed Verifying attestation {}", e))?;
 
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
@@ -60,7 +60,7 @@ impl Operation for AddIvsKey {
             headers,
         )
         .await
-        .map_err(|_| "Failed Getting Attestation Signature".to_string())?;
+        .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
 
         let add_ivskey_transaction = CommonDeps::send_and_confirm(
             add_ivs_key_info
@@ -91,7 +91,7 @@ impl Operation for UpdateEncryptionKey {
         let attestation_stream =
             compute_pcrs::build_attestation(&update_encryption_info.attestation_utility, false)
                 .await
-                .map_err(|_| "Failed Building Attestations.".to_string())?;
+                .map_err(|e| format!("Failed Building Attestations {}", e))?;
 
         let attestation_data: Vec<u8> = attestation_stream
             .fold(Vec::new(), |mut acc, item| async {
@@ -114,7 +114,7 @@ impl Operation for UpdateEncryptionKey {
             false,
         )
         .await
-        .map_err(|_| "Failed Verifying attestation".to_string())?;
+        .map_err(|e| format!("Failed Verifying attestation {}", e))?;
 
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
@@ -134,7 +134,7 @@ impl Operation for UpdateEncryptionKey {
             headers,
         )
         .await
-        .map_err(|_| "Failed Getting Attestation Signature".to_string())?;
+        .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
 
         let update_encryption_key_transaction = CommonDeps::send_and_confirm(
             update_encryption_info
