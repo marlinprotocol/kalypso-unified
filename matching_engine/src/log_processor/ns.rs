@@ -240,6 +240,12 @@ pub async fn process_native_staking_logs(
         return Ok(());
     }
 
+    if cfg!(feature = "skip_unknown_events") {
+        log::warn!("{:?}", log);
+        log::warn!("Unknown event noted and skipped");
+        return Ok(());
+    }
+
     log::error!("unhandled log in native staking {:?}", log);
     return Err("Unhandled log in native staking".into());
 }

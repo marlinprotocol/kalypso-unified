@@ -386,6 +386,12 @@ pub async fn process_generator_registry_logs(
         return Ok(());
     }
 
+    if cfg!(feature = "skip_unknown_events") {
+        log::warn!("{:?}", log);
+        log::warn!("Unknown event noted and skipped");
+        return Ok(());
+    }
+
     log::error!("unhandled log in generator registry {:?}", log);
     return Err("Unhandled log in generator registry".into());
 }

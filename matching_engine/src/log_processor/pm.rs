@@ -628,6 +628,12 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
+    if cfg!(feature = "skip_unknown_events") {
+        log::warn!("{:?}", log);
+        log::warn!("Unknown event noted and skipped");
+        return Ok(());
+    }
+
     log::error!("unhandled log in proof market place {:?}", log);
     return Err("Unhandled log in proof market place".into());
 }
