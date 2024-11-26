@@ -22,7 +22,7 @@ pub async fn process_symbiotic_staking_logs(
         .get(&log.topics[0])
         .is_some()
     {
-        log::debug!("standard topic to skip found, ignoring it");
+        log::warn!("standard topic to skip found, ignoring it");
         return Ok(());
     }
 
