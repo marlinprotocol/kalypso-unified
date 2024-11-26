@@ -13,6 +13,7 @@ lazy_static! {
         set.insert(H256::from_str("bd79b86ffe0ab8e8776151514217cd7cacd52c909f66475c3af44e129f0b00ff").unwrap()); // AccessControl.RoleAdminChanged
         set.insert(H256::from_str("7f26b83ff96e1f2b6a682f133852f6798a09c465da95921460cefb3847402498").unwrap()); // Initializable.Initialized(uint8)
         set.insert(H256::from_str("c7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2").unwrap()); // Initializable.Initialized(uint64)
+        set.insert(H256::from_str("746a79946772c15f5e373aa401e8ea8252319fc7ddb2728bc860b4de762a6cde").unwrap()); // SymbioticStaking.VaultSnapshotSubmitted // new
         set
     };
 
