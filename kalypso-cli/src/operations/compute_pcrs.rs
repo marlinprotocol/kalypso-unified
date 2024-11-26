@@ -165,10 +165,21 @@ pub async fn get_image_id(
     let pcr2_vec = pcr2_bytes;
 
     let encoded = ethers::abi::encode(&[
-        ethers::abi::Token::Bytes(pcr0_vec.into()),
-        ethers::abi::Token::Bytes(pcr1_vec.into()),
-        ethers::abi::Token::Bytes(pcr2_vec.into()),
+        ethers::abi::Token::Bytes(pcr0_vec.clone().into()),
+        ethers::abi::Token::Bytes(pcr1_vec.clone().into()),
+        ethers::abi::Token::Bytes(pcr2_vec.clone().into()),
     ]);
+
+    let hashed_image_id = kalypso_helper::image_id_helpers::get_kalypso_image_id_from_pcrs(
+        pcr0_vec.into(),
+        pcr1_vec.into(),
+        pcr2_vec.into(),
+    );
+
+    println!(
+        "Hashed Image ID: {}",
+        format!("0x{}", hex::encode(hashed_image_id))
+    );
 
     Ok(format!("0x{}", hex::encode(encoded)))
 }
@@ -311,17 +322,4 @@ pub fn non_confidential_pcrs() -> PCRS {
         pcr1_vec,
         pcr2_vec,
     }
-}
-
-use ethers::types::H256;
-use ethers::utils::keccak256;
-
-pub fn get_kalypso_image_id_from_pcrs(pcr0: Bytes, pcr1: Bytes, pcr2: Bytes) -> H256 {
-    let mut data = Vec::new();
-    data.extend_from_slice(&pcr0);
-    data.extend_from_slice(&pcr1);
-    data.extend_from_slice(&pcr2);
-
-    // Compute the keccak256 hash
-    keccak256(data).into()
 }

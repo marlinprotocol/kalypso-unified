@@ -47,7 +47,7 @@ struct SingleMarketResponse {
     median_proof_time: String,
     total_earnings: String,
     total_slashed: Vec<TokenAmount>,
-    hardware_requirement: Option<MinHardware>,
+    hardware_requirement: MinHardware,
     min_stake: Vec<TokenAmount>,
     jobs: Jobs,
     market_setup_data: MarketSetupData,

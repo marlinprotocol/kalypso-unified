@@ -27,7 +27,7 @@ pub struct MarketResponse {
 pub struct Market {
     market_id: String,
     name: Option<String>,
-    hardware_requirement: Option<MinHardware>,
+    hardware_requirement: MinHardware,
     total_proofs_generated: String,
     requests_in_progress: String,
     median_time_per_proof: String,

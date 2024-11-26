@@ -1,5 +1,6 @@
-use ethers::core::types::U256;
 use ethers::prelude::*;
+use ethers::types::U256;
+use im::HashSet;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -68,8 +69,8 @@ pub struct MarketSetupData {
     #[serde(alias = "privacy_policy_url")]
     privacy_policy_url: Option<String>,
 
-    #[serde(alias = "min_hardware")]
-    pub min_hardware: Option<MinHardware>,
+    #[serde(alias = "min_hardware", default)]
+    pub min_hardware: MinHardware,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -77,17 +78,17 @@ pub struct MinHardware {
     pub instance_type: Option<String>,
     pub vcpus: Option<usize>,
     pub vgpus: Option<usize>,
-    pub enclave_required: Option<bool>,
+    pub enclave_required: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MarketMetadata {
     pub market_id: U256,
     pub verifier: Address,
-    pub prover_image_id: [u8; 32],
     pub activation_block: U256,
-    pub ivs_image_id: [u8; 32],
     pub metadata: Bytes,
+    pub prover_images: HashSet<H256>,
+    pub ivs_images: HashSet<H256>,
 }
 
 impl MarketMetadata {
@@ -99,8 +100,12 @@ impl MarketMetadata {
         let json_str = std::str::from_utf8(&self.metadata).unwrap_or("{}");
 
         // Deserialize JSON string into `MarketSetupData` struct.
-        // If deserialization fails, return the default `MarketSetupData`.
-        serde_json::from_str(json_str).unwrap_or_default()
+        let mut setup_data: MarketSetupData = serde_json::from_str(json_str).unwrap_or_default();
+
+        // Update the `enclave_required` field.
+        setup_data.min_hardware.enclave_required = !self.is_non_confidential_market();
+
+        setup_data
     }
 }
 
@@ -204,5 +209,43 @@ impl MarketMetadataStore {
     pub fn get_earnings(&self, market_id: &U256) -> Option<U256> {
         // Safely access the earnings map
         self.earnings.get(market_id).cloned()
+    }
+}
+
+impl MarketMetadata {
+    pub fn is_non_confidential_market(&self) -> bool {
+        self.prover_images.contains(
+            &kalypso_helper::image_id_helpers::hashed_image_id_for_non_confidential_market(),
+        )
+    }
+}
+
+impl MarketMetadataStore {
+    // Add a prover image by market_id
+    pub fn add_prover_image(&mut self, market_id: U256, image: H256) {
+        if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
+            metadata.prover_images.insert(image);
+        }
+    }
+
+    // Remove a prover image by market_id
+    pub fn remove_prover_image(&mut self, market_id: U256, image: H256) {
+        if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
+            metadata.prover_images.remove(&image);
+        }
+    }
+
+    // Add an IVS image by market_id
+    pub fn add_ivs_image(&mut self, market_id: U256, image: H256) {
+        if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
+            metadata.ivs_images.insert(image);
+        }
+    }
+
+    // Remove an IVS image by market_id
+    pub fn remove_ivs_image(&mut self, market_id: U256, image: H256) {
+        if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
+            metadata.ivs_images.remove(&image);
+        }
     }
 }

@@ -3,10 +3,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use ethers::{core::rand, signers::Signer, types::U256};
 
-use crate::{
-    common_deps::CommonDeps,
-    operations::compute_pcrs::{get_kalypso_image_id_from_pcrs, non_confidential_pcrs},
-};
+use crate::{common_deps::CommonDeps, operations::compute_pcrs::non_confidential_pcrs};
 
 use super::Operation;
 
@@ -17,11 +14,12 @@ impl Operation for ConfidentialRequest {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let confidential_request_info = CommonDeps::confidential_request_info(&config)?;
         let non_confidential_pcrs = non_confidential_pcrs();
-        let non_confidential_market_kalypso_image_id = get_kalypso_image_id_from_pcrs(
-            non_confidential_pcrs.pcr0_vec.into(),
-            non_confidential_pcrs.pcr1_vec.into(),
-            non_confidential_pcrs.pcr2_vec.into(),
-        );
+        let non_confidential_market_kalypso_image_id =
+            kalypso_helper::image_id_helpers::get_kalypso_image_id_from_pcrs(
+                non_confidential_pcrs.pcr0_vec.into(),
+                non_confidential_pcrs.pcr1_vec.into(),
+                non_confidential_pcrs.pcr2_vec.into(),
+            );
 
         let market_data = confidential_request_info
             .proof_marketplace
@@ -132,11 +130,12 @@ impl Operation for NonConfidentialRequest {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let non_confidential_request_info = CommonDeps::non_confidential_request_info(&config)?;
         let non_confidential_pcrs = non_confidential_pcrs();
-        let non_confidential_market_kalypso_image_id = get_kalypso_image_id_from_pcrs(
-            non_confidential_pcrs.pcr0_vec.into(),
-            non_confidential_pcrs.pcr1_vec.into(),
-            non_confidential_pcrs.pcr2_vec.into(),
-        );
+        let non_confidential_market_kalypso_image_id =
+            kalypso_helper::image_id_helpers::get_kalypso_image_id_from_pcrs(
+                non_confidential_pcrs.pcr0_vec.into(),
+                non_confidential_pcrs.pcr1_vec.into(),
+                non_confidential_pcrs.pcr2_vec.into(),
+            );
 
         let market_data = non_confidential_request_info
             .proof_marketplace

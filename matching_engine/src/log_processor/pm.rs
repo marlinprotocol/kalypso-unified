@@ -6,6 +6,7 @@ use crate::utility::get_l1_block_from_l2_block;
 use crate::utility::get_timestamp_from_l2block_number;
 use crate::utility::tx_to_string;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
+use im::HashSet;
 
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -315,9 +316,17 @@ pub async fn process_proof_market_place_logs(
         let market = MarketMetadata {
             market_id,
             verifier: market.0,
-            prover_image_id: market.1,
+            prover_images: {
+                let mut s = HashSet::new();
+                s.insert(market.1.into());
+                s
+            },
             activation_block: market.3,
-            ivs_image_id: market.4,
+            ivs_images: {
+                let mut s = HashSet::new();
+                s.insert(market.4.into());
+                s
+            },
             metadata: market.6,
         };
 
@@ -337,12 +346,17 @@ pub async fn process_proof_market_place_logs(
             log.data.clone(),
         )
     {
-        log::warn!(
+        log::debug!(
             "Added prover image: {} to marketplace: {}",
             hex::encode(prover_image_added_log.image_id),
             prover_image_added_log.market_id
         );
-        log::warn!("Not indexing AddExtraProverImage to market right now");
+        {
+            market_store.write().await.add_prover_image(
+                prover_image_added_log.market_id,
+                prover_image_added_log.image_id.into(),
+            );
+        }
         return Ok(());
     }
 
@@ -353,12 +367,18 @@ pub async fn process_proof_market_place_logs(
             log.data.clone(),
         )
     {
-        log::warn!(
+        log::debug!(
             "Removed prover image: {} from marketplace: {}",
             hex::encode(prover_image_removed_log.image_id),
             prover_image_removed_log.market_id
         );
-        log::warn!("Not indexing RemoveExtraProverImage to market right now");
+
+        {
+            market_store.write().await.remove_prover_image(
+                prover_image_removed_log.market_id,
+                prover_image_removed_log.image_id.into(),
+            );
+        }
         return Ok(());
     }
 
@@ -367,12 +387,19 @@ pub async fn process_proof_market_place_logs(
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::warn!(
+        log::debug!(
             "Add ivs image: {} to marketplace: {}",
             hex::encode(ivs_image_added_log.image_id),
             ivs_image_added_log.market_id
         );
-        log::warn!("Not indexing AddExtraIVSImage from market right now");
+
+        {
+            market_store.write().await.add_ivs_image(
+                ivs_image_added_log.market_id,
+                ivs_image_added_log.image_id.into(),
+            );
+        }
+
         return Ok(());
     }
 
@@ -383,12 +410,19 @@ pub async fn process_proof_market_place_logs(
             log.data.clone(),
         )
     {
-        log::warn!(
+        log::debug!(
             "Removed ivs image: {} from marketplace: {}",
             hex::encode(ivs_image_removed_log.image_id),
             ivs_image_removed_log.market_id
         );
-        log::warn!("Not indexing RemoveExtraIVSImage from market right now");
+
+        {
+            market_store.write().await.remove_ivs_image(
+                ivs_image_removed_log.market_id,
+                ivs_image_removed_log.image_id.into(),
+            );
+        }
+
         return Ok(());
     }
 
