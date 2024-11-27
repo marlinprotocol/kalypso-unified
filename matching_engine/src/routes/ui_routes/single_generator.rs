@@ -102,6 +102,13 @@ pub struct GeneratorResponse {
     stake_locked: Vec<TokenAmount>,
     delegations: Vec<DelegateOperation>,
     my_delegations: Vec<TokenAmount>,
+    withdrawal_requests: Vec<WithdrawRequest>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct WithdrawRequest {
+    account: String,
+    index: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -483,5 +490,13 @@ async fn recompute_single_generator_response<'a>(
 
             token_tracker.to_token_amount()
         },
+        withdrawal_requests: local_generator_store
+            .get_withdrawl_requests(&generator_id)
+            .iter()
+            .map(|a| WithdrawRequest {
+                account: hex::encode(a.account),
+                index: a.index.to_string(),
+            })
+            .collect(),
     })
 }

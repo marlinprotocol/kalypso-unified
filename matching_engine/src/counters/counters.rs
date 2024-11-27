@@ -2,6 +2,7 @@ use im::HashSet;
 use std::collections::HashMap;
 use std::hash::Hash;
 
+#[derive(Default)]
 pub struct GenericCounters<TKey, TValue> {
     total_values: HashSet<TValue>, // Tracks all unique values (e.g., requestors) across all keys
     key_wise: HashMap<TKey, HashSet<TValue>>, // Maps keys (e.g., markets) to sets of values (e.g., requestors)

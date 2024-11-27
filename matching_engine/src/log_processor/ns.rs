@@ -4,7 +4,11 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
-    generator_lib::{delegation, generator_store, native_stake_store},
+    generator_lib::{
+        delegation,
+        generator_store::{self, WithdrawlRequest},
+        native_stake_store,
+    },
     log_processor::constants,
     utility::{get_l1_block_from_l2_block, tx_to_string},
 };
@@ -118,6 +122,8 @@ pub async fn process_native_staking_logs(
         );
 
         let address = request_stake_decrease_log.operator;
+        let account = request_stake_decrease_log.account;
+        let index = request_stake_decrease_log.index;
 
         log::warn!("pausing all assignments across all markets");
         log::warn!("will be unpaused once the request if fully withdrawn");
@@ -127,6 +133,7 @@ pub async fn process_native_staking_logs(
         log::warn!("Setting new utilization to same value");
         let new_utilization = 1000000000000000000_i64.into();
         generator_store.update_intended_stake_util(&address, new_utilization);
+        generator_store.insert_withdrawal_request(&address, WithdrawlRequest { account, index });
         return Ok(());
     }
 
@@ -145,6 +152,8 @@ pub async fn process_native_staking_logs(
         let address = remove_stake_log.operator;
         let amount = remove_stake_log.amount;
         let token_address = remove_stake_log.token;
+        let account = remove_stake_log.account;
+        let index = remove_stake_log.index;
 
         let block_l2: U256 = log.block_number.unwrap().as_u64().into();
         let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
@@ -164,6 +173,7 @@ pub async fn process_native_staking_logs(
         );
         generator_store.resume_assignments_accross_all_markets(&address);
         generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
+        generator_store.remove_withdrawal_request(&address, WithdrawlRequest { account, index });
 
         return Ok(());
     }

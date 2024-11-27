@@ -1,9 +1,10 @@
 use ethers::types::{Address, U256};
 use im::HashMap;
+use serde::{Deserialize, Serialize};
 
 use crate::utility::TokenTracker;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SymbioticStakeStore {
     operators: HashMap<Address, TokenTracker>,
     pub tokens_to_lock: TokenTracker,

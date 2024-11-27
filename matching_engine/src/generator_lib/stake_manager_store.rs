@@ -1,7 +1,8 @@
 use ethers::types::Address;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StakeManagerStore {
     enabled_pools: HashSet<Address>,
 }

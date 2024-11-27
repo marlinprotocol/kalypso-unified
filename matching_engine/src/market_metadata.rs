@@ -109,11 +109,14 @@ impl MarketMetadata {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct MarketMetadataStore {
     market_by_id: HashMap<U256, MarketMetadata>,
+    #[serde(skip)]
     median_proof_time_tracker: MedianCounter<U256, U256>, //<MarketId, Time in blocks>
+    #[serde(skip)]
     median_proof_cost_tracker: MedianCounter<U256, U256>, //<MarketId, Cost in USDC>
-    earnings: HashMap<U256, U256>,                        // market to usdc earning
+    earnings: HashMap<U256, U256>, // market to usdc earning
 }
 
 impl Default for MarketMetadataStore {

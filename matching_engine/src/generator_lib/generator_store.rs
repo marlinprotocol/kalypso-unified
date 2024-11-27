@@ -1,5 +1,6 @@
 use ethers::core::types::Address;
 use ethers::prelude::*;
+use im::HashSet;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLockReadGuard;
@@ -59,7 +60,7 @@ fn get_points(block_number: u64) -> U256 {
     U256::zero()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
     generators: HashMap<Address, Generator>, // Generator -> Details
@@ -74,6 +75,7 @@ pub struct GeneratorStore {
     delegation_store: DelegationStore,
     kalypso_points: HashMap<Address, U256>,
     kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
+    withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -86,6 +88,12 @@ pub struct SlashingRecord {
     pub expected_time: U256,
     pub slashing_penalty: AddressTokenPair,
     pub slashing_timestamp: U256,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Hash)]
+pub struct WithdrawlRequest {
+    pub account: Address,
+    pub index: U256,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
@@ -228,6 +236,7 @@ impl GeneratorStore {
             delegation_store: DelegationStore::new(),
             kalypso_points: HashMap::new(),
             kalypso_points_per_market: HashMap::new(),
+            withdrawl_requests: HashMap::new(),
         }
     }
 
@@ -968,6 +977,75 @@ impl GeneratorStore {
             return vec![];
         } else {
             return data.unwrap().clone();
+        }
+    }
+}
+
+impl GeneratorStore {
+    /// Inserts a withdrawal request for a given operator address.
+    ///
+    /// # Arguments
+    ///
+    /// * `operator_address` - A reference to the `Address` of the operator.
+    /// * `withdrawal_request` - The `WithdrawlRequest` to be inserted.
+    ///
+    /// # Behavior
+    ///
+    /// - If the `operator_address` does not exist in `withdrawl_requests`, it creates a new `HashSet`.
+    /// - Inserts the `withdrawal_request` into the `HashSet` for the given `operator_address`.
+    pub fn insert_withdrawal_request(
+        &mut self,
+        operator_address: &Address,
+        withdrawal_request: WithdrawlRequest,
+    ) {
+        self.withdrawl_requests
+            .entry(operator_address.clone())
+            .or_insert_with(HashSet::new)
+            .insert(withdrawal_request);
+    }
+
+    /// Retrieves all withdrawal requests for a given operator address.
+    ///
+    /// # Arguments
+    ///
+    /// * `operator_address` - A reference to the `Address` of the operator.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<WithdrawlRequest>` containing all withdrawal requests associated with the `operator_address`.
+    /// Returns an empty vector if no requests are found.
+    pub fn get_withdrawl_requests(&self, operator_address: &Address) -> Vec<WithdrawlRequest> {
+        match self.withdrawl_requests.get(operator_address) {
+            Some(requests) => requests.iter().cloned().collect(),
+            None => Vec::new(),
+        }
+    }
+
+    /// Removes a specific withdrawal request for a given operator address.
+    ///
+    /// # Arguments
+    ///
+    /// * `operator_address` - A reference to the `Address` of the operator.
+    /// * `withdrawal_request` - The `WithdrawlRequest` to be removed.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the withdrawal request was successfully removed.
+    /// `false` if the `operator_address` does not exist or the `withdrawal_request` was not found.
+    pub fn remove_withdrawal_request(
+        &mut self,
+        operator_address: &Address,
+        withdrawal_request: WithdrawlRequest,
+    ) -> bool {
+        if let Some(requests) = self.withdrawl_requests.get_mut(operator_address) {
+            let removed = requests.remove(&withdrawal_request);
+            // Optionally, remove the address entry if no more requests exist
+            if requests.is_empty() {
+                self.withdrawl_requests.remove(operator_address);
+            }
+            removed.is_some()
+        } else {
+            false
         }
     }
 }

@@ -3,7 +3,11 @@ use std::collections::{BinaryHeap, HashMap};
 use std::hash::Hash; // To use for the min-heap
 
 // Struct to store two heaps for median calculation
-pub struct MedianTracker<TValue> {
+#[derive(Default)]
+pub struct MedianTracker<TValue>
+where
+    TValue: std::cmp::Ord,
+{
     min_heap: BinaryHeap<Reverse<TValue>>, // Min-heap to store larger half (smallest on top)
     max_heap: BinaryHeap<TValue>,          // Max-heap to store smaller half (largest on top)
 }
@@ -55,7 +59,11 @@ where
 }
 
 // Main struct to handle per-key and global median tracking
-pub struct MedianCounter<TKey, TValue> {
+#[derive(Default)]
+pub struct MedianCounter<TKey, TValue>
+where
+    TValue: std::cmp::Ord,
+{
     key_wise: HashMap<TKey, MedianTracker<TValue>>, // Per-key median trackers
     global_tracker: MedianTracker<TValue>,          // Global median tracker
 }

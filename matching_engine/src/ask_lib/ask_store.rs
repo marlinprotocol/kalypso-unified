@@ -40,16 +40,20 @@ impl Default for Proof {
     }
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct LocalAskStore {
     asks_by_id: HashMap<U256, LocalAsk>,
     market_id_index: HashMap<U256, Vec<LocalAsk>>,
     state_index: HashMap<AskState, Vec<LocalAsk>>,
     proofs: HashMap<U256, Proof>,
+    #[serde(skip)]
     proof_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
+    #[serde(skip)]
     request_counter_by_requestors: GenericCounters<U256, Address>, // Count by Address(i.e requestor), Also sub-count by U256(i.e marketId)
     proving_time_taken: HashMap<U256, U256>,
     proving_cost_taken: HashMap<U256, U256>,
     proof_transaction: HashMap<U256, String>,
+    #[serde(skip)]
     failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
     completed_proofs: CompletedProofs,
     proof_cycle_completed_on: HashMap<U256, U256>,

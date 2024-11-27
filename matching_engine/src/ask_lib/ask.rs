@@ -41,6 +41,7 @@ impl Ord for LocalAsk {
 }
 
 // CompletedProofs struct with multiple indexes and a counter
+#[derive(Serialize, Deserialize)]
 pub struct CompletedProofs {
     // Index by address (generator), with sorted sets of LocalAsks
     completed_by_generator: HashMap<Address, BTreeSet<LocalAsk>>,
