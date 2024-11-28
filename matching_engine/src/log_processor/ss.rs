@@ -307,6 +307,15 @@ pub async fn process_symbiotic_staking_logs(
             .await
             .unwrap_or_default();
 
+        let stake_slashed = if cfg!(feature = "disable_slashing") {
+            log::warn!(
+                "Symbiotic slashing is disabled, however an 0 undelegation entry is still noted"
+            );
+            0.into()
+        } else {
+            stake_slashed
+        };
+
         generator_store.remove_stake(
             &address,
             &token_address,
@@ -316,7 +325,7 @@ pub async fn process_symbiotic_staking_logs(
             log.log_index.unwrap(),
             tx_to_string(&log.transaction_hash.unwrap()),
             delegation::Operation::Slash,
-            delegation::Source::Native,
+            delegation::Source::Symbiotic,
         );
         return Ok(());
     }

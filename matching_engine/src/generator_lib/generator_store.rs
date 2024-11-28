@@ -747,7 +747,7 @@ impl GeneratorStore {
             .or_insert(kalypso_points_per_proof);
     }
 
-    pub fn update_on_slashing(
+    pub fn note_entry_slashing(
         &mut self,
         generator_address: &Address,
         token_addresses: Vec<Address>,

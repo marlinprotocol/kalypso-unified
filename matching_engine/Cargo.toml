@@ -31,10 +31,11 @@ service_check_helper = {path = "../generator", package = "generator"}
 tokio = { version = "1.15.0", features = ["full"] }
 
 [features]
-default = ["matching_engine_enable_cors", "use_l1_block_numbers", "add_timestamp_to_asks", "skip_unknown_events"]
+default = ["matching_engine_enable_cors", "use_l1_block_numbers", "add_timestamp_to_asks", "skip_unknown_events", "disable_slashing"]
 matching_engine_enable_cors = ["kalypso_helper/enable_cors"]
 disable_match_creation = []
 use_l1_block_numbers = []
 add_timestamp_to_asks= []
 force_transactions = []
 skip_unknown_events = []
+disable_slashing = []

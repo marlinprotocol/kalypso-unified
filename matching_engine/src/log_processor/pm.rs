@@ -501,7 +501,8 @@ pub async fn process_proof_market_place_logs(
         let (slashing_tokens, slashings): (Vec<Address>, Vec<U256>) =
             slashing_token_pairs.into_iter().unzip();
 
-        generator_store.write().await.update_on_slashing(
+        // only notes the slashing entry, doesn't update stake
+        generator_store.write().await.note_entry_slashing(
             &generator_address,
             slashing_tokens,
             &ask_id,
