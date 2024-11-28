@@ -282,6 +282,12 @@
       "prompt": "Enter url of the server that does benchmarking and returns benchmark result",
       "secret": false,
       "env_var": "BENCHMARK_URL"
+    },
+    {
+      "field": "symbiotic_operator_registry",
+      "prompt": "Enter Symbiotic Operator Registry",
+      "secret": false,
+      "env_var": "SYMBIOTIC_OPERATOR_REGISTRY"
     }
   ],
   "operations": [
@@ -557,6 +563,16 @@
       "description": "Get Benchmark results of prover",
       "required_prompts": [
         "benchmark_url"
+      ]
+    },
+    {
+      "name": "Symbiotic Operator Register",
+      "description": "Register Operator on Symbiotic Network",
+      "required_prompts": [
+        "private_key",
+        "symbiotic_rpc_url",
+        "symbiotic_chain_id",
+        "symbiotic_operator_registry"
       ]
     }
   ]

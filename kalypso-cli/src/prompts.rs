@@ -85,6 +85,10 @@ impl<'a> Prompter<'a> {
         validators.insert("input_verification_url".to_string(), validate_rpc_url);
         validators.insert("prover_program_name".to_string(), validate_string);
         validators.insert("benchmark_url".to_string(), validate_rpc_url);
+        validators.insert(
+            "symbiotic_operator_registry".to_string(),
+            validate_eth_address,
+        );
 
         validators.insert(
             "confirmation".to_string(),

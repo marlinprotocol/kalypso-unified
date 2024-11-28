@@ -81,6 +81,9 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Stop Enclave Program" => Some(Box::new(programs::StopProgram)),
         "Test Enclave Connection" => Some(Box::new(programs::TestConnection)),
         "Benchmark Prover" => Some(Box::new(programs::Benchmark)),
+        "Symbiotic Operator Register" => {
+            Some(Box::new(symbiotic_opt_in::SymbioticOperatorRegister))
+        }
         _ => unimplemented!(),
     }
 }

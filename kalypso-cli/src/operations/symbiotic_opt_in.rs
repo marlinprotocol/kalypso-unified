@@ -6,6 +6,55 @@ use crate::common_deps::CommonDeps;
 
 use super::Operation;
 
+pub struct SymbioticOperatorRegister;
+
+#[async_trait]
+impl Operation for SymbioticOperatorRegister {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let symbiotic_register_info = CommonDeps::symbiotic_operator_registry_info(&config)?;
+        abigen!(
+            OperatorRegistryContract,
+            r#"[
+                {
+                    "inputs": [],
+                    "name": "registerOperator",
+                    "outputs": [],
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                }
+            ]"#
+        );
+
+        // Initialize the provider
+        let provider_http = Provider::<Http>::try_from(symbiotic_register_info.symbiotic_rpc_url)
+            .map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+        // Initialize the SignerMiddleware with the provider and signer
+        let client = SignerMiddleware::new(
+            provider_http.clone(),
+            symbiotic_register_info.signer.clone(),
+        );
+        let client_arc = Arc::new(client);
+
+        let operator_registry = OperatorRegistryContract::new(
+            symbiotic_register_info.symbiotic_operator_registry,
+            client_arc.clone(),
+        );
+
+        let operator_registry_transaction_hash =
+            CommonDeps::send_and_confirm(operator_registry.register_operator().send())
+                .await
+                .map_err(|e| format!("Failed making symbiotic operator registry {}", e))?;
+
+        println!(
+            "Operator Registry transaction: {}",
+            operator_registry_transaction_hash
+        );
+
+        Ok(())
+    }
+}
+
 pub struct SymbioticOptIn;
 
 #[async_trait]

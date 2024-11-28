@@ -1298,3 +1298,43 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct SymbioticOperatorRegisterInfo {
+    pub signer: LocalWallet,
+    pub symbiotic_rpc_url: String,
+    pub symbiotic_operator_registry: Address,
+}
+
+impl CommonDeps {
+    pub fn symbiotic_operator_registry_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<SymbioticOperatorRegisterInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "symbiotic_rpc_url", symbiotic_rpc_url);
+        get_config_ref!(config, "symbiotic_chain_id", symbiotic_chain_id);
+        get_config_ref!(
+            config,
+            "symbiotic_operator_registry",
+            symbiotic_operator_registry_address
+        );
+
+        let symbiotic_operator_registry = symbiotic_operator_registry_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Symbiotic Operator Registry Address: {}", e))?;
+
+        let signer = private_key
+            .parse::<LocalWallet>()
+            .map_err(|e| format!("Failed to parse private key: {}", e))?
+            .with_chain_id(
+                symbiotic_chain_id
+                    .parse::<u64>()
+                    .map_err(|e| format!("Invalid symbiotic_chain_id: {}", e))?,
+            );
+
+        Ok(SymbioticOperatorRegisterInfo {
+            signer,
+            symbiotic_rpc_url: symbiotic_rpc_url.clone(),
+            symbiotic_operator_registry,
+        })
+    }
+}
