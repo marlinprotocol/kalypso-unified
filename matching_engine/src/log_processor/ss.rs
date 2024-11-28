@@ -307,7 +307,7 @@ pub async fn process_symbiotic_staking_logs(
             .await
             .unwrap_or_default();
 
-        let stake_slashed = if cfg!(feature = "disable_slashing") {
+        let stake_slashed = if cfg!(feature = "disable_symbiotic_slashing") {
             log::warn!(
                 "Symbiotic slashing is disabled, however an 0 undelegation entry is still noted"
             );
