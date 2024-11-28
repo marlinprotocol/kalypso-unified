@@ -494,7 +494,7 @@ async fn recompute_single_generator_response<'a>(
             .get_withdrawl_requests(&generator_id)
             .iter()
             .map(|a| WithdrawRequest {
-                account: hex::encode(a.account),
+                account: address_to_string(&a.account),
                 index: a.index.to_string(),
             })
             .collect(),

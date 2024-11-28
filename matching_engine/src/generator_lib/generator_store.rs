@@ -64,17 +64,33 @@ fn get_points(block_number: u64) -> U256 {
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
     generators: HashMap<Address, Generator>, // Generator -> Details
+
+    #[serde(skip)]
     generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>, //[Generator, MarketId] -> MarketWiseInfo
+
     state_index: HashMap<GeneratorState, Vec<(Address, U256)>>, // State -> [Generator, MarketId]
+
     address_index: HashMap<Address, Vec<U256>>, // Generator -> [MarketId] participations
-    earnings: HashMap<Address, U256>,           // Generator -> TotalEarnings
+
+    earnings: HashMap<Address, U256>, // Generator -> TotalEarnings
+
+    #[serde(skip)]
     earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
-    slashings: HashMap<Address, TokenTracker>,                  // Generator -> Total Slashings
+
+    slashings: HashMap<Address, TokenTracker>, // Generator -> Total Slashings
+
+    #[serde(skip)]
     slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
+
     slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
+
     delegation_store: DelegationStore,
+
     kalypso_points: HashMap<Address, U256>,
+
+    #[serde(skip)]
     kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
+
     withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
 }
 

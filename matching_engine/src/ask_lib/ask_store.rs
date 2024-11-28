@@ -1,8 +1,9 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
+use im::HashMap;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Display, fmt::Formatter, fmt::Result};
+use std::{fmt::Display, fmt::Formatter, fmt::Result};
 
 use crate::counters::counters::GenericCounters;
 
@@ -40,25 +41,84 @@ impl Default for Proof {
     }
 }
 
+use crate::utility::deserialize_u256_map;
+use crate::utility::serialize_u256_map;
+
 #[derive(Deserialize, Serialize)]
 pub struct LocalAskStore {
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     asks_by_id: HashMap<U256, LocalAsk>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     market_id_index: HashMap<U256, Vec<LocalAsk>>,
+
+    // default serde should work here
     state_index: HashMap<AskState, Vec<LocalAsk>>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     proofs: HashMap<U256, Proof>,
+
     #[serde(skip)]
     proof_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
+
     #[serde(skip)]
     request_counter_by_requestors: GenericCounters<U256, Address>, // Count by Address(i.e requestor), Also sub-count by U256(i.e marketId)
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     proving_time_taken: HashMap<U256, U256>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     proving_cost_taken: HashMap<U256, U256>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     proof_transaction: HashMap<U256, String>,
+
     #[serde(skip)]
     failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
+
+    // default serde should work here
     completed_proofs: CompletedProofs,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     proof_cycle_completed_on: HashMap<U256, U256>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     job_created_on_timestamp: HashMap<U256, U256>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     job_matched_on_timestamp: HashMap<U256, U256>,
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     job_completed_on_timestamp: HashMap<U256, U256>,
 }
 

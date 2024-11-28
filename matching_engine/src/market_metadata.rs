@@ -1,8 +1,8 @@
 use ethers::prelude::*;
 use ethers::types::U256;
+use im::HashMap;
 use im::HashSet;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use crate::counters::median_counter::MedianCounter;
 
@@ -108,14 +108,27 @@ impl MarketMetadata {
         setup_data
     }
 }
+use crate::utility::deserialize_u256_map;
+use crate::utility::serialize_u256_map;
 
 #[derive(Serialize, Deserialize)]
 pub struct MarketMetadataStore {
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     market_by_id: HashMap<U256, MarketMetadata>,
+
     #[serde(skip)]
     median_proof_time_tracker: MedianCounter<U256, U256>, //<MarketId, Time in blocks>
+
     #[serde(skip)]
     median_proof_cost_tracker: MedianCounter<U256, U256>, //<MarketId, Cost in USDC>
+
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     earnings: HashMap<U256, U256>, // market to usdc earning
 }
 

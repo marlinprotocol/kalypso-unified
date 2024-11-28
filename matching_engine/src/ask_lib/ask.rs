@@ -1,8 +1,9 @@
 use super::ask_status::AskState;
 use ethers::core::types::U256;
 use ethers::prelude::*;
+use im::HashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeSet, HashMap};
+use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
 pub struct LocalAsk {
@@ -40,6 +41,9 @@ impl Ord for LocalAsk {
     }
 }
 
+use crate::utility::deserialize_u256_map;
+use crate::utility::serialize_u256_map;
+
 // CompletedProofs struct with multiple indexes and a counter
 #[derive(Serialize, Deserialize)]
 pub struct CompletedProofs {
@@ -47,6 +51,10 @@ pub struct CompletedProofs {
     completed_by_generator: HashMap<Address, BTreeSet<LocalAsk>>,
 
     // Index by market_id, with sorted sets of LocalAsks
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
     completed_by_market: HashMap<U256, BTreeSet<LocalAsk>>,
 
     // Counter to track total number of completed proofs

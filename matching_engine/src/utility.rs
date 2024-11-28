@@ -19,7 +19,7 @@ use ethers::utils::keccak256;
 use hex::decode;
 use im::HashMap;
 use rand::Rng;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
 
 pub fn address_to_string(address: &Address) -> String {
@@ -483,4 +483,50 @@ impl TokenTracker {
     pub fn force_remove(&mut self, token: Address) {
         self.tokens.remove(&token);
     }
+}
+
+/// Serialize a `HashMap<U256, V>` by converting `U256` keys to hexadecimal strings.
+pub fn serialize_hashmap_u256<V, S>(
+    map: &HashMap<U256, V>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    V: Serialize,
+    S: Serializer,
+{
+    // Convert each U256 key to a hexadecimal string with "0x" prefix.
+    let string_map: HashMap<String, &V> =
+        map.iter().map(|(k, v)| (format!("{:#x}", k), v)).collect();
+    string_map.serialize(serializer)
+}
+
+pub fn serialize_u256_map<V, S>(map: &HashMap<U256, V>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    V: Serialize,
+    S: Serializer,
+{
+    let string_map: HashMap<String, &V> =
+        map.iter().map(|(k, v)| (format!("{:#x}", k), v)).collect();
+    string_map.serialize(serializer)
+}
+
+// Custom deserialization function
+pub fn deserialize_u256_map<'de, V, D>(deserializer: D) -> Result<HashMap<U256, V>, D::Error>
+where
+    V: Deserialize<'de> + std::clone::Clone,
+    D: Deserializer<'de>,
+{
+    // Deserialize into a temporary `HashMap<String, V>`.
+    let string_map: HashMap<String, V> = HashMap::deserialize(deserializer)?;
+    let mut map = HashMap::new();
+
+    for (k, v) in string_map {
+        // Remove the "0x" prefix if present.
+        let key_str = k.strip_prefix("0x").unwrap_or(&k);
+        // Parse the hexadecimal string back into a `U256`.
+        let u256 = U256::from_str_radix(key_str, 16).map_err(serde::de::Error::custom)?;
+        map.insert(u256, v);
+    }
+
+    Ok(map)
 }
