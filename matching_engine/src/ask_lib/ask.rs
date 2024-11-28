@@ -45,7 +45,7 @@ use crate::utility::deserialize_u256_map;
 use crate::utility::serialize_u256_map;
 
 // CompletedProofs struct with multiple indexes and a counter
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct CompletedProofs {
     // Index by address (generator), with sorted sets of LocalAsks
     completed_by_generator: HashMap<Address, BTreeSet<LocalAsk>>,

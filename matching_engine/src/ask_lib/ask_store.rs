@@ -44,7 +44,7 @@ impl Default for Proof {
 use crate::utility::deserialize_u256_map;
 use crate::utility::serialize_u256_map;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct LocalAskStore {
     #[serde(
         serialize_with = "serialize_u256_map",
@@ -67,10 +67,8 @@ pub struct LocalAskStore {
     )]
     proofs: HashMap<U256, Proof>,
 
-    #[serde(skip)]
     proof_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
 
-    #[serde(skip)]
     request_counter_by_requestors: GenericCounters<U256, Address>, // Count by Address(i.e requestor), Also sub-count by U256(i.e marketId)
 
     #[serde(
@@ -91,7 +89,6 @@ pub struct LocalAskStore {
     )]
     proof_transaction: HashMap<U256, String>,
 
-    #[serde(skip)]
     failed_request_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
 
     // default serde should work here

@@ -1,7 +1,8 @@
 use ethers::types::U256;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct CostStore {
     data: HashMap<u8, U256>,
 }

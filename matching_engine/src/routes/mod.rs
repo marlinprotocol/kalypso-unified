@@ -54,7 +54,6 @@ pub fn ui_scope() -> actix_web::Scope {
             "/market/{id}",
             web::get().to(ui_routes::single_market::single_market),
         )
-        .route("/dump", web::get().to(ui_routes::welcome::get_dump))
 }
 
 pub fn get_stats_scope() -> actix_web::Scope {
@@ -86,6 +85,7 @@ pub fn get_stats_scope() -> actix_web::Scope {
             "/marketStats/{marketId}",
             web::get().to(market_info::market_stats),
         )
+        .route("/dump", web::get().to(ui_routes::welcome::get_dump))
 }
 
 pub fn get_core_scope() -> actix_web::Scope {

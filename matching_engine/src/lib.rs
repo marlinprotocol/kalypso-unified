@@ -141,6 +141,19 @@ pub struct MatchingEngine {
     matching_engine_port: u16,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Dump {
+    pub market_metadata_store: MarketMetadataStore,
+    pub local_ask_store: LocalAskStore,
+    pub generator_store: GeneratorStore,
+    pub native_staking_store: NativeStakingStore,
+    pub symbiotic_stake_store: SymbioticStakeStore,
+    pub cost_store: CostStore,
+    pub key_store: KeyStore,
+    pub stake_manager_store: StakeManagerStore,
+    pub parsed_block: U64,
+}
+
 impl MatchingEngine {
     pub fn from_config(config: MatchingEngineConfig, matching_engine_port: Option<u16>) -> Self {
         Self {
@@ -181,6 +194,33 @@ impl MatchingEngine {
         Self::from_config(config, matching_engine_port)
     }
 
+    pub async fn run_from_dump(&self, dump: Dump) -> anyhow::Result<()> {
+        // wrapping around is case to shared across threads
+        let shared_local_ask_store = Arc::new(RwLock::new(dump.local_ask_store.clone()));
+        let shared_generator_store = Arc::new(RwLock::new(dump.generator_store.clone()));
+        let shared_market_store = Arc::new(RwLock::new(dump.market_metadata_store.clone()));
+        let shared_key_store = Arc::new(RwLock::new(dump.key_store.clone()));
+        let shared_cost_store = Arc::new(RwLock::new(dump.cost_store.clone()));
+        let shared_symbiotic_staking_store =
+            Arc::new(RwLock::new(dump.symbiotic_stake_store.clone()));
+        let shared_native_store = Arc::new(RwLock::new(dump.native_staking_store.clone()));
+        let shared_stake_manager_store = Arc::new(RwLock::new(dump.stake_manager_store.clone()));
+        let shared_parsed_block_number_store = Arc::new(RwLock::new(dump.parsed_block.clone()));
+
+        self._run(
+            shared_local_ask_store,
+            shared_generator_store,
+            shared_market_store,
+            shared_key_store,
+            shared_cost_store,
+            shared_symbiotic_staking_store,
+            shared_native_store,
+            shared_stake_manager_store,
+            shared_parsed_block_number_store,
+        )
+        .await
+    }
+
     pub async fn run(&self) -> anyhow::Result<()> {
         let local_ask_store = LocalAskStore::new();
         let generator_list_store = GeneratorStore::new();
@@ -190,6 +230,7 @@ impl MatchingEngine {
         let symbiotic_staking_store = SymbioticStakeStore::new();
         let native_staking_store = NativeStakingStore::new();
         let stake_manager_store = StakeManagerStore::new();
+        let start_block_string = self.config.clone().start_block;
 
         // wrapping around is case to shared across threads
         let shared_local_ask_store = Arc::new(RwLock::new(local_ask_store));
@@ -200,7 +241,36 @@ impl MatchingEngine {
         let shared_symbiotic_staking_store = Arc::new(RwLock::new(symbiotic_staking_store));
         let shared_native_store = Arc::new(RwLock::new(native_staking_store));
         let shared_stake_manager_store = Arc::new(RwLock::new(stake_manager_store));
+        let shared_parsed_block_number_store = Arc::new(RwLock::new(
+            U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
+        ));
 
+        self._run(
+            shared_local_ask_store,
+            shared_generator_store,
+            shared_market_store,
+            shared_key_store,
+            shared_cost_store,
+            shared_symbiotic_staking_store,
+            shared_native_store,
+            shared_stake_manager_store,
+            shared_parsed_block_number_store,
+        )
+        .await
+    }
+
+    async fn _run(
+        &self,
+        shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
+        shared_generator_store: Arc<RwLock<GeneratorStore>>,
+        shared_market_store: Arc<RwLock<MarketMetadataStore>>,
+        shared_key_store: Arc<RwLock<KeyStore>>,
+        shared_cost_store: Arc<RwLock<CostStore>>,
+        shared_symbiotic_staking_store: Arc<RwLock<SymbioticStakeStore>>,
+        shared_native_store: Arc<RwLock<NativeStakingStore>>,
+        shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+        shared_parsed_block_number_store: Arc<RwLock<U64>>,
+    ) -> anyhow::Result<()> {
         let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));
 
         let rpc_url = self.config.clone().rpc_url;
@@ -217,8 +287,6 @@ impl MatchingEngine {
             .parse::<LocalWallet>()
             .unwrap()
             .with_chain_id(U64::from_dec_str(&chain_id).unwrap().as_u64());
-
-        let start_block_string = self.config.clone().start_block;
 
         log::info!(
             "matching engine address {:?}",
@@ -285,9 +353,6 @@ impl MatchingEngine {
         let shared_staking_manager =
             bindings::staking_manager::StakingManager::new(staking_manager_address, client.clone());
 
-        let shared_parsed_block_number_store = Arc::new(RwLock::new(
-            U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
-        ));
         let shared_parsed_block = Arc::clone(&shared_parsed_block_number_store);
 
         let shared_market_data = Arc::clone(&shared_market_store);
@@ -318,6 +383,8 @@ impl MatchingEngine {
             shared_native_store.clone(),
             shared_symbiotic_staking_store.clone(),
             shared_key_store.clone(),
+            shared_cost_store.clone(),
+            shared_stake_manager_store.clone(),
             relayer_key_balance.clone(),
             should_stop.clone(),
         );

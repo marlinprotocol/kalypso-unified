@@ -111,7 +111,7 @@ impl MarketMetadata {
 use crate::utility::deserialize_u256_map;
 use crate::utility::serialize_u256_map;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct MarketMetadataStore {
     #[serde(
         serialize_with = "serialize_u256_map",
@@ -119,11 +119,9 @@ pub struct MarketMetadataStore {
     )]
     market_by_id: HashMap<U256, MarketMetadata>,
 
-    #[serde(skip)]
-    median_proof_time_tracker: MedianCounter<U256, U256>, //<MarketId, Time in blocks>
+    median_proof_time_tracker: MedianCounter<U256>, //<MarketId, Time in blocks>
 
-    #[serde(skip)]
-    median_proof_cost_tracker: MedianCounter<U256, U256>, //<MarketId, Cost in USDC>
+    median_proof_cost_tracker: MedianCounter<U256>, //<MarketId, Cost in USDC>
 
     #[serde(
         serialize_with = "serialize_u256_map",

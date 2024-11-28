@@ -1,9 +1,13 @@
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
-use std::hash::Hash; // To use for the min-heap
+use std::collections::BinaryHeap;
+
+use im::HashMap;
+
+use ethers::types::U256;
+use serde::{Deserialize, Serialize}; // To use for the min-heap
 
 // Struct to store two heaps for median calculation
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct MedianTracker<TValue>
 where
     TValue: std::cmp::Ord,
@@ -58,20 +62,26 @@ where
     }
 }
 
+use crate::utility::deserialize_u256_map;
+use crate::utility::serialize_u256_map;
+
 // Main struct to handle per-key and global median tracking
-#[derive(Default)]
-pub struct MedianCounter<TKey, TValue>
+#[derive(Default, Serialize, Deserialize, Clone)]
+pub struct MedianCounter<TValue>
 where
-    TValue: std::cmp::Ord,
+    TValue: std::cmp::Ord + std::clone::Clone,
 {
-    key_wise: HashMap<TKey, MedianTracker<TValue>>, // Per-key median trackers
-    global_tracker: MedianTracker<TValue>,          // Global median tracker
+    #[serde(
+        serialize_with = "serialize_u256_map",
+        deserialize_with = "deserialize_u256_map"
+    )]
+    key_wise: HashMap<U256, MedianTracker<TValue>>, // Per-key median trackers
+    global_tracker: MedianTracker<TValue>, // Global median tracker
 }
 
-impl<TKey, TValue> MedianCounter<TKey, TValue>
+impl<TValue> MedianCounter<TValue>
 where
-    TKey: Eq + Hash + Clone, // Key must be hashable and clonable
-    TValue: Ord + Clone,     // Value must be sortable and clonable
+    TValue: Ord + Clone, // Value must be sortable and clonable
 {
     pub fn new() -> Self {
         MedianCounter {
@@ -81,7 +91,7 @@ where
     }
 
     // Insert a value for a specific key and update the global tracker
-    pub fn insert(&mut self, key: TKey, value: TValue) {
+    pub fn insert(&mut self, key: U256, value: TValue) {
         // Insert into the global tracker
         self.global_tracker.insert(value.clone());
 
@@ -96,7 +106,7 @@ where
     }
 
     // Get the median for a specific key
-    pub fn median_by_key(&self, key: &TKey) -> Option<TValue> {
+    pub fn median_by_key(&self, key: &U256) -> Option<TValue> {
         self.key_wise.get(key).and_then(|tracker| tracker.median())
     }
 }

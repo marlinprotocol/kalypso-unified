@@ -3,9 +3,11 @@ use ethers::prelude::*;
 use im::HashSet;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use tokio::sync::RwLockReadGuard;
 
 use std::collections::HashMap;
+use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::sync::Arc;
 
@@ -60,12 +62,221 @@ fn get_points(block_number: u64) -> U256 {
     U256::zero()
 }
 
+mod generator_markets_serde {
+    use super::*;
+    use serde::de::{self, MapAccess, Visitor};
+    use serde::ser::SerializeMap;
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S>(
+        value: &HashMap<(Address, U256), GeneratorInfoPerMarket>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(value.len()))?;
+        for ((address, u256), gen_info) in value {
+            // Convert address to hex string (without 0x prefix)
+            let address_str = format!("{:x}", address);
+            // Convert U256 to decimal string
+            let u256_str = u256.to_string();
+            // Create a combined key
+            let key = format!("{}|{}", address_str, u256_str);
+            map.serialize_entry(&key, gen_info)?;
+        }
+        map.end()
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<HashMap<(Address, U256), GeneratorInfoPerMarket>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct MapVisitor;
+
+        impl<'de> Visitor<'de> for MapVisitor {
+            type Value = HashMap<(Address, U256), GeneratorInfoPerMarket>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a map with keys as 'address|u256' strings")
+            }
+
+            fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut map = HashMap::new();
+                while let Some((key, value)) =
+                    access.next_entry::<String, GeneratorInfoPerMarket>()?
+                {
+                    let parts: Vec<&str> = key.splitn(2, '|').collect();
+                    if parts.len() != 2 {
+                        return Err(de::Error::custom(format!("invalid key format: {}", key)));
+                    }
+                    // Parse address from hex string
+                    let address = Address::from_str(parts[0]).map_err(de::Error::custom)?;
+                    // Parse U256 from decimal string
+                    let u256 = U256::from_dec_str(parts[1]).map_err(de::Error::custom)?;
+                    map.insert((address, u256), value);
+                }
+                Ok(map)
+            }
+        }
+
+        deserializer.deserialize_map(MapVisitor)
+    }
+}
+
+mod earnings_or_points_per_market_serde {
+    use super::*;
+    use serde::de::{self, MapAccess, Visitor};
+    use serde::ser::SerializeMap;
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S>(
+        value: &HashMap<Address, HashMap<U256, U256>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(value.len()))?;
+        for (address, inner_map) in value {
+            // Convert address to hex string (without 0x prefix)
+            let address_str = format!("{:x}", address);
+            // Convert inner HashMap<U256, U256> to HashMap<String, String>
+            let mut inner_map_serializable = HashMap::with_capacity(inner_map.len());
+            for (u256_key, u256_value) in inner_map {
+                let key_str = u256_key.to_string();
+                let value_str = u256_value.to_string();
+                inner_map_serializable.insert(key_str, value_str);
+            }
+            map.serialize_entry(&address_str, &inner_map_serializable)?;
+        }
+        map.end()
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<HashMap<Address, HashMap<U256, U256>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct EarningsPerMarketVisitor;
+
+        impl<'de> Visitor<'de> for EarningsPerMarketVisitor {
+            type Value = HashMap<Address, HashMap<U256, U256>>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a map of addresses to maps of U256 keys and U256 values")
+            }
+
+            fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut map = HashMap::new();
+                while let Some((address_str, inner_map_serializable)) =
+                    access.next_entry::<String, HashMap<String, String>>()?
+                {
+                    // Parse address from hex string
+                    let address = Address::from_str(&address_str).map_err(de::Error::custom)?;
+                    let mut inner_map = HashMap::new();
+                    for (key_str, value_str) in inner_map_serializable {
+                        // Parse U256 keys and values from decimal strings
+                        let u256_key = U256::from_dec_str(&key_str).map_err(de::Error::custom)?;
+                        let u256_value =
+                            U256::from_dec_str(&value_str).map_err(de::Error::custom)?;
+                        inner_map.insert(u256_key, u256_value);
+                    }
+                    map.insert(address, inner_map);
+                }
+                Ok(map)
+            }
+        }
+
+        deserializer.deserialize_map(EarningsPerMarketVisitor)
+    }
+}
+
+mod slashing_per_generator_per_market_serde {
+    use super::*;
+    use serde::de::{self, MapAccess, Visitor};
+    use serde::ser::SerializeMap;
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S>(
+        value: &HashMap<Address, HashMap<U256, TokenTracker>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(value.len()))?;
+        for (address, inner_map) in value {
+            // Convert Address to hex string without '0x' prefix
+            let address_str = format!("{:x}", address);
+            // Convert inner HashMap<U256, TokenTracker> to HashMap<String, TokenTracker>
+            let mut inner_map_serializable = HashMap::with_capacity(inner_map.len());
+            for (u256_key, token_tracker_value) in inner_map {
+                let key_str = u256_key.to_string();
+                inner_map_serializable.insert(key_str, token_tracker_value);
+            }
+            map.serialize_entry(&address_str, &inner_map_serializable)?;
+        }
+        map.end()
+    }
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<HashMap<Address, HashMap<U256, TokenTracker>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct SlashingPerGeneratorPerMarketVisitor;
+
+        impl<'de> Visitor<'de> for SlashingPerGeneratorPerMarketVisitor {
+            type Value = HashMap<Address, HashMap<U256, TokenTracker>>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter
+                    .write_str("a map of addresses to maps of U256 keys and TokenTracker values")
+            }
+
+            fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
+            where
+                M: MapAccess<'de>,
+            {
+                let mut map = HashMap::new();
+                while let Some((address_str, inner_map_serializable)) =
+                    access.next_entry::<String, HashMap<String, TokenTracker>>()?
+                {
+                    // Parse Address from hex string
+                    let address = Address::from_str(&address_str).map_err(de::Error::custom)?;
+                    let mut inner_map = HashMap::new();
+                    for (key_str, token_tracker_value) in inner_map_serializable {
+                        // Parse U256 key from decimal string
+                        let u256_key = U256::from_dec_str(&key_str).map_err(de::Error::custom)?;
+                        inner_map.insert(u256_key, token_tracker_value);
+                    }
+                    map.insert(address, inner_map);
+                }
+                Ok(map)
+            }
+        }
+
+        deserializer.deserialize_map(SlashingPerGeneratorPerMarketVisitor)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeneratorStore {
     // Change key to tuple (Address, U256)
     generators: HashMap<Address, Generator>, // Generator -> Details
 
-    #[serde(skip)]
+    #[serde(with = "generator_markets_serde")]
     generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>, //[Generator, MarketId] -> MarketWiseInfo
 
     state_index: HashMap<GeneratorState, Vec<(Address, U256)>>, // State -> [Generator, MarketId]
@@ -74,12 +285,12 @@ pub struct GeneratorStore {
 
     earnings: HashMap<Address, U256>, // Generator -> TotalEarnings
 
-    #[serde(skip)]
+    #[serde(with = "earnings_or_points_per_market_serde")]
     earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
 
     slashings: HashMap<Address, TokenTracker>, // Generator -> Total Slashings
 
-    #[serde(skip)]
+    #[serde(with = "slashing_per_generator_per_market_serde")]
     slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
 
     slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
@@ -88,7 +299,7 @@ pub struct GeneratorStore {
 
     kalypso_points: HashMap<Address, U256>,
 
-    #[serde(skip)]
+    #[serde(with = "earnings_or_points_per_market_serde")]
     kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
 
     withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,

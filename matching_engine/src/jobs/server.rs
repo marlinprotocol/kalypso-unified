@@ -12,8 +12,10 @@ use kalypso_helper::middlewares::request_limiter::ConcurrencyLimiter;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 
+use crate::costs::CostStore;
 use crate::generator_lib::key_store::KeyStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::stake_manager_store::StakeManagerStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketMetadataStore;
 use crate::routes::{get_core_scope, get_stats_scope, ui_scope};
@@ -37,6 +39,8 @@ pub struct MatchingEngineServer {
     shared_native_staking_data: Arc<RwLock<NativeStakingStore>>,
     shared_symbiotic_staking_data: Arc<RwLock<SymbioticStakeStore>>,
     shared_key_data: Arc<RwLock<KeyStore>>,
+    shared_cost_store_data: Arc<RwLock<CostStore>>,
+    shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
     relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
     should_stop: Arc<AtomicBool>,
 }
@@ -53,6 +57,8 @@ impl MatchingEngineServer {
         shared_native_staking_data: Arc<RwLock<NativeStakingStore>>,
         shared_symbiotic_staking_data: Arc<RwLock<SymbioticStakeStore>>,
         shared_key_data: Arc<RwLock<KeyStore>>,
+        shared_cost_store_data: Arc<RwLock<CostStore>>,
+        shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
         should_stop: Arc<AtomicBool>,
     ) -> Self {
@@ -65,6 +71,8 @@ impl MatchingEngineServer {
             shared_generator_data,
             shared_native_staking_data,
             shared_symbiotic_staking_data,
+            shared_cost_store_data,
+            shared_stake_manager_store,
             shared_key_data,
             relayer_key_balance,
             should_stop,
@@ -107,6 +115,8 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_generator_data.clone()))
                 .app_data(Data::new(self.shared_native_staking_data.clone()))
                 .app_data(Data::new(self.shared_symbiotic_staking_data.clone()))
+                .app_data(Data::new(self.shared_cost_store_data.clone()))
+                .app_data(Data::new(self.shared_stake_manager_store.clone()))
                 .app_data(Data::new(self.shared_key_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
                 .service(

@@ -1,10 +1,14 @@
+use ethers::types::U64;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::ask_lib::ask_store::LocalAskStore;
+use crate::costs::CostStore;
 use crate::generator_lib::generator_store::GeneratorStore;
+use crate::generator_lib::key_store::KeyStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::stake_manager_store::StakeManagerStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketMetadataStore;
 
@@ -25,6 +29,10 @@ struct Dump<'a> {
     generator_store: Option<&'a GeneratorStore>,
     native_staking_store: Option<&'a NativeStakingStore>,
     symbiotic_stake_store: Option<&'a SymbioticStakeStore>,
+    cost_store: Option<&'a CostStore>,
+    key_store: Option<&'a KeyStore>,
+    stake_manager_store: Option<&'a StakeManagerStore>,
+    parsed_block: Option<&'a U64>,
 }
 
 pub async fn get_dump(
@@ -33,12 +41,20 @@ pub async fn get_dump(
     local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
     local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+    local_cost_store: Data<Arc<RwLock<CostStore>>>,
+    local_key_store: Data<Arc<RwLock<KeyStore>>>,
+    local_stake_manager_store: Data<Arc<RwLock<StakeManagerStore>>>,
+    local_parsed_block: Data<Arc<RwLock<U64>>>,
 ) -> actix_web::Result<HttpResponse> {
     try_read_or_lock!(local_market_store, market_store);
     try_read_or_lock!(local_ask_store, ask_store);
     try_read_or_lock!(local_generator_store, generator_store);
     try_read_or_lock!(local_native_store, native_store);
     try_read_or_lock!(local_symbiotic_store, symbiotic_store);
+    try_read_or_lock!(local_cost_store, cost_store);
+    try_read_or_lock!(local_key_store, key_store);
+    try_read_or_lock!(local_stake_manager_store, stake_manager_store);
+    try_read_or_lock!(local_parsed_block, parsed_block);
 
     let dump = Dump {
         market_metadata_store: Some(&*market_store),
@@ -46,6 +62,10 @@ pub async fn get_dump(
         generator_store: Some(&*generator_store),
         native_staking_store: Some(&*native_store),
         symbiotic_stake_store: Some(&*symbiotic_store),
+        cost_store: Some(&*cost_store),
+        key_store: Some(&*key_store),
+        stake_manager_store: Some(&*stake_manager_store),
+        parsed_block: Some(&*parsed_block),
     };
 
     // Return the JSON response
