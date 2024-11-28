@@ -1,3 +1,4 @@
+use actix_web::web::Data;
 use bindings::proof_marketplace as pmp;
 use ethers::prelude::*;
 use ethers::types::U256;
@@ -116,9 +117,10 @@ pub struct JobCreator {
     #[allow(unused)]
     log_storage: Option<Arc<Mutex<Vec<String>>>>,
     max_threads: usize,
-    shared_latest_block: Arc<tokio::sync::Mutex<U64>>,
+    shared_latest_block: Arc<Mutex<U64>>,
     should_stop: Arc<AtomicBool>,
     skip_input_verification: bool,
+    metrics: Data<kalypso_helper::prom_client::TaskMetrics>,
 }
 
 impl JobCreator {
@@ -146,12 +148,32 @@ impl JobCreator {
         max_threads: usize,
     ) -> Self {
         let service_name = Uuid::new_v4().to_string();
-        let shared_latest_block = Arc::new(tokio::sync::Mutex::new(U64::zero()));
+        let shared_latest_block = Arc::new(Mutex::new(U64::zero()));
         let should_stop = Arc::new(AtomicBool::new(false));
+
+        let task_metrics =
+            actix_web::web::Data::new(kalypso_helper::prom_client::TaskMetrics::default());
+        let mut app_state = kalypso_helper::prom_client::ListenerMetrics::default();
+
+        app_state.registry.register(
+            "requests",
+            "Count of requests",
+            task_metrics.requests.clone(),
+        );
+
+        app_state.registry.register(
+            "block",
+            "Block Number till which the listener has found requests",
+            task_metrics.block.clone(),
+        );
+
+        let shared_app_state = Arc::new(Mutex::new(app_state));
+
         let health_check_service = ListenerHealthCheckServer::new(
             service_name,
             shared_latest_block.clone(),
             should_stop.clone(),
+            shared_app_state.clone(),
         );
 
         tokio::spawn(health_check_service.start_server(9999, false));
@@ -172,6 +194,7 @@ impl JobCreator {
                 shared_latest_block,
                 should_stop,
                 skip_input_verification,
+                metrics: task_metrics,
             }
         } else {
             Self {
@@ -182,6 +205,7 @@ impl JobCreator {
                 shared_latest_block,
                 should_stop,
                 skip_input_verification,
+                metrics: task_metrics,
             }
         }
     }
@@ -550,6 +574,8 @@ impl JobCreator {
                 }
             };
 
+            self.metrics.note_block_parsed_to(start_block);
+
             let end = if start_block + blocks_at_once > latest_block {
                 latest_block - 1
             } else {
@@ -618,6 +644,7 @@ impl JobCreator {
                         "Need to generate proof (polling) for ASK ID : {}",
                         event.ask_id
                     );
+                    self.metrics.inc_tasks_assigned();
                     let gen_ecies_private_key = generator.ecies_priv_key;
 
                     let proof_market_place_clone_http = Arc::clone(&proof_marketplace_http);
@@ -768,7 +795,7 @@ impl JobCreator {
             start_block = end + 1;
 
             {
-                *self.shared_latest_block.lock().await = start_block
+                *self.shared_latest_block.lock().unwrap() = start_block
             }
         }
         Ok(())

@@ -7,12 +7,13 @@ use actix_web::{web, App, HttpServer};
 use ethers::types::U64;
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::sync::Mutex;
+use std::sync::Mutex;
 
 pub struct ListenerHealthCheckServer {
     shared_latest_block: Arc<Mutex<U64>>,
     service_name: Arc<Mutex<String>>,
     should_stop: Arc<AtomicBool>,
+    shared_metrics: Arc<Mutex<kalypso_helper::prom_client::ListenerMetrics>>,
 }
 
 impl ListenerHealthCheckServer {
@@ -21,11 +22,13 @@ impl ListenerHealthCheckServer {
         service_name: String,
         shared_latest_block: Arc<Mutex<U64>>,
         should_stop: Arc<AtomicBool>,
+        shared_metrics: Arc<Mutex<kalypso_helper::prom_client::ListenerMetrics>>,
     ) -> Self {
         ListenerHealthCheckServer {
             shared_latest_block,
             service_name: Arc::new(Mutex::new(service_name)),
             should_stop,
+            shared_metrics,
         }
     }
 
@@ -33,13 +36,18 @@ impl ListenerHealthCheckServer {
         let server = HttpServer::new(move || {
             let rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
                 Duration::from_secs(1),
-                100 as u64,
+                1 as u64,
             );
             App::new()
                 .wrap(rate_limiter)
                 .app_data(Data::new(self.shared_latest_block.clone()))
                 .app_data(Data::new(self.service_name.clone()))
+                .app_data(Data::new(self.shared_metrics.clone()))
                 .route("/getLatestBlock", web::get().to(get_latest_block_number))
+                .route(
+                    "/metrics",
+                    web::get().to(kalypso_helper::common_handlers::metrics_handler),
+                )
         });
 
         if enable_ssc {
@@ -84,8 +92,8 @@ async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
     service_name: Data<Arc<Mutex<String>>>,
 ) -> actix_web::Result<HttpResponse> {
-    let latest_parsed_block = _shared_parsed_block.lock().await;
-    let service_name = service_name.lock().await;
+    let latest_parsed_block = _shared_parsed_block.lock().unwrap();
+    let service_name = service_name.lock().unwrap();
 
     #[derive(Serialize, Debug, Clone)]
     struct GetLatestBlockNumberResponse {

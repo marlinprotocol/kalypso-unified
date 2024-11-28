@@ -1,3 +1,4 @@
+use crate::prom_client::ListenerMetrics;
 use crate::response::response;
 use crate::sch_payload::{SCHPayload, ToPayload, ToSchResponse};
 use actix_web::http::StatusCode;
@@ -185,6 +186,20 @@ async fn sign_attestation_encrypted(
     } else {
         return response("Attestation signing failed", StatusCode::BAD_REQUEST, None);
     }
+}
+
+pub async fn metrics_handler(
+    state: Data<Arc<Mutex<ListenerMetrics>>>,
+) -> actix_web::Result<actix_web::HttpResponse> {
+    let state = match state.lock() {
+        Ok(data) => data,
+        Err(_) => todo!(),
+    };
+    let mut body = String::new();
+    prometheus_client::encoding::text::encode(&mut body, &state.registry).unwrap();
+    Ok(actix_web::HttpResponse::Ok()
+        .content_type("application/openmetrics-text; version=1.0.0; charset=utf-8")
+        .body(body))
 }
 
 async fn _sign_attestation(body: &SignAttestation, ecies_priv_key: &Vec<u8>) -> Option<Value> {
