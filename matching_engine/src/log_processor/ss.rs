@@ -205,7 +205,7 @@ pub async fn process_symbiotic_staking_logs(
                     .unwrap();
 
                 log::debug!(
-                    "operator:{}, snapshot token:{}, amount: {}",
+                    "operator:{:?}, snapshot token:{:?}, amount: {:?}",
                     &operator,
                     &stake_token,
                     vault_snapshot_amount.to_string()
@@ -216,6 +216,24 @@ pub async fn process_symbiotic_staking_logs(
                     symbiotic_stake_store.get_latest_stake_info(&operator, &stake_token);
 
                 if vault_snapshot_amount.gt(&last_stored_staking_info) {
+                    log::debug!(
+                        "Operator: {:?} Token:{:?} existing stake {:?}",
+                        &operator,
+                        &stake_token,
+                        last_stored_staking_info
+                    );
+                    log::debug!(
+                        "Operator: {:?} Token:{:?} new stake {:?}",
+                        &operator,
+                        &stake_token,
+                        vault_snapshot_amount
+                    );
+                    log::debug!(
+                        "Operator: {:?} Token:{:?} recevied extra stake {:?}",
+                        &operator,
+                        &stake_token,
+                        vault_snapshot_amount - last_stored_staking_info
+                    );
                     generator_store.add_extra_stake(
                         &operator,
                         &stake_token,
@@ -227,6 +245,25 @@ pub async fn process_symbiotic_staking_logs(
                         delegation::Source::Symbiotic,
                     );
                 } else if vault_snapshot_amount.lt(&last_stored_staking_info) {
+                    log::debug!(
+                        "Operator: {:?} Token:{:?} existing stake {:?}",
+                        &operator,
+                        &stake_token,
+                        last_stored_staking_info
+                    );
+                    log::debug!(
+                        "Operator: {:?} Token:{:?} new stake {:?}",
+                        &operator,
+                        &stake_token,
+                        vault_snapshot_amount
+                    );
+                    log::debug!(
+                        "Operator: {:?} Token:{:?} removed stake {:?}",
+                        &operator,
+                        &stake_token,
+                        last_stored_staking_info - vault_snapshot_amount
+                    );
+
                     generator_store.remove_stake(
                         &operator,
                         &stake_token,

@@ -38,3 +38,4 @@ test_*.sh
 
 /app
 /app/*
+*.log

@@ -220,6 +220,12 @@ impl TokenTracker {
         *entry += *amount; // Increment the token amount
     }
 
+    pub fn replace_token(&mut self, token: &Address, amount: &U256) {
+        log::warn!("Replace token value is being called in TokenTracker, avoid using this function and modify the app's code");
+        let entry = self.tokens.entry(*token).or_insert(U256::zero());
+        *entry = *amount; // replace with  whatever value provided.
+    }
+
     pub fn sub_token(&mut self, token: &Address, amount: &U256) -> Result<(), String> {
         if let Some(entry) = self.tokens.get_mut(token) {
             if *entry >= *amount {

@@ -638,12 +638,26 @@ impl GeneratorStore {
     ) {
         if let Some(generator) = self.generators.get_mut(generator_address) {
             match source {
-                super::delegation::Source::Native => generator
-                    .total_native_stake
-                    .sub_token_saturating(token_address, amount),
-                super::delegation::Source::Symbiotic => generator
-                    .total_symbiotic_stake
-                    .sub_token_saturating(token_address, amount),
+                super::delegation::Source::Native => {
+                    log::debug!("Existing Native Stake: {:?}", generator.total_native_stake);
+                    log::debug!("Token to remove: {:?}, Amount: {:?}", token_address, amount);
+                    generator
+                        .total_native_stake
+                        .sub_token(token_address, amount)
+                        .unwrap(); // unwraping because this should never come
+                }
+
+                super::delegation::Source::Symbiotic => {
+                    log::debug!(
+                        "Existing Symbiotic Stake: {:?}",
+                        generator.total_symbiotic_stake
+                    );
+                    log::debug!("Token to remove: {:?}, Amount: {:?}", token_address, amount);
+                    generator
+                        .total_symbiotic_stake
+                        .sub_token(token_address, amount)
+                        .unwrap();
+                }
             }
 
             self.delegation_store.add_delegation(
