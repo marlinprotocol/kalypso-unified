@@ -437,7 +437,7 @@ impl LogParser {
         };
 
         for random_pending_ask in available_asks {
-            log::info!(
+            log::debug!(
                 "Finding matching generator for ask: {}",
                 random_pending_ask.ask_id
             );
@@ -462,14 +462,14 @@ impl LogParser {
                 continue;
             }
 
-            log::info!("idle generators: {}", &idle_generators.len());
+            log::debug!("idle generators: {}", &idle_generators.len());
 
             let key_store = { self.shared_key_store.read().await };
             let idle_generator =
                 generator_helper::random_generator_selection(idle_generators).unwrap();
 
             if let Some(&cached_compute_value) = cached_compute.get(&idle_generator.address) {
-                log::info!(
+                log::debug!(
                     "Generator: {}, Compute available: {}, vs compute required: {}",
                     idle_generator.address,
                     cached_compute_value,
@@ -503,7 +503,7 @@ impl LogParser {
                             .clone()
                 };
 
-                log::info!(
+                log::debug!(
                     "Generator: {}, Stash available: {}, vs stash required: {}",
                     idle_generator.address,
                     cached_stake_value.to_string(),
@@ -520,7 +520,7 @@ impl LogParser {
                             .clone()
                             .sub(TokenTracker::from_address_token_pair(selected_token));
 
-                        log::info!(
+                        log::debug!(
                             "Updated cached stake of generator: {} = {}",
                             idle_generator.address,
                             updated_cached_stake
@@ -741,6 +741,12 @@ impl LogParser {
             .tokens_to_lock
             .to_address_token_pair();
 
+        log::debug!(
+            "Required Native Stake for Job: {}",
+            random_pending_ask.ask_id
+        );
+        log::debug!("Job {} Reward: {}", random_pending_ask.ask_id, task_reward);
+
         let idle_generators = {
             let generator_query = {
                 if random_pending_ask.has_private_inputs {
@@ -794,6 +800,10 @@ impl LogParser {
 
             let generators = generator_query.result();
 
+            log::debug!(
+                "Final Number of elligible generators found: {}",
+                generators.len()
+            );
             generator_helper::select_idle_generators(generators)
         };
         idle_generators

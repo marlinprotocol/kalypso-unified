@@ -1047,6 +1047,7 @@ impl GeneratorStore {
             })
             .collect(); // Collect the results into a Vec
 
+        log::debug!("Generator with idle compute: {}", generator_result.len());
         GeneratorQueryResult::new(generator_result)
     }
 
@@ -1068,6 +1069,21 @@ impl GeneratorStore {
                         .clone()
                         .sub(generator.native_stake_locked.clone());
 
+                    log::debug!(
+                        "Filtering Generator by available native stake. Generator: {:?}",
+                        generator.address
+                    );
+                    log::debug!(
+                        "Generator: {:?} remaining native stake: {:?}",
+                        generator.address,
+                        remaining_stake
+                    );
+                    log::debug!(
+                        "Generator: {:?} one of the token required in native stake: {:?}",
+                        generator.address,
+                        min_stake
+                    );
+
                     // Check if at least one of the AddressTokenPairs in min_stake meets the condition
                     let is_valid = min_stake
                         .iter()
@@ -1085,6 +1101,11 @@ impl GeneratorStore {
             })
             .collect(); // Collect the results into a Vec
 
+        log::debug!(
+            "Number of generators available with native stake {:?} = {}",
+            min_stake,
+            generator_result.len()
+        );
         GeneratorQueryResult::new(generator_result)
     }
 
@@ -1106,6 +1127,21 @@ impl GeneratorStore {
                         .clone()
                         .sub(generator.symbiotic_stake_locked.clone());
 
+                    log::debug!(
+                        "Filtering Generator by available symbiotic stake. Generator: {:?}",
+                        generator.address
+                    );
+                    log::debug!(
+                        "Generator: {:?} remaining symbiotic stake: {:?}",
+                        generator.address,
+                        remaining_stake
+                    );
+                    log::debug!(
+                        "Generator: {:?} one of the token required in symbiotic stake: {:?}",
+                        generator.address,
+                        min_stake
+                    );
+
                     // Check if at least one of the AddressTokenPairs in min_stake meets the condition
                     let is_valid = min_stake
                         .iter()
@@ -1123,6 +1159,11 @@ impl GeneratorStore {
             })
             .collect(); // Collect the results into a Vec
 
+        log::debug!(
+            "Number of generators available with symbiotic stake {:?} = {}",
+            min_stake,
+            generator_result.len()
+        );
         GeneratorQueryResult::new(generator_result)
     }
 
