@@ -1,4 +1,5 @@
 use super::cache::CachedResponse;
+use super::single_generator::StakeBreakDown;
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
@@ -39,6 +40,7 @@ struct Operator {
     proofs_missed: String,
     pending_proofs: String,
     current_stake: Vec<TokenAmount>,
+    stake_break_down: StakeBreakDown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -187,6 +189,17 @@ async fn recompute_generator_response<'a>(
             proofs_missed: proofs_missed.to_string(),
             pending_proofs: pending_proofs.to_string(),
             current_stake,
+            stake_break_down: StakeBreakDown {
+                total_native_stake: operator_data.clone().total_native_stake.to_token_amount(),
+                total_native_stake_locked: operator_data.native_stake_locked.to_token_amount(),
+                total_symbiotic_stake: operator_data
+                    .clone()
+                    .total_symbiotic_stake
+                    .to_token_amount(),
+                total_symbiotic_stake_locked: operator_data
+                    .symbiotic_stake_locked
+                    .to_token_amount(),
+            },
         };
 
         result.push(operator);

@@ -103,6 +103,15 @@ pub struct GeneratorResponse {
     delegations: Vec<DelegateOperation>,
     my_delegations: Vec<TokenAmount>,
     withdrawal_requests: Vec<WithdrawRequest>,
+    stake_break_down: StakeBreakDown,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct StakeBreakDown {
+    pub total_native_stake: Vec<TokenAmount>,
+    pub total_native_stake_locked: Vec<TokenAmount>,
+    pub total_symbiotic_stake: Vec<TokenAmount>,
+    pub total_symbiotic_stake_locked: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -317,8 +326,8 @@ async fn recompute_single_generator_response<'a>(
             .get_total_slashing(&generator_id)
             .unwrap_or_default()
             .to_token_amount(),
-        total_delegations: (generator_data.total_native_stake
-            + generator_data.total_symbiotic_stake)
+        total_delegations: (generator_data.clone().total_native_stake
+            + generator_data.clone().total_symbiotic_stake)
             .to_token_amount(),
         available_stake: (local_generator_store
             .get_available_native_stake(&generator_id)
@@ -327,6 +336,15 @@ async fn recompute_single_generator_response<'a>(
                 .get_available_symbiotic_stake(&generator_id)
                 .unwrap_or_default())
         .to_token_amount(),
+        stake_break_down: StakeBreakDown {
+            total_native_stake: generator_data.clone().total_native_stake.to_token_amount(),
+            total_native_stake_locked: generator_data.native_stake_locked.to_token_amount(),
+            total_symbiotic_stake: generator_data
+                .clone()
+                .total_symbiotic_stake
+                .to_token_amount(),
+            total_symbiotic_stake_locked: generator_data.symbiotic_stake_locked.to_token_amount(),
+        },
         stake_locked: (local_generator_store
             .get_native_stake_locked(&generator_id)
             .unwrap_or_default()
