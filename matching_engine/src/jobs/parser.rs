@@ -479,9 +479,14 @@ impl LogParser {
                 );
                 if idle_generator.compute_required_per_request > cached_compute_value {
                     log::warn!(
-                        "Possible insuff compute if ask: {} is assigned",
+                        "Possible insuff compute if ask: {} is assigned, so skipping it",
                         random_pending_ask.ask_id
                     );
+                    log::warn!(
+                        "Will try assigning ask: {} in next iteration to any generator",
+                        random_pending_ask.ask_id
+                    );
+                    continue;
                 } else {
                     cached_compute.insert(
                         idle_generator.address,
@@ -531,9 +536,14 @@ impl LogParser {
                     }
                 } else {
                     log::warn!(
-                        "Possible insuff stash if ask: {} is assigned",
+                        "Possible insuff stash if ask: {} is assigned, so skipping it",
                         random_pending_ask.ask_id
                     );
+                    log::warn!(
+                        "Will try assigning ask: {} in next iteration to any generator",
+                        random_pending_ask.ask_id
+                    );
+                    continue;
                 }
             }
 
@@ -591,14 +601,6 @@ impl LogParser {
                 );
                 {
                     // previous ref of ask store won't work because it was readonly, create a write only one that drops here only.
-                    // match self.shared_local_ask_store.try_write() {
-                    //     Ok(mut store) => store.modify_state(&random_pending_ask.ask_id, ask_state),
-                    //     Err(err) => {
-                    //         log::error!("Failed getting lock on ask store {}", err);
-                    //         log::error!("Failed updating ask store. If repeated issue, there may be another matching running in parallel");
-                    //     }
-                    // }
-
                     let mut ask_store = self.shared_local_ask_store.write().await;
                     ask_store.modify_state(&random_pending_ask.ask_id, ask_state);
                     drop(ask_store);
@@ -623,6 +625,8 @@ impl LogParser {
         if task_list.len().eq(&0) {
             log::warn!("No Matches");
             return Ok(end_block);
+        } else {
+            log::info!("Trying to assign {} asks", task_list.len());
         }
 
         let mut ask_ids = vec![];
