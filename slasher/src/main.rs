@@ -130,13 +130,14 @@ impl SlashingInstance {
             };
 
             for operator in operators.iter() {
-                sleep(Duration::from_secs(3)).await;
+                sleep(Duration::from_secs(1)).await;
                 let active_requests = self.active_requests(operator.address.clone()).await?;
                 for active_request in active_requests.iter() {
+                    sleep(Duration::from_secs(1)).await;
                     self._handle_request(active_request).await;
                 }
             }
-            sleep(Duration::from_secs(3)).await;
+            sleep(Duration::from_secs(1)).await;
 
             let markets = match self.get_markets().await {
                 Ok(data) => data,
@@ -147,14 +148,15 @@ impl SlashingInstance {
             };
 
             for market in markets.iter() {
-                sleep(Duration::from_secs(3)).await;
+                sleep(Duration::from_secs(1)).await;
                 let expired_requests = self.expired_requests(market.market_id.clone()).await?;
                 for expired_request in expired_requests.iter() {
+                    sleep(Duration::from_secs(1)).await;
                     self._handle_request(expired_request).await;
                 }
             }
 
-            sleep(Duration::from_secs(3)).await;
+            sleep(Duration::from_secs(1)).await;
         }
     }
 

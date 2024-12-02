@@ -375,6 +375,8 @@ impl LogParser {
             .get_by_ask_state_except_complete(AskState::Create)
             .filter_by_flag(true)
             .result();
+
+        drop(ask_store); // dropping here manually because, in next step may require to obtain a write lock
         log::debug!("Complete fetch available asks");
 
         if available_asks.is_none() {
@@ -589,13 +591,17 @@ impl LogParser {
                 );
                 {
                     // previous ref of ask store won't work because it was readonly, create a write only one that drops here only.
-                    match self.shared_local_ask_store.try_write() {
-                        Ok(mut store) => store.modify_state(&random_pending_ask.ask_id, ask_state),
-                        Err(err) => {
-                            log::error!("{}", err);
-                            log::error!("Failed updating ask store. If repeated issue, there may be another matching running in parallel");
-                        }
-                    }
+                    // match self.shared_local_ask_store.try_write() {
+                    //     Ok(mut store) => store.modify_state(&random_pending_ask.ask_id, ask_state),
+                    //     Err(err) => {
+                    //         log::error!("Failed getting lock on ask store {}", err);
+                    //         log::error!("Failed updating ask store. If repeated issue, there may be another matching running in parallel");
+                    //     }
+                    // }
+
+                    let mut ask_store = self.shared_local_ask_store.write().await;
+                    ask_store.modify_state(&random_pending_ask.ask_id, ask_state);
+                    drop(ask_store);
                 }
                 continue;
             }
