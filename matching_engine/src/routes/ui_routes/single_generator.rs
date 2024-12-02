@@ -112,6 +112,8 @@ pub struct StakeBreakDown {
     pub total_native_stake_locked: Vec<TokenAmount>,
     pub total_symbiotic_stake: Vec<TokenAmount>,
     pub total_symbiotic_stake_locked: Vec<TokenAmount>,
+    pub available_native_stake: Vec<TokenAmount>,
+    pub available_symbiotic_stake: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -344,6 +346,12 @@ async fn recompute_single_generator_response<'a>(
                 .total_symbiotic_stake
                 .to_token_amount(),
             total_symbiotic_stake_locked: generator_data.symbiotic_stake_locked.to_token_amount(),
+            available_native_stake: (generator_data.total_native_stake
+                - generator_data.native_stake_locked)
+                .to_token_amount(),
+            available_symbiotic_stake: (generator_data.total_symbiotic_stake
+                - generator_data.symbiotic_stake_locked)
+                .to_token_amount(),
         },
         stake_locked: (local_generator_store
             .get_native_stake_locked(&generator_id)

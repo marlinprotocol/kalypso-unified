@@ -199,6 +199,12 @@ async fn recompute_generator_response<'a>(
                 total_symbiotic_stake_locked: operator_data
                     .symbiotic_stake_locked
                     .to_token_amount(),
+                available_native_stake: (operator_data.total_native_stake
+                    - operator_data.native_stake_locked)
+                    .to_token_amount(),
+                available_symbiotic_stake: (operator_data.total_symbiotic_stake
+                    - operator_data.symbiotic_stake_locked)
+                    .to_token_amount(),
             },
         };
 
