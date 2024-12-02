@@ -81,22 +81,24 @@ impl MatchingEngineServer {
 
     pub async fn start_server(self, port: u16, enable_ssc: bool) -> anyhow::Result<()> {
         let server = HttpServer::new(move || {
-            let ui_request_concurrency = ConcurrencyLimiter::new(2);
+            let max_requests = 25 as usize;
+            
+            let ui_request_concurrency = ConcurrencyLimiter::new(max_requests);
             let ui_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
                 Duration::from_secs(1),
-                10 as u64,
+                max_requests as u64,
             );
 
-            let stats_request_concurrency = ConcurrencyLimiter::new(2);
+            let stats_request_concurrency = ConcurrencyLimiter::new(max_requests);
             let stats_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
                 Duration::from_secs(1),
-                10 as u64,
+                max_requests as u64,
             );
 
-            let core_request_concurrency = ConcurrencyLimiter::new(10);
+            let core_request_concurrency = ConcurrencyLimiter::new(max_requests);
             let core_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
                 Duration::from_secs(1),
-                10 as u64,
+                max_requests as u64,
             );
 
             #[cfg(not(feature = "matching_engine_enable_cors"))]
