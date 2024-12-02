@@ -192,7 +192,7 @@ impl Operation for NonConfidentialRequest {
                     bindings::proof_marketplace::Ask {
                         market_id: non_confidential_request_info.market_id,
                         reward: non_confidential_request_info.max_proof_generation_cost,
-                        expiry: (10000000000000 as u64).into(),
+                        expiry: (200 as u64).into(),
                         time_taken_for_proof_generation: non_confidential_request_info
                             .max_proof_generation_time,
                         deadline: U256::zero(),
