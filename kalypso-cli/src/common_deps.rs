@@ -578,6 +578,8 @@ pub struct NonConfidentialRequest {
     pub max_proof_generation_time: U256,
     pub inputs: ethers::types::Bytes,
     pub market_id: U256,
+    pub provider_http: Provider<Http>,
+    pub kalypso_rpc_url: String,
 }
 
 impl CommonDeps {
@@ -635,6 +637,9 @@ impl CommonDeps {
         let market_id = U256::from_dec_str(market_id.as_str())
             .map_err(|e| format!("Invalid Market Id: {}", e))?;
 
+        let provider_http =
+            Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
         Ok(NonConfidentialRequest {
             private_key_signer,
             proof_marketplace,
@@ -643,6 +648,8 @@ impl CommonDeps {
             max_proof_generation_time,
             inputs,
             market_id,
+            provider_http,
+            kalypso_rpc_url: rpc_url.clone(),
         })
     }
 }
@@ -911,6 +918,8 @@ pub struct ConfidentialRequest {
     pub entity_registry: bindings::entity_key_registry::EntityKeyRegistry<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
+    pub provider_http: Provider<Http>,
+    pub kalypso_rpc_url: String,
 }
 
 impl CommonDeps {
@@ -999,6 +1008,9 @@ impl CommonDeps {
             rpc_url,
         )?;
 
+        let provider_http =
+            Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
         Ok(ConfidentialRequest {
             private_key_signer,
             proof_marketplace,
@@ -1009,6 +1021,8 @@ impl CommonDeps {
             market_id,
             private_inputs,
             entity_registry,
+            provider_http,
+            kalypso_rpc_url: rpc_url.clone(),
         })
     }
 }
