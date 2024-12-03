@@ -88,6 +88,10 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         }
         "Update Market Metadata" => Some(Box::new(update_market_metadata::UpdateMarketMetadata)),
         "Update Generator Metadata" => Some(Box::new(update_generator_meta::UpdateGeneratorMeta)),
+        "Check Symbiotic Registration Info" => Some(Box::new(
+            symbiotic_opt_in::SymbioticOperatorRegistrationInfo,
+        )),
+        "Check Symbiotic Optin Info" => Some(Box::new(symbiotic_opt_in::SymbioticOptinInfo)),
         _ => unimplemented!(),
     }
 }

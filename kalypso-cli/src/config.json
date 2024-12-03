@@ -595,6 +595,29 @@
         "chain_id",
         "generator_registry"
       ]
+    },
+    {
+      "name": "Check Symbiotic Registration Info",
+      "description": "Checks whether the operator is registered on symbiotic",
+      "required_prompts": [
+        "private_key",
+        "symbiotic_rpc_url",
+        "symbiotic_chain_id",
+        "symbiotic_operator_registry"
+      ]
+    },
+    {
+      "name": "Check Symbiotic Optin Info",
+      "description": "Checks whether operator has opted into vaults and networks",
+      "required_prompts": [
+        "private_key",
+        "symbiotic_rpc_url",
+        "symbiotic_chain_id",
+        "vault_opt_in_service",
+        "vault_address",
+        "network_opt_in_service",
+        "network_address"
+      ]
     }
   ]
 }
