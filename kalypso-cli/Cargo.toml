@@ -7,6 +7,7 @@ edition = "2021"
 async-trait = "0.1.64" 
 bytes = "1.0"
 bindings = { path = "../bindings", package = "foundry-contracts" }
+binding_patches = { path = "../binding_patches", package = "binding_patches"}
 dotenv = "0.15.0"
 dialoguer = "0.10.3"
 ethers = { version = "2", features = ["rustls"] }

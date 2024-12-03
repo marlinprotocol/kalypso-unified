@@ -14,6 +14,8 @@ pub mod request;
 pub mod stake;
 pub mod symbiotic_opt_in;
 pub mod update_encryption_key;
+pub mod update_generator_meta;
+pub mod update_market_metadata;
 pub mod whitelist;
 
 // ... Add other operation modules here
@@ -84,6 +86,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Symbiotic Operator Register" => {
             Some(Box::new(symbiotic_opt_in::SymbioticOperatorRegister))
         }
+        "Update Market Metadata" => Some(Box::new(update_market_metadata::UpdateMarketMetadata)),
+        "Update Generator Metadata" => Some(Box::new(update_generator_meta::UpdateGeneratorMeta)),
         _ => unimplemented!(),
     }
 }

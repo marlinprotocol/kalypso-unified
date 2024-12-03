@@ -1352,3 +1352,160 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct UpdateMarketMetadataInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: binding_patches::UpdateProofMarketplaceMetadataPatch<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn update_market_metadata_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<UpdateMarketMetadataInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "market_id", market_id);
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        let (proof_marketplace, local_wallet) = update_proof_marketplace_metadata_patch_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        Ok(UpdateMarketMetadataInfo {
+            private_key_signer: local_wallet,
+            proof_marketplace,
+            market_id,
+        })
+    }
+}
+
+fn update_proof_marketplace_metadata_patch_instance(
+    private_key: &str,
+    chain_id: &str,
+    proof_marketplace_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        binding_patches::UpdateProofMarketplaceMetadataPatch<
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+        >,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let proof_marketplace_address = proof_marketplace_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Proof Marketplace address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let proof_marketplace = binding_patches::UpdateProofMarketplaceMetadataPatch::new(
+        proof_marketplace_address,
+        client_arc.clone(),
+    );
+
+    Ok((proof_marketplace, private_key_signer))
+}
+
+pub struct UpdateGeneratorMetaInfo {
+    pub generator_registry: binding_patches::UpdateGeneratorMetadataPatch<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+}
+
+impl CommonDeps {
+    pub fn update_generator_meta_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<UpdateGeneratorMetaInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "generator_registry", generator_registry_address);
+
+        let (generator_registry, _) = update_generator_meta_instance(
+            private_key,
+            chain_id,
+            generator_registry_address,
+            rpc_url,
+        )?;
+
+        Ok(UpdateGeneratorMetaInfo { generator_registry })
+    }
+}
+
+fn update_generator_meta_instance(
+    private_key: &str,
+    chain_id: &str,
+    generator_registry_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        binding_patches::UpdateGeneratorMetadataPatch<
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+        >,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let generator_registry_address = generator_registry_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Generator Registry address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let generator_registry = binding_patches::UpdateGeneratorMetadataPatch::new(
+        generator_registry_address,
+        client_arc.clone(),
+    );
+
+    Ok((generator_registry, private_key_signer))
+}

@@ -574,6 +574,27 @@
         "symbiotic_chain_id",
         "symbiotic_operator_registry"
       ]
+    },
+    {
+      "name": "Update Market Metadata",
+      "description": "Update the Market Related data. It reads info from marketmeta.json and updates in the marketplace. Operation can be only performed by admin",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id"        
+      ]
+    },
+    {
+      "name": "Update Generator Metadata",
+      "description": "Update the generator info in the registry. It reads info from generatormeta.json and updates in the generator registry. Operation can be performed only by relevant operator",
+      "required_prompts":[
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry"
+      ]
     }
   ]
 }

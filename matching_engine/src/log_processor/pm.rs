@@ -426,12 +426,17 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
-    if let Ok(ask_cancelled_log) = proof_market_place.decode_event::<pmp::AskCancelledFilter>(
-        "AskCancelled",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        log::debug!("Ask has been cancelled {:?}", ask_cancelled_log.ask_id);
+    if let Ok(ask_cancelled_log) =
+        proof_market_place.decode_event_raw("AskCancelled", log.topics.clone(), log.data.clone())
+    {
+        let ask_id = ask_cancelled_log
+            .get(0)
+            .unwrap()
+            .clone()
+            .into_uint()
+            .unwrap();
+
+        log::debug!("Ask has been cancelled {:?}", ask_id);
         let mut local_ask_store = { local_ask_store.write().await };
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
@@ -440,12 +445,9 @@ pub async fn process_proof_market_place_logs(
                 .await
                 .unwrap_or_default();
 
-        local_ask_store.update_proof_proof_cycle_completed_on(
-            &ask_cancelled_log.ask_id,
-            proof_cycle_completed_on_l1,
-        );
-        local_ask_store.modify_state(&ask_cancelled_log.ask_id, AskState::Complete);
-        local_ask_store.remove_ask_only_if_completed(&ask_cancelled_log.ask_id);
+        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
+        local_ask_store.modify_state(&ask_id, AskState::Complete);
+        local_ask_store.remove_ask_only_if_completed(&ask_id);
         return Ok(());
     }
 
