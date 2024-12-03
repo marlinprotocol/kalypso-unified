@@ -18,7 +18,7 @@ impl Operation for UpdateMarketMetadata {
         let data = read_file_from_paths(&meta_paths)
             .map_err(|e| format!("Failed reading marketmeta.json {}", e))?;
 
-        let market_meta: matching_engine_helpers::market_metadata::MarketMetadata =
+        let market_meta: matching_engine_helpers::market_metadata::MarketSetupData =
             serde_json::from_str(&data)
                 .map_err(|e| format!("Failed deserde marketmeta.json into MarketMetadata{}", e))?;
 
