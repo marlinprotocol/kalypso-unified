@@ -1332,6 +1332,18 @@ impl GeneratorStore {
     }
 }
 
+impl GeneratorStore {
+    pub fn update_generator_metadata(
+        &mut self,
+        generator_address: Address,
+        generator_meta_data: Bytes,
+    ) {
+        if let Some(generator) = self.generators.get_mut(&generator_address) {
+            generator.generator_data = generator_meta_data;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{generator_lib::generator_helper::select_idle_generators, utility::TokenTracker};

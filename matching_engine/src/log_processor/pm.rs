@@ -629,6 +629,36 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
+    // ------ custom patches being handled here --------------------- //
+    let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
+
+    let client = Arc::new(provider_http.clone());
+
+    let pmp_update_marketmetadata_patch = binding_patches::UpdateProofMarketplaceMetadataPatch::new(
+        proof_market_place.address(),
+        client,
+    );
+
+    if let Ok(update_market_metadata_log) = pmp_update_marketmetadata_patch.decode_event_raw(
+        "MarketMetadataUpdated",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        let market_id_bytes = update_market_metadata_log.get(0).unwrap();
+        let market_id = market_id_bytes.clone().into_uint().unwrap();
+
+        let metadata_bytes = update_market_metadata_log.get(1).unwrap();
+        let metadata = metadata_bytes.clone().into_bytes().unwrap().to_vec();
+
+        {
+            market_store
+                .write()
+                .await
+                .update_marketmeta_bytes(market_id, metadata.into());
+        }
+        return Ok(());
+    }
+
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");

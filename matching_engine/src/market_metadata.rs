@@ -263,3 +263,11 @@ impl MarketMetadataStore {
         }
     }
 }
+
+impl MarketMetadataStore {
+    pub fn update_marketmeta_bytes(&mut self, market_id: U256, metadata: Bytes) {
+        if let Some(marketmetadata) = self.market_by_id.get_mut(&market_id) {
+            marketmetadata.metadata = metadata
+        }
+    }
+}

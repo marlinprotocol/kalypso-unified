@@ -251,6 +251,7 @@ impl LogParser {
                                     log,
                                     &self.generator_registry,
                                     &self.shared_generator_store,
+                                    &self.rpc_url,
                                 )
                                 .await
                                 .unwrap();

@@ -12,6 +12,7 @@ pub async fn process_generator_registry_logs(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
+    rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::GENERATOR_REGISTRY_TOPICS_SKIP
         .get(&log.topics[0])
@@ -383,6 +384,29 @@ pub async fn process_generator_registry_logs(
             symbiotic_complete_snapshot_log
         );
         log::warn!("SymbioticCompleteSnapshot is now processed using symbiotic::SnapshotConfirmed");
+        return Ok(());
+    }
+
+    // ------ custom patches being handled here --------------------- //
+    let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
+
+    let client = Arc::new(provider_http.clone());
+
+    let gr_update_generator_data_patch =
+        binding_patches::UpdateGeneratorMetadataPatch::new(genertor_registry.address(), client);
+
+    if let Ok(update_generator_metadata_log) = gr_update_generator_data_patch.decode_event_raw(
+        "GeneratorDataUpdated",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        let generator_bytes = update_generator_metadata_log.get(0).unwrap();
+        let generator_address = generator_bytes.clone().into_address().unwrap();
+
+        let generator_bytes = update_generator_metadata_log.get(1).unwrap();
+        let generator_meta_data = generator_bytes.clone().into_bytes().unwrap().to_vec();
+
+        generator_store.update_generator_metadata(generator_address, generator_meta_data.into());
         return Ok(());
     }
 
