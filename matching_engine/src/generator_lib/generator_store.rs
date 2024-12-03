@@ -359,7 +359,7 @@ pub struct Generator {
 pub struct GeneratorMeta {
     /// The display name of the generator or application.
     #[serde(alias = "display_name")]
-    display_name: Option<String>,
+    pub display_name: Option<String>,
 
     /// A brief description of the generator or application.
     #[serde(alias = "display_description")]

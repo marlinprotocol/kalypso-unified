@@ -302,12 +302,13 @@ async fn recompute_single_generator_response<'a>(
             .into_iter()
             .unzip();
 
+    let details = generator_data.deserialize_generator_bytes();
     Some(GeneratorResponse {
         operator: Operator {
-            name: None,
+            name: details.display_name.clone(),
             address: address_to_string(&generator_id),
         },
-        details: generator_data.deserialize_generator_bytes(),
+        details,
         kalypso_points: local_generator_store
             .get_kalypso_points(&generator_id)
             .unwrap_or_default()

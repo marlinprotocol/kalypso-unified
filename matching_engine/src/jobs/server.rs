@@ -81,7 +81,7 @@ impl MatchingEngineServer {
 
     pub async fn start_server(self, port: u16, enable_ssc: bool) -> anyhow::Result<()> {
         let server = HttpServer::new(move || {
-            let max_requests = 3 as usize;
+            let max_requests = 15 as usize;
 
             let ui_request_concurrency = ConcurrencyLimiter::new(max_requests);
             let ui_rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
