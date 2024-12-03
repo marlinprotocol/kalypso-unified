@@ -41,6 +41,9 @@ pub struct SlashingInstance {
     proof_marketplace: ProofMarketplaceInstance,
     #[allow(unused)]
     reward_address: Address,
+
+    delay_in_ms: Duration,
+    confirmations: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -50,6 +53,8 @@ pub struct SlashingInstanceConfig {
     #[serde(alias = "relayer_private_key")]
     pub slasher_key: String,
     pub chain_id: String,
+    pub delay_in_time_ms: Option<u64>,
+    pub confirmations: Option<usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -113,9 +118,11 @@ impl SlashingInstance {
         Self {
             indexer_url: indexer_url.into(),
             client: Client::new(),
-            config,
+            config: config.clone(),
             proof_marketplace,
             reward_address: slasher_key.address(),
+            delay_in_ms: Duration::from_millis(config.delay_in_time_ms.unwrap_or(100)),
+            confirmations: config.confirmations.unwrap_or(10),
         }
     }
 
@@ -129,15 +136,32 @@ impl SlashingInstance {
                 }
             };
 
+            log::debug!("Found {} operators", operators.len());
+
             for operator in operators.iter() {
-                sleep(Duration::from_secs(1)).await;
+                log::debug!(
+                    "Searching active requests of operator: {:?}",
+                    operator.address
+                );
+                sleep(self.delay_in_ms).await;
                 let active_requests = self.active_requests(operator.address.clone()).await?;
+
+                log::debug!(
+                    "Found {} active requests for operator: {}",
+                    active_requests.len(),
+                    operator.address
+                );
                 for active_request in active_requests.iter() {
-                    sleep(Duration::from_secs(1)).await;
+                    log::debug!(
+                        "Trying to slash request: {} for operator {:?}",
+                        active_request.ask_id,
+                        operator.address
+                    );
+                    sleep(self.delay_in_ms).await;
                     self._handle_request(active_request).await;
                 }
             }
-            sleep(Duration::from_secs(1)).await;
+            sleep(self.delay_in_ms).await;
 
             let markets = match self.get_markets().await {
                 Ok(data) => data,
@@ -147,16 +171,32 @@ impl SlashingInstance {
                 }
             };
 
+            log::debug!("Found {} markets", markets.len());
+
             for market in markets.iter() {
-                sleep(Duration::from_secs(1)).await;
+                log::debug!(
+                    "Searching expired requests for market: {}",
+                    market.market_id
+                );
+                sleep(self.delay_in_ms).await;
                 let expired_requests = self.expired_requests(market.market_id.clone()).await?;
+                log::debug!(
+                    "Found {} expired requests in market: {}",
+                    expired_requests.len(),
+                    market.market_id
+                );
                 for expired_request in expired_requests.iter() {
-                    sleep(Duration::from_secs(1)).await;
+                    log::debug!(
+                        "Trying to cancel expired request: {} in the market: {}",
+                        expired_request.ask_id,
+                        market.market_id
+                    );
+                    sleep(self.delay_in_ms).await;
                     self._handle_request(expired_request).await;
                 }
             }
 
-            sleep(Duration::from_secs(1)).await;
+            sleep(self.delay_in_ms).await;
         }
     }
 
@@ -195,7 +235,7 @@ impl SlashingInstance {
             }
 
             let slashing_transaction = match slashing_transaction.send().await {
-                Ok(data) => data.confirmations(10),
+                Ok(data) => data.confirmations(self.confirmations),
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("failed sending the transaction");
@@ -241,7 +281,7 @@ impl SlashingInstance {
             }
 
             let cancellation_transaction = match cancellation_transaction.send().await {
-                Ok(data) => data.confirmations(10),
+                Ok(data) => data.confirmations(self.confirmations),
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("failed sending the transaction");

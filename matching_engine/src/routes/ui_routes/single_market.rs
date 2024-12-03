@@ -290,6 +290,7 @@ async fn recompute_single_market_response<'a>(
             .collect::<Vec<RegisteredGenerator>>(),
         unmatched_jobs: local_ask_store
             .get_by_ask_state_except_complete(AskState::Create)
+            .filter_by_market_id(market_id)
             .result()
             .map(|mut asks| {
                 asks.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
