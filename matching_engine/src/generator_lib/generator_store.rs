@@ -869,7 +869,7 @@ impl GeneratorStore {
                     slashing_penalty: (token_address.clone(), slashing.clone()),
                     slashing_block_number: slashing_block_number.clone(),
                     slashing_timestamp: slashing_timestamp.clone(),
-                    source: super::delegation::Source::Native,
+                    source: super::delegation::Source::Symbiotic,
                 });
         }
     }
