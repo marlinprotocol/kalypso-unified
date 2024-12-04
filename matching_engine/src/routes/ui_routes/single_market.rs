@@ -28,6 +28,7 @@ struct Jobs {
     proofs_generated: usize,
     proofs_pending: usize,
     proofs_in_progress: usize,
+    requests_made: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -265,6 +266,7 @@ async fn recompute_single_market_response<'a>(
                     0
                 }
             },
+            requests_made: { local_ask_store.get_request_count_by_market_id(&market_id) },
         },
         market_setup_data: marketmetadata.deserialize_market_bytes(),
         registered_generator_list: local_generator_store

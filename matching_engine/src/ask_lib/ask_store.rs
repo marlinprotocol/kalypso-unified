@@ -67,9 +67,11 @@ pub struct LocalAskStore {
     )]
     proofs: HashMap<U256, Proof>,
 
-    proof_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e AskId), Also sub-count by U256(i.e marketId)
+    proof_counter_by_market: GenericCounters<U256, U256>, // Count by U256(i.e Proofs), Also sub-count by U256(i.e marketId)
 
     request_counter_by_requestors: GenericCounters<U256, Address>, // Count by Address(i.e requestor), Also sub-count by U256(i.e marketId)
+
+    request_counter_by_market_id: GenericCounters<U256, U256>, // Count by U256(i.e Asks), Also sub-count by U256(i.e marketId)
 
     #[serde(
         serialize_with = "serialize_u256_map",
@@ -264,6 +266,7 @@ impl LocalAskStore {
             proofs: HashMap::new(),
             proof_counter_by_market: GenericCounters::new(),
             request_counter_by_requestors: GenericCounters::new(),
+            request_counter_by_market_id: GenericCounters::new(),
             proving_cost_taken: HashMap::new(),
             proving_time_taken: HashMap::new(),
             proof_transaction: HashMap::new(),
@@ -280,6 +283,9 @@ impl LocalAskStore {
         self.asks_by_id.insert(ask.ask_id, ask.clone());
         self.request_counter_by_requestors
             .insert(ask.market_id, ask.prover_refund_address);
+
+        self.request_counter_by_market_id
+            .insert(ask.market_id, ask.ask_id);
 
         self.market_id_index
             .entry(ask.market_id)
@@ -476,6 +482,16 @@ impl LocalAskStore {
 
     pub fn get_total_proof_count(&self) -> usize {
         self.proof_counter_by_market.total_count()
+    }
+}
+
+impl LocalAskStore {
+    pub fn get_request_count_by_market_id(&self, market_id: &U256) -> usize {
+        self.request_counter_by_market_id.key_count(market_id)
+    }
+
+    pub fn get_total_request_count(&self) -> usize {
+        self.request_counter_by_market_id.total_count()
     }
 }
 
