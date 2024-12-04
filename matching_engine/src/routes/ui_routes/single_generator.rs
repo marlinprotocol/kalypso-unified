@@ -104,6 +104,7 @@ pub struct GeneratorResponse {
     my_delegations: Vec<TokenAmount>,
     withdrawal_requests: Vec<WithdrawRequest>,
     stake_break_down: StakeBreakDown,
+    compute_break_down: ComputeBreakDown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -114,6 +115,13 @@ pub struct StakeBreakDown {
     pub total_symbiotic_stake_locked: Vec<TokenAmount>,
     pub available_native_stake: Vec<TokenAmount>,
     pub available_symbiotic_stake: Vec<TokenAmount>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ComputeBreakDown {
+    pub total_compute: String,
+    pub compute_locked: String,
+    pub compute_available: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -525,5 +533,13 @@ async fn recompute_single_generator_response<'a>(
                 index: a.index.to_string(),
             })
             .collect(),
+        compute_break_down: ComputeBreakDown {
+            total_compute: generator_data.declared_compute.to_string(),
+            compute_locked: generator_data.compute_consumed.to_string(),
+            compute_available: (generator_data
+                .declared_compute
+                .saturating_sub(generator_data.compute_consumed))
+            .to_string(),
+        },
     })
 }
