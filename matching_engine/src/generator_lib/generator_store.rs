@@ -315,6 +315,7 @@ pub struct SlashingRecord {
     pub expected_time: U256,
     pub slashing_penalty: AddressTokenPair,
     pub slashing_timestamp: U256,
+    pub source: super::delegation::Source,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Hash)]
@@ -764,10 +765,12 @@ impl GeneratorStore {
     pub fn note_entry_slashing(
         &mut self,
         generator_address: &Address,
-        token_addresses: Vec<Address>,
         ask_id: &U256,
         market_id: &U256,
-        slashings: Vec<U256>,
+        native_tokens_slashed: Vec<Address>,
+        native_slashings: Vec<U256>,
+        symbiotic_tokens_slashed: Vec<Address>,
+        symbiotic_slashings: Vec<U256>,
         slashing_tx: String,
         price_offered: &U256,
         deadline: &U256,
@@ -782,7 +785,7 @@ impl GeneratorStore {
             generator_market.proofs_slashed.add_assign(U256::one());
         }
 
-        for (token_address, slashing) in token_addresses.iter().zip(slashings.iter()) {
+        for (token_address, slashing) in native_tokens_slashed.iter().zip(native_slashings.iter()) {
             // Update the slashing tracker for each token
             self.slashings
                 .entry(*generator_address)
@@ -806,7 +809,7 @@ impl GeneratorStore {
         }
 
         // Record the slashing event
-        for (token_address, slashing) in token_addresses.iter().zip(slashings.iter()) {
+        for (token_address, slashing) in native_tokens_slashed.iter().zip(native_slashings.iter()) {
             self.slashing_records
                 .entry(*generator_address)
                 .or_insert_with(Vec::new)
@@ -819,6 +822,54 @@ impl GeneratorStore {
                     slashing_penalty: (token_address.clone(), slashing.clone()),
                     slashing_block_number: slashing_block_number.clone(),
                     slashing_timestamp: slashing_timestamp.clone(),
+                    source: super::delegation::Source::Native,
+                });
+        }
+
+        for (token_address, slashing) in symbiotic_tokens_slashed
+            .iter()
+            .zip(symbiotic_slashings.iter())
+        {
+            // Update the slashing tracker for each token
+            self.slashings
+                .entry(*generator_address)
+                .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing entry
+                .or_insert_with(|| {
+                    let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
+                    tracker.add_token(token_address, slashing); // Add the slashing amount
+                    tracker
+                });
+
+            self.slashing_per_generator_per_market
+                .entry(*generator_address)
+                .or_insert_with(HashMap::new) // Create the inner HashMap if it doesn't exist
+                .entry(*market_id)
+                .and_modify(|tracker| tracker.add_token(token_address, slashing)) // Modify the existing TokenTracker
+                .or_insert_with(|| {
+                    let mut tracker = TokenTracker::new(); // Create a new TokenTracker if none exists
+                    tracker.add_token(token_address, slashing); // Add the slashing amount
+                    tracker
+                });
+        }
+
+        // Record the slashing event
+        for (token_address, slashing) in symbiotic_tokens_slashed
+            .iter()
+            .zip(symbiotic_slashings.iter())
+        {
+            self.slashing_records
+                .entry(*generator_address)
+                .or_insert_with(Vec::new)
+                .push(SlashingRecord {
+                    ask_id: ask_id.clone(),
+                    market_id: market_id.clone(),
+                    slashing_tx: slashing_tx.clone(),
+                    price_offered: price_offered.clone(),
+                    expected_time: deadline.clone(),
+                    slashing_penalty: (token_address.clone(), slashing.clone()),
+                    slashing_block_number: slashing_block_number.clone(),
+                    slashing_timestamp: slashing_timestamp.clone(),
+                    source: super::delegation::Source::Native,
                 });
         }
     }

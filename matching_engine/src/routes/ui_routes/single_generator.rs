@@ -143,12 +143,14 @@ struct DelegateOperation {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Slash {
+    ask_id: Option<String>,
     timestamp: String,
     market: MarketInfo,
     request: String, // Transaction Hash
     price_offered: String,
     slashing_penalty: TokenAmount,
     slasing_epoch_timestamp: Option<String>,
+    source: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -474,6 +476,7 @@ async fn recompute_single_generator_response<'a>(
             .get_slashing_records(&generator_id)
             .into_iter()
             .map(|record| Slash {
+                ask_id: Some(record.ask_id.to_string()),
                 slasing_epoch_timestamp: convert_to_option_string(Some(record.slashing_timestamp)),
                 timestamp: record.slashing_block_number.to_string(),
                 market: MarketInfo {
@@ -487,6 +490,7 @@ async fn recompute_single_generator_response<'a>(
                 request: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
+                source: record.source.to_string(),
             })
             .collect(),
         delegations: local_generator_store

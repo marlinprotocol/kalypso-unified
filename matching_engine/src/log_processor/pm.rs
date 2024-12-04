@@ -484,7 +484,7 @@ pub async fn process_proof_market_place_logs(
         log::debug!("Proof not Generated: update generator state");
         let (generator_address, _) = {
             let data = local_ask_store.get_by_ask_id(&ask_id).unwrap();
-            let generator_address = data.generator.unwrap().into();
+            let generator_address: Address = data.generator.unwrap().into();
             let market_id = data.market_id;
             (generator_address, market_id)
         };
@@ -494,22 +494,33 @@ pub async fn process_proof_market_place_logs(
         let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
         local_ask_store.remove_ask_only_if_completed(&ask_id);
 
-        let slashing_token_pairs = {
-            (native_store.read().await.tokens_to_lock.clone()
-                + symbiotic_stake_store.read().await.tokens_to_lock.clone())
-            .to_address_token_pair()
-        };
+        let native_slashing_token_pairs = native_store
+            .read()
+            .await
+            .tokens_to_lock
+            .clone()
+            .to_address_token_pair();
+        let symbitoic_slashing_token_pairs = symbiotic_stake_store
+            .read()
+            .await
+            .tokens_to_lock
+            .clone()
+            .to_address_token_pair();
 
-        let (slashing_tokens, slashings): (Vec<Address>, Vec<U256>) =
-            slashing_token_pairs.into_iter().unzip();
+        let (native_slashing_tokens, native_slashings): (Vec<Address>, Vec<U256>) =
+            native_slashing_token_pairs.into_iter().unzip();
+        let (symbiotic_slashing_tokens, symbiotic_slashings): (Vec<Address>, Vec<U256>) =
+            symbitoic_slashing_token_pairs.into_iter().unzip();
 
         // only notes the slashing entry, doesn't update stake
         generator_store.write().await.note_entry_slashing(
             &generator_address,
-            slashing_tokens,
             &ask_id,
             &ask.market_id,
-            slashings,
+            native_slashing_tokens,
+            native_slashings,
+            symbiotic_slashing_tokens,
+            symbiotic_slashings,
             tx_to_string(&log.transaction_hash.unwrap()),
             &ask.reward,
             &ask.deadline,
