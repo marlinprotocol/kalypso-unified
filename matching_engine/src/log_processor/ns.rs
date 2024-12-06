@@ -11,7 +11,7 @@ use crate::{
         native_stake_store,
     },
     log_processor::constants,
-    utility::{get_l1_block_from_l2_block, get_timestamp_from_l2block_number, tx_to_string},
+    utility::{get_l1_block_from_l2_block, tx_to_string},
 };
 
 pub async fn process_native_staking_logs(
@@ -21,7 +21,7 @@ pub async fn process_native_staking_logs(
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
     native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
-    ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
+    #[allow(unused)] ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
     rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::NATIVE_STAKING_TOPICS_SKIP
@@ -232,19 +232,13 @@ pub async fn process_native_staking_logs(
         let address = stake_slash_logs.operator;
         let stake_slashed = stake_slash_logs.amount;
         let token_address = stake_slash_logs.token;
-        let ask_id = stake_slash_logs.job_id; //job _id and ask_id are same
-
-        let ask = { ask_store.read().await.get_by_ask_id(&ask_id).unwrap() };
-        let market_id = ask.market_id;
-        let reward = ask.reward;
-        let deadline = ask.deadline;
 
         let block_l2: U256 = log.block_number.unwrap().as_u64().into();
         let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
             .await
             .unwrap_or_default();
 
-        let stake_slashed = if cfg!(feature = "disable_native_slashing") {
+        let stake_slashed = if cfg!(feature = "override_native_slashing_to_zero") {
             log::warn!("Native slashing is disabled, however an 0 entry is still noted");
             0.into()
         } else {
@@ -263,26 +257,39 @@ pub async fn process_native_staking_logs(
             delegation::Source::Native,
         );
 
-        let (native_slashing_tokens, native_slashings): (Vec<Address>, Vec<U256>) =
-            { (vec![token_address], vec![stake_slashed]) };
+        // No need to generate this if there are dummy logs enabled
+        #[cfg(not(feature = "generate_dummy_slash_logs"))]
+        {
+            use crate::utility::get_timestamp_from_l2block_number;
 
-        // only notes the slashing entry, doesn't update stake
-        generator_store.note_entry_slashing(
-            &address,
-            &ask_id,
-            &market_id,
-            native_slashing_tokens,
-            native_slashings,
-            vec![],
-            vec![],
-            tx_to_string(&log.transaction_hash.unwrap()),
-            &reward,
-            &deadline,
-            &U64::from(block_l1.as_u64()),
-            &get_timestamp_from_l2block_number(rpc_url, &block_l1)
-                .await
-                .unwrap_or_default(),
-        );
+            let ask_id = stake_slash_logs.job_id; //job _id and ask_id are same
+            let ask = { ask_store.read().await.get_by_ask_id(&ask_id).unwrap() };
+
+            let market_id = ask.market_id;
+            let reward = ask.reward;
+            let deadline = ask.deadline;
+
+            let (native_slashing_tokens, native_slashings): (Vec<Address>, Vec<U256>) =
+                { (vec![token_address], vec![stake_slashed]) };
+
+            // only notes the slashing entry, doesn't update stake
+            generator_store.note_entry_slashing(
+                &address,
+                &ask_id,
+                &market_id,
+                native_slashing_tokens,
+                native_slashings,
+                vec![],
+                vec![],
+                tx_to_string(&log.transaction_hash.unwrap()),
+                &reward,
+                &deadline,
+                &U64::from(block_l1.as_u64()),
+                &get_timestamp_from_l2block_number(rpc_url, &block_l1)
+                    .await
+                    .unwrap_or_default(),
+            );
+        }
         return Ok(());
     }
 

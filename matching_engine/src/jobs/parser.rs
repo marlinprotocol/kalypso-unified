@@ -1,7 +1,12 @@
+#[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
+
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
+
+#[cfg(not(feature = "disable_match_creation"))]
 use crate::generator_lib::generator_store;
+
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::stake_manager_store::StakeManagerStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
@@ -9,12 +14,19 @@ use crate::market_metadata::MarketMetadataStore;
 use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
+
+#[cfg(not(feature = "disable_match_creation"))]
 use kalypso_helper::secret_inputs_helpers;
+
 use std::collections::HashMap;
+
+#[cfg(not(feature = "disable_match_creation"))]
 use std::ops::Sub;
 
+#[cfg(not(feature = "disable_match_creation"))]
+use std::str::FromStr;
+
 use std::{
-    str::FromStr,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
@@ -25,13 +37,14 @@ use std::{
 use tokio::sync::RwLock;
 
 use crate::log_processor;
+
+#[cfg(not(feature = "disable_match_creation"))]
 use crate::{
     ask_lib::ask::LocalAsk,
-    generator_lib::{
-        generator_helper, generator_state::GeneratorState, generator_store::GeneratorStore,
-        key_store::KeyStore,
-    },
+    generator_lib::{generator_helper, generator_state::GeneratorState},
 };
+
+use crate::generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
 
 type EntityRegistryInstance = bindings::entity_key_registry::EntityKeyRegistry<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -77,7 +90,9 @@ pub struct LogParser {
     shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
     shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
     shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+    #[allow(unused)]
     chain_id: String,
+    #[allow(unused)]
     max_tasks_size: usize,
     rpc_url: String,
 }
