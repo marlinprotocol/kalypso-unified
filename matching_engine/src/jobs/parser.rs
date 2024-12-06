@@ -276,6 +276,7 @@ impl LogParser {
                                     &self.native_staking,
                                     &self.shared_generator_store,
                                     &self.shared_native_stake_store,
+                                    &self.shared_local_ask_store,
                                     &self.rpc_url,
                                 )
                                 .await
@@ -289,6 +290,7 @@ impl LogParser {
                                     &self.symbiotic_staking,
                                     &self.shared_generator_store,
                                     &self.shared_symbiotic_stake_store,
+                                    &self.shared_local_ask_store,
                                     &self.rpc_url,
                                 )
                                 .await

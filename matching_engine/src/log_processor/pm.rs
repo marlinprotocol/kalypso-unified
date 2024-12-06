@@ -29,8 +29,8 @@ pub async fn process_proof_market_place_logs(
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
     market_store: &Arc<RwLock<MarketMetadataStore>>,
     cost_store: &Arc<RwLock<CostStore>>,
-    native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
-    symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
+    _native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
+    _symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
     rpc_url: &str,
@@ -494,41 +494,9 @@ pub async fn process_proof_market_place_logs(
         let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
         local_ask_store.remove_ask_only_if_completed(&ask_id);
 
-        let native_slashing_token_pairs = native_store
-            .read()
-            .await
-            .tokens_to_lock
-            .clone()
-            .to_address_token_pair();
-        let symbitoic_slashing_token_pairs = symbiotic_stake_store
-            .read()
-            .await
-            .tokens_to_lock
-            .clone()
-            .to_address_token_pair();
+        let mut generator_store = generator_store.write().await;
 
-        let (native_slashing_tokens, native_slashings): (Vec<Address>, Vec<U256>) =
-            native_slashing_token_pairs.into_iter().unzip();
-        let (symbiotic_slashing_tokens, symbiotic_slashings): (Vec<Address>, Vec<U256>) =
-            symbitoic_slashing_token_pairs.into_iter().unzip();
-
-        // only notes the slashing entry, doesn't update stake
-        generator_store.write().await.note_entry_slashing(
-            &generator_address,
-            &ask_id,
-            &ask.market_id,
-            native_slashing_tokens,
-            native_slashings,
-            symbiotic_slashing_tokens,
-            symbiotic_slashings,
-            tx_to_string(&log.transaction_hash.unwrap()),
-            &ask.reward,
-            &ask.deadline,
-            &U64::from(proof_cycle_completed_on_l1.as_u64()),
-            &get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
-                .await
-                .unwrap_or_default(),
-        );
+        generator_store.reduce_active_requests(&generator_address, &ask.market_id);
 
         log::warn!("Complete Proof not Generated");
         return Ok(());

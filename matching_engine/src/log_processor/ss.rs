@@ -4,9 +4,10 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
+    ask_lib::ask_store,
     generator_lib::{delegation, generator_store, symbiotic_stake_store},
     log_processor::constants,
-    utility::{get_l1_block_from_l2_block, tx_to_string},
+    utility::{get_l1_block_from_l2_block, get_timestamp_from_l2block_number, tx_to_string},
 };
 
 pub async fn process_symbiotic_staking_logs(
@@ -16,6 +17,7 @@ pub async fn process_symbiotic_staking_logs(
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
     symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
+    ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
     rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::SYMBIOTIC_STAKING_TOPICS_SKIP
@@ -338,6 +340,12 @@ pub async fn process_symbiotic_staking_logs(
         let address = stake_slash_logs.operator;
         let stake_slashed = stake_slash_logs.amount;
         let token_address = stake_slash_logs.token;
+        let ask_id = stake_slash_logs.job_id; //job _id and ask_id are same
+
+        let ask = { ask_store.read().await.get_by_ask_id(&ask_id).unwrap() };
+        let market_id = ask.market_id;
+        let reward = ask.reward;
+        let deadline = ask.deadline;
 
         let block_l2: U256 = log.block_number.unwrap().as_u64().into();
         let block_l1: U256 = get_l1_block_from_l2_block(rpc_url, block_l2)
@@ -363,6 +371,29 @@ pub async fn process_symbiotic_staking_logs(
             tx_to_string(&log.transaction_hash.unwrap()),
             delegation::Operation::Slash,
             delegation::Source::Symbiotic,
+        );
+
+        let (symbiotic_slashing_tokens, symbiotic_slashings): (Vec<Address>, Vec<U256>) =
+            { 
+                (vec![token_address], vec![stake_slashed]) 
+            };
+
+        // only notes the slashing entry, doesn't update stake
+        generator_store.note_entry_slashing(
+            &address,
+            &ask_id,
+            &market_id,
+            vec![],
+            vec![],
+            symbiotic_slashing_tokens,
+            symbiotic_slashings,
+            tx_to_string(&log.transaction_hash.unwrap()),
+            &reward,
+            &deadline,
+            &U64::from(block_l1.as_u64()),
+            &get_timestamp_from_l2block_number(rpc_url, &block_l1)
+                .await
+                .unwrap_or_default(),
         );
         return Ok(());
     }

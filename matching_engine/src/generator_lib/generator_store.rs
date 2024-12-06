@@ -657,7 +657,7 @@ impl GeneratorStore {
                     generator
                         .total_symbiotic_stake
                         .sub_token(token_address, amount)
-                        .unwrap();
+                        .unwrap(); // unwraping because this should never come
                 }
             }
 
@@ -737,7 +737,7 @@ impl GeneratorStore {
         // Update the total earnings for the address
         self.earnings
             .entry(*address)
-            .and_modify(|e| *e = e.saturating_add(*earning))
+            .and_modify(|e| *e = e.add(*earning))
             .or_insert(*earning);
 
         // Update the earnings for the specific market
@@ -745,21 +745,31 @@ impl GeneratorStore {
             .entry(*address)
             .or_insert_with(HashMap::new)
             .entry(*market_id)
-            .and_modify(|e| *e = e.saturating_add(*earning))
+            .and_modify(|e| *e = e.add(*earning))
             .or_insert(*earning);
 
         let kalypso_points_per_proof = get_points(block_number.as_u64());
         self.kalypso_points
             .entry(*address)
-            .and_modify(|e| *e = e.saturating_add(kalypso_points_per_proof))
+            .and_modify(|e| *e = e.add(kalypso_points_per_proof))
             .or_insert(kalypso_points_per_proof);
 
         self.kalypso_points_per_market
             .entry(*address)
             .or_insert_with(HashMap::new)
             .entry(*market_id)
-            .and_modify(|e| *e = e.saturating_add(kalypso_points_per_proof))
+            .and_modify(|e| *e = e.add(kalypso_points_per_proof))
             .or_insert(kalypso_points_per_proof);
+    }
+
+    pub fn reduce_active_requests(&mut self, generator_address: &Address, market_id: &U256) {
+        if let Some(generator_market) = self
+            .generator_markets
+            .get_mut(&(*generator_address, *market_id))
+        {
+            generator_market.active_requests.sub_assign(U256::one());
+            generator_market.proofs_slashed.add_assign(U256::one());
+        }
     }
 
     pub fn note_entry_slashing(
@@ -777,14 +787,6 @@ impl GeneratorStore {
         slashing_block_number: &U64,
         slashing_timestamp: &U256,
     ) {
-        if let Some(generator_market) = self
-            .generator_markets
-            .get_mut(&(*generator_address, *market_id))
-        {
-            generator_market.active_requests.sub_assign(U256::one());
-            generator_market.proofs_slashed.add_assign(U256::one());
-        }
-
         for (token_address, slashing) in native_tokens_slashed.iter().zip(native_slashings.iter()) {
             // Update the slashing tracker for each token
             self.slashings
