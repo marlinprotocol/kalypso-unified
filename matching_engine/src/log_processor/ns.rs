@@ -244,6 +244,13 @@ pub async fn process_native_staking_logs(
             .await
             .unwrap_or_default();
 
+        let stake_slashed = if cfg!(feature = "disable_native_slashing") {
+            log::warn!("Native slashing is disabled, however an 0 entry is still noted");
+            0.into()
+        } else {
+            stake_slashed
+        };
+
         generator_store.remove_stake(
             &address,
             &token_address,

@@ -353,9 +353,7 @@ pub async fn process_symbiotic_staking_logs(
             .unwrap_or_default();
 
         let stake_slashed = if cfg!(feature = "disable_symbiotic_slashing") {
-            log::warn!(
-                "Symbiotic slashing is disabled, however an 0 undelegation entry is still noted"
-            );
+            log::warn!("Symbiotic slashing is disabled, however an 0 entry is still noted");
             0.into()
         } else {
             stake_slashed
@@ -374,9 +372,7 @@ pub async fn process_symbiotic_staking_logs(
         );
 
         let (symbiotic_slashing_tokens, symbiotic_slashings): (Vec<Address>, Vec<U256>) =
-            { 
-                (vec![token_address], vec![stake_slashed]) 
-            };
+            { (vec![token_address], vec![stake_slashed]) };
 
         // only notes the slashing entry, doesn't update stake
         generator_store.note_entry_slashing(

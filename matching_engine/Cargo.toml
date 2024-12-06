@@ -39,10 +39,11 @@ default = [
     "skip_unknown_events", 
     "disable_symbiotic_slashing"
 ]
-matching_engine_enable_cors = ["kalypso_helper/enable_cors"]
-disable_match_creation = []
-use_l1_block_numbers = []
 add_timestamp_to_asks= []
-force_transactions = []
-skip_unknown_events = []
+disable_match_creation = []
+disable_native_slashing = []
 disable_symbiotic_slashing = []
+force_transactions = []
+matching_engine_enable_cors = ["kalypso_helper/enable_cors"]
+skip_unknown_events = []
+use_l1_block_numbers = []
