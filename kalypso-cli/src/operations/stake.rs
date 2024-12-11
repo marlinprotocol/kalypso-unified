@@ -73,3 +73,83 @@ impl Operation for NativeStaking {
         Ok(())
     }
 }
+
+#[async_trait]
+impl Operation for NativeStaking {
+    async fn request_withdrawal(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let native_stake_info = CommonDeps::native_staking_info(&config)?;
+
+        // Call the requestStakeWithdrawal function
+        let request_tx = CommonDeps::send_and_confirm(
+            native_stake_info
+                .native_staking
+                .request_stake_withdrawal(native_stake_info.operator_address)
+                .send(),
+        )
+        .await
+        .map_err(|e| format!("Request Stake Withdrawal failed: {}", e))?;
+
+        println!("Stake Withdrawal Requested: {}", request_tx);
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl Operation for NativeStaking {
+    async fn read_withdrawal_ids(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let indexer_url = config
+            .get("indexer_url")
+            .ok_or("Missing indexer_url in config")?;
+
+        // Fetch withdrawal requests
+        let response = reqwest::get(indexer_url)
+            .await
+            .map_err(|e| format!("Failed to fetch from indexer: {}", e))?
+            .text()
+            .await
+            .map_err(|e| format!("Failed to parse indexer response: {}", e))?;
+
+        let parsed_response: serde_json::Value =
+            serde_json::from_str(&response).map_err(|e| format!("Invalid JSON response: {}", e))?;
+
+        // Extract withdrawal IDs
+        if let Some(requests) = parsed_response["withdrawal_requests"].as_array() {
+            for request in requests {
+                if let Some(id) = request["id"].as_str() {
+                    println!("Withdrawal ID: {}", id);
+                }
+            }
+        } else {
+            return Err("No withdrawal requests found".to_string());
+        }
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl Operation for NativeStaking {
+    async fn confirm_withdrawal(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let native_stake_info = CommonDeps::native_staking_info(&config)?;
+
+        get_config_ref!(config, "withdrawal_id", withdrawal_id);
+        let withdrawal_id = withdrawal_id
+            .parse::<U256>()
+            .map_err(|e| format!("Invalid withdrawal ID: {}", e))?;
+
+        // Call the withdrawStake function
+        let confirm_tx = CommonDeps::send_and_confirm(
+            native_stake_info
+                .native_staking
+                .withdraw_stake(withdrawal_id)
+                .send(),
+        )
+        .await
+        .map_err(|e| format!("Confirm Withdrawal failed: {}", e))?;
+
+        println!("Withdrawal Confirmed: {}", confirm_tx);
+
+        Ok(())
+    }
+}

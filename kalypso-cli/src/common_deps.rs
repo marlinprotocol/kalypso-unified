@@ -552,6 +552,7 @@ fn get_native_staking_instance(
 
     Ok((native_staking, private_key_signer))
 }
+
 pub struct ReadAttestationInfo {
     pub attestation_utility: String,
 }
