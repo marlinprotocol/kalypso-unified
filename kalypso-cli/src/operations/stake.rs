@@ -79,7 +79,7 @@ impl Operation for NativeStaking {
     async fn request_withdrawal(&self, config: HashMap<String, String>) -> Result<(), String> {
         let native_stake_info = CommonDeps::native_staking_info(&config)?;
 
-        // Call the requestStakeWithdrawal function
+        // Step 1: Call the requestStakeWithdrawal function
         let request_tx = CommonDeps::send_and_confirm(
             native_stake_info
                 .native_staking
@@ -91,9 +91,38 @@ impl Operation for NativeStaking {
 
         println!("Stake Withdrawal Requested: {}", request_tx);
 
-        Ok(())
+        // Step 2: Verify the indexer update
+        let indexer_url = config
+            .get("indexer_url")
+            .ok_or("Missing indexer_url in config")?;
+
+        // Query the indexer for withdrawal requests
+        let response = reqwest::get(indexer_url)
+            .await
+            .map_err(|e| format!("Failed to fetch from indexer: {}", e))?
+            .text()
+            .await
+            .map_err(|e| format!("Failed to parse indexer response: {}", e))?;
+
+        let parsed_response: serde_json::Value =
+            serde_json::from_str(&response).map_err(|e| format!("Invalid JSON response: {}", e))?;
+
+        // Validate that the operator's withdrawal request is included
+        if let Some(requests) = parsed_response["withdrawal_requests"].as_array() {
+            let operator_address = native_stake_info.operator_address.to_string();
+
+            if requests.iter().any(|req| req["operator"].as_str() == Some(&operator_address)) {
+                println!("Indexer updated with the withdrawal request for operator: {}", operator_address);
+                Ok(())
+            } else {
+                Err("Indexer did not update with the new withdrawal request.".to_string())
+            }
+        } else {
+            Err("No withdrawal requests found in the indexer.".to_string())
+        }
     }
 }
+
 
 #[async_trait]
 impl Operation for NativeStaking {
