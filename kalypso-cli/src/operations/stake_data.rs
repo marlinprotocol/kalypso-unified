@@ -168,7 +168,10 @@ async fn read_staking_data(
 
     // Define the table headers
     STAKING_INIT.call_once(|| {
-        println!("\n\nTokens Delegated to operator\n\n");
+        println!(
+            "\n\nTokens Delegated to operator {:?}\n\n",
+            operator_address
+        );
         println!(
             "{:<30} | {:<42} | {:>20}",
             "Stake Category", "Token", "Amount"
