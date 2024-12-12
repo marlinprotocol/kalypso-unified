@@ -160,7 +160,7 @@ pub async fn process_proof_market_place_logs(
                 );
             } else {
                 ask_to_store.state = Some(AskState::InvalidSecret).to_owned();
-                log::warn!(
+                log::debug!(
                     "Stored ask with AskId {:?} to store but couldn't infer private inputs",
                     parsed_ask_created_log.ask_id
                 );
@@ -299,8 +299,8 @@ pub async fn process_proof_market_place_logs(
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::warn!("Decode Raw Event is being used to detect MarketplaceCreated");
-        log::warn!("fix this to ensure that you receive all errors during compilation");
+        log::debug!("Decode Raw Event is being used to detect MarketplaceCreated");
+        log::debug!("fix this to ensure that you receive all errors during compilation");
         log::info!(
             "New market place has been registered {:?}",
             new_market_place
@@ -465,9 +465,9 @@ pub async fn process_proof_market_place_logs(
             .into_uint()
             .unwrap();
 
-        log::warn!("Decode Raw Event is being used to detect ProofNotGenerated");
-        log::warn!("Avoid it get error during compilation itself");
-        log::warn!(
+        log::debug!("Decode Raw Event is being used to detect ProofNotGenerated");
+        log::debug!("Avoid it get error during compilation itself");
+        log::debug!(
             "Ask's proof not generated {:?}. Generator is likely slashed",
             ask_id
         );
@@ -540,7 +540,7 @@ pub async fn process_proof_market_place_logs(
             );
         }
 
-        log::warn!("Complete Proof not Generated");
+        log::debug!("Complete Proof not Generated");
         return Ok(());
     }
 
@@ -549,8 +549,8 @@ pub async fn process_proof_market_place_logs(
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::warn!("Decode Raw Event is being used to detect InvalidInputsDetected");
-        log::warn!("fix this to ensure that you receive all errors during compilation");
+        log::debug!("Decode Raw Event is being used to detect InvalidInputsDetected");
+        log::debug!("fix this to ensure that you receive all errors during compilation");
 
         let ask_id = invalid_inputs_detected_log
             .get(0)
@@ -559,7 +559,7 @@ pub async fn process_proof_market_place_logs(
             .into_uint()
             .unwrap();
 
-        log::warn!(
+        log::debug!(
             "Ask's inputs were wrong {:?}. Submitted attestation for invalid input",
             ask_id
         );
@@ -606,7 +606,7 @@ pub async fn process_proof_market_place_logs(
                 &proof_cycle_completed_on_l1.as_u64().into(),
             );
         }
-        log::warn!("Complete: invalid input attestation event operation");
+        log::debug!("Complete: invalid input attestation event operation");
         return Ok(());
     }
 
