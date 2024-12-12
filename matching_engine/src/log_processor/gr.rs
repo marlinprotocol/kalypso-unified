@@ -63,26 +63,11 @@ pub async fn process_generator_registry_logs(
             .await
             .unwrap();
 
-        //check if any native or symbiotic stake already existed
-        let stake_backup = generator_store.get_stake_backup(&address);
-
         let generator = generator_store::Generator {
             address,
             reward_address: generator_data.0,
-            total_native_stake: {
-                if stake_backup.is_some() {
-                    stake_backup.clone().unwrap().native_stake.clone()
-                } else {
-                    TokenTracker::new()
-                }
-            },
-            total_symbiotic_stake: {
-                if stake_backup.is_some() {
-                    stake_backup.unwrap().symbiotic_stake.clone()
-                } else {
-                    TokenTracker::new()
-                }
-            },
+            total_native_stake: TokenTracker::new(),
+            total_symbiotic_stake: TokenTracker::new(),
             sum_of_compute_allocations: 0.into(),
             compute_consumed: 0.into(),
             native_stake_locked: TokenTracker::new(),
@@ -92,9 +77,10 @@ pub async fn process_generator_registry_logs(
             intended_stake_util: 1000000000000000000_i64.into(),
             intended_compute_util: 1000000000000000000_i64.into(),
             generator_data: generator_data.6,
+            active: true,
         };
 
-        generator_store.insert(generator.clone());
+        generator_store.register_generator(generator.clone());
         log::debug!("Generator registered {:?}", address.clone());
 
         return Ok(());
@@ -173,7 +159,7 @@ pub async fn process_generator_registry_logs(
             proofs_slashed: 0.into(),
             state: Some(generator_state::GeneratorState::Joined),
         };
-        generator_store.insert_markets(generator_market);
+        generator_store.register_generator_in_market(generator_market);
         return Ok(());
     }
 

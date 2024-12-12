@@ -303,14 +303,6 @@ pub struct GeneratorStore {
     kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
 
     withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
-
-    stake_backup: HashMap<Address, StakeBackup>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StakeBackup {
-    pub native_stake: TokenTracker,
-    pub symbiotic_stake: TokenTracker,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -361,6 +353,7 @@ pub struct Generator {
     pub intended_stake_util: U256,
     pub intended_compute_util: U256,
     pub generator_data: Bytes,
+    pub active: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -473,7 +466,6 @@ impl GeneratorStore {
             kalypso_points: HashMap::new(),
             kalypso_points_per_market: HashMap::new(),
             withdrawl_requests: HashMap::new(),
-            stake_backup: HashMap::new(),
         }
     }
 
@@ -519,14 +511,34 @@ impl GeneratorStore {
             )
     }
 
-    pub fn insert(&mut self, generator: Generator) {
+    pub fn register_generator(&mut self, generator: Generator) {
         let address = generator.address;
         if !self.generators.contains_key(&generator.address) {
             self.generators.insert(address, generator);
+        } else {
+            if let Some(existing) = self.generators.get_mut(&generator.address) {
+                // These commented fields are to be used as same ones before.
+
+                // pub total_native_stake: TokenTracker,
+                // pub total_symbiotic_stake: TokenTracker,
+                // pub native_stake_locked: TokenTracker,
+                // pub symbiotic_stake_locked: TokenTracker,
+
+                existing.address = generator.address;
+                existing.reward_address = generator.reward_address;
+                existing.sum_of_compute_allocations = generator.sum_of_compute_allocations;
+                existing.compute_consumed = generator.compute_consumed;
+                existing.active_market_places = generator.active_market_places;
+                existing.declared_compute = generator.declared_compute;
+                existing.intended_stake_util = generator.intended_compute_util;
+                existing.intended_compute_util = generator.intended_compute_util;
+                existing.active = generator.active;
+                existing.generator_data = generator.generator_data;
+            }
         }
     }
 
-    pub fn insert_markets(&mut self, generator_market: GeneratorInfoPerMarket) {
+    pub fn register_generator_in_market(&mut self, generator_market: GeneratorInfoPerMarket) {
         let address = generator_market.address;
         let market_id = generator_market.market_id;
         let compute_allocation = generator_market.compute_required_per_request;
@@ -589,22 +601,17 @@ impl GeneratorStore {
     }
 
     pub fn remove_by_address(&mut self, address: &Address) {
-        if let Some(generator) = self.generators.get(address) {
-            let native_stake = generator.total_native_stake.clone();
-            let symbiotic_stake = generator.total_symbiotic_stake.clone();
-
-            let backup = StakeBackup {
-                native_stake,
-                symbiotic_stake,
-            };
-
-            self.stake_backup.insert(address.clone(), backup);
-            self.generators.remove(address);
+        if let Some(generator) = self.generators.get_mut(address) {
+            generator.active = false;
         }
     }
 
-    pub fn get_stake_backup(&self, address: &Address) -> Option<StakeBackup> {
-        self.stake_backup.get(address).cloned()
+    pub fn is_active(&self, generator_address: &Address) -> bool {
+        if let Some(generator) = self.generators.get(generator_address) {
+            generator.active.clone()
+        } else {
+            false
+        }
     }
 
     pub fn add_extra_stake(
@@ -1056,7 +1063,7 @@ impl GeneratorStore {
         GeneratorQueryResult::new(self.generator_markets.values().collect())
     }
 
-    pub fn query_by_market_id(&self, market_id: &U256) -> GeneratorQueryResult {
+    pub fn query_by_market_id_and_only_active(&self, market_id: &U256) -> GeneratorQueryResult {
         log::debug!("Check query by market id");
 
         let generator_markets: Vec<&GeneratorInfoPerMarket> = self
@@ -1064,8 +1071,12 @@ impl GeneratorStore {
             .par_iter() // Parallel iterator over the generator_markets HashMap
             .filter_map(|((_, gen_market_id), generator_info)| {
                 // Check if the market_id matches
-                if gen_market_id == market_id {
-                    Some(generator_info)
+                if self.is_active(&generator_info.address) {
+                    if gen_market_id == market_id {
+                        Some(generator_info)
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
@@ -1475,9 +1486,10 @@ mod tests {
             intended_stake_util: U256::from_dec_str("123123").unwrap(),
             intended_compute_util: U256::from_dec_str("123123").unwrap(),
             generator_data: vec![].into(),
+            active: true,
         };
 
-        generator_store.insert(generator1.clone());
+        generator_store.register_generator(generator1.clone());
 
         let generator = generator_store.get_by_address(&generator1.clone().address);
         assert!(generator.is_some());
@@ -1617,7 +1629,7 @@ mod tests {
 
         let random_generator_info_per_market =
             get_random_market_info_for_generator(&random_generator.address, "1".into());
-        generator_store.insert_markets(random_generator_info_per_market);
+        generator_store.register_generator_in_market(random_generator_info_per_market);
 
         let generator_info_per_market = generator_store.get_by_address_and_market(
             &random_generator.address,
@@ -1659,7 +1671,7 @@ mod tests {
             let generator = generator_store.get_by_address(&generator).unwrap();
             let random_generator_info_per_market =
                 get_random_market_info_for_generator(&generator.address, "1".into());
-            generator_store.insert_markets(random_generator_info_per_market);
+            generator_store.register_generator_in_market(random_generator_info_per_market);
         }
 
         let all_generator_per_market_query =
@@ -1703,7 +1715,7 @@ mod tests {
             let generator = generator_store.get_by_address(&generator).unwrap();
             let random_generator_info_per_market =
                 get_random_market_info_for_generator(&generator.address, "1".into());
-            generator_store.insert_markets(random_generator_info_per_market);
+            generator_store.register_generator_in_market(random_generator_info_per_market);
         }
 
         let all_generator_per_market_query =
@@ -1747,7 +1759,7 @@ mod tests {
             let generator = generator_store.get_by_address(&generator).unwrap();
             let random_generator_info_per_market =
                 get_random_market_info_for_generator(&generator.address, "1".into());
-            generator_store.insert_markets(random_generator_info_per_market);
+            generator_store.register_generator_in_market(random_generator_info_per_market);
         }
 
         let all_generator_per_market_query =
@@ -1809,7 +1821,7 @@ mod tests {
                     get_random_market_info_for_generator(&generator.address, market);
 
                 // Second borrow: insert markets
-                generator_store.insert_markets(random_generator_info_per_market);
+                generator_store.register_generator_in_market(random_generator_info_per_market);
             }
         }
 
@@ -1841,7 +1853,7 @@ mod tests {
             let random_market = &markets[rng.gen_range(0..markets.len())];
             let idle_generators: Vec<GeneratorInfoPerMarket> = select_idle_generators(
                 generator_store
-                    .query_by_market_id(&U256::from_dec_str(random_market).unwrap())
+                    .query_by_market_id_and_only_active(&U256::from_dec_str(random_market).unwrap())
                     .filter_by_state(vec![GeneratorState::Joined, GeneratorState::Wip])
                     .result(),
             );
@@ -1937,9 +1949,10 @@ mod tests {
                 intended_stake_util: U256::from_dec_str("1000000000000000000").unwrap(),
                 intended_compute_util: U256::from_dec_str("1000000000000000000").unwrap(),
                 generator_data: vec![].into(),
+                active: true,
             };
 
-            generator_store.insert(generator);
+            generator_store.register_generator(generator);
         }
 
         generator_store
