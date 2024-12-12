@@ -12,6 +12,7 @@ pub mod programs;
 pub mod read_proof;
 pub mod request;
 pub mod stake;
+pub mod stake_data;
 pub mod symbiotic_opt_in;
 pub mod update_encryption_key;
 pub mod update_generator_meta;
@@ -92,6 +93,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
             symbiotic_opt_in::SymbioticOperatorRegistrationInfo,
         )),
         "Check Symbiotic Optin Info" => Some(Box::new(symbiotic_opt_in::SymbioticOptinInfo)),
+        "Read Stake Data" => Some(Box::new(stake_data::StakeData)),
         _ => unimplemented!(),
     }
 }
