@@ -63,11 +63,26 @@ pub async fn process_generator_registry_logs(
             .await
             .unwrap();
 
+        //check if any native or symbiotic stake already existed
+        let stake_backup = generator_store.get_stake_backup(&address);
+
         let generator = generator_store::Generator {
             address,
             reward_address: generator_data.0,
-            total_native_stake: TokenTracker::new(),
-            total_symbiotic_stake: TokenTracker::new(),
+            total_native_stake: {
+                if stake_backup.is_some() {
+                    stake_backup.clone().unwrap().native_stake.clone()
+                } else {
+                    TokenTracker::new()
+                }
+            },
+            total_symbiotic_stake: {
+                if stake_backup.is_some() {
+                    stake_backup.unwrap().symbiotic_stake.clone()
+                } else {
+                    TokenTracker::new()
+                }
+            },
             sum_of_compute_allocations: 0.into(),
             compute_consumed: 0.into(),
             native_stake_locked: TokenTracker::new(),

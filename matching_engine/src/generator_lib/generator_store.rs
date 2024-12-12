@@ -303,6 +303,14 @@ pub struct GeneratorStore {
     kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
 
     withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
+
+    stake_backup: HashMap<Address, StakeBackup>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StakeBackup {
+    pub native_stake: TokenTracker,
+    pub symbiotic_stake: TokenTracker,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -465,6 +473,7 @@ impl GeneratorStore {
             kalypso_points: HashMap::new(),
             kalypso_points_per_market: HashMap::new(),
             withdrawl_requests: HashMap::new(),
+            stake_backup: HashMap::new(),
         }
     }
 
@@ -580,7 +589,22 @@ impl GeneratorStore {
     }
 
     pub fn remove_by_address(&mut self, address: &Address) {
-        self.generators.remove(address);
+        if let Some(generator) = self.generators.get(address) {
+            let native_stake = generator.total_native_stake.clone();
+            let symbiotic_stake = generator.total_symbiotic_stake.clone();
+
+            let backup = StakeBackup {
+                native_stake,
+                symbiotic_stake,
+            };
+
+            self.stake_backup.insert(address.clone(), backup);
+            self.generators.remove(address);
+        }
+    }
+
+    pub fn get_stake_backup(&self, address: &Address) -> Option<StakeBackup> {
+        self.stake_backup.get(address).cloned()
     }
 
     pub fn add_extra_stake(
