@@ -1510,3 +1510,26 @@ fn update_generator_meta_instance(
 
     Ok((generator_registry, private_key_signer))
 }
+
+pub struct ReadStakeDataInfo {
+    pub operator_address: Address,
+    pub indexer_url: String,
+}
+
+impl CommonDeps {
+    pub fn read_stake_data_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<ReadStakeDataInfo, String> {
+        get_config_ref!(config, "indexer_url", indexer_url);
+        get_config_ref!(config, "operator_address", operator_address);
+
+        let operator_address = operator_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Operator Address: {}", e))?;
+
+        Ok(ReadStakeDataInfo {
+            operator_address,
+            indexer_url: indexer_url.to_string(),
+        })
+    }
+}

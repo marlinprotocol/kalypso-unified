@@ -505,6 +505,14 @@
       ]
     },
     {
+      "name": "Read Stake Data",
+      "description": "Read Stake Data across Native and Symbiotic Staking modules",
+      "required_prompts": [
+        "indexer_url", 
+        "operator_address"
+      ]
+    },
+    {
       "name": "Request Symbiotic Stake",
       "description": "Request delegation from symbiotic",
       "required_prompts": [
