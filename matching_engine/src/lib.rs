@@ -154,6 +154,20 @@ pub struct Dump {
     pub parsed_block: U64,
 }
 
+// Define the Dump struct
+#[derive(Serialize)]
+pub struct DumpSend<'a> {
+    market_metadata_store: Option<&'a MarketMetadataStore>,
+    local_ask_store: Option<&'a LocalAskStore>,
+    generator_store: Option<&'a GeneratorStore>,
+    native_staking_store: Option<&'a NativeStakingStore>,
+    symbiotic_stake_store: Option<&'a SymbioticStakeStore>,
+    cost_store: Option<&'a CostStore>,
+    key_store: Option<&'a KeyStore>,
+    stake_manager_store: Option<&'a StakeManagerStore>,
+    parsed_block: Option<&'a U64>,
+}
+
 impl MatchingEngine {
     pub fn from_config(config: MatchingEngineConfig, matching_engine_port: Option<u16>) -> Self {
         Self {

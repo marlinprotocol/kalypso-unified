@@ -36,7 +36,7 @@ use std::{
 };
 use tokio::sync::RwLock;
 
-use crate::log_processor;
+use crate::{log_processor, DumpSend};
 
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::{
@@ -162,7 +162,10 @@ impl LogParser {
 
     pub async fn parse(&self) -> anyhow::Result<()> {
         let mut matches_upto: Option<U64> = None;
+        let mut loop_count: usize = 0;
         loop {
+            loop_count += 1;
+
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
@@ -176,6 +179,73 @@ impl LogParser {
                     continue;
                 }
             };
+
+            if loop_count % 100 == 0 {
+                // make backup here
+                let market_store = self.shared_market_store.read().await;
+                let ask_store = self.shared_local_ask_store.read().await;
+                let generator_store = self.shared_generator_store.read().await;
+                let native_store = self.shared_native_stake_store.read().await;
+                let symbiotic_store = self.shared_symbiotic_stake_store.read().await;
+                let cost_store = self.shared_cost_store.read().await;
+                let key_store = self.shared_key_store.read().await;
+                let stake_manager_store = self.shared_stake_manager_store.read().await;
+                let parsed_block = self.start_block.read().await;
+
+                let dump = DumpSend {
+                    market_metadata_store: Some(&*market_store),
+                    local_ask_store: Some(&*ask_store),
+                    generator_store: Some(&*generator_store),
+                    native_staking_store: Some(&*native_store),
+                    symbiotic_stake_store: Some(&*symbiotic_store),
+                    cost_store: Some(&*cost_store),
+                    key_store: Some(&*key_store),
+                    stake_manager_store: Some(&*stake_manager_store),
+                    parsed_block: Some(&*parsed_block),
+                };
+
+                use std::path::Path;
+                use tokio::fs;
+                use tokio::io::AsyncWriteExt;
+
+                // Serialize DumpSend to JSON
+                match serde_json::to_string_pretty(&dump) {
+                    Ok(json_string) => {
+                        // Define the file path
+                        let path = Path::new("./matching_engine_config/dump.json");
+
+                        // Ensure the directory exists
+                        if let Some(parent) = path.parent() {
+                            if let Err(e) = fs::create_dir_all(parent).await {
+                                log::error!("Failed to create directory {:?}: {}", parent, e);
+                                // Handle the error as needed, e.g., continue or return
+                            }
+                        }
+
+                        // Write the JSON string to the file asynchronously
+                        match fs::File::create(&path).await {
+                            Ok(mut file) => {
+                                if let Err(e) = file.write_all(json_string.as_bytes()).await {
+                                    log::error!("Failed to write to file {:?}: {}", path, e);
+                                    // Handle the error as needed
+                                } else {
+                                    log::info!("Successfully backed up dump to {:?}", path);
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("Failed to create file {:?}: {}", path, e);
+                                // Handle the error as needed
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to serialize DumpSend: {}", e);
+                        // Handle the serialization error as needed
+                    }
+                }
+
+                continue;
+            }
 
             if let Some(matches_upto) = matches_upto.filter(|&m| m == end_block) {
                 log::warn!(
