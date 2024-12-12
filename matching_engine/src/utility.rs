@@ -221,7 +221,7 @@ impl TokenTracker {
     }
 
     pub fn replace_token(&mut self, token: &Address, amount: &U256) {
-        log::warn!("Replace token value is being called in TokenTracker, avoid using this function and modify the app's code");
+        log::debug!("Replace token value is being called in TokenTracker, avoid using this function and modify the app's code");
         let entry = self.tokens.entry(*token).or_insert(U256::zero());
         *entry = *amount; // replace with  whatever value provided.
     }
@@ -241,6 +241,7 @@ impl TokenTracker {
 
     // Subtract tokens from the tracker, but set balance to 0 in case of underflow
     pub fn sub_token_saturating(&mut self, token: &Address, amount: &U256) {
+        log::debug!("using sub_token_saturation in TokenTracker. User sub_token instead");
         if let Some(entry) = self.tokens.get_mut(token) {
             if *entry >= *amount {
                 *entry -= *amount; // Normal subtraction

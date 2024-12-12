@@ -127,6 +127,8 @@ pub struct ComputeBreakDown {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WithdrawRequest {
     account: String,
+    token: String,
+    amount: String,
     index: String,
 }
 
@@ -535,6 +537,8 @@ async fn recompute_single_generator_response<'a>(
             .map(|a| WithdrawRequest {
                 account: address_to_string(&a.account),
                 index: a.index.to_string(),
+                token: address_to_string(&a.token),
+                amount: a.amount.to_string(),
             })
             .collect(),
         compute_break_down: ComputeBreakDown {

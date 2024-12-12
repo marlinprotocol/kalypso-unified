@@ -677,8 +677,7 @@ impl GeneratorStore {
                     log::debug!("Token to remove: {:?}, Amount: {:?}", token_address, amount);
                     generator
                         .total_native_stake
-                        .sub_token(token_address, amount)
-                        .unwrap(); // unwraping because this should never come
+                        .sub_token_saturating(token_address, amount);
                 }
 
                 super::delegation::Source::Symbiotic => {
@@ -689,8 +688,7 @@ impl GeneratorStore {
                     log::debug!("Token to remove: {:?}, Amount: {:?}", token_address, amount);
                     generator
                         .total_symbiotic_stake
-                        .sub_token(token_address, amount)
-                        .unwrap(); // unwraping because this should never come
+                        .sub_token_saturating(token_address, amount);
                 }
             }
 

@@ -162,10 +162,9 @@ impl LogParser {
 
     pub async fn parse(&self) -> anyhow::Result<()> {
         let mut matches_upto: Option<U64> = None;
-        let mut loop_count: usize = 0;
-        loop {
-            loop_count += 1;
+        let mut last_backup_made_at = tokio::time::Instant::now();
 
+        loop {
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
@@ -180,7 +179,16 @@ impl LogParser {
                 }
             };
 
-            if loop_count % 100 == 0 {
+            // once in every n loops, the indexers makes a local backup to avoid parsing from start.
+            // this is useless if the shape of the data the indexers creates changes.
+
+            let time_since_last_backup = last_backup_made_at.elapsed();
+            log::info!(
+                "Time since last backup: {} sec",
+                time_since_last_backup.as_secs_f64()
+            );
+
+            if time_since_last_backup > tokio::time::Duration::from_secs(100) {
                 // make backup here
                 let market_store = self.shared_market_store.read().await;
                 let ask_store = self.shared_local_ask_store.read().await;
@@ -244,6 +252,7 @@ impl LogParser {
                     }
                 }
 
+                last_backup_made_at = tokio::time::Instant::now();
                 continue;
             }
 
