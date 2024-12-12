@@ -131,6 +131,31 @@ async fn task_assignment_requirements(indexer_url: String) -> Result<(), Box<dyn
         "Native",
         &dashboard_response.task_assignment_requirements.native,
     );
+
+    print_task(
+        " ",
+        &vec![TaskEntry {
+            token: " ".into(),
+            amount: " ".into(),
+        }],
+    );
+
+    print_task(
+        "-----------",
+        &vec![TaskEntry {
+            token: "(and one of the token requirement below)".into(),
+            amount: "-----------".into(),
+        }],
+    );
+
+    print_task(
+        " ",
+        &vec![TaskEntry {
+            token: " ".into(),
+            amount: " ".into(),
+        }],
+    );
+
     print_task(
         "Symbiotic",
         &dashboard_response.task_assignment_requirements.symbiotic,
@@ -199,16 +224,25 @@ async fn read_staking_data(
         &api_response.stake_break_down.total_native_stake_locked,
     );
     print_stake(
+        "Available Native Stake",
+        &api_response.stake_break_down.available_native_stake,
+    );
+
+    print_stake(
+        "-------",
+        &vec![StakeEntry {
+            token: "-------".into(),
+            amount: "-------".into(),
+        }],
+    );
+
+    print_stake(
         "Total Symbiotic Stake",
         &api_response.stake_break_down.total_symbiotic_stake,
     );
     print_stake(
         "Total Symbiotic Stake Locked",
         &api_response.stake_break_down.total_symbiotic_stake_locked,
-    );
-    print_stake(
-        "Available Native Stake",
-        &api_response.stake_break_down.available_native_stake,
     );
     print_stake(
         "Available Symbiotic Stake",
