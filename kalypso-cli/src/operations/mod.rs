@@ -11,6 +11,7 @@ pub mod leave_or_request_leave_marketplace;
 pub mod programs;
 pub mod read_proof;
 pub mod request;
+pub mod set_operator_commision;
 pub mod stake;
 pub mod stake_data;
 pub mod symbiotic_opt_in;
@@ -94,6 +95,9 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         )),
         "Check Symbiotic Optin Info" => Some(Box::new(symbiotic_opt_in::SymbioticOptinInfo)),
         "Read Stake Data" => Some(Box::new(stake_data::StakeData)),
+        "Set Operator Reward Commission" => {
+            Some(Box::new(set_operator_commision::SetOperatorCommision))
+        }
         _ => unimplemented!(),
     }
 }

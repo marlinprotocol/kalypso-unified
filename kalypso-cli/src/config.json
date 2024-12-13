@@ -288,6 +288,12 @@
       "prompt": "Enter Symbiotic Operator Registry",
       "secret": false,
       "env_var": "SYMBIOTIC_OPERATOR_REGISTRY"
+    },
+    {
+      "field": "operator_commission",
+      "prompt": "Enter operator-commission. [0 (0%)- 1000000000000000000 (100%)]",
+      "secret": false,
+      "env_var": "OPERATOR_COMMISSION"
     }
   ],
   "operations": [
@@ -625,6 +631,18 @@
         "vault_address",
         "network_opt_in_service",
         "network_address"
+      ]
+    },
+    {
+      "name": "Set Operator Reward Commission",
+      "description": "Set Operator Reward Commission [0 (0%)- 1000000000000000000 (100%)]",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "generator_registry",
+        "proof_marketplace",
+        "operator_commission"        
       ]
     }
   ]

@@ -63,6 +63,7 @@ impl<'a> Prompter<'a> {
         validators.insert("display_description".to_string(), validate_string);
         validators.insert("website".to_string(), validate_string);
         validators.insert("twitter".to_string(), validate_string);
+        validators.insert("operator_commission".to_string(), validate_dec_str_id);
 
         validators.insert(
             "symbiotic_rpc_url".to_string(),
