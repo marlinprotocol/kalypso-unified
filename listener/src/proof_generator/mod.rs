@@ -14,6 +14,7 @@ use std::io::Read;
 use std::sync::Arc;
 use std::time::Instant;
 use std::{thread, time::Duration};
+use tokio::sync::Semaphore;
 
 mod confidential_provers;
 mod non_confidential_prover;
@@ -38,6 +39,8 @@ pub struct GenerateProofParams<'a> {
 //Generating proof for the input
 pub async fn generate_proof(
     generate_proof_params: GenerateProofParams<'_>,
+    valid_proof_semaphore: Arc<Semaphore>,
+    invalid_inputs_semaphore: Arc<Semaphore>,
 ) -> Result<Proof, Box<dyn std::error::Error>> {
     let (public_inputs, decoded_secret_input, market_id, parsed_ask_created_log, markets) =
         fetch_decoded_secret(generate_proof_params.clone())
@@ -79,7 +82,9 @@ pub async fn generate_proof(
             generate_proof_params.skip_input_verification,
         );
 
-        confidential_prover.get_proof().await
+        confidential_prover
+            .get_proof(valid_proof_semaphore, invalid_inputs_semaphore)
+            .await
     } else {
         // market without confidential inputs
         let ivs_url = &markets.get(&market_id.to_string()).unwrap().ivs_url;
@@ -101,7 +106,9 @@ pub async fn generate_proof(
             generate_proof_params.skip_input_verification,
         );
 
-        non_confidential_prover.get_proof().await
+        non_confidential_prover
+            .get_proof(valid_proof_semaphore, invalid_inputs_semaphore)
+            .await
     }
 }
 

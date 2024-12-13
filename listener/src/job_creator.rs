@@ -587,7 +587,8 @@ impl JobCreator {
             stop_handle.store(true, Ordering::Release);
         });
 
-        let proof_semaphore = Arc::new(Semaphore::new(self.max_threads)); // ensures that only `max_threads` number of proofs are flushed to generator
+        let valid_proof_semaphore = Arc::new(Semaphore::new(self.max_threads)); // ensures that only `max_threads` number of proofs are flushed to generator
+        let invalid_inputs_semaphore = Arc::new(Semaphore::new(5));
         let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
         loop {
@@ -688,7 +689,8 @@ impl JobCreator {
                     let markets_clone = Arc::clone(&markets);
                     // code inside thread starts here
 
-                    let proof_semaphore = proof_semaphore.clone();
+                    let valid_proof_semaphore = valid_proof_semaphore.clone();
+                    let invalid_inputs_semaphore = invalid_inputs_semaphore.clone();
                     let transaction_semaphore = transaction_semaphore.clone();
 
                     let skip_input_verification = self.skip_input_verification.clone();
@@ -714,19 +716,15 @@ impl JobCreator {
                             skip_input_verification,
                         };
 
-                        let proof_permit = proof_semaphore
-                            .acquire()
-                            .await
-                            .expect("Failed to acquire proof semaphore");
-
-                        let proof = match proof_generator::generate_proof(generate_proof_args).await
+                        let proof = match proof_generator::generate_proof(
+                            generate_proof_args,
+                            valid_proof_semaphore,
+                            invalid_inputs_semaphore,
+                        )
+                        .await
                         {
-                            Ok(proof) => {
-                                drop(proof_permit);
-                                proof
-                            }
+                            Ok(proof) => proof,
                             Err(err) => {
-                                drop(proof_permit);
                                 log::error!("Error generating proof for ask: {}", event.ask_id);
                                 log::error!("{}", err.to_string());
                                 return log::error!("{}", err);
