@@ -26,6 +26,7 @@ const DEFAULT_COUNT: &usize = &100;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Jobs {
     proofs_generated: usize,
+    inputs_challenged: usize,
     proofs_pending: usize,
     proofs_in_progress: usize,
     requests_made: usize,
@@ -267,6 +268,9 @@ async fn recompute_single_market_response<'a>(
                 }
             },
             requests_made: { local_ask_store.get_request_count_by_market_id(&market_id) },
+            inputs_challenged: {
+                local_ask_store.get_failed_request_count_by_market_id(&market_id)
+            },
         },
         market_setup_data: marketmetadata.deserialize_market_bytes(),
         registered_generator_list: local_generator_store
