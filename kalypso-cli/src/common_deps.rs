@@ -1533,3 +1533,42 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct SetOperatorCommission {
+    pub private_key_signer: LocalWallet,
+    pub rpc_url: String,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub operator_commission: U256,
+}
+
+impl CommonDeps {
+    pub fn set_operator_commission_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<SetOperatorCommission, String> {
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "chain_id", chain_id);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        get_config_ref!(config, "operator_commission", operator_commission);
+
+        let operator_commission = U256::from_dec_str(&operator_commission.as_str())
+            .map_err(|e| format!("Invalid Operator Commission: {}", e))?;
+
+        Ok(SetOperatorCommission {
+            private_key_signer,
+            proof_marketplace,
+            operator_commission,
+            rpc_url: rpc_url.to_string(),
+        })
+    }
+}
