@@ -207,6 +207,44 @@ struct GeneratorQuery {
     query: QueryParams,
 }
 
+pub async fn withdrawal_request(
+    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    path: web::Path<(String,)>,
+) -> actix_web::Result<HttpResponse> {
+    let generator_id: Address = match path.into_inner().0.parse() {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
+                status: "Invalid Generator Id".into(),
+            }))
+        }
+    };
+
+    try_read_or_lock!(_local_generator_store, local_generator_store);
+
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    struct WithdrawalResponse {
+        withdrawal_requests: Vec<WithdrawRequest>,
+    }
+
+    let withdrawal_requests = local_generator_store
+        .get_withdrawl_requests(&generator_id)
+        .iter()
+        .map(|a| WithdrawRequest {
+            account: address_to_string(&a.account),
+            index: a.index.to_string(),
+            token: address_to_string(&a.token),
+            amount: a.amount.to_string(),
+        })
+        .collect::<Vec<WithdrawRequest>>();
+
+    let response = WithdrawalResponse {
+        withdrawal_requests,
+    };
+
+    return Ok(HttpResponse::Ok().json(response));
+}
+
 pub async fn single_generator(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
