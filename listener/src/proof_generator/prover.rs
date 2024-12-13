@@ -1,7 +1,8 @@
 use ethers::types::Bytes;
 use reqwest::Client;
 use serde::{de::DeserializeOwned, Serialize};
-use std::error::Error;
+use std::{error::Error, sync::Arc};
+use tokio::sync::Semaphore;
 
 #[derive(Debug, Clone)]
 pub enum Proof {
@@ -24,15 +25,31 @@ pub trait Prover {
 
     fn should_skip_input_verification(&self) -> bool;
 
-    async fn get_proof(&self) -> Result<Proof, Box<dyn Error>> {
+    async fn get_proof(
+        &self,
+        valid_proof_semaphore: Arc<Semaphore>,
+        invalid_inputs_semaphore: Arc<Semaphore>,
+    ) -> Result<Proof, Box<dyn Error>> {
         if self.should_skip_input_verification() {
+            let proof_permit = valid_proof_semaphore
+                .acquire()
+                .await
+                .expect("Failed to acquire proof semaphore");
             let proof = self.generate_proof().await?;
+            drop(proof_permit); // not needed but explicity dropping it
             return Ok(Proof::ValidProof(proof.proof.into()));
         }
 
         let check_input = self.check_inputs().await?;
         if check_input.valid {
+            let proof_permit = valid_proof_semaphore
+                .acquire()
+                .await
+                .expect("Failed to acquire proof semaphore");
+
             let proof = self.generate_proof().await?;
+
+            drop(proof_permit); // not needed but explicity dropping  it
             let check_proof = self.verify_inputs_and_proof(proof.proof.as_ref()).await;
             match check_proof {
                 Ok(data) => {
@@ -49,7 +66,14 @@ pub trait Prover {
             }
             Ok(Proof::ValidProof(proof.proof.into()))
         } else {
+            let invalid_inputs_permit = invalid_inputs_semaphore
+                .acquire()
+                .await
+                .expect("Failed to acquire proof semaphore");
+
             let proof = self.generate_attestation_for_invalid_inputs().await?;
+
+            drop(invalid_inputs_permit);
             Ok(Proof::InvalidProof(proof.proof.into()))
         }
     }
