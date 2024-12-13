@@ -4,10 +4,12 @@ use ethers::prelude::*;
 use ethers::types::U256;
 use ethers::{abi::Address, providers::Provider};
 use kalypso_helper::custom_logger::CustomLogger;
+use kalypso_helper::prom_client::TaskMetrics;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::MutexGuard;
 use std::{
     str::FromStr,
     sync::{Arc, Mutex},
@@ -22,6 +24,20 @@ use crate::proof_generator::GenerateProofParams;
 use crate::server::ListenerHealthCheckServer;
 use crate::{ask, generator_store, proof_generator};
 use warp::Filter;
+
+macro_rules! with_metrics_lock {
+    ($metrics:expr, $action:expr) => {
+        match $metrics.lock() {
+            Ok(mut data) => {
+                $action(&mut data);
+                drop(data);
+            }
+            Err(err) => {
+                log::error!("unable to update prom_client metrics: {}", err);
+            }
+        }
+    };
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfigModel {
@@ -120,7 +136,7 @@ pub struct JobCreator {
     shared_latest_block: Arc<Mutex<U64>>,
     should_stop: Arc<AtomicBool>,
     skip_input_verification: bool,
-    metrics: Data<kalypso_helper::prom_client::TaskMetrics>,
+    metrics: Data<Arc<Mutex<TaskMetrics>>>,
 }
 
 impl JobCreator {
@@ -151,21 +167,27 @@ impl JobCreator {
         let shared_latest_block = Arc::new(Mutex::new(U64::zero()));
         let should_stop = Arc::new(AtomicBool::new(false));
 
-        let task_metrics =
-            actix_web::web::Data::new(kalypso_helper::prom_client::TaskMetrics::default());
+        let metrics = kalypso_helper::prom_client::TaskMetrics::default();
+
         let mut app_state = kalypso_helper::prom_client::ListenerMetrics::default();
 
-        app_state.registry.register(
-            "requests",
-            "Count of requests",
-            task_metrics.requests.clone(),
-        );
+        app_state
+            .registry
+            .register("requests", "Count of requests", metrics.requests.clone());
 
         app_state.registry.register(
             "block",
             "Block Number till which the listener has found requests",
-            task_metrics.block.clone(),
+            metrics.block.clone(),
         );
+
+        app_state.registry.register(
+            "proving_time",
+            "Times spent by prover on jobs",
+            metrics.proving_time.clone(),
+        );
+
+        let task_metrics = actix_web::web::Data::new(Arc::new(Mutex::new(metrics)));
 
         let shared_app_state = Arc::new(Mutex::new(app_state));
 
@@ -176,7 +198,12 @@ impl JobCreator {
             shared_app_state.clone(),
         );
 
-        tokio::spawn(health_check_service.start_server(9999, false));
+        let prometheus_port: u16 = std::env::var("PROMETHEUS_PORT")
+            .ok()
+            .and_then(|val| val.parse().ok())
+            .unwrap_or(9999);
+
+        tokio::spawn(health_check_service.start_server(prometheus_port, false));
 
         if enable_logging_server {
             let log_storage = Arc::new(Mutex::new(Vec::new()));
@@ -218,7 +245,12 @@ impl JobCreator {
             warp::reply::json(&*logs)
         });
 
-        let server = warp::serve(log_route).run(([127, 0, 0, 1], 9999));
+        let logging_server_port: u16 = std::env::var("LOGGING_SERVER_PORT")
+            .ok()
+            .and_then(|val| val.parse().ok())
+            .unwrap_or(9998);
+
+        let server = warp::serve(log_route).run(([127, 0, 0, 1], logging_server_port));
 
         Box::pin(server)
     }
@@ -574,7 +606,8 @@ impl JobCreator {
                 }
             };
 
-            self.metrics.note_block_parsed_to(start_block);
+            with_metrics_lock!(self.metrics, |data: &mut MutexGuard<'_, TaskMetrics>| data
+                .note_block_parsed_to(start_block));
 
             let end = if start_block + blocks_at_once > latest_block {
                 latest_block - 1
@@ -644,7 +677,10 @@ impl JobCreator {
                         "Need to generate proof (polling) for ASK ID : {}",
                         event.ask_id
                     );
-                    self.metrics.inc_tasks_assigned();
+
+                    with_metrics_lock!(self.metrics, |data: &mut TaskMetrics| data
+                        .inc_tasks_assigned());
+
                     let gen_ecies_private_key = generator.ecies_priv_key;
 
                     let proof_market_place_clone_http = Arc::clone(&proof_marketplace_http);
@@ -656,7 +692,11 @@ impl JobCreator {
                     let transaction_semaphore = transaction_semaphore.clone();
 
                     let skip_input_verification = self.skip_input_verification.clone();
+
+                    let metrics_arc = self.metrics.clone();
                     tokio::spawn(async move {
+                        let start_time = std::time::Instant::now();
+
                         log::info!(
                             "Spin up new thread from proof generation of ask: {}",
                             event.ask_id
@@ -704,6 +744,8 @@ impl JobCreator {
                         let proof_transaction = match proof {
                             crate::proof_generator::prover::Proof::ValidProof(proof) => {
                                 log::info!("Submitting proof on-chain...");
+                                with_metrics_lock!(metrics_arc, |data: &mut TaskMetrics| data
+                                    .increase_tasks_proven());
 
                                 let mut tx = submitter_pmp_clone_http
                                     .lock()
@@ -719,7 +761,14 @@ impl JobCreator {
                                         .confirmations(10)
                                         .await
                                     {
-                                        Ok(confirmation) => confirmation,
+                                        Ok(confirmation) => {
+                                            with_metrics_lock!(
+                                                metrics_arc,
+                                                |data: &mut TaskMetrics| data
+                                                    .increase_job_submitted_on_chain()
+                                            );
+                                            confirmation
+                                        }
                                         Err(e) => {
                                             log::error!("Error awaiting confirmations: {:?}", e);
                                             None
@@ -735,6 +784,8 @@ impl JobCreator {
                                 invalid_proof_signature,
                             ) => {
                                 log::info!("Submitting signature on-chain...");
+                                with_metrics_lock!(metrics_arc, |data: &mut TaskMetrics| data
+                                    .increase_challenge_request());
                                 let mut tx = submitter_pmp_clone_http
                                     .lock()
                                     .await
@@ -752,7 +803,14 @@ impl JobCreator {
                                         .confirmations(10)
                                         .await
                                     {
-                                        Ok(confirmation) => confirmation,
+                                        Ok(confirmation) => {
+                                            with_metrics_lock!(
+                                                metrics_arc,
+                                                |data: &mut TaskMetrics| data
+                                                    .increase_job_submitted_on_chain()
+                                            );
+                                            confirmation
+                                        }
                                         Err(e) => {
                                             log::error!("Error awaiting confirmations: {:?}", e);
                                             None
@@ -787,6 +845,10 @@ impl JobCreator {
                                 );
                             }
                         }
+
+                        let time_elapsed = start_time.elapsed();
+                        with_metrics_lock!(metrics_arc, |data: &mut TaskMetrics| data
+                            .observe_time_spent(time_elapsed.as_secs_f64()));
                         // code inside thread ends here
                     });
                 }
