@@ -1585,9 +1585,8 @@ impl CommonDeps {
         get_config_ref!(config, "operator_address", operator_address);
         get_config_ref!(config, "rpc_url", rpc_url);
         get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
-        get_config_ref!(config, "chain_id", chain_id);
 
-        let (proof_marketplace, provider_http) =
+        let (proof_marketplace, _) =
             get_proof_marketplace_instance_without_signer(proof_marketplace_address, rpc_url)?;
 
         let operator_address = operator_address
