@@ -98,6 +98,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Set Operator Reward Commission" => {
             Some(Box::new(set_operator_commision::SetOperatorCommision))
         }
+        "Read Rewards Info" => Some(Box::new(claim_rewards::ReadRewardsInfo)),
         _ => unimplemented!(),
     }
 }
