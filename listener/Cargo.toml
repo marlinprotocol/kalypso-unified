@@ -30,3 +30,4 @@ warp = "0.3"
 [features]
 default = []
 force_transactions = []
+testnet = []
