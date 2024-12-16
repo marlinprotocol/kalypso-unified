@@ -1,11 +1,68 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Once};
 
 use async_trait::async_trait;
-use ethers::signers::Signer;
+use ethers::{signers::Signer, types::Address};
+use serde::{Deserialize, Serialize};
 
 use crate::common_deps::CommonDeps;
 
 use super::Operation;
+
+pub struct RequestNativeStakeWithdrawal;
+
+#[async_trait]
+impl Operation for RequestNativeStakeWithdrawal {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        unimplemented!()
+    }
+}
+
+pub struct ReadWithdrawalRequestIds;
+
+#[async_trait]
+impl Operation for ReadWithdrawalRequestIds {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let read_stake_data_info = CommonDeps::read_stake_data_info(&config)?;
+        let withdrawal_requests = read_staking_data(
+            &read_stake_data_info.operator_address,
+            read_stake_data_info.indexer_url,
+        )
+        .await
+        .map_err(|e| format!("Unable to read stake data from indexer: {}", e))?;
+
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            println!(
+                "\n\nWithdrawal Requests for Operator {:?}\n\n",
+                read_stake_data_info.operator_address
+            );
+            println!(
+                "{:<42} | {:<42} | {:>42} | {:<5}",
+                "Account", "Amount", "Token", "Index"
+            );
+            println!("{:-<42}-+-{:-<42}-+-{:-<42}-+-{:-<5}", "", "", "", "");
+        });
+
+        for withdrawal in withdrawal_requests {
+            println!(
+                "{:<42} | {:<42} | {:>42} | {:<5}",
+                withdrawal.account, withdrawal.amount, withdrawal.token, withdrawal.index
+            );
+        }
+
+        println!();
+        Ok(())
+    }
+}
+
+pub struct ProcessWithdrawalRequests;
+
+#[async_trait]
+impl Operation for ProcessWithdrawalRequests {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        unimplemented!()
+    }
+}
 
 pub struct NativeStaking;
 
@@ -74,111 +131,50 @@ impl Operation for NativeStaking {
     }
 }
 
-#[async_trait]
-impl Operation for NativeStaking {
-    async fn request_withdrawal(&self, config: HashMap<String, String>) -> Result<(), String> {
-        let native_stake_info = CommonDeps::native_staking_info(&config)?;
-
-        // Step 1: Call the requestStakeWithdrawal function
-        let request_tx = CommonDeps::send_and_confirm(
-            native_stake_info
-                .native_staking
-                .request_stake_withdrawal(native_stake_info.operator_address)
-                .send(),
-        )
-        .await
-        .map_err(|e| format!("Request Stake Withdrawal failed: {}", e))?;
-
-        println!("Stake Withdrawal Requested: {}", request_tx);
-
-        // Step 2: Verify the indexer update
-        let indexer_url = config
-            .get("indexer_url")
-            .ok_or("Missing indexer_url in config")?;
-
-        // Query the indexer for withdrawal requests
-        let response = reqwest::get(indexer_url)
-            .await
-            .map_err(|e| format!("Failed to fetch from indexer: {}", e))?
-            .text()
-            .await
-            .map_err(|e| format!("Failed to parse indexer response: {}", e))?;
-
-        let parsed_response: serde_json::Value =
-            serde_json::from_str(&response).map_err(|e| format!("Invalid JSON response: {}", e))?;
-
-        // Validate that the operator's withdrawal request is included
-        if let Some(requests) = parsed_response["withdrawal_requests"].as_array() {
-            let operator_address = native_stake_info.operator_address.to_string();
-
-            if requests.iter().any(|req| req["operator"].as_str() == Some(&operator_address)) {
-                println!("Indexer updated with the withdrawal request for operator: {}", operator_address);
-                Ok(())
-            } else {
-                Err("Indexer did not update with the new withdrawal request.".to_string())
-            }
-        } else {
-            Err("No withdrawal requests found in the indexer.".to_string())
-        }
-    }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct WithdrawRequest {
+    account: String,
+    token: String,
+    amount: String,
+    index: String,
 }
 
-
-#[async_trait]
-impl Operation for NativeStaking {
-    async fn read_withdrawal_ids(&self, config: HashMap<String, String>) -> Result<(), String> {
-        let indexer_url = config
-            .get("indexer_url")
-            .ok_or("Missing indexer_url in config")?;
-
-        // Fetch withdrawal requests
-        let response = reqwest::get(indexer_url)
-            .await
-            .map_err(|e| format!("Failed to fetch from indexer: {}", e))?
-            .text()
-            .await
-            .map_err(|e| format!("Failed to parse indexer response: {}", e))?;
-
-        let parsed_response: serde_json::Value =
-            serde_json::from_str(&response).map_err(|e| format!("Invalid JSON response: {}", e))?;
-
-        // Extract withdrawal IDs
-        if let Some(requests) = parsed_response["withdrawal_requests"].as_array() {
-            for request in requests {
-                if let Some(id) = request["id"].as_str() {
-                    println!("Withdrawal ID: {}", id);
-                }
-            }
-        } else {
-            return Err("No withdrawal requests found".to_string());
-        }
-
-        Ok(())
-    }
+// Define the structure of the entire API response
+#[derive(Deserialize, Debug)]
+struct ApiResponse {
+    withdrawal_requests: Vec<WithdrawRequest>,
+    // Include other fields if necessary
 }
 
-#[async_trait]
-impl Operation for NativeStaking {
-    async fn confirm_withdrawal(&self, config: HashMap<String, String>) -> Result<(), String> {
-        let native_stake_info = CommonDeps::native_staking_info(&config)?;
+use reqwest::header::{HeaderMap, CONTENT_TYPE};
+use std::error::Error;
 
-        get_config_ref!(config, "withdrawal_id", withdrawal_id);
-        let withdrawal_id = withdrawal_id
-            .parse::<U256>()
-            .map_err(|e| format!("Invalid withdrawal ID: {}", e))?;
+async fn read_staking_data(
+    operator_address: &Address,
+    indexer_url: String,
+) -> Result<Vec<WithdrawRequest>, Box<dyn Error>> {
+    // Initialize the HTTP client with a timeout (optional but recommended)
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
 
-        // Call the withdrawStake function
-        let confirm_tx = CommonDeps::send_and_confirm(
-            native_stake_info
-                .native_staking
-                .withdraw_stake(withdrawal_id)
-                .send(),
-        )
-        .await
-        .map_err(|e| format!("Confirm Withdrawal failed: {}", e))?;
+    // Construct the full URL
+    let full_url = format!("{}/ui/generator/{:?}", indexer_url, operator_address);
 
-        println!("Withdrawal Confirmed: {}", confirm_tx);
+    // Prepare the headers
+    let mut headers = HeaderMap::new();
+    headers.insert(CONTENT_TYPE, "application/json".parse()?);
 
-        Ok(())
+    // Make the GET request
+    let response = client.get(&full_url).headers(headers).send().await?;
+
+    // Check if the response status is success
+    if !response.status().is_success() {
+        return Err(format!("Request failed with status: {}", response.status()).into());
     }
+
+    // Parse the JSON response
+    let api_response: ApiResponse = response.json().await?;
+
+    Ok(api_response.withdrawal_requests)
 }
