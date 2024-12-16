@@ -646,7 +646,7 @@
       ]
     },
     {
-      "name": "Reward Rewards",
+      "name": "Read Rewards Info",
       "description": "Read accumulated rewards",
       "required_prompts": [
         "operator_address",
