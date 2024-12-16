@@ -7,6 +7,26 @@ use crate::common_deps::CommonDeps;
 
 use super::Operation;
 
+pub struct ReadRewardsInfo;
+
+#[async_trait]
+impl Operation for ReadRewardsInfo {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let read_rewards_info = CommonDeps::read_rewards_info(&config)?;
+
+        let available_rewards = read_rewards_info
+            .proof_marketplace
+            .claimable_amount(read_rewards_info.operator)
+            .call()
+            .await
+            .map_err(|_| "Failed making call to proof marketplace contract".to_string())?;
+
+        println!("Available Rewards: {}", available_rewards);
+
+        Ok(())
+    }
+}
+
 pub struct ClaimRewardsInfo;
 
 #[async_trait]

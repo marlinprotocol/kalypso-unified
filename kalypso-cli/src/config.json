@@ -644,6 +644,16 @@
         "proof_marketplace",
         "operator_commission"        
       ]
+    },
+    {
+      "name": "Reward Rewards",
+      "description": "Read accumulated rewards",
+      "required_prompts": [
+        "operator_address",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace"
+      ]
     }
   ]
 }
