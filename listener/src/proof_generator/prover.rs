@@ -56,12 +56,21 @@ pub trait Prover {
                     if data.is_input_and_proof_valid {
                         log::info!("is_input_and_proof_valid");
                     } else {
-                        log::error!("is_input_and_proof_is_invalid");
-                        log::warn!("invalid proofs will be rejected in future");
+                        if cfg!(feature = "testnet") {
+                            log::warn!("is_input_and_proof_is_invalid");
+                            log::warn!("invalid proofs will be rejected in future");
+                        } else {
+                            log::error!("is_input_and_proof_is_invalid");
+                            log::error!("invalid proofs will be rejected in future");
+                        }
                     }
                 }
                 _ => {
-                    log::error!("Generated Proof could not be verified against IVS");
+                    if cfg!(feature = "testnet") {
+                        log::warn!("Generated Proof could not be verified against IVS");
+                    } else {
+                        log::error!("Generated Proof could not be verified against IVS");
+                    }
                 }
             }
             Ok(Proof::ValidProof(proof.proof.into()))
