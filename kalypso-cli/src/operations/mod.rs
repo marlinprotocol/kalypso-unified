@@ -99,6 +99,9 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
             Some(Box::new(set_operator_commision::SetOperatorCommision))
         }
         "Read Rewards Info" => Some(Box::new(claim_rewards::ReadRewardsInfo)),
+        "Read Native Staking Pending Withdrawals" => {
+            Some(Box::new(stake::ReadWithdrawalRequestIds))
+        }
         _ => unimplemented!(),
     }
 }
