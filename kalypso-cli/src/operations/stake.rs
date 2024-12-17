@@ -97,6 +97,10 @@ impl Operation for ProcessWithdrawalRequests {
             .map(|a| U256::from_dec_str(a.index.as_ref()).unwrap())
             .collect();
 
+        if withdrawal_requests.len() == 0 {
+            return Err("No Pending Withdrawals available".to_string());
+        }
+
         let withdrawal_transaction_hash = CommonDeps::send_and_confirm(
             request_staking_info
                 .native_staking
