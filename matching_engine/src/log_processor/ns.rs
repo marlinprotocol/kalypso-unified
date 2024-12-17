@@ -132,6 +132,18 @@ pub async fn process_native_staking_logs(
         log::warn!("pausing all assignments across all markets");
         log::warn!("will be unpaused once the request if fully withdrawn");
 
+        let withdrawal_request_time = match native_staking
+            .withdrawal_requests(account, address, index)
+            .call()
+            .await
+        {
+            Ok(data) => data.2,
+            Err(err) => {
+                log::error!("Failed Querying withdrawal request timestamp: {}", err);
+                0.into()
+            }
+        };
+
         generator_store.pause_assignments_across_all_markets(&address);
 
         log::warn!("Setting new utilization to same value");
@@ -144,6 +156,7 @@ pub async fn process_native_staking_logs(
                 index,
                 token,
                 amount,
+                timestamp: withdrawal_request_time,
             },
         );
         return Ok(());
@@ -172,6 +185,18 @@ pub async fn process_native_staking_logs(
             .await
             .unwrap_or_default();
 
+        let withdrawal_request_time = match native_staking
+            .withdrawal_requests(account, address, index)
+            .call()
+            .await
+        {
+            Ok(data) => data.2,
+            Err(err) => {
+                log::error!("Failed Querying withdrawal request timestamp: {}", err);
+                0.into()
+            }
+        };
+
         generator_store.remove_stake(
             &address,
             &token_address,
@@ -192,6 +217,7 @@ pub async fn process_native_staking_logs(
                 index,
                 token: token_address,
                 amount,
+                timestamp: withdrawal_request_time,
             },
         );
 

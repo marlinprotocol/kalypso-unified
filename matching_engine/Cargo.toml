@@ -10,6 +10,7 @@ actix-web = {version = "4.5.1", features = ["rustls"] }
 anyhow = "1.0.86"
 bindings = { path = "../bindings", package = "foundry-contracts" }
 binding_patches = { path = "../binding_patches", package = "binding_patches"}
+derivative = "2.2"
 dotenv = "0.15.0"
 ecies = {version = "0.2.6", features = ["std"]}
 env_logger = "0.11.3"

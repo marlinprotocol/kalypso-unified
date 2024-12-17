@@ -318,12 +318,18 @@ pub struct SlashingRecord {
     pub source: super::delegation::Source,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Hash)]
+use derivative::Derivative; // way to exclude timestamp from calculations
+#[derive(Debug, Clone, Serialize, Deserialize, PartialOrd, Derivative)]
+#[derivative(Hash, PartialEq, Eq)]
 pub struct WithdrawlRequest {
     pub account: Address,
     pub token: Address,
     pub amount: U256,
     pub index: U256,
+
+    // Exclude `timestamp` from `Hash` and `PartialEq`
+    #[derivative(Hash = "ignore", PartialEq = "ignore")]
+    pub timestamp: U256,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
