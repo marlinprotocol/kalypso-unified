@@ -130,6 +130,7 @@ pub struct WithdrawRequest {
     token: String,
     amount: String,
     index: String,
+    withdrawal_timestamp: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -235,6 +236,7 @@ pub async fn withdrawal_request(
             index: a.index.to_string(),
             token: address_to_string(&a.token),
             amount: a.amount.to_string(),
+            withdrawal_timestamp: a.timestamp.to_string(),
         })
         .collect::<Vec<WithdrawRequest>>();
 
@@ -577,6 +579,7 @@ async fn recompute_single_generator_response<'a>(
                 index: a.index.to_string(),
                 token: address_to_string(&a.token),
                 amount: a.amount.to_string(),
+                withdrawal_timestamp: a.timestamp.to_string(),
             })
             .collect(),
         compute_break_down: ComputeBreakDown {
