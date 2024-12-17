@@ -55,6 +55,10 @@ pub fn ui_scope() -> actix_web::Scope {
             web::get().to(ui_routes::single_market::single_market),
         )
         .route(
+            "/market_jobs/{id}",
+            web::get().to(ui_routes::single_market::jobs),
+        )
+        .route(
             "/withdrawals/{id}",
             web::get().to(ui_routes::single_generator::withdrawal_request),
         )

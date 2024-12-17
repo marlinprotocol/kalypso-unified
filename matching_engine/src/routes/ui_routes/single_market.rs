@@ -118,6 +118,61 @@ impl CachedMarketResponse {
     }
 }
 
+pub async fn jobs(
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    path: web::Path<(String,)>,
+) -> actix_web::Result<HttpResponse> {
+    let market_id: U256 = match U256::from_dec_str(&path.0) {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
+                status: "Invalid Market Id".into(),
+            }))
+        }
+    };
+
+    try_read_or_lock!(_local_ask_store, local_ask_store);
+
+    let jobs = Jobs {
+        proofs_generated: local_ask_store.get_proof_count(&market_id),
+        proofs_pending: {
+            let result = local_ask_store
+                .get_by_ask_state_except_complete(AskState::Create)
+                .filter_by_market_id(market_id)
+                .result();
+
+            if result.is_some() {
+                result.unwrap().len()
+            } else {
+                0
+            }
+        },
+        proofs_in_progress: {
+            let result = local_ask_store
+                .get_by_ask_state_except_complete(AskState::Assigned)
+                .filter_by_market_id(market_id)
+                .result();
+
+            if result.is_some() {
+                result.unwrap().len()
+            } else {
+                0
+            }
+        },
+        requests_made: { local_ask_store.get_request_count_by_market_id(&market_id) },
+        inputs_challenged: { local_ask_store.get_failed_request_count_by_market_id(&market_id) },
+    };
+
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    struct JobRespone {
+        jobs: Jobs,
+    }
+
+    let response = JobRespone { jobs };
+
+    return Ok(HttpResponse::Ok().json(response));
+}
+
 pub async fn single_market(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
