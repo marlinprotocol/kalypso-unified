@@ -1599,3 +1599,68 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct RequestStakeWithdrawal {
+    pub private_key_signer: LocalWallet,
+    pub native_staking:
+        bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub staking_token: bindings::ierc20::IERC20<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub staking_amount: U256,
+}
+
+impl CommonDeps {
+    pub fn request_stake_withdrawal_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<RequestStakeWithdrawal, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "native_staking", native_staking_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "staking_token", staking_token);
+        get_config_ref!(config, "staking_amount", staking_amount);
+
+        let (staking_token, _) =
+            get_token_instance(private_key, chain_id, &staking_token, rpc_url)?;
+
+        let (native_staking, private_key_signer) =
+            get_native_staking_instance(private_key, chain_id, native_staking_address, rpc_url)?;
+
+        let staking_amount = U256::from_dec_str(staking_amount.as_str())
+            .map_err(|e| format!("Invalid Unstaking Amount: {}", e))?;
+
+        Ok(RequestStakeWithdrawal {
+            private_key_signer,
+            native_staking,
+            staking_token,
+            staking_amount,
+        })
+    }
+}
+
+pub struct NativeStakeWithdrawal {
+    pub private_key_signer: LocalWallet,
+    pub native_staking:
+        bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub indexer_url: String,
+}
+
+impl CommonDeps {
+    pub fn native_staking_withdrawal_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<NativeStakeWithdrawal, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "native_staking", native_staking_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "indexer_url", indexer_url);
+
+        let (native_staking, private_key_signer) =
+            get_native_staking_instance(private_key, chain_id, native_staking_address, rpc_url)?;
+
+        Ok(NativeStakeWithdrawal {
+            private_key_signer,
+            native_staking,
+            indexer_url: indexer_url.to_string(),
+        })
+    }
+}

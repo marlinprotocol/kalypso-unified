@@ -102,6 +102,8 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Read Native Staking Pending Withdrawals" => {
             Some(Box::new(stake::ReadWithdrawalRequestIds))
         }
+        "Request Native Stake Withdrawal" => Some(Box::new(stake::RequestNativeStakeWithdrawal)),
+        "Process Withdrawal Requests" => Some(Box::new(stake::ProcessWithdrawalRequests)),
         _ => unimplemented!(),
     }
 }
