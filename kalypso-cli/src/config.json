@@ -116,7 +116,7 @@
     },
     {
       "field": "staking_amount",
-      "prompt": "Enter the amount to stake",
+      "prompt": "Enter the amount to stake (or) withdraw",
       "secret": false,
       "env_var": "STAKING_AMOUNT"
     },
@@ -659,7 +659,31 @@
       "name": "Read Native Staking Pending Withdrawals",
       "description": "Reads Native Staking pending withdrawals",
       "required_prompts":[
-        "indexer_url", "operator_address"
+        "indexer_url", 
+        "operator_address"
+      ]
+    },
+    {
+      "name": "Request Native Stake Withdrawal",
+      "description": "Create a withdrawal request on Native Staking Module",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "native_staking",
+        "chain_id",
+        "staking_token",
+        "staking_amount"
+      ]
+    },
+    {
+      "name": "Process Withdrawal Requests",
+      "description": "Complete Withdrawal Request. Withdraws amount present in all withdrawal requests",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "native_staking",
+        "chain_id",
+        "indexer_url"
       ]
     }
   ]

@@ -1,7 +1,10 @@
 use std::{collections::HashMap, sync::Once};
 
 use async_trait::async_trait;
-use ethers::{signers::Signer, types::Address};
+use ethers::{
+    signers::Signer,
+    types::{Address, U256},
+};
 use serde::{Deserialize, Serialize};
 
 use crate::common_deps::CommonDeps;
@@ -13,7 +16,27 @@ pub struct RequestNativeStakeWithdrawal;
 #[async_trait]
 impl Operation for RequestNativeStakeWithdrawal {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
-        unimplemented!()
+        let request_staking_withdrawal_info = CommonDeps::request_stake_withdrawal_info(&config)?;
+
+        let native_unstaking_request_tx = CommonDeps::send_and_confirm(
+            request_staking_withdrawal_info
+                .native_staking
+                .request_stake_withdrawal(
+                    request_staking_withdrawal_info.private_key_signer.address(),
+                    request_staking_withdrawal_info.staking_token.address(),
+                    request_staking_withdrawal_info.staking_amount,
+                )
+                .send(),
+        )
+        .await
+        .map_err(|e| format!("Native Unstaking Request Transaction failed: {}", e))?;
+
+        println!(
+            "Native Unstaking Request Transaction: {}",
+            native_unstaking_request_tx
+        );
+
+        Ok(())
     }
 }
 
@@ -60,7 +83,37 @@ pub struct ProcessWithdrawalRequests;
 #[async_trait]
 impl Operation for ProcessWithdrawalRequests {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
-        unimplemented!()
+        let request_staking_info = CommonDeps::native_staking_withdrawal_info(&config)?;
+
+        let withdrawal_requests = read_staking_data(
+            &request_staking_info.private_key_signer.address(),
+            request_staking_info.indexer_url,
+        )
+        .await
+        .map_err(|e| format!("Unable to read stake data from indexer: {}", e))?;
+
+        let withdrawal_requests: Vec<U256> = withdrawal_requests
+            .iter()
+            .map(|a| U256::from_dec_str(a.index.as_ref()).unwrap())
+            .collect();
+
+        let withdrawal_transaction_hash = CommonDeps::send_and_confirm(
+            request_staking_info
+                .native_staking
+                .withdraw_stake(
+                    request_staking_info.private_key_signer.address(),
+                    withdrawal_requests.into(),
+                )
+                .send(),
+        )
+        .await
+        .map_err(|e| format!("Native Staking Withdraw Transaction failed: {}", e))?;
+
+        println!(
+            "Withdrawal Request Transaction: {}",
+            withdrawal_transaction_hash
+        );
+        Ok(())
     }
 }
 
