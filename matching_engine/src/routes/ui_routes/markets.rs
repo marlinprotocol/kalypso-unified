@@ -37,6 +37,7 @@ pub struct Market {
     slashing_penalty: Vec<TokenAmount>,
     status: bool,
     market_setup_data: MarketSetupData,
+    registered_generators: usize,
 }
 
 type CachedMarketResponse = CachedResponse<MarketResponse>;
@@ -225,6 +226,7 @@ async fn recompute_market_response<'a>(
             slashing_penalty: slashing_penalty.to_token_amount(),
             status: true, // Adjust as needed
             market_setup_data: meta.deserialize_market_bytes(),
+            registered_generators: local_generator_store.get_all_by_market_id(&market_id).len(),
         };
 
         markets.push(market);

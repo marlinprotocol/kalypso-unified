@@ -39,3 +39,5 @@ test_*.sh
 /app
 /app/*
 *.log
+
+marketmeta.json
