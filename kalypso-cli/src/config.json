@@ -478,6 +478,7 @@
         "private_key",
         "rpc_url",
         "chain_id",
+        "proof_marketplace",
         "generator_registry",
         "market_id",
         "attestation_server_url",

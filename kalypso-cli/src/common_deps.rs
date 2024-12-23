@@ -796,6 +796,7 @@ pub struct UpdateEncryptionKeyInfo {
     pub generator_registry: bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<Provider<Http>>,
     pub attestation_utility: String,
     pub attestation_verifier: String,
     pub enclave_client_url: String,
@@ -810,6 +811,8 @@ impl CommonDeps {
         get_config_ref!(config, "rpc_url", rpc_url);
         get_config_ref!(config, "generator_registry", generator_registry_address);
         get_config_ref!(config, "chain_id", chain_id);
+
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
 
         get_config_ref!(config, "attestation_server_url", attestation_server_url);
         get_config_ref!(config, "attestion_verifier_url", attestion_verifier_url);
@@ -826,6 +829,9 @@ impl CommonDeps {
         let market_id = U256::from_dec_str(market_id.as_str())
             .map_err(|e| format!("Invalid Market Id: {}", e))?;
 
+        let (proof_marketplace, _) =
+            get_proof_marketplace_instance_without_signer(proof_marketplace_address, rpc_url)?;
+
         Ok(UpdateEncryptionKeyInfo {
             private_key_signer,
             generator_registry,
@@ -833,6 +839,7 @@ impl CommonDeps {
             attestation_verifier: attestion_verifier_url.to_string(),
             enclave_client_url: enclave_client_url.to_string(),
             market_id,
+            proof_marketplace,
         })
     }
 }
@@ -1442,6 +1449,10 @@ pub struct UpdateGeneratorMetaInfo {
     pub generator_registry: binding_patches::UpdateGeneratorMetadataPatch<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
+    pub read_generator_registry: bindings::generator_registry::GeneratorRegistry<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub private_key_signer: LocalWallet,
 }
 
 impl CommonDeps {
@@ -1453,14 +1464,25 @@ impl CommonDeps {
         get_config_ref!(config, "chain_id", chain_id);
         get_config_ref!(config, "generator_registry", generator_registry_address);
 
-        let (generator_registry, _) = update_generator_meta_instance(
+        let (generator_registry, private_key_signer) = update_generator_meta_instance(
             private_key,
             chain_id,
             generator_registry_address,
             rpc_url,
         )?;
 
-        Ok(UpdateGeneratorMetaInfo { generator_registry })
+        let (read_generator_registry, _) = get_generator_registry_instance(
+            private_key,
+            chain_id,
+            generator_registry_address,
+            rpc_url,
+        )?;
+
+        Ok(UpdateGeneratorMetaInfo {
+            generator_registry,
+            private_key_signer,
+            read_generator_registry,
+        })
     }
 }
 

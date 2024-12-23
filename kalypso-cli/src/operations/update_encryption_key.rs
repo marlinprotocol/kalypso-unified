@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use ethers::signers::Signer;
+use ethers::{signers::Signer, types::H256};
 use futures::StreamExt;
 
 use crate::{common_deps::CommonDeps, operations::compute_pcrs};
@@ -87,6 +87,19 @@ pub struct UpdateEncryptionKey;
 impl Operation for UpdateEncryptionKey {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let update_encryption_info = CommonDeps::update_encryption_info(&config)?;
+
+        let market_data = update_encryption_info
+            .proof_marketplace
+            .market_data(update_encryption_info.market_id)
+            .call()
+            .await
+            .map_err(|e| format!("Failed making call to proof marketplace contract {}", e))?;
+
+        if H256::from_slice(&market_data.1.to_vec())
+            == kalypso_helper::image_id_helpers::hashed_image_id_for_non_confidential_market()
+        {
+            return Err("non confidential markets don't need encryption key".to_string());
+        }
 
         let attestation_stream =
             compute_pcrs::build_attestation(&update_encryption_info.attestation_utility, false)

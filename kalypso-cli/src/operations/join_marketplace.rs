@@ -1,6 +1,9 @@
 use crate::{common_deps::CommonDeps, operations::Operation};
 use async_trait::async_trait;
-use ethers::{signers::Signer, types::Address};
+use ethers::{
+    signers::Signer,
+    types::{Address, H256},
+};
 use std::collections::HashMap;
 
 pub struct JoinMarketplace;
@@ -54,6 +57,19 @@ impl Operation for JoinMarketplace {
 
                     // Print the transaction hash
                     println!("{}", tx_hash);
+
+                    let market_data = generator_join_market
+                        .proof_marketplace
+                        .market_data(generator_join_market.market_id)
+                        .call()
+                        .await
+                        .map_err(|e| {
+                            format!("Failed making call to proof marketplace contract {}", e)
+                        })?;
+
+                    if H256::from_slice(&market_data.1.to_vec()) != kalypso_helper::image_id_helpers::hashed_image_id_for_non_confidential_market() {
+                        println!("Market: {} is a confidential market. Please Update Encryption Key after doing so. Else the prover will not receive jobs", generator_join_market.market_id);
+                    }
                 }
             }
             Err(_) => {
