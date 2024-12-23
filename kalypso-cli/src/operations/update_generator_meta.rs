@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs, io};
 
 use async_trait::async_trait;
+use ethers::{signers::Signer, types::Address};
 
 use crate::common_deps::CommonDeps;
 
@@ -12,6 +13,17 @@ pub struct UpdateGeneratorMeta;
 impl Operation for UpdateGeneratorMeta {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let generator_meta_info = CommonDeps::update_generator_meta_info(&config)?;
+
+        let generator_data = generator_meta_info
+            .read_generator_registry
+            .generator_registry(generator_meta_info.private_key_signer.address())
+            .call()
+            .await
+            .map_err(|e| format!("Failed Reading Generator Registry Contract {}", e))?;
+
+        if generator_data.0.eq(&Address::zero()) {
+            return Err(format!("Please 'Register' operator first"));
+        }
 
         let generator_meta_paths = ["./generatormeta.json"];
 
