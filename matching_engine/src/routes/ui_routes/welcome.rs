@@ -2,6 +2,7 @@ use ethers::types::U64;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use kalypso_helper::secret_inputs_helpers;
 
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
@@ -22,7 +23,7 @@ pub async fn welcome() -> actix_web::Result<HttpResponse> {
 }
 
 // Define the Dump struct
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct Dump<'a> {
     market_metadata_store: Option<&'a MarketMetadataStore>,
     local_ask_store: Option<&'a LocalAskStore>,
@@ -33,6 +34,12 @@ struct Dump<'a> {
     key_store: Option<&'a KeyStore>,
     stake_manager_store: Option<&'a StakeManagerStore>,
     parsed_block: Option<&'a U64>,
+}
+
+#[derive(Serialize, Clone)]
+struct EncryptedDump {
+    encrypted: Vec<u8>,
+    acls: Vec<Vec<u8>>,
 }
 
 pub async fn get_dump(
@@ -70,4 +77,41 @@ pub async fn get_dump(
 
     // Return the JSON response
     Ok(HttpResponse::Ok().json(dump))
+}
+
+impl<'a> Dump<'a> {
+    pub async fn create_encrypted_dump(&self, ecies_public_keys: Vec<Vec<u8>>) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
+        let dump_value = serde_json::to_value(self).unwrap();
+        let dump = serde_json::to_vec(&dump_value).unwrap();
+        let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump).unwrap();
+        let encrypted_dump = EncryptedDump{
+            encrypted: encrypted_data.encrypted_data,
+            acls: encrypted_data.acls
+        };
+        Ok(encrypted_dump)
+    }
+}
+
+impl EncryptedDump {
+    pub async fn get_dump(&self, ecies_private_key: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        let encrypted_value = serde_json::to_value(self.clone().encrypted).unwrap();
+        let encrypted_dump = serde_json::to_vec(&encrypted_value).unwrap();
+        let mut decrypted_dump: Vec<u8> = vec![];
+        for acl in self.clone().acls {
+            let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
+                &encrypted_dump,
+                &acl,
+                &ecies_private_key, 
+                None);
+            match decrypted {
+                Ok(data) => {
+                    decrypted_dump = data;
+                }
+                Err(e) => {
+                    log::warn!("Error: ecies key mismatch {:?}", e);
+                }
+            }
+        }
+        Ok(decrypted_dump)
+    }
 }
