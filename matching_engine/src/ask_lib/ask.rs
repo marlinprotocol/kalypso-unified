@@ -22,6 +22,7 @@ pub struct LocalAsk {
     pub generator: Option<Address>,
     pub invalid_secret_flag: bool,
     pub created_on: U256,
+    pub create_transaction: H256,
 }
 
 use std::{

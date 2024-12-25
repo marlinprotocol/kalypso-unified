@@ -65,6 +65,7 @@ struct Job {
     cost: TokenAmount,
     ask_id: String,
     inputs: String,
+    inputs_transaction: String,
     generator: Option<String>,
     status: AskState,
     created_on_timestamp: Option<String>,
@@ -379,6 +380,7 @@ async fn recompute_single_market_response<'a>(
                         proof_created_on_timestamp: convert_to_option_string(
                             local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
                         ),
+                        inputs_transaction: a.create_transaction.to_string(),
                     })
                     .collect()
             })
@@ -416,6 +418,7 @@ async fn recompute_single_market_response<'a>(
                 proof_created_on_timestamp: convert_to_option_string(
                     local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
                 ),
+                inputs_transaction: a.create_transaction.to_string(),
             })
             .collect(),
     })

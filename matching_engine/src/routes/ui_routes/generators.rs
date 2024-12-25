@@ -3,6 +3,7 @@ use super::single_generator::{ComputeBreakDown, StakeBreakDown};
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::market_metadata::MarketMetadataStore;
 use crate::models::WelcomeResponse;
 use crate::utility::{address_to_string, TokenAmount, TokenTracker};
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
@@ -52,6 +53,7 @@ struct Market {
 }
 
 pub async fn get_generators_all(
+    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
     _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
@@ -66,12 +68,14 @@ pub async fn get_generators_all(
     try_read_or_lock!(_local_generator_store, local_generator_store);
     try_read_or_lock!(_local_native_store, local_native_store);
     try_read_or_lock!(_local_symbiotic_store, local_symbiotic_store);
+    try_read_or_lock!(_local_market_store, local_market_store);
 
     // Step 2: If the cache is invalid, recompute the response
     let new_response = recompute_generator_response(
         local_generator_store,
         local_native_store,
         local_symbiotic_store,
+        local_market_store,
     )
     .await;
 
@@ -95,6 +99,7 @@ async fn recompute_generator_response<'a>(
     local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
     local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
     local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
+    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
 ) -> GeneratorResponse {
     // Step 1: Acquire the lock and extract all necessary data
     let generator_details = {
@@ -153,7 +158,22 @@ async fn recompute_generator_response<'a>(
             .unzip();
         for info_per_market in &all_markets_of_generator {
             let market = Market {
-                name: info_per_market.market_id.to_string(),
+                name: {
+                    let name =
+                        local_market_store.get_market_by_market_id(&info_per_market.market_id);
+
+                    match name {
+                        Some(data) => {
+                            let name = data.deserialize_market_bytes().zk_app_name;
+
+                            match name {
+                                Some(data) => data,
+                                None => "unknown".into(),
+                            }
+                        }
+                        None => "unknown".into(),
+                    }
+                },
                 token: all_tokens_supported
                     .iter()
                     .map(|a| address_to_string(a))
