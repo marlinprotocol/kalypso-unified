@@ -1,5 +1,5 @@
 use ethers::types::U64;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::fs;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -26,17 +26,17 @@ pub async fn welcome() -> actix_web::Result<HttpResponse> {
 }
 
 // Define the Dump struct
-#[derive(Serialize, Clone)]
-struct Dump<'a> {
-    market_metadata_store: Option<&'a MarketMetadataStore>,
-    local_ask_store: Option<&'a LocalAskStore>,
-    generator_store: Option<&'a GeneratorStore>,
-    native_staking_store: Option<&'a NativeStakingStore>,
-    symbiotic_stake_store: Option<&'a SymbioticStakeStore>,
-    cost_store: Option<&'a CostStore>,
-    key_store: Option<&'a KeyStore>,
-    stake_manager_store: Option<&'a StakeManagerStore>,
-    parsed_block: Option<&'a U64>,
+#[derive(Serialize, Deserialize, Clone)]
+struct Dump {
+    market_metadata_store: Option<MarketMetadataStore>,
+    local_ask_store: Option<LocalAskStore>,
+    generator_store: Option<GeneratorStore>,
+    native_staking_store: Option<NativeStakingStore>,
+    symbiotic_stake_store: Option<SymbioticStakeStore>,
+    cost_store: Option<CostStore>,
+    key_store: Option<KeyStore>,
+    stake_manager_store: Option<StakeManagerStore>,
+    parsed_block: Option<U64>,
 }
 
 #[derive(Serialize, Clone)]
@@ -67,15 +67,15 @@ pub async fn get_dump(
     try_read_or_lock!(local_parsed_block, parsed_block);
 
     let dump = Dump {
-        market_metadata_store: Some(&*market_store),
-        local_ask_store: Some(&*ask_store),
-        generator_store: Some(&*generator_store),
-        native_staking_store: Some(&*native_store),
-        symbiotic_stake_store: Some(&*symbiotic_store),
-        cost_store: Some(&*cost_store),
-        key_store: Some(&*key_store),
-        stake_manager_store: Some(&*stake_manager_store),
-        parsed_block: Some(&*parsed_block),
+        market_metadata_store: Some(market_store.clone()),
+        local_ask_store: Some(ask_store.clone()),
+        generator_store: Some(generator_store.clone()),
+        native_staking_store: Some(native_store.clone()),
+        symbiotic_stake_store: Some(symbiotic_store.clone()),
+        cost_store: Some(cost_store.clone()),
+        key_store: Some(key_store.clone()),
+        stake_manager_store: Some(stake_manager_store.clone()),
+        parsed_block: Some(parsed_block.clone()),
     };
 
     // Return the JSON response
@@ -106,28 +106,28 @@ pub async fn get_encrypted_dump(
     try_read_or_lock!(local_parsed_block, parsed_block);
 
     let dump = Dump {
-        market_metadata_store: Some(&*market_store),
-        local_ask_store: Some(&*ask_store),
-        generator_store: Some(&*generator_store),
-        native_staking_store: Some(&*native_store),
-        symbiotic_stake_store: Some(&*symbiotic_store),
-        cost_store: Some(&*cost_store),
-        key_store: Some(&*key_store),
-        stake_manager_store: Some(&*stake_manager_store),
-        parsed_block: Some(&*parsed_block),
+        market_metadata_store: Some(market_store.clone()),
+        local_ask_store: Some(ask_store.clone()),
+        generator_store: Some(generator_store.clone()),
+        native_staking_store: Some(native_store.clone()),
+        symbiotic_stake_store: Some(symbiotic_store.clone()),
+        cost_store: Some(cost_store.clone()),
+        key_store: Some(key_store.clone()),
+        stake_manager_store: Some(stake_manager_store.clone()),
+        parsed_block: Some(parsed_block.clone()),
     };
 
-    let encrypted_dump = dump.create_encrypted_dump(ecies_keys.clone()).await. unwrap();
+    let encrypted_dump = dump.create_encrypted_dump(ecies_keys.clone()).unwrap();
 
     // Return the JSON response
     Ok(HttpResponse::Ok().json(encrypted_dump))
 }
 
-impl<'a> Dump<'a> {
-    async fn create_encrypted_dump(&self, ecies_public_keys: Vec<Vec<u8>>) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
+impl Dump {
+    pub fn create_encrypted_dump(&self, ecies_public_keys: Vec<Vec<u8>>) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
         // Load matching engine configuration
-        let config_path = "../../../matching_engine_config/matching_engine_config.json".to_string();
-        let alt_config_path = "./../../matching_engine_config/matching_engine_config.json".to_string();
+        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
+        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
         let file_content =
             fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path)).unwrap();
         let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
@@ -136,7 +136,7 @@ impl<'a> Dump<'a> {
         let sk = SecretKey::parse(private_key).unwrap();
 
         let public_key = PublicKey::from_secret_key(&sk);
-        let public_key = public_key.serialize_compressed().to_vec();
+        let public_key = public_key.serialize_compressed().iter().cloned().collect();
 
         // Check matching engine key in the ecies key list
         if ecies_public_keys.contains(&public_key) {
@@ -157,10 +157,20 @@ impl<'a> Dump<'a> {
 }
 
 impl EncryptedDump {
-    pub async fn get_dump_plaintxt(&self, ecies_private_key: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    pub fn get_dump(&self, ecies_private_key: Vec<u8>) -> Result<Dump, Box<dyn std::error::Error>> {
         let encrypted_value = serde_json::to_value(self.clone().encrypted).unwrap();
         let encrypted_dump = serde_json::to_vec(&encrypted_value).unwrap();
-        let mut decrypted_dump: Vec<u8> = vec![];
+        let mut decrypted_dump: Dump = Dump { 
+            market_metadata_store: None, 
+            local_ask_store: None, 
+            generator_store: None, 
+            native_staking_store: None, 
+            symbiotic_stake_store: None, 
+            cost_store: None, 
+            key_store: None, 
+            stake_manager_store: None, 
+            parsed_block: None
+        };
         for acl in self.clone().acls {
             let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
                 &encrypted_dump,
@@ -169,7 +179,7 @@ impl EncryptedDump {
                 None);
             match decrypted {
                 Ok(data) => {
-                    decrypted_dump = data;
+                    decrypted_dump = serde_json::from_slice(&data).unwrap();
                 }
                 Err(e) => {
                     log::warn!("Error: ecies key mismatch {:?}", e);
@@ -177,5 +187,35 @@ impl EncryptedDump {
             }
         }
         Ok(decrypted_dump)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Dump;
+    use std::fs;
+    use serde_json;
+    
+    #[test]
+    fn test_encryption_and_decrytion() {
+        // fetch sample dump
+        let dump_path = "../matching_engine_config/dump.json".to_string();
+        let alt_dump_path = "./matching_engine_config/dump.json".to_string();
+        let file_content =
+            fs::read_to_string(dump_path).or_else(|_| fs::read_to_string(alt_dump_path)).unwrap();
+        let dump: Dump = serde_json::from_str(&file_content).unwrap();
+
+        // Encryption
+        let private_key = "e2a16eece5f9e388ebe73b791343e1a98d86a17376e87be5155ec7cf9c78f069".as_bytes().to_vec();
+        let public_key = "0xAB85EDad6e4Dc27493530A2CAa9332Aa38FecFB1".as_bytes().to_vec();
+
+        let me_public_key = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes().to_vec();
+        let ecies_public_keys = vec![public_key, me_public_key];
+
+        let encrypted_dump = dump.create_encrypted_dump(ecies_public_keys).unwrap();
+
+        let decrypted_dump = encrypted_dump.get_dump(private_key).unwrap();
+
+        assert_eq!(serde_json::to_string(&decrypted_dump).unwrap(), serde_json::to_string(&dump).unwrap());
     }
 }
