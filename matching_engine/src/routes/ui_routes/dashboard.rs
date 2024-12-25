@@ -49,6 +49,7 @@ struct RecentProof {
     generator: Generator,
     time: String,
     cost: String,
+    inputs_transaction: String,
     proof_link: String,
     created_on_timestamp: Option<String>,
     matched_on_timestamp: Option<String>,
@@ -235,6 +236,7 @@ async fn recompute_dashboard_response<'a>(
             },
             time,
             cost,
+            inputs_transaction: ask_request.create_transaction.to_string(),
             proof_link,
             created_on_timestamp: convert_to_option_string(
                 local_ask_store.get_job_created_on_timestamp(&ask_request.ask_id),

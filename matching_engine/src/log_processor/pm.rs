@@ -122,6 +122,7 @@ pub async fn process_proof_market_place_logs(
             invalid_secret_flag: false,
             created_on: created_on_l1,
             time_requested_for_proof_generation: ask_data.0.time_taken_for_proof_generation,
+            create_transaction: log.transaction_hash.unwrap().clone(),
         };
 
         if parsed_ask_created_log.has_private_inputs {
