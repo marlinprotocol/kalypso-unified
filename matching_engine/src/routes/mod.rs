@@ -86,6 +86,7 @@ pub fn get_stats_scope() -> actix_web::Scope {
             web::get().to(market_info::market_stats),
         )
         .route("/dump", web::get().to(ui_routes::welcome::get_dump))
+        .route("/encrypted_dump", web::get().to(ui_routes::welcome::get_encrypted_dump))
 }
 
 pub fn get_core_scope() -> actix_web::Scope {
