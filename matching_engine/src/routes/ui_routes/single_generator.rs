@@ -14,6 +14,7 @@ use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
 use crate::utility::convert_to_option_string;
 use crate::utility::random_usize;
+use crate::utility::tx_to_string;
 use crate::utility::TokenAmount;
 use crate::utility::TokenTracker;
 use actix_web::web;
@@ -477,7 +478,7 @@ async fn recompute_single_generator_response<'a>(
                         time_taken_for_proof_generation: None,
                         proof: None,
                         proof_transaction: None,
-                        inputs_transaction: a.create_transaction.to_string(),
+                        inputs_transaction: tx_to_string(&a.create_transaction),
                     })
                     .collect()
             })
@@ -516,7 +517,7 @@ async fn recompute_single_generator_response<'a>(
                         .to_string(),
                 ),
                 proof_transaction: local_ask_store.get_proof_transaction(&ask.ask_id),
-                inputs_transaction: ask.create_transaction.to_string(),
+                inputs_transaction: tx_to_string(&ask.create_transaction),
             })
             .collect::<Vec<Job>>(),
         slashing_history: local_generator_store
