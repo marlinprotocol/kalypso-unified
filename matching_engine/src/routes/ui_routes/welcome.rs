@@ -1,6 +1,7 @@
 use ethers::types::{U256, U64};
 use serde::{Serialize, Deserialize};
 use std::fs;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use ecies::{PublicKey, SecretKey};
