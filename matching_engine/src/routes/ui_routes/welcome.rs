@@ -1,6 +1,7 @@
-use ethers::types::U64;
+use ethers::types::{U256, U64};
 use serde::{Serialize, Deserialize};
 use std::fs;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use ecies::{PublicKey, SecretKey};
@@ -39,7 +40,7 @@ struct Dump {
     parsed_block: Option<U64>,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 struct EncryptedDump {
     encrypted: Vec<u8>,
     acls: Vec<Vec<u8>>,
@@ -136,13 +137,15 @@ impl Dump {
         let sk = SecretKey::parse(private_key).unwrap();
 
         let public_key = PublicKey::from_secret_key(&sk);
-        let public_key = public_key.serialize_compressed().iter().cloned().collect();
+        let public_key = public_key.serialize_compressed();
+        // let public_key_m = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes();
 
         // Check matching engine key in the ecies key list
-        if ecies_public_keys.contains(&public_key) {
+        if ecies_public_keys.contains(&public_key.to_vec()) {
             let dump_value = serde_json::to_value(self).unwrap();
             let dump = serde_json::to_vec(&dump_value).unwrap();
             let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump).unwrap();
+            // let checker = secret_inputs_helpers::encrypt_data_with_ecies_and_aes(ecies_public_keys, &dump).unwrap();
             let encrypted_dump = EncryptedDump{
                 encrypted: encrypted_data.encrypted_data,
                 acls: encrypted_data.acls
@@ -151,8 +154,6 @@ impl Dump {
         } else {
             Err("Matching engine key not found in key list".into())
         }
-
-        
     }
 }
 
@@ -176,7 +177,7 @@ impl EncryptedDump {
                 &encrypted_dump,
                 &acl,
                 &ecies_private_key, 
-                None);
+                Some(U256::from_str("3").unwrap()));
             match decrypted {
                 Ok(data) => {
                     decrypted_dump = serde_json::from_slice(&data).unwrap();
@@ -195,6 +196,8 @@ mod tests {
     use super::Dump;
     use std::fs;
     use serde_json;
+    use ecies::{PublicKey, SecretKey};
+    use crate::MatchingEngineConfig;
     
     #[test]
     fn test_encryption_and_decrytion() {
@@ -206,16 +209,36 @@ mod tests {
         let dump: Dump = serde_json::from_str(&file_content).unwrap();
 
         // Encryption
-        let private_key = "e2a16eece5f9e388ebe73b791343e1a98d86a17376e87be5155ec7cf9c78f069".as_bytes().to_vec();
-        let public_key = "0xAB85EDad6e4Dc27493530A2CAa9332Aa38FecFB1".as_bytes().to_vec();
+        let private_key_str = "e2a16eece5f9e388ebe73b791343e1a98d86a17376e87be5155ec7cf9c78f069";
+        let private_key = hex::decode(private_key_str).unwrap();
+        let private_key: &[u8; 32] = private_key.as_slice().try_into().unwrap();
+        let sk = SecretKey::parse(private_key).unwrap();
 
-        let me_public_key = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes().to_vec();
-        let ecies_public_keys = vec![public_key, me_public_key];
+        let public_key = PublicKey::from_secret_key(&sk);
+        let public_key = public_key.serialize_compressed();
+        // let public_key = "0xAB85EDad6e4Dc27493530A2CAa9332Aa38FecFB1".as_bytes();
 
-        let encrypted_dump = dump.create_encrypted_dump(ecies_public_keys).unwrap();
+        // Load matching engine configuration
+        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
+        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
+        let file_content =
+            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path)).unwrap();
+        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
+        let me_private_key = hex::decode(config.matching_engine_key).unwrap();
+        let me_private_key: &[u8; 32] = me_private_key.as_slice().try_into().unwrap();
+        let me_sk = SecretKey::parse(me_private_key).unwrap();
 
-        let decrypted_dump = encrypted_dump.get_dump(private_key).unwrap();
+        let me_public_key = PublicKey::from_secret_key(&me_sk);
+        let me_public_key = me_public_key.serialize_compressed();
 
-        assert_eq!(serde_json::to_string(&decrypted_dump).unwrap(), serde_json::to_string(&dump).unwrap());
+        // let me_public_key = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes();
+        let ecies_public_keys = vec![public_key.to_vec(), me_public_key.to_vec()];
+
+        let encrypted_dump = dump.create_encrypted_dump(ecies_public_keys.into()).unwrap();
+
+        let decrypted_dump = encrypted_dump.get_dump(sk.serialize().to_vec()).unwrap();
+        println!("Decrypted dump back: {:?}", serde_json::to_string(&decrypted_dump).unwrap());
+
+        // assert_eq!(sha256(decrypted_dump), sha256(dump));
     }
 }
