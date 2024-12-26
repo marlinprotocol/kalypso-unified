@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use ethers::{signers::Signer, types::H256};
 use futures::StreamExt;
 
-use crate::{common_deps::CommonDeps, operations::compute_pcrs};
+use crate::common_deps::CommonDeps;
 
 use super::Operation;
 
@@ -14,10 +14,12 @@ impl Operation for AddIvsKey {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let add_ivs_key_info = CommonDeps::add_ivs_key_info(&config)?;
 
-        let attestation_stream =
-            compute_pcrs::build_attestation(&add_ivs_key_info.attestation_utility, false)
-                .await
-                .map_err(|e| format!("Failed Building Attestations {}", e))?;
+        let attestation_stream = kalypso_helper::pcr_helpers::build_attestation(
+            &add_ivs_key_info.attestation_utility,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Building Attestations {}", e))?;
 
         let attestation_data: Vec<u8> = attestation_stream
             .fold(Vec::new(), |mut acc, item| async {
@@ -34,7 +36,7 @@ impl Operation for AddIvsKey {
             })
             .await;
 
-        let verified_attestation = compute_pcrs::get_verified_attestation(
+        let verified_attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
             &add_ivs_key_info.attestation_verifier,
             attestation_data,
             false,
@@ -101,10 +103,12 @@ impl Operation for UpdateEncryptionKey {
             return Err("non confidential markets don't need encryption key".to_string());
         }
 
-        let attestation_stream =
-            compute_pcrs::build_attestation(&update_encryption_info.attestation_utility, false)
-                .await
-                .map_err(|e| format!("Failed Building Attestations {}", e))?;
+        let attestation_stream = kalypso_helper::pcr_helpers::build_attestation(
+            &update_encryption_info.attestation_utility,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Building Attestations {}", e))?;
 
         let attestation_data: Vec<u8> = attestation_stream
             .fold(Vec::new(), |mut acc, item| async {
@@ -121,7 +125,7 @@ impl Operation for UpdateEncryptionKey {
             })
             .await;
 
-        let verified_attestation = compute_pcrs::get_verified_attestation(
+        let verified_attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
             &update_encryption_info.attestation_verifier,
             attestation_data,
             false,

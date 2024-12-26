@@ -2,7 +2,9 @@ use super::cache::CachedResponse;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
-use crate::utility::{address_to_string, bytes_to_string, convert_to_option_string, TokenAmount};
+use crate::utility::{
+    address_to_string, bytes_to_string, convert_to_option_string, tx_to_string, TokenAmount,
+};
 use crate::{
     ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
     market_metadata::MarketMetadataStore,
@@ -236,7 +238,7 @@ async fn recompute_dashboard_response<'a>(
             },
             time,
             cost,
-            inputs_transaction: ask_request.create_transaction.to_string(),
+            inputs_transaction: tx_to_string(&ask_request.create_transaction),
             proof_link,
             created_on_timestamp: convert_to_option_string(
                 local_ask_store.get_job_created_on_timestamp(&ask_request.ask_id),

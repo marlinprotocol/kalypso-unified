@@ -8,7 +8,8 @@ use crate::market_metadata::{MarketMetadataStore, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::{
-    address_to_string, convert_to_option_string, TokenAmount, TokenTracker, USDC_TOKEN,
+    address_to_string, convert_to_option_string, tx_to_string, TokenAmount, TokenTracker,
+    USDC_TOKEN,
 };
 use actix_web::web::{self, Data};
 use actix_web::HttpResponse;
@@ -380,7 +381,7 @@ async fn recompute_single_market_response<'a>(
                         proof_created_on_timestamp: convert_to_option_string(
                             local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
                         ),
-                        inputs_transaction: a.create_transaction.to_string(),
+                        inputs_transaction: tx_to_string(&a.create_transaction),
                     })
                     .collect()
             })
@@ -418,7 +419,7 @@ async fn recompute_single_market_response<'a>(
                 proof_created_on_timestamp: convert_to_option_string(
                     local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
                 ),
-                inputs_transaction: a.create_transaction.to_string(),
+                inputs_transaction: tx_to_string(&a.create_transaction),
             })
             .collect(),
     })
