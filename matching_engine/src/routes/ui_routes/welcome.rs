@@ -1,7 +1,6 @@
 use ethers::types::{U256, U64};
 use serde::{Serialize, Deserialize};
 use std::fs;
-use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use ecies::{PublicKey, SecretKey};
@@ -145,7 +144,6 @@ impl Dump {
             let dump_value = serde_json::to_value(self).unwrap();
             let dump = serde_json::to_vec(&dump_value).unwrap();
             let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump).unwrap();
-            // let checker = secret_inputs_helpers::encrypt_data_with_ecies_and_aes(ecies_public_keys, &dump).unwrap();
             let encrypted_dump = EncryptedDump{
                 encrypted: encrypted_data.encrypted_data,
                 acls: encrypted_data.acls
@@ -172,18 +170,23 @@ impl EncryptedDump {
             stake_manager_store: None, 
             parsed_block: None
         };
+        let mut counter = 0;
         for acl in self.clone().acls {
+            counter = counter + 1;
+            println!("Loop {:?}, ACL {:?}", counter, acl);
             let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
                 &encrypted_dump,
                 &acl,
                 &ecies_private_key, 
-                Some(U256::from_str("3").unwrap()));
+                Some(U256::default()));
             match decrypted {
                 Ok(data) => {
                     decrypted_dump = serde_json::from_slice(&data).unwrap();
+                    break;
                 }
                 Err(e) => {
                     log::warn!("Error: ecies key mismatch {:?}", e);
+                    continue;
                 }
             }
         }
@@ -236,7 +239,7 @@ mod tests {
 
         let encrypted_dump = dump.create_encrypted_dump(ecies_public_keys.into()).unwrap();
 
-        let decrypted_dump = encrypted_dump.get_dump(sk.serialize().to_vec()).unwrap();
+        let decrypted_dump = encrypted_dump.get_dump(me_sk.serialize().to_vec()).unwrap();
         println!("Decrypted dump back: {:?}", serde_json::to_string(&decrypted_dump).unwrap());
 
         // assert_eq!(sha256(decrypted_dump), sha256(dump));
