@@ -143,7 +143,10 @@ impl Dump {
         if ecies_public_keys.contains(&public_key.to_vec()) {
             let dump_value = serde_json::to_value(self).unwrap();
             let dump = serde_json::to_vec(&dump_value).unwrap();
-            let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump).unwrap();
+            let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(
+                ecies_public_keys, 
+                &dump
+            ).unwrap();
             let encrypted_dump = EncryptedDump{
                 encrypted: encrypted_data.encrypted_data,
                 acls: encrypted_data.acls
@@ -157,8 +160,7 @@ impl Dump {
 
 impl EncryptedDump {
     pub fn get_dump(&self, ecies_private_key: Vec<u8>) -> Result<Dump, Box<dyn std::error::Error>> {
-        let encrypted_value = serde_json::to_value(self.clone().encrypted).unwrap();
-        let encrypted_dump = serde_json::to_vec(&encrypted_value).unwrap();
+        let encrypted_dump = self.clone().encrypted;
         let mut decrypted_dump: Dump = Dump { 
             market_metadata_store: None, 
             local_ask_store: None, 
@@ -170,21 +172,23 @@ impl EncryptedDump {
             stake_manager_store: None, 
             parsed_block: None
         };
-        let mut counter = 0;
+        // let mut counter = 0;
         for acl in self.clone().acls {
-            counter = counter + 1;
-            println!("Loop {:?}, ACL {:?}", counter, acl);
+            // counter = counter + 1;
+            // println!("Loop {:?}, ACL {:?}", counter, acl);
             let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
                 &encrypted_dump,
                 &acl,
                 &ecies_private_key, 
-                Some(U256::default()));
+                Some(U256::from(1)));
             match decrypted {
                 Ok(data) => {
+                    // println!("OK, Loop {:?}", counter);
                     decrypted_dump = serde_json::from_slice(&data).unwrap();
                     break;
                 }
                 Err(e) => {
+                    // println!("Err, Loop {:?}", counter);
                     log::warn!("Error: ecies key mismatch {:?}", e);
                     continue;
                 }
@@ -227,21 +231,20 @@ mod tests {
         let file_content =
             fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path)).unwrap();
         let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
-        let me_private_key = hex::decode(config.matching_engine_key).unwrap();
-        let me_private_key: &[u8; 32] = me_private_key.as_slice().try_into().unwrap();
+        let me_private_key_vec = hex::decode(config.matching_engine_key).unwrap();
+        let me_private_key: &[u8; 32] = me_private_key_vec.as_slice().try_into().unwrap();
         let me_sk = SecretKey::parse(me_private_key).unwrap();
 
         let me_public_key = PublicKey::from_secret_key(&me_sk);
         let me_public_key = me_public_key.serialize_compressed();
 
         // let me_public_key = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes();
-        let ecies_public_keys = vec![public_key.to_vec(), me_public_key.to_vec()];
+        let ecies_public_keys = vec![public_key.to_vec(), me_public_key.to_vec(), public_key.to_vec()];
 
         let encrypted_dump = dump.create_encrypted_dump(ecies_public_keys.into()).unwrap();
 
-        let decrypted_dump = encrypted_dump.get_dump(me_sk.serialize().to_vec()).unwrap();
-        println!("Decrypted dump back: {:?}", serde_json::to_string(&decrypted_dump).unwrap());
-
-        // assert_eq!(sha256(decrypted_dump), sha256(dump));
+        let decrypted_dump = encrypted_dump.get_dump(me_private_key_vec).unwrap();
+        let decrypted_dump_vec = serde_json::to_string(&decrypted_dump).unwrap();
+        dbg!(decrypted_dump_vec);
     }
 }
