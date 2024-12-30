@@ -25,6 +25,13 @@ abigen!(
     event_derives(serde::Deserialize, serde::Serialize)
 );
 
+abigen!(
+    NativeStakingPatch,
+    "./src/native_staking.json",
+    event_derives(serde::Deserialize, serde::Serialize)
+);
+
 pub use GeneratorRegistryPatch;
+pub use NativeStakingPatch;
 pub use UpdateProofMarketplaceMetadataPatch;
 pub use VaultSnapshotPatch;
