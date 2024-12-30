@@ -5,9 +5,12 @@ use tokio::sync::RwLock;
 
 use crate::{
     ask_lib::ask_store,
-    generator_lib::{delegation, generator_store, symbiotic_stake_store},
+    generator_lib::{
+        delegation, generator_store,
+        symbiotic_stake_store::{self, VaultSnapshot},
+    },
     log_processor::constants,
-    utility::{get_l1_block_from_l2_block, tx_to_string},
+    utility::{get_l1_block_from_l2_block, get_timestamp_from_l2block_number, tx_to_string},
 };
 
 pub async fn process_symbiotic_staking_logs(
@@ -155,17 +158,72 @@ pub async fn process_symbiotic_staking_logs(
         log.data.clone(),
     ) {
         log::debug!("VaultSnapshotSubmitted Logs: {:?}", event_log);
+        let (
+            transmitter,
+            captured_timestamp,
+            index,
+            num_of_transactions,
+            image_id,
+            snapshot_data,
+            proof,
+        ) = if event_log.len() == 6 {
+            let transmitter = event_log.get(0).unwrap().clone().into_address().unwrap();
+            let index = event_log.get(1).unwrap().clone().into_uint().unwrap();
+            let num_of_transactions = event_log.get(2).unwrap().clone().into_uint().unwrap();
+            let image_id = event_log
+                .get(3)
+                .unwrap()
+                .clone()
+                .into_fixed_bytes()
+                .unwrap();
+            let snapshot_data = event_log.get(4).unwrap().clone().into_bytes().unwrap();
+            let proof = event_log.get(5).unwrap().clone().into_bytes().unwrap();
+
+            // is mocked here
+            let capture_time = get_timestamp_from_l2block_number(
+                rpc_url,
+                &log.block_number.unwrap().as_u64().into(),
+            )
+            .await
+            .unwrap_or_default();
+
+            (
+                transmitter,
+                capture_time,
+                index,
+                num_of_transactions,
+                image_id,
+                snapshot_data,
+                proof,
+            )
+        } else {
+            unimplemented!("VaultSnapshotSubmitted event definition was changed")
+        };
+
+        symbiotic_stake_store.store_vault_snapshot(
+            captured_timestamp,
+            VaultSnapshot {
+                transmitter,
+                index,
+                captured_timestamp,
+                num_of_transactions,
+                image_id,
+                snapshot_data,
+                proof,
+            },
+        );
+
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
-        "SlashResultSubmitted",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        log::debug!("SlashResultSubmitted Logs: {:?}", event_log);
-        return Ok(());
-    }
+    // if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+    //     "SlashResultSubmitted",
+    //     log.topics.clone(),
+    //     log.data.clone(),
+    // ) {
+    //     log::debug!("SlashResultSubmitted Logs: {:?}", event_log);
+    //     return Ok(());
+    // }
 
     let mut generator_store = { generator_store.write().await };
 
@@ -373,6 +431,7 @@ pub async fn process_symbiotic_staking_logs(
             delegation::Operation::Slash,
             delegation::Source::Symbiotic,
         );
+
         #[cfg(not(feature = "generate_dummy_slash_logs"))]
         {
             use crate::utility::get_timestamp_from_l2block_number;

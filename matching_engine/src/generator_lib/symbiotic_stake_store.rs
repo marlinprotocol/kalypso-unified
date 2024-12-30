@@ -7,7 +7,19 @@ use crate::utility::TokenTracker;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SymbioticStakeStore {
     operators: HashMap<Address, TokenTracker>,
+    vault_snapshots: HashMap<U256, VaultSnapshot>, // vault snapshot indexed with captures timestamps
     pub tokens_to_lock: TokenTracker,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VaultSnapshot {
+    pub transmitter: Address,
+    pub index: U256,
+    pub captured_timestamp: U256,
+    pub num_of_transactions: U256,
+    pub image_id: Vec<u8>,
+    pub snapshot_data: Vec<u8>,
+    pub proof: Vec<u8>,
 }
 
 impl SymbioticStakeStore {
@@ -15,6 +27,7 @@ impl SymbioticStakeStore {
         Self {
             operators: HashMap::new(),
             tokens_to_lock: TokenTracker::new(),
+            vault_snapshots: HashMap::new(),
         }
     }
 }
@@ -62,5 +75,11 @@ impl SymbioticStakeStore {
 
     pub fn remove_lock_token(&mut self, token: Address) {
         self.tokens_to_lock.force_remove(token);
+    }
+}
+
+impl SymbioticStakeStore {
+    pub fn store_vault_snapshot(&mut self, captured_timestamp: U256, snapshot: VaultSnapshot) {
+        self.vault_snapshots.insert(captured_timestamp, snapshot);
     }
 }
