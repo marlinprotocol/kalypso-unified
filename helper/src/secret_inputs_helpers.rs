@@ -20,6 +20,14 @@ pub struct SecretData {
     pub acl_data: Vec<u8>,
 }
 
+#[derive(Serialize)]
+pub struct SecretDataMulti {
+    #[allow(unused)]
+    pub encrypted_data: Vec<u8>,
+    #[allow(unused)]
+    pub acls: Vec<Vec<u8>>,
+}
+
 #[allow(unused)]
 pub fn decrypt_ecies(receiver_priv: &[u8], msg: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
     let result = decrypt(receiver_priv, msg).unwrap();
@@ -171,6 +179,27 @@ pub fn encrypt_data_with_ecies_and_aes(
     Ok(SecretData {
         encrypted_data,
         acl_data: encrypted_secret_key,
+    })
+}
+
+#[allow(unused)]
+pub fn encrypt_data_with_aes_and_multi_ecies(
+    receiver_pub: Vec<Vec<u8>>,
+    data: &[u8],
+) -> Result<SecretDataMulti, Box<dyn std::error::Error>> {
+    let mut key = vec![0u8; 32];
+    rand_bytes(&mut key)?;
+
+    let encrypted_data = encrypt_aes(data, &key).unwrap();
+    let mut acls = vec![];
+    for ecies_key in receiver_pub {
+        let encrypted_secret_key = encrypt(&ecies_key, &key).unwrap();
+        acls.push(encrypted_secret_key);
+    }
+
+    Ok(SecretDataMulti {
+        encrypted_data,
+        acls,
     })
 }
 
