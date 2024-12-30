@@ -321,6 +321,8 @@ pub struct SlashingRecord {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Hash)]
 pub struct WithdrawlRequest {
     pub account: Address,
+    pub token: Address,
+    pub amount: U256,
     pub index: U256,
 }
 

@@ -55,7 +55,7 @@ pub async fn process_generator_registry_logs(
         let address = parsed_registered_generator_log.generator.into();
         let compute = parsed_registered_generator_log.initial_compute.into();
 
-        log::warn!("During registration initial stake is assumed to be 0");
+        log::debug!("During registration initial stake is assumed to be 0");
 
         let generator_data = genertor_registry
             .generator_registry(address)
@@ -218,7 +218,7 @@ pub async fn process_generator_registry_logs(
             added_stake_log.generator_address
         );
 
-        log::warn!("Add Stake is now handled in native staking");
+        log::debug!("Add Stake is now handled in native staking");
         return Ok(());
     }
 
@@ -233,7 +233,7 @@ pub async fn process_generator_registry_logs(
             request_stake_decrease_log.generator_address
         );
 
-        log::warn!(
+        log::debug!(
             "RequestStakeDecrease is not processed using native_staking::StakeWithdrawalRequested"
         );
         return Ok(());
@@ -251,7 +251,7 @@ pub async fn process_generator_registry_logs(
             remove_stake_log.generator_address
         );
 
-        log::warn!("Request stake decrese in no processed in native_stake::StakeWithdrawn");
+        log::debug!("Request stake decrese in no processed in native_stake::StakeWithdrawn");
 
         return Ok(());
     }
@@ -281,7 +281,7 @@ pub async fn process_generator_registry_logs(
                 log.data.clone(),
             )
     {
-        log::info!(
+        log::debug!(
             "Request compute decrease for Generator: {:?}",
             request_compute_decrease_log.generator
         );
@@ -300,7 +300,7 @@ pub async fn process_generator_registry_logs(
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::info!(
+        log::debug!(
             "Compute decrease for Generator: {:?} to : {:?}",
             decrease_compute_log.generator,
             decrease_compute_log.compute
@@ -322,7 +322,7 @@ pub async fn process_generator_registry_logs(
         log.data.clone(),
     ) {
         log::debug!("Stake Lock Imposed: {:?}", stake_lock_logs);
-        log::warn!("Stake Lock Imposed is now Handled in native_staking::StakeLocked and symbiotic_staking::StakeLocked separately");
+        log::debug!("Stake Lock Imposed is now Handled in native_staking::StakeLocked and symbiotic_staking::StakeLocked separately");
         return Ok(());
     }
 
@@ -346,7 +346,7 @@ pub async fn process_generator_registry_logs(
         log.data.clone(),
     ) {
         log::debug!("Stake Lock Released: {:?}", stake_lock_logs);
-        log::warn!("Stake Lock Released in native_staking::StakeUnlocked and symbiotic_stake::StakeUnlocked separately");
+        log::debug!("Stake Lock Released in native_staking::StakeUnlocked and symbiotic_stake::StakeUnlocked separately");
         return Ok(());
     }
 
@@ -370,8 +370,8 @@ pub async fn process_generator_registry_logs(
             log.data.clone(),
         )
     {
-        log::warn!("Stake Slashed: {:?}", stake_slash_logs);
-        log::warn!("Stake slash is now handled in ns::JobSlashed and ss::JobSlashed separately");
+        log::debug!("Stake Slashed: {:?}", stake_slash_logs);
+        log::debug!("Stake slash is now handled in ns::JobSlashed and ss::JobSlashed separately");
         return Ok(());
     }
 
@@ -384,7 +384,9 @@ pub async fn process_generator_registry_logs(
             "Processing SymbioticCompleteSnapshot: {:?}",
             symbiotic_complete_snapshot_log
         );
-        log::warn!("SymbioticCompleteSnapshot is now processed using symbiotic::SnapshotConfirmed");
+        log::debug!(
+            "SymbioticCompleteSnapshot is now processed using symbiotic::SnapshotConfirmed"
+        );
         return Ok(());
     }
 

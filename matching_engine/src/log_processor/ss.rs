@@ -199,12 +199,21 @@ pub async fn process_symbiotic_staking_logs(
 
         for stake_token in known_tokens {
             for operator in all_generators.clone().into_iter() {
-                // if this fails, system breaks. TODO
-                let vault_snapshot_amount = symbiotic_staking
+                // if this fails, then we just use last amount
+                let vault_snapshot_amount_result = symbiotic_staking
                     .get_operator_stake_amount_at(capture_timestamp, stake_token, operator)
                     .call()
-                    .await
-                    .unwrap();
+                    .await;
+
+                let vault_snapshot_amount = match vault_snapshot_amount_result {
+                    Ok(data) => data,
+                    Err(err) => {
+                        log::error!("Unable to fetch latest symbiotic stake. contract call get_operator_stake_amount_at failing: {}", err);
+                        symbiotic_stake_store
+                            .get_latest_stake_info(&operator, &stake_token)
+                            .clone()
+                    }
+                };
 
                 log::debug!(
                     "operator:{:?}, snapshot token:{:?}, amount: {:?}",

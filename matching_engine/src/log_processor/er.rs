@@ -40,7 +40,7 @@ pub async fn process_entity_key_registry_logs(
         )
         .is_ok()
     {
-        log::warn!("Skipped EnclaveImageRevoked event");
+        log::debug!("Skipped EnclaveImageRevoked event");
         return Ok(());
     }
 

@@ -126,6 +126,8 @@ pub async fn process_native_staking_logs(
         let address = request_stake_decrease_log.operator;
         let account = request_stake_decrease_log.account;
         let index = request_stake_decrease_log.index;
+        let token = request_stake_decrease_log.token;
+        let amount = request_stake_decrease_log.amount;
 
         log::warn!("pausing all assignments across all markets");
         log::warn!("will be unpaused once the request if fully withdrawn");
@@ -135,7 +137,15 @@ pub async fn process_native_staking_logs(
         log::warn!("Setting new utilization to same value");
         let new_utilization = 1000000000000000000_i64.into();
         generator_store.update_intended_stake_util(&address, new_utilization);
-        generator_store.insert_withdrawal_request(&address, WithdrawlRequest { account, index });
+        generator_store.insert_withdrawal_request(
+            &address,
+            WithdrawlRequest {
+                account,
+                index,
+                token,
+                amount,
+            },
+        );
         return Ok(());
     }
 
@@ -175,7 +185,15 @@ pub async fn process_native_staking_logs(
         );
         generator_store.resume_assignments_accross_all_markets(&address);
         generator_store.update_intended_stake_util(&address, 1000000000000000000_i64.into());
-        generator_store.remove_withdrawal_request(&address, WithdrawlRequest { account, index });
+        generator_store.remove_withdrawal_request(
+            &address,
+            WithdrawlRequest {
+                account,
+                index,
+                token: token_address,
+                amount,
+            },
+        );
 
         return Ok(());
     }
