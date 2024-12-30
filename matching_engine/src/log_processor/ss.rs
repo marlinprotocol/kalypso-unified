@@ -7,7 +7,7 @@ use crate::{
     ask_lib::ask_store,
     generator_lib::{
         delegation, generator_store,
-        symbiotic_stake_store::{self, VaultSnapshot},
+        symbiotic_stake_store::{self, SlashResult, VaultSnapshot},
     },
     log_processor::constants,
     utility::{get_l1_block_from_l2_block, get_timestamp_from_l2block_number, tx_to_string},
@@ -23,6 +23,12 @@ pub async fn process_symbiotic_staking_logs(
     #[allow(unused)] ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
     rpc_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
+    let client = Arc::new(provider_http.clone());
+
+    let symbiotic_staking_patch =
+        binding_patches::VaultSnapshotPatch::new(symbiotic_staking.address(), client);
+
     if constants::SYMBIOTIC_STAKING_TOPICS_SKIP
         .get(&log.topics[0])
         .is_some()
@@ -166,7 +172,7 @@ pub async fn process_symbiotic_staking_logs(
             image_id,
             snapshot_data,
             proof,
-        ) = if event_log.len() == 6 {
+        ) = {
             let transmitter = event_log.get(0).unwrap().clone().into_address().unwrap();
             let index = event_log.get(1).unwrap().clone().into_uint().unwrap();
             let num_of_transactions = event_log.get(2).unwrap().clone().into_uint().unwrap();
@@ -196,12 +202,11 @@ pub async fn process_symbiotic_staking_logs(
                 snapshot_data,
                 proof,
             )
-        } else {
-            unimplemented!("VaultSnapshotSubmitted event definition was changed")
         };
 
         symbiotic_stake_store.store_vault_snapshot(
             captured_timestamp,
+            index,
             VaultSnapshot {
                 transmitter,
                 index,
@@ -216,14 +221,180 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
-    // if let Ok(event_log) = symbiotic_staking.decode_event_raw(
-    //     "SlashResultSubmitted",
-    //     log.topics.clone(),
-    //     log.data.clone(),
-    // ) {
-    //     log::debug!("SlashResultSubmitted Logs: {:?}", event_log);
-    //     return Ok(());
-    // }
+    if let Ok(event_log) = symbiotic_staking_patch.decode_event_raw(
+        "VaultSnapshotSubmitted",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("VaultSnapshotSubmitted Logs: {:?}", event_log);
+        let (
+            transmitter,
+            captured_timestamp,
+            index,
+            num_of_transactions,
+            image_id,
+            snapshot_data,
+            proof,
+        ) = {
+            let transmitter = event_log.get(0).unwrap().clone().into_address().unwrap();
+            let capture_time = event_log.get(1).unwrap().clone().into_uint().unwrap();
+            let index = event_log.get(2).unwrap().clone().into_uint().unwrap();
+            let num_of_transactions = event_log.get(3).unwrap().clone().into_uint().unwrap();
+            let image_id = event_log
+                .get(4)
+                .unwrap()
+                .clone()
+                .into_fixed_bytes()
+                .unwrap();
+            let snapshot_data = event_log.get(5).unwrap().clone().into_bytes().unwrap();
+            let proof = event_log.get(6).unwrap().clone().into_bytes().unwrap();
+
+            (
+                transmitter,
+                capture_time,
+                index,
+                num_of_transactions,
+                image_id,
+                snapshot_data,
+                proof,
+            )
+        };
+
+        symbiotic_stake_store.store_vault_snapshot(
+            captured_timestamp,
+            index,
+            VaultSnapshot {
+                transmitter,
+                index,
+                captured_timestamp,
+                num_of_transactions,
+                image_id,
+                snapshot_data,
+                proof,
+            },
+        );
+
+        return Ok(());
+    }
+
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "SlashResultSubmitted",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("SlashResultSubmitted Logs: {:?}", event_log);
+        let (
+            transmitter,
+            captured_timestamp,
+            index,
+            num_of_transactions,
+            image_id,
+            slash_data,
+            proof,
+        ) = {
+            let transmitter = event_log.get(0).unwrap().clone().into_address().unwrap();
+            let index = event_log.get(1).unwrap().clone().into_uint().unwrap();
+            let num_of_transactions = event_log.get(2).unwrap().clone().into_uint().unwrap();
+            let image_id = event_log
+                .get(3)
+                .unwrap()
+                .clone()
+                .into_fixed_bytes()
+                .unwrap();
+            let slash_result = event_log.get(4).unwrap().clone().into_bytes().unwrap();
+            let proof = event_log.get(5).unwrap().clone().into_bytes().unwrap();
+
+            // is mocked here
+            let capture_time = get_timestamp_from_l2block_number(
+                rpc_url,
+                &log.block_number.unwrap().as_u64().into(),
+            )
+            .await
+            .unwrap_or_default();
+
+            (
+                transmitter,
+                capture_time,
+                index,
+                num_of_transactions,
+                image_id,
+                slash_result,
+                proof,
+            )
+        };
+
+        symbiotic_stake_store.store_slash_result(
+            captured_timestamp,
+            index,
+            SlashResult {
+                transmitter,
+                index,
+                captured_timestamp,
+                num_of_transactions,
+                image_id,
+                slash_data,
+                proof,
+            },
+        );
+
+        return Ok(());
+    }
+
+    if let Ok(event_log) = symbiotic_staking_patch.decode_event_raw(
+        "SlashResultSubmitted",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("SlashResultSubmitted Logs: {:?}", event_log);
+        let (
+            transmitter,
+            captured_timestamp,
+            index,
+            num_of_transactions,
+            image_id,
+            slash_data,
+            proof,
+        ) = {
+            let transmitter = event_log.get(0).unwrap().clone().into_address().unwrap();
+            let capture_time = event_log.get(1).unwrap().clone().into_uint().unwrap();
+            let index = event_log.get(2).unwrap().clone().into_uint().unwrap();
+            let num_of_transactions = event_log.get(3).unwrap().clone().into_uint().unwrap();
+            let image_id = event_log
+                .get(4)
+                .unwrap()
+                .clone()
+                .into_fixed_bytes()
+                .unwrap();
+            let slash_result = event_log.get(5).unwrap().clone().into_bytes().unwrap();
+            let proof = event_log.get(6).unwrap().clone().into_bytes().unwrap();
+
+            (
+                transmitter,
+                capture_time,
+                index,
+                num_of_transactions,
+                image_id,
+                slash_result,
+                proof,
+            )
+        };
+
+        symbiotic_stake_store.store_slash_result(
+            captured_timestamp,
+            index,
+            SlashResult {
+                transmitter,
+                index,
+                captured_timestamp,
+                num_of_transactions,
+                image_id,
+                slash_data,
+                proof,
+            },
+        );
+
+        return Ok(());
+    }
 
     let mut generator_store = { generator_store.write().await };
 
@@ -234,15 +405,47 @@ pub async fn process_symbiotic_staking_logs(
     ) {
         log::debug!("Processing SnapshotConfirmed");
 
-        let capture_timestamp = {
-            let transmitter_token = symbiotic_complete_snapshot_log.get(0).unwrap();
-            let transmitter = transmitter_token.clone().into_address().unwrap();
-            log::debug!("Transmitter: {}", transmitter);
+        let transmitter = symbiotic_complete_snapshot_log
+            .get(0)
+            .unwrap()
+            .clone()
+            .into_address()
+            .unwrap();
+        log::debug!("Transmitter: {}", transmitter);
+        let confirmed_timestamp = symbiotic_complete_snapshot_log
+            .get(1)
+            .unwrap()
+            .clone()
+            .into_uint()
+            .unwrap();
 
-            let capture_timestamp_token = symbiotic_complete_snapshot_log.get(1).unwrap();
-            let capture_timestamp = capture_timestamp_token.clone().into_uint().unwrap();
-            capture_timestamp
-        };
+        let vault_snapshots = symbiotic_stake_store.get_all_vault_snapshots(confirmed_timestamp);
+        let slash_results = symbiotic_stake_store.get_all_slash_results(confirmed_timestamp);
+
+        if slash_results.len() == 0 && vault_snapshots.len() == 0 {
+            log::warn!("No snapshots found with timestamp: {}", confirmed_timestamp);
+            return Ok(());
+        }
+
+        // when snapshot is confirmed, clear all the operator data before it.
+        symbiotic_stake_store.clean_operators();
+
+        for vault_snapshot in vault_snapshots.iter() {
+            log::debug!("{:?}", vault_snapshot.clone().decode_vault_snapshot());
+            for decoded_vault_snapshot in vault_snapshot.clone().decode_vault_snapshot().iter() {
+                symbiotic_stake_store.upsert_stake(
+                    &decoded_vault_snapshot.operator,
+                    &decoded_vault_snapshot.stake_token,
+                    &decoded_vault_snapshot.amount,
+                );
+            }
+        }
+
+        for slash_result in slash_results.iter() {
+            log::debug!("{:?}", slash_result.clone().decode_slash_result());
+        }
+
+        let all_generators = generator_store.all_generators_address();
 
         let (known_tokens, _): (Vec<Address>, Vec<U256>) = {
             symbiotic_stake_store
@@ -252,26 +455,11 @@ pub async fn process_symbiotic_staking_logs(
                 .into_iter()
                 .unzip()
         };
-
-        let all_generators = generator_store.all_generators_address();
-
         for stake_token in known_tokens {
             for operator in all_generators.clone().into_iter() {
-                // if this fails, then we just use last amount
-                let vault_snapshot_amount_result = symbiotic_staking
-                    .get_operator_stake_amount_at(capture_timestamp, stake_token, operator)
-                    .call()
-                    .await;
-
-                let vault_snapshot_amount = match vault_snapshot_amount_result {
-                    Ok(data) => data,
-                    Err(err) => {
-                        log::error!("Unable to fetch latest symbiotic stake. contract call get_operator_stake_amount_at failing: {}", err);
-                        symbiotic_stake_store
-                            .get_latest_stake_info(&operator, &stake_token)
-                            .clone()
-                    }
-                };
+                // at this point symbiotic snapshot is already cleanup, and refreshed.
+                let vault_snapshot_amount =
+                    symbiotic_stake_store.get_latest_stake_info(&operator, &stake_token);
 
                 log::debug!(
                     "operator:{:?}, snapshot token:{:?}, amount: {:?}",
@@ -280,9 +468,11 @@ pub async fn process_symbiotic_staking_logs(
                     vault_snapshot_amount.to_string()
                 );
 
-                // before updating in symbiotic, do these steps
-                let last_stored_staking_info =
-                    symbiotic_stake_store.get_latest_stake_info(&operator, &stake_token);
+                let last_stored_staking_info = generator_store
+                    .get_by_address(&operator)
+                    .unwrap_or_default()
+                    .total_symbiotic_stake
+                    .get_balance(&stake_token);
 
                 if vault_snapshot_amount.gt(&last_stored_staking_info) {
                     log::debug!(
@@ -347,8 +537,6 @@ pub async fn process_symbiotic_staking_logs(
                 } else {
                     log::debug!("No change in symbiotic stake noticed");
                 }
-
-                symbiotic_stake_store.upsert_stake(&operator, &stake_token, &vault_snapshot_amount);
             }
         }
 

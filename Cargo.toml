@@ -16,6 +16,10 @@ members = [
 ]
 resolver = "2"
 
+[profile.dev]
+panic = "abort"
+debug = true
+
 [profile.release]
 strip = true
 lto = true

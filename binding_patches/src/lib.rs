@@ -14,10 +14,17 @@ abigen!(
 // Re-export the generated contract bindings to make them accessible when your library is used as a dependency.
 
 abigen!(
-    UpdateGeneratorMetadataPatch,
+    GeneratorRegistryPatch,
     "./src/generator_registry.json",
     event_derives(serde::Deserialize, serde::Serialize)
 );
 
-pub use UpdateGeneratorMetadataPatch;
+abigen!(
+    VaultSnapshotPatch,
+    "./src/vaultsnapshot.json",
+    event_derives(serde::Deserialize, serde::Serialize)
+);
+
+pub use GeneratorRegistryPatch;
 pub use UpdateProofMarketplaceMetadataPatch;
+pub use VaultSnapshotPatch;
