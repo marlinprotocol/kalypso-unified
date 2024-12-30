@@ -1445,9 +1445,8 @@ fn update_proof_marketplace_metadata_patch_instance(
 }
 
 pub struct UpdateGeneratorMetaInfo {
-    pub generator_registry: binding_patches::UpdateGeneratorMetadataPatch<
-        SignerMiddleware<Provider<Http>, LocalWallet>,
-    >,
+    pub generator_registry:
+        binding_patches::GeneratorRegistryPatch<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub read_generator_registry: bindings::generator_registry::GeneratorRegistry<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
@@ -1492,9 +1491,7 @@ fn update_generator_meta_instance(
     rpc_url: &str,
 ) -> Result<
     (
-        binding_patches::UpdateGeneratorMetadataPatch<
-            SignerMiddleware<Provider<Http>, LocalWallet>,
-        >,
+        binding_patches::GeneratorRegistryPatch<SignerMiddleware<Provider<Http>, LocalWallet>>,
         LocalWallet,
     ),
     String,
@@ -1524,7 +1521,7 @@ fn update_generator_meta_instance(
     let client_arc = Arc::new(client);
 
     // Initialize the Generator Registry contract instance with the signer-enabled client
-    let generator_registry = binding_patches::UpdateGeneratorMetadataPatch::new(
+    let generator_registry = binding_patches::GeneratorRegistryPatch::new(
         generator_registry_address,
         client_arc.clone(),
     );

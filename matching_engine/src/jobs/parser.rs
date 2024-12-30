@@ -188,7 +188,7 @@ impl LogParser {
                 time_since_last_backup.as_secs_f64()
             );
 
-            if time_since_last_backup > tokio::time::Duration::from_secs(15) {
+            if time_since_last_backup > tokio::time::Duration::from_secs(60 * 2) {
                 // make backup here
                 let market_store = self.shared_market_store.read().await;
                 let ask_store = self.shared_local_ask_store.read().await;

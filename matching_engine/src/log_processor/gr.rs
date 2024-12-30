@@ -396,7 +396,7 @@ pub async fn process_generator_registry_logs(
     let client = Arc::new(provider_http.clone());
 
     let gr_update_generator_data_patch =
-        binding_patches::UpdateGeneratorMetadataPatch::new(genertor_registry.address(), client);
+        binding_patches::GeneratorRegistryPatch::new(genertor_registry.address(), client);
 
     if let Ok(update_generator_metadata_log) = gr_update_generator_data_patch.decode_event_raw(
         "GeneratorDataUpdated",
@@ -410,6 +410,20 @@ pub async fn process_generator_registry_logs(
         let generator_meta_data = generator_bytes.clone().into_bytes().unwrap().to_vec();
 
         generator_store.update_generator_metadata(generator_address, generator_meta_data.into());
+        return Ok(());
+    }
+
+    if let Ok(intend_to_reduce_stake_logs) = gr_update_generator_data_patch.decode_event_raw(
+        "IntendToReduceStake",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!(
+            "Intend to reduce stake logs {:?}",
+            intend_to_reduce_stake_logs
+        );
+
+        log::debug!("IntendToReduceStake is not processed here");
         return Ok(());
     }
 

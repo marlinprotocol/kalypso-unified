@@ -346,7 +346,7 @@ pub struct GeneratorInfoPerMarket {
     pub state: Option<GeneratorState>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Default)]
 pub struct Generator {
     pub address: Address,
     pub reward_address: Address,
