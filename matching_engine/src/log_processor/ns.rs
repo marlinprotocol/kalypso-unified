@@ -337,6 +337,15 @@ pub async fn process_native_staking_logs(
         return Ok(());
     }
 
+    if let Ok(set_withdrawal_duration_logs) = native_staking.decode_event_raw(
+        "WithdrawalDurationSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("WithdrawalDurationSet: {:?}", set_withdrawal_duration_logs);
+        return Ok(());
+    }
+
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
