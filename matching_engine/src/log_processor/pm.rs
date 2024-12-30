@@ -683,6 +683,19 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
+    if let Ok(operator_reward_share_set_log) = pmp_update_marketmetadata_patch.decode_event_raw(
+        "OperatorRewardShareSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!(
+            "operator reward share log {:?}",
+            operator_reward_share_set_log
+        );
+
+        return Ok(());
+    }
+
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
