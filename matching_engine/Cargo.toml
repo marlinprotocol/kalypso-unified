@@ -40,7 +40,7 @@ default = ["testnet"]
 external_indexer = ["testnet", "disable_match_creation"]
 testnet = [
     "matching_engine_enable_cors",
-    # "skip_unknown_events",
+    "skip_unknown_events",
     "override_symbiotic_slashing_to_zero",
     "override_native_slashing_to_zero",
     "generate_dummy_slash_logs",
