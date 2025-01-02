@@ -174,7 +174,7 @@ pub async fn get_verified_attestation(
     Ok(encoded)
 }
 
-pub async fn verify_attestation_sig(
+pub async fn verify_attestation(
     verifier_url: &str,
     attestation_data: Vec<u8>,
     print_logs: bool,
@@ -242,7 +242,7 @@ pub fn verify_with_timestamp(
 
 #[cfg(test)]
 mod tests {
-    use super::{build_attestation_vec, parse_attestation_doc, verify_attestation_sig};
+    use super::{build_attestation_vec, parse_attestation_doc, verify_attestation};
 
     #[tokio::test]
     async fn test_verified_attestation_with_verifier() {
@@ -261,7 +261,7 @@ mod tests {
             );
 
             let verified_result =
-                verify_attestation_sig("http://13.201.207.60:1400", attestation_vec, false).await;
+                verify_attestation("http://13.201.207.60:1400", attestation_vec, false).await;
 
             assert!(
                 verified_result.is_ok(),
