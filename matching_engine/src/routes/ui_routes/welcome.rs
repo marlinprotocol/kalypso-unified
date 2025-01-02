@@ -98,7 +98,6 @@ pub async fn get_encrypted_dump(
     local_cost_store: Data<Arc<RwLock<CostStore>>>,
     local_key_store: Data<Arc<RwLock<KeyStore>>>,
     local_stake_manager_store: Data<Arc<RwLock<StakeManagerStore>>>,
-    ecies_public_keys: Data<Arc<RwLock<Vec<Vec<u8>>>>>,
     local_parsed_block: Data<Arc<RwLock<U64>>>,
 ) -> actix_web::Result<HttpResponse> {
     try_read_or_lock!(local_market_store, market_store);
@@ -109,7 +108,6 @@ pub async fn get_encrypted_dump(
     try_read_or_lock!(local_cost_store, cost_store);
     try_read_or_lock!(local_key_store, key_store);
     try_read_or_lock!(local_stake_manager_store, stake_manager_store);
-    try_read_or_lock!(ecies_public_keys, ecies_keys);
     try_read_or_lock!(local_parsed_block, parsed_block);
 
     let dump = Dump {
@@ -124,14 +122,14 @@ pub async fn get_encrypted_dump(
         parsed_block: Some(parsed_block.clone()),
     };
 
-    let encrypted_dump = dump.create_encrypted_dump(ecies_keys.clone()).await.unwrap();
+    let encrypted_dump = dump.create_encrypted_dump().await.unwrap();
 
     // Return the JSON response
     Ok(HttpResponse::Ok().json(encrypted_dump))
 }
 
 impl Dump {
-    pub async fn create_encrypted_dump(&self, ecies_public_keys: Vec<Vec<u8>>) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
+    pub async fn create_encrypted_dump(&self) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
         // Load matching engine configuration
         let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
         let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
@@ -158,11 +156,6 @@ impl Dump {
         let proof_market_place_var = config.clone().proof_market_place;
         let proof_market_place_addr = Address::from_str(&proof_market_place_var).unwrap();
 
-        let proof_market_place = bindings::proof_marketplace::ProofMarketplace::new(
-            proof_market_place_addr,
-            client.clone(),
-        );
-
         let entity_key_registry_var = config.clone().entity_registry;
         let entity_key_registry_address = Address::from_str(&entity_key_registry_var).unwrap();
 
@@ -172,18 +165,28 @@ impl Dump {
         );
 
         // Get the matching engine keys
-        let matching_engine_keys = entity_key_registry.pub_key(
+        let mut ecies_public_keys = vec![];
+        let matching_engine_key = entity_key_registry.pub_key(
             proof_market_place_addr, 
             U256::from(0)
         ).call().await.unwrap();
-        println!("Matching engine key: {:?}", matching_engine_keys.to_string());
+
+        let mut extended_pub_key = vec![0x04];
+        extended_pub_key.extend_from_slice(&matching_engine_key);
+
+        // Now, `extended_pub_key` is a 65-byte vector with `04` prepended.
+        let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into().unwrap();
+        let me_public_key = ecies::PublicKey::parse(pub_key_array).unwrap();
+        let me_public_key = me_public_key.serialize_compressed();
+        ecies_public_keys.push(me_public_key.to_vec());
+        
+        // Ensure this matching engine can decrypt
         let private_key = hex::decode(config.matching_engine_key).unwrap();
         let private_key: &[u8; 32] = private_key.as_slice().try_into().unwrap();
         let sk = SecretKey::parse(private_key).unwrap();
 
         let public_key = PublicKey::from_secret_key(&sk);
         let public_key = public_key.serialize_compressed();
-        // let public_key_m = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes();
 
         // Check matching engine key in the ecies key list
         if ecies_public_keys.contains(&public_key.to_vec()) {
@@ -205,7 +208,15 @@ impl Dump {
 }
 
 impl EncryptedDump {
-    pub fn get_dump(&self, ecies_private_key: Vec<u8>) -> Result<Dump, Box<dyn std::error::Error>> {
+    pub fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>> {
+        // Load matching engine configuration
+        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
+        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
+        let file_content =
+            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path)).unwrap();
+        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
+        let me_private_key_vec = hex::decode(config.matching_engine_key).unwrap();
+
         let encrypted_dump = self.clone().encrypted;
         let mut decrypted_dump: Dump = Dump { 
             market_metadata_store: None, 
@@ -225,7 +236,7 @@ impl EncryptedDump {
             let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
                 &encrypted_dump,
                 &acl,
-                &ecies_private_key, 
+                &me_private_key_vec, 
                 Some(U256::from(1)));
             match decrypted {
                 Ok(data) => {
@@ -248,73 +259,43 @@ impl EncryptedDump {
 mod tests {
     use super::Dump;
     use std::fs;
-    use ethers::types::U64;
     use serde_json;
-    use ecies::{PublicKey, SecretKey};
-    use crate::ask_lib::ask_store::LocalAskStore;
-    use crate::MatchingEngineConfig;
+    use ethers::types::U64;
     use crate::costs::CostStore;
-    use crate::generator_lib::generator_store::GeneratorStore;
+    use crate::ask_lib::ask_store::LocalAskStore;
     use crate::generator_lib::key_store::KeyStore;
-    use crate::generator_lib::native_stake_store::NativeStakingStore;
-    use crate::generator_lib::stake_manager_store::StakeManagerStore;
-    use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
     use crate::market_metadata::MarketMetadataStore;
+    use crate::generator_lib::generator_store::GeneratorStore;
+    use crate::generator_lib::stake_manager_store::StakeManagerStore;
+    use crate::generator_lib::native_stake_store::NativeStakingStore;
+    use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
     
     #[tokio::test]
     async fn test_encryption_and_decrytion() {
-        // fetch sample dump
-        let dump_path = "../matching_engine_config/dump.json".to_string();
-        let alt_dump_path = "./matching_engine_config/dump.json".to_string();
-        let file_content =
-            fs::read_to_string(dump_path).or_else(|_| fs::read_to_string(alt_dump_path)).unwrap();
-        let dump: Dump = serde_json::from_str(&file_content).unwrap();
+        // // fetch sample dump
+        // let dump_path = "../matching_engine_config/dump.json".to_string();
+        // let alt_dump_path = "./matching_engine_config/dump.json".to_string();
+        // let file_content =
+        //     fs::read_to_string(dump_path).or_else(|_| fs::read_to_string(alt_dump_path)).unwrap();
+        // let dump: Dump = serde_json::from_str(&file_content).unwrap();
 
         // create default dump
-        // let dump = Dump {
-        //     market_metadata_store: Some(MarketMetadataStore::new()), 
-        //     local_ask_store: Some(LocalAskStore::new()), 
-        //     generator_store: Some(GeneratorStore::new()), 
-        //     native_staking_store: Some(NativeStakingStore::new()), 
-        //     symbiotic_stake_store: Some(SymbioticStakeStore::new()), 
-        //     cost_store: Some(CostStore::new()), 
-        //     key_store: Some(KeyStore::new()), 
-        //     stake_manager_store: Some(StakeManagerStore::new()), 
-        //     parsed_block: Some(U64::default())
-        // };
-        let checker = serde_json::to_string(&dump).unwrap();
-        let checker2 = serde_json::to_string(&dump).unwrap();
+        let dump = Dump {
+            market_metadata_store: Some(MarketMetadataStore::new()), 
+            local_ask_store: Some(LocalAskStore::new()), 
+            generator_store: Some(GeneratorStore::new()), 
+            native_staking_store: Some(NativeStakingStore::new()), 
+            symbiotic_stake_store: Some(SymbioticStakeStore::new()), 
+            cost_store: Some(CostStore::new()), 
+            key_store: Some(KeyStore::new()), 
+            stake_manager_store: Some(StakeManagerStore::new()), 
+            parsed_block: Some(U64::default())
+        };
 
-        // Encryption
-        let private_key_str = "e2a16eece5f9e388ebe73b791343e1a98d86a17376e87be5155ec7cf9c78f069";
-        let private_key = hex::decode(private_key_str).unwrap();
-        let private_key: &[u8; 32] = private_key.as_slice().try_into().unwrap();
-        let sk = SecretKey::parse(private_key).unwrap();
+        let encrypted_dump = dump.create_encrypted_dump().await.unwrap();
 
-        let public_key = PublicKey::from_secret_key(&sk);
-        let public_key = public_key.serialize_compressed();
-        // let public_key = "0xAB85EDad6e4Dc27493530A2CAa9332Aa38FecFB1".as_bytes();
-
-        // Load matching engine configuration
-        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
-        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
-        let file_content =
-            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path)).unwrap();
-        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
-        let me_private_key_vec = hex::decode(config.matching_engine_key).unwrap();
-        let me_private_key: &[u8; 32] = me_private_key_vec.as_slice().try_into().unwrap();
-        let me_sk = SecretKey::parse(me_private_key).unwrap();
-
-        let me_public_key = PublicKey::from_secret_key(&me_sk);
-        let me_public_key = me_public_key.serialize_compressed();
-
-        // let me_public_key = "0x378b45251c732E190ccf74A0FC971DF73559CA67".as_bytes();
-        let ecies_public_keys = vec![public_key.to_vec(), me_public_key.to_vec(), public_key.to_vec()];
-
-        let encrypted_dump = dump.create_encrypted_dump(ecies_public_keys.into()).await.unwrap();
-
-        let decrypted_dump = encrypted_dump.get_dump(me_private_key_vec).unwrap();
+        let decrypted_dump = encrypted_dump.get_dump().unwrap();
         let decrypted_dump_str = serde_json::to_string(&decrypted_dump).unwrap();
-        assert_eq!(checker2, checker);
+        dbg!(decrypted_dump_str);
     }
 }
