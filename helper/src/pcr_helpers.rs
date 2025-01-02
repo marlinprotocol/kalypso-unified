@@ -25,12 +25,19 @@ pub async fn build_attestation(
 ) -> Result<impl Stream<Item = Result<Bytes, reqwest::Error>>, Box<dyn Error>> {
     let attestation_end_point = utility_url(base_url, "/attestation/raw");
 
+    build_attestation_raw(&attestation_end_point, print_logs).await
+}
+
+pub async fn build_attestation_raw(
+    attestation_end_point: &str,
+    print_logs: bool,
+) -> Result<impl Stream<Item = Result<Bytes, reqwest::Error>>, Box<dyn Error>> {
     if print_logs {
         println!("build attestation {}", attestation_end_point);
     }
 
     let client = Client::new();
-    let response = client.get(&attestation_end_point).send().await?;
+    let response = client.get(attestation_end_point).send().await?;
 
     // Check if the response status is successful (2xx)
     if !response.status().is_success() {
@@ -45,6 +52,32 @@ pub async fn build_attestation(
 }
 
 pub async fn build_attestation_vec(
+    attestation_end_point: &str,
+    print_logs: bool,
+) -> Result<Vec<u8>, Box<dyn Error>> {
+    let attestation_stream = build_attestation_raw(attestation_end_point, print_logs)
+        .await
+        .map_err(|e| format!("Failed Building Attestations: {}", e))?;
+
+    let attestation_data: Vec<u8> = attestation_stream
+        .fold(Vec::new(), |mut acc, item| async {
+            match item {
+                Ok(bytes) => {
+                    acc.extend_from_slice(&bytes);
+                    acc
+                }
+                Err(e) => {
+                    println!("Error while receiving data: {}", e);
+                    acc
+                }
+            }
+        })
+        .await;
+
+    Ok(attestation_data)
+}
+
+pub async fn build_attestation_vec_raw(
     base_url: &str,
     print_logs: bool,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
