@@ -55,7 +55,7 @@ pub async fn build_attestation_vec(
     attestation_end_point: &str,
     print_logs: bool,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
-    let attestation_stream = build_attestation_raw(attestation_end_point, print_logs)
+    let attestation_stream = build_attestation(attestation_end_point, print_logs)
         .await
         .map_err(|e| format!("Failed Building Attestations: {}", e))?;
 
@@ -81,7 +81,7 @@ pub async fn build_attestation_vec_raw(
     base_url: &str,
     print_logs: bool,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
-    let attestation_stream = build_attestation(base_url, print_logs)
+    let attestation_stream = build_attestation_raw(base_url, print_logs)
         .await
         .map_err(|e| format!("Failed Building Attestations: {}", e))?;
 
