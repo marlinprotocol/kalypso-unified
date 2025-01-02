@@ -15,6 +15,7 @@ mod decrypt_request;
 mod get_priv_inputs;
 mod market_info;
 mod ui_routes;
+mod unhandled_logs;
 
 type EntityRegistryInstance = Data<
     Arc<
@@ -94,6 +95,10 @@ pub fn get_stats_scope() -> actix_web::Scope {
             web::get().to(market_info::market_stats),
         )
         .route("/dump", web::get().to(ui_routes::welcome::get_dump))
+        .route(
+            "/unhandled_logs",
+            web::get().to(unhandled_logs::get_unhandled_logs),
+        )
 }
 
 pub fn get_core_scope() -> actix_web::Scope {

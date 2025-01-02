@@ -36,6 +36,7 @@ pub async fn process_proof_market_place_logs(
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
     rpc_url: &str,
+    unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::PROOF_MARKET_TOPICS_SKIP
         .get(&log.topics[0])
@@ -699,6 +700,8 @@ pub async fn process_proof_market_place_logs(
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
+        let mut unhandled_logs = { unhandled_logs.write().await };
+        unhandled_logs.push(log.clone());
         return Ok(());
     }
 

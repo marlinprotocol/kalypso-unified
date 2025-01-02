@@ -23,6 +23,7 @@ pub async fn process_native_staking_logs(
     native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
     #[allow(unused)] ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
     rpc_url: &str,
+    unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::NATIVE_STAKING_TOPICS_SKIP
         .get(&log.topics[0])
@@ -349,6 +350,8 @@ pub async fn process_native_staking_logs(
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
+        let mut unhandled_logs = { unhandled_logs.write().await };
+        unhandled_logs.push(log.clone());
         return Ok(());
     }
 

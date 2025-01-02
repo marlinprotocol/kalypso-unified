@@ -95,6 +95,7 @@ pub struct LogParser {
     #[allow(unused)]
     max_tasks_size: usize,
     rpc_url: String,
+    unhandled_logs: Arc<RwLock<Vec<Log>>>,
 }
 
 impl LogParser {
@@ -123,6 +124,7 @@ impl LogParser {
         shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         chain_id: String,
+        unhandled_logs: Arc<RwLock<Vec<Log>>>,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
             .unwrap()
@@ -157,6 +159,7 @@ impl LogParser {
             chain_id,
             max_tasks_size: 10, // TODO: dynamically adjust latter
             rpc_url,
+            unhandled_logs,
         }
     }
 
@@ -334,6 +337,7 @@ impl LogParser {
                                     &self.matching_engine_key,
                                     &self.matching_engine_slave_keys,
                                     &self.rpc_url,
+                                    &self.unhandled_logs,
                                 )
                                 .await
                                 .unwrap();
@@ -346,6 +350,7 @@ impl LogParser {
                                     &self.generator_registry,
                                     &self.shared_generator_store,
                                     &self.rpc_url,
+                                    &self.unhandled_logs,
                                 )
                                 .await
                                 .unwrap();
@@ -358,6 +363,7 @@ impl LogParser {
                                     log,
                                     &self.entity_registry,
                                     &self.shared_key_store,
+                                    &self.unhandled_logs,
                                 )
                                 .await
                                 .unwrap();
@@ -372,6 +378,7 @@ impl LogParser {
                                     &self.shared_native_stake_store,
                                     &self.shared_local_ask_store,
                                     &self.rpc_url,
+                                    &self.unhandled_logs,
                                 )
                                 .await
                                 .unwrap();
@@ -386,6 +393,7 @@ impl LogParser {
                                     &self.shared_symbiotic_stake_store,
                                     &self.shared_local_ask_store,
                                     &self.rpc_url,
+                                    &self.unhandled_logs,
                                 )
                                 .await
                                 .unwrap();
@@ -399,6 +407,7 @@ impl LogParser {
                                     &self.shared_stake_manager_store,
                                     native_staking_address,
                                     symbiotic_staking_address,
+                                    &self.unhandled_logs,
                                 )
                                 .await
                                 .unwrap();

@@ -13,6 +13,7 @@ pub async fn process_staking_manager_log(
     stake_manager_store: &Arc<RwLock<stake_manager_store::StakeManagerStore>>,
     supported_native_staking_pool: Address,
     supported_symbiotic_staking_pool: Address,
+    unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::STAKING_MANAGER_TOPICS_SKIP
         .get(&log.topics[0])
@@ -76,6 +77,8 @@ pub async fn process_staking_manager_log(
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
+        let mut unhandled_logs = { unhandled_logs.write().await };
+        unhandled_logs.push(log.clone());
         return Ok(());
     }
 

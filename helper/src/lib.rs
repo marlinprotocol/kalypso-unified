@@ -9,3 +9,7 @@ pub mod response;
 pub mod sch_payload;
 pub mod secret_inputs_helpers;
 pub mod ssc;
+
+// added this because oyster-sdk-rs import is not directly working
+#[allow(unused)]
+mod oyster;

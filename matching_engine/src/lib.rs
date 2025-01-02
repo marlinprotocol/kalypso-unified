@@ -377,6 +377,8 @@ impl MatchingEngine {
         let shared_matching_key = Arc::new(RwLock::new(matching_engine_key_for_server));
         let shared_matching_key_clone = Arc::clone(&shared_matching_key);
 
+        let unhandled_logs = Arc::new(RwLock::new(vec![]));
+
         let should_stop = Arc::new(AtomicBool::new(false));
         let stop_handle_clone = should_stop.clone();
 
@@ -401,6 +403,7 @@ impl MatchingEngine {
             shared_stake_manager_store.clone(),
             relayer_key_balance.clone(),
             should_stop.clone(),
+            unhandled_logs.clone(),
         );
 
         let matching_engine_port = self.matching_engine_port;
@@ -442,6 +445,7 @@ impl MatchingEngine {
             shared_native_store,
             shared_stake_manager_store,
             chain_id,
+            unhandled_logs,
         ));
 
         let parser_handle = tokio::spawn(async move {

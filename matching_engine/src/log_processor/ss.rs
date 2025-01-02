@@ -22,6 +22,7 @@ pub async fn process_symbiotic_staking_logs(
     symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
     #[allow(unused)] ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
     rpc_url: &str,
+    unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
     let client = Arc::new(provider_http.clone());
@@ -658,6 +659,8 @@ pub async fn process_symbiotic_staking_logs(
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
+        let mut unhandled_logs = { unhandled_logs.write().await };
+        unhandled_logs.push(log.clone());
         return Ok(());
     }
 

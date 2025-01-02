@@ -11,6 +11,7 @@ pub async fn process_entity_key_registry_logs(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     key_store: &Arc<RwLock<key_store::KeyStore>>,
+    unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::ENTITY_KEY_REGISTRY_TOPICS_SKIP
         .get(&log.topics[0])
@@ -173,6 +174,8 @@ pub async fn process_entity_key_registry_logs(
     if cfg!(feature = "skip_unknown_events") {
         log::warn!("{:?}", log);
         log::warn!("Unknown event noted and skipped");
+        let mut unhandled_logs = { unhandled_logs.write().await };
+        unhandled_logs.push(log.clone());
         return Ok(());
     }
 

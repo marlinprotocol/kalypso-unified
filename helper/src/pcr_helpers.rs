@@ -141,7 +141,7 @@ pub async fn get_verified_attestation(
     Ok(encoded)
 }
 
-pub async fn verify_attestation(
+pub async fn verify_attestation_sig(
     verifier_url: &str,
     attestation_data: Vec<u8>,
     print_logs: bool,
@@ -178,20 +178,7 @@ pub async fn verify_attestation(
 use std::collections::BTreeMap;
 
 use aws_nitro_enclaves_cose::{crypto::Openssl, CoseSign1};
-use hyper_util::client::legacy::Error as HyperError;
 use serde_cbor::{self, value, value::Value};
-
-#[derive(thiserror::Error, Debug)]
-pub enum AttestationError {
-    #[error("failed to parse: {0}")]
-    ParseFailed(String),
-    #[error("failed to verify attestation: {0}")]
-    VerifyFailed(String),
-    #[error("http client error")]
-    HttpClientError(#[from] HyperError),
-    #[error("http body error")]
-    HttpBodyError(#[from] hyper::Error),
-}
 
 pub fn parse_attestation_doc(
     attestation_doc: &[u8],
@@ -212,12 +199,20 @@ pub fn parse_attestation_doc(
     Ok((cosesign1, attestation_doc, another_attestation_doc))
 }
 
+pub fn verify_with_timestamp(
+    attestation_doc_cbor: Vec<u8>,
+    pcrs: [[u8; 48]; 3],
+    timestamp: usize,
+) -> Result<Vec<u8>, AttestationError> {
+    oyster::verify_with_timestamp(attestation_doc_cbor, pcrs, timestamp)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{build_attestation_vec, parse_attestation_doc, verify_attestation};
+    use super::{build_attestation_vec, parse_attestation_doc, verify_attestation_sig};
 
     #[tokio::test]
-    async fn test_verified_attestation() {
+    async fn test_verified_attestation_with_verifier() {
         let result = build_attestation_vec("http://3.110.146.109:1500", false).await;
 
         assert!(
@@ -233,7 +228,7 @@ mod tests {
             );
 
             let verified_result =
-                verify_attestation("http://13.201.207.60:1400", attestation_vec, false).await;
+                verify_attestation_sig("http://13.201.207.60:1400", attestation_vec, false).await;
 
             assert!(
                 verified_result.is_ok(),
@@ -443,6 +438,8 @@ fn process_cabundle(cabundle: &Value) -> Result<String, String> {
 }
 
 use pem::{encode as pem_encode, Pem};
+
+use crate::oyster::{self, AttestationError};
 
 fn der_to_pem(der_bytes: &[u8]) -> String {
     let pem = Pem {

@@ -7,7 +7,7 @@ use ethers::core::k256::ecdsa::SigningKey;
 use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Provider};
 use ethers::signers::Wallet;
-use ethers::types::U64;
+use ethers::types::{Log, U64};
 use kalypso_helper::middlewares::request_limiter::ConcurrencyLimiter;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
@@ -43,6 +43,7 @@ pub struct MatchingEngineServer {
     shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
     relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
     should_stop: Arc<AtomicBool>,
+    shared_unhandled_logs: Arc<RwLock<Vec<Log>>>,
 }
 
 impl MatchingEngineServer {
@@ -61,6 +62,7 @@ impl MatchingEngineServer {
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
         should_stop: Arc<AtomicBool>,
+        shared_unhandled_logs: Arc<RwLock<Vec<Log>>>,
     ) -> Self {
         MatchingEngineServer {
             shared_market_data,
@@ -76,6 +78,7 @@ impl MatchingEngineServer {
             shared_key_data,
             relayer_key_balance,
             should_stop,
+            shared_unhandled_logs,
         }
     }
 
@@ -121,6 +124,7 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_stake_manager_store.clone()))
                 .app_data(Data::new(self.shared_key_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
+                .app_data(Data::new(self.shared_unhandled_logs.clone()))
                 .service(
                     ui_scope()
                         .wrap(ui_request_concurrency)
