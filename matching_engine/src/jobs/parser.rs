@@ -226,7 +226,7 @@ impl LogParser {
                 use tokio::io::AsyncWriteExt;
 
                 let path_to_snapshot = Path::new(&self.path_to_snapshot);
-                match serde_json::to_string_pretty(&dump) {
+                match serde_json::to_string(&dump) {
                     Ok(json_string) => {
                         // Ensure the directory exists
                         if let Some(parent) = path_to_snapshot.parent() {
