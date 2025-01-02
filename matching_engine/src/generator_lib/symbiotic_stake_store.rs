@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::utility::TokenTracker;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SymbioticStakeStore {
     operators: HashMap<Address, TokenTracker>,
     vault_snapshots: HashMap<U256, HashMap<U256, VaultSnapshot>>, // vault snapshot indexed with captures timestamps, then index

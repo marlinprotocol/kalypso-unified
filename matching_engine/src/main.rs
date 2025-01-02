@@ -2,7 +2,8 @@ use std::fs;
 use std::io;
 
 use dotenv::dotenv;
-use matching_engine::{Dump, MatchingEngine, MatchingEngineConfig};
+use matching_engine::EncryptedDump;
+use matching_engine::{MatchingEngine, MatchingEngineConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,17 +27,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matching_engine = MatchingEngine::from_config(config, indexer_port);
 
     // Attempt to load the dump file
-    let dump_paths = [
-        "../matching_engine_config/dump.json",
-        "./matching_engine_config/dump.json",
+    let encrypted_dump_paths = [
+        "../matching_engine_config/encrypted_dump.json",
+        "./matching_engine_config/encrypted_dump.json",
     ];
-    match read_file_from_paths(&dump_paths) {
+    match read_file_from_paths(&encrypted_dump_paths) {
         Ok(dump_content) => {
-            let dump: Dump = serde_json::from_str(&dump_content)?;
-            matching_engine.run_from_dump(dump).await?;
+            let enc_dump: EncryptedDump = serde_json::from_str(&dump_content)?;
+            matching_engine
+                .run_from_encrypted_dump(enc_dump, encrypted_dump_paths[1].to_string())
+                .await?;
         }
         Err(_) => {
-            matching_engine.run().await?;
+            matching_engine
+                .run(encrypted_dump_paths[1].to_string())
+                .await?;
         }
     }
 

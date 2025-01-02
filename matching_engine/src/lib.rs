@@ -32,6 +32,11 @@ use std::{str::FromStr, sync::Arc};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
+use ecies::{PublicKey, SecretKey};
+use ethers::types::{U256, U64};
+use kalypso_helper::secret_inputs_helpers;
+use std::fs;
+
 pub fn get_welcome_request<R>() -> Request<(), R> {
     Request {
         request_type: RequestType::GET,
@@ -141,7 +146,12 @@ pub struct MatchingEngine {
     matching_engine_port: u16,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+pub enum DumpType {
+    Encrypted(EncryptedDump),
+    Regular(Dump),
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Dump {
     pub market_metadata_store: MarketMetadataStore,
     pub local_ask_store: LocalAskStore,
@@ -154,18 +164,133 @@ pub struct Dump {
     pub parsed_block: U64,
 }
 
-// Define the Dump struct
-#[derive(Serialize)]
-pub struct DumpSend<'a> {
-    market_metadata_store: Option<&'a MarketMetadataStore>,
-    local_ask_store: Option<&'a LocalAskStore>,
-    generator_store: Option<&'a GeneratorStore>,
-    native_staking_store: Option<&'a NativeStakingStore>,
-    symbiotic_stake_store: Option<&'a SymbioticStakeStore>,
-    cost_store: Option<&'a CostStore>,
-    key_store: Option<&'a KeyStore>,
-    stake_manager_store: Option<&'a StakeManagerStore>,
-    parsed_block: Option<&'a U64>,
+#[derive(Serialize, Clone, Deserialize, Debug)]
+pub struct EncryptedDump {
+    encrypted: Vec<u8>,
+    acls: Vec<Vec<u8>>,
+}
+
+impl Dump {
+    pub async fn create_encrypted_dump(&self) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
+        // Load matching engine configuration
+        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
+        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
+        let file_content = fs::read_to_string(config_path)
+            .or_else(|_| fs::read_to_string(alt_config_path))
+            .unwrap();
+        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
+
+        let rpc_url = config.clone().rpc_url;
+        let chain_id = config.clone().chain_id;
+
+        let relayer_key = config.clone().relayer_private_key;
+        let relayer_signer = relayer_key
+            .parse::<LocalWallet>()
+            .unwrap()
+            .with_chain_id(U64::from_dec_str(&chain_id).unwrap().as_u64());
+
+        let provider_http = Provider::<Http>::try_from(&rpc_url)
+            .unwrap()
+            // .with_signer(matching_engine_signer.clone());
+            .with_signer(relayer_signer.clone());
+
+        let client = Arc::new(provider_http.clone());
+
+        let proof_market_place_var = config.clone().proof_market_place;
+        let proof_market_place_addr = Address::from_str(&proof_market_place_var).unwrap();
+
+        let entity_key_registry_var = config.clone().entity_registry;
+        let entity_key_registry_address = Address::from_str(&entity_key_registry_var).unwrap();
+
+        let entity_key_registry = bindings::entity_key_registry::EntityKeyRegistry::new(
+            entity_key_registry_address,
+            client.clone(),
+        );
+
+        // Get the matching engine keys
+        let mut ecies_public_keys = vec![];
+        let matching_engine_key = entity_key_registry
+            .pub_key(proof_market_place_addr, U256::from(0))
+            .call()
+            .await
+            .unwrap();
+
+        let mut extended_pub_key = vec![0x04];
+        extended_pub_key.extend_from_slice(&matching_engine_key);
+
+        // Now, `extended_pub_key` is a 65-byte vector with `04` prepended.
+        let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into().unwrap();
+        let me_public_key = ecies::PublicKey::parse(pub_key_array).unwrap();
+        let me_public_key = me_public_key.serialize_compressed();
+        ecies_public_keys.push(me_public_key.to_vec());
+
+        // Ensure this matching engine can decrypt
+        let private_key = hex::decode(config.matching_engine_key).unwrap();
+        let private_key: &[u8; 32] = private_key.as_slice().try_into().unwrap();
+        let sk = SecretKey::parse(private_key).unwrap();
+
+        let public_key = PublicKey::from_secret_key(&sk);
+        let public_key = public_key.serialize_compressed();
+
+        // Check matching engine key in the ecies key list
+        if ecies_public_keys.contains(&public_key.to_vec()) {
+            let dump_value = serde_json::to_value(self).unwrap();
+            let dump = serde_json::to_vec(&dump_value).unwrap();
+            let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(
+                ecies_public_keys,
+                &dump,
+            )
+            .unwrap();
+            let encrypted_dump = EncryptedDump {
+                encrypted: encrypted_data.encrypted_data,
+                acls: encrypted_data.acls,
+            };
+            Ok(encrypted_dump)
+        } else {
+            Err("Matching engine key not found in key list".into())
+        }
+    }
+}
+
+impl EncryptedDump {
+    pub fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>> {
+        // Load matching engine configuration
+        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
+        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
+        let file_content = fs::read_to_string(config_path)
+            .or_else(|_| fs::read_to_string(alt_config_path))
+            .unwrap();
+        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
+        let me_private_key_vec = hex::decode(config.matching_engine_key).unwrap();
+
+        let encrypted_dump = self.clone().encrypted;
+        let mut decrypted_dump: Dump = Dump::default();
+
+        // let mut counter = 0;
+        for acl in self.clone().acls {
+            // counter = counter + 1;
+            // println!("Loop {:?}, ACL {:?}", counter, acl);
+            let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
+                &encrypted_dump,
+                &acl,
+                &me_private_key_vec,
+                Some(U256::from(1)),
+            );
+            match decrypted {
+                Ok(data) => {
+                    // println!("OK, Loop {:?}", counter);
+                    decrypted_dump = serde_json::from_slice(&data).unwrap();
+                    break;
+                }
+                Err(e) => {
+                    // println!("Err, Loop {:?}", counter);
+                    log::warn!("Error: ecies key mismatch {:?}", e);
+                    continue;
+                }
+            }
+        }
+        Ok(decrypted_dump)
+    }
 }
 
 impl MatchingEngine {
@@ -208,7 +333,16 @@ impl MatchingEngine {
         Self::from_config(config, matching_engine_port)
     }
 
-    pub async fn run_from_dump(&self, dump: Dump) -> anyhow::Result<()> {
+    pub async fn run_from_encrypted_dump(
+        &self,
+        encrypted_dump: EncryptedDump,
+        path_to_snapshot: String,
+    ) -> anyhow::Result<()> {
+        let dump = encrypted_dump.get_dump().unwrap();
+        self.run_from_dump(dump, path_to_snapshot).await
+    }
+
+    pub async fn run_from_dump(&self, dump: Dump, path_to_snapshot: String) -> anyhow::Result<()> {
         // wrapping around is case to shared across threads
         let shared_local_ask_store = Arc::new(RwLock::new(dump.local_ask_store.clone()));
         let shared_generator_store = Arc::new(RwLock::new(dump.generator_store.clone()));
@@ -231,11 +365,12 @@ impl MatchingEngine {
             shared_native_store,
             shared_stake_manager_store,
             shared_parsed_block_number_store,
+            path_to_snapshot,
         )
         .await
     }
 
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&self, path_to_snapshot: String) -> anyhow::Result<()> {
         let local_ask_store = LocalAskStore::new();
         let generator_list_store = GeneratorStore::new();
         let key_list_store = KeyStore::new();
@@ -269,6 +404,7 @@ impl MatchingEngine {
             shared_native_store,
             shared_stake_manager_store,
             shared_parsed_block_number_store,
+            path_to_snapshot,
         )
         .await
     }
@@ -284,6 +420,7 @@ impl MatchingEngine {
         shared_native_store: Arc<RwLock<NativeStakingStore>>,
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         shared_parsed_block_number_store: Arc<RwLock<U64>>,
+        path_to_snapshot: String,
     ) -> anyhow::Result<()> {
         let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));
 
@@ -421,7 +558,8 @@ impl MatchingEngine {
         let confirmations = 5; // ideally this should be more
         let block_range = 20000; // Number of blocks to fetch logs from at once
         let should_stop_clone = should_stop.clone();
-        let parser = Arc::new(LogParser::new(
+
+        let log_parser = LogParser::new(
             should_stop_clone,
             rpc_url,
             relayer_signer.clone(),
@@ -446,7 +584,10 @@ impl MatchingEngine {
             shared_stake_manager_store,
             chain_id,
             unhandled_logs,
-        ));
+            path_to_snapshot,
+        );
+
+        let parser = Arc::new(log_parser);
 
         let parser_handle = tokio::spawn(async move {
             parser.parse().await.unwrap();

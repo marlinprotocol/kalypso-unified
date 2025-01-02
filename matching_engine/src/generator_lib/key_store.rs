@@ -27,7 +27,7 @@ impl Key {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct KeyStore {
     keys: HashMap<(Address, u64), Key>, // Using u64 as a stand-in for uint256.
 }

@@ -1,8 +1,8 @@
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
-use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
+use crate::{ask_lib::ask_store::LocalAskStore, Dump};
 
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::generator_lib::generator_store;
@@ -36,7 +36,7 @@ use std::{
 };
 use tokio::sync::RwLock;
 
-use crate::{log_processor, DumpSend};
+use crate::log_processor;
 
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::{
@@ -68,6 +68,8 @@ type NativeStakingInstance =
 type StakingManagerInstance =
     bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
+use std::path::Path;
+
 pub struct LogParser {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
@@ -96,6 +98,7 @@ pub struct LogParser {
     max_tasks_size: usize,
     rpc_url: String,
     unhandled_logs: Arc<RwLock<Vec<Log>>>,
+    path_to_snapshot: String,
 }
 
 impl LogParser {
@@ -125,6 +128,7 @@ impl LogParser {
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         chain_id: String,
         unhandled_logs: Arc<RwLock<Vec<Log>>>,
+        path_to_snapshot: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
             .unwrap()
@@ -160,6 +164,7 @@ impl LogParser {
             max_tasks_size: 10, // TODO: dynamically adjust latter
             rpc_url,
             unhandled_logs,
+            path_to_snapshot,
         }
     }
 
@@ -191,7 +196,7 @@ impl LogParser {
                 time_since_last_backup.as_secs_f64()
             );
 
-            if time_since_last_backup > tokio::time::Duration::from_secs(60 * 2) {
+            if time_since_last_backup > tokio::time::Duration::from_secs(120) {
                 // make backup here
                 let market_store = self.shared_market_store.read().await;
                 let ask_store = self.shared_local_ask_store.read().await;
@@ -203,30 +208,28 @@ impl LogParser {
                 let stake_manager_store = self.shared_stake_manager_store.read().await;
                 let parsed_block = self.start_block.read().await;
 
-                let dump = DumpSend {
-                    market_metadata_store: Some(&*market_store),
-                    local_ask_store: Some(&*ask_store),
-                    generator_store: Some(&*generator_store),
-                    native_staking_store: Some(&*native_store),
-                    symbiotic_stake_store: Some(&*symbiotic_store),
-                    cost_store: Some(&*cost_store),
-                    key_store: Some(&*key_store),
-                    stake_manager_store: Some(&*stake_manager_store),
-                    parsed_block: Some(&*parsed_block),
+                let dump = Dump {
+                    market_metadata_store: market_store.clone(),
+                    local_ask_store: ask_store.clone(),
+                    generator_store: generator_store.clone(),
+                    native_staking_store: native_store.clone(),
+                    symbiotic_stake_store: symbiotic_store.clone(),
+                    cost_store: cost_store.clone(),
+                    key_store: key_store.clone(),
+                    stake_manager_store: stake_manager_store.clone(),
+                    parsed_block: parsed_block.clone(),
                 };
 
-                use std::path::Path;
+                let dump = dump.create_encrypted_dump().await.unwrap();
+
                 use tokio::fs;
                 use tokio::io::AsyncWriteExt;
 
-                // Serialize DumpSend to JSON
+                let path_to_snapshot = Path::new(&self.path_to_snapshot);
                 match serde_json::to_string_pretty(&dump) {
                     Ok(json_string) => {
-                        // Define the file path
-                        let path = Path::new("./matching_engine_config/dump.json");
-
                         // Ensure the directory exists
-                        if let Some(parent) = path.parent() {
+                        if let Some(parent) = path_to_snapshot.parent() {
                             if let Err(e) = fs::create_dir_all(parent).await {
                                 log::error!("Failed to create directory {:?}: {}", parent, e);
                                 // Handle the error as needed, e.g., continue or return
@@ -234,23 +237,30 @@ impl LogParser {
                         }
 
                         // Write the JSON string to the file asynchronously
-                        match fs::File::create(&path).await {
+                        match fs::File::create(path_to_snapshot).await {
                             Ok(mut file) => {
                                 if let Err(e) = file.write_all(json_string.as_bytes()).await {
-                                    log::error!("Failed to write to file {:?}: {}", path, e);
+                                    log::error!(
+                                        "Failed to write to file {:?}: {}",
+                                        path_to_snapshot,
+                                        e
+                                    );
                                     // Handle the error as needed
                                 } else {
-                                    log::info!("Successfully backed up dump to {:?}", path);
+                                    log::info!(
+                                        "Successfully backed up dump to {:?}",
+                                        path_to_snapshot
+                                    );
                                 }
                             }
                             Err(e) => {
-                                log::error!("Failed to create file {:?}: {}", path, e);
+                                log::error!("Failed to create file {:?}: {}", path_to_snapshot, e);
                                 // Handle the error as needed
                             }
                         }
                     }
                     Err(e) => {
-                        log::error!("Failed to serialize DumpSend: {}", e);
+                        log::error!("Failed to serialize Dump: {}", e);
                         // Handle the serialization error as needed
                     }
                 }

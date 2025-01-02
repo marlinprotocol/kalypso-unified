@@ -2,7 +2,7 @@ use crate::utility::TokenTracker;
 use ethers::types::{Address, U256};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NativeStakingStore {
     pub tokens_to_lock: TokenTracker,
 }
