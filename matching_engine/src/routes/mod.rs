@@ -96,6 +96,10 @@ pub fn get_stats_scope() -> actix_web::Scope {
         )
         .route("/dump", web::get().to(ui_routes::welcome::get_dump))
         .route(
+            "/encrypted_dump",
+            web::get().to(ui_routes::welcome::get_encrypted_dump),
+        )
+        .route(
             "/unhandled_logs",
             web::get().to(unhandled_logs::get_unhandled_logs),
         )
