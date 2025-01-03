@@ -54,9 +54,8 @@ type ProofMarketplaceInstance = bindings::proof_marketplace::ProofMarketplace<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
 >;
 
-type GeneratorRegistryInstance = bindings::generator_registry::GeneratorRegistry<
-    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
->;
+type GeneratorRegistryInstance =
+    bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
 type SymbioticStakingInstance = bindings::symbiotic_staking::SymbioticStaking<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -693,7 +692,7 @@ impl LogParser {
             // state confirmation
             let ask_state = match self
                 .proof_marketplace
-                .get_ask_state(random_pending_ask.ask_id)
+                .get_bid_state(random_pending_ask.ask_id)
                 .await
             {
                 Ok(data) => data,

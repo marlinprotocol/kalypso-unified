@@ -15,7 +15,7 @@ impl Operation for JoinMarketplace {
 
         match generator_join_market
             .generator_registry
-            .generator_registry(generator_join_market.private_key_signer.address())
+            .prover_registry(generator_join_market.private_key_signer.address())
             .call()
             .await
         {
@@ -25,7 +25,7 @@ impl Operation for JoinMarketplace {
                 } else {
                     let info_per_market = generator_join_market
                         .generator_registry
-                        .generator_info_per_market(
+                        .prover_info_per_market(
                             generator_join_market.private_key_signer.address(),
                             generator_join_market.market_id,
                         )
@@ -47,6 +47,7 @@ impl Operation for JoinMarketplace {
                                 generator_join_market.compute_per_request_required,
                                 generator_join_market.proof_generation_cost,
                                 generator_join_market.proposed_time,
+                                0.into(), // TODO, this is commission
                                 false,
                                 vec![].into(),
                                 vec![].into(),

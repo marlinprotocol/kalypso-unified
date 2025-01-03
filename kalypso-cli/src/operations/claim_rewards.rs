@@ -16,7 +16,7 @@ impl Operation for ReadRewardsInfo {
 
         let available_rewards = read_rewards_info
             .proof_marketplace
-            .claimable_amount(read_rewards_info.operator)
+            .prover_claimable_fee_reward(read_rewards_info.operator)
             .call()
             .await
             .map_err(|_| "Failed making call to proof marketplace contract".to_string())?;
@@ -36,7 +36,7 @@ impl Operation for ClaimRewardsInfo {
 
         let available_rewards = claim_rewards_info
             .proof_marketplace
-            .claimable_amount(claim_rewards_info.reward_address)
+            .prover_claimable_fee_reward(claim_rewards_info.reward_address)
             .call()
             .await
             .map_err(|_| "Failed making call to proof marketplace contract".to_string())?;
@@ -48,7 +48,7 @@ impl Operation for ClaimRewardsInfo {
         let claim_reward_transaction = CommonDeps::send_and_confirm(
             claim_rewards_info
                 .proof_marketplace
-                .flush(claim_rewards_info.reward_address)
+                .claim_prover_fee_reward()
                 .send(),
         )
         .await

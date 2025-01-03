@@ -11,8 +11,7 @@ members = [
     "generator_client",
     "integration_checks",
     "kalypso-cli",
-    "slasher", 
-    "binding_patches",
+    "slasher"
 ]
 resolver = "2"
 

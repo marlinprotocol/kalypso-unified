@@ -1,6 +1,6 @@
 use crate::job_creator::MarketDetails;
-use bindings::proof_marketplace::Ask;
-use bindings::proof_marketplace::{AskCreatedFilter, ProofMarketplace};
+use bindings::proof_marketplace::Bid;
+use bindings::proof_marketplace::{BidCreatedFilter, ProofMarketplace};
 use confidential_provers::ConfidentialProver;
 use ethers::prelude::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
@@ -74,7 +74,7 @@ pub async fn generate_proof(
                 "http://localhost:{}/api/generateProof",
                 generator_port.clone().unwrap()
             ),
-            parsed_ask_created_log.ask_id,
+            parsed_ask_created_log.bid_id,
             public_inputs.into(),
             decoded_secret_input
                 .expect("Unable to decode secret for confidential markets")
@@ -101,7 +101,7 @@ pub async fn generate_proof(
             ),
             format!("{}/api/verifyInputsAndProof", ivs_url.clone().unwrap()),
             generator_url.clone().unwrap().clone(),
-            parsed_ask_created_log.ask_id,
+            parsed_ask_created_log.bid_id,
             public_inputs.into(),
             generate_proof_params.skip_input_verification,
         );
@@ -116,7 +116,7 @@ type InputAndDecodedSecret<'a> = (
     Vec<u8>,
     Option<Vec<u8>>,
     U256,
-    AskCreatedFilter,
+    BidCreatedFilter,
     &'a HashMap<String, MarketDetails>,
 );
 async fn fetch_decoded_secret(
@@ -134,8 +134,8 @@ async fn fetch_decoded_secret(
         skip_input_verification: _,
     } = generate_proof_params;
     let client = proof_market_place_contract_http.client();
-    let list_of_ask: &Ask = &proof_market_place_contract_http
-        .list_of_ask(ask_id)
+    let list_of_ask: &Bid = &proof_market_place_contract_http
+        .list_of_bid(ask_id)
         .await?
         .0;
     let market_id = list_of_ask.market_id;
@@ -164,7 +164,7 @@ async fn fetch_decoded_secret(
 
         // Fetching ask Transaction hash
         let ask_event_filter = &proof_market_place_contract_http
-            .ask_created_filter()
+            .bid_created_filter()
             .filter
             .from_block(begin)
             .to_block(end_block)
@@ -195,7 +195,7 @@ async fn fetch_decoded_secret(
     }
 
     let parsed_ask_created_log = proof_market_place_contract_http
-        .decode_event::<bindings::proof_marketplace::AskCreatedFilter>(
+        .decode_event::<bindings::proof_marketplace::BidCreatedFilter>(
             "AskCreated",
             ask_log[0].topics.clone(),
             ask_log[0].data.clone(),

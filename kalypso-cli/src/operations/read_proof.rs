@@ -18,7 +18,7 @@ impl Operation for ReadProof {
 
         let ask_state = read_proof_info
             .proof_marketplace
-            .get_ask_state(read_proof_info.ask_id)
+            .get_bid_state(read_proof_info.ask_id)
             .call()
             .await
             .map_err(|e| format!("Unable to read proof marketplace contract: {}", e))?;

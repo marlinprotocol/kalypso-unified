@@ -32,44 +32,67 @@ pub async fn process_native_staking_logs(
         log::debug!("standard topic to skip found, ignoring it");
         return Ok(());
     }
-    if let Ok(stake_manager_set_log) =
-        native_staking.decode_event_raw("StakingManagerSet", log.topics.clone(), log.data.clone())
-    {
+    if let Ok(stake_manager_set_log) = native_staking
+        .decode_event::<bindings::native_staking::StakingManagerSetFilter>(
+        "StakingManagerSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
         log::debug!("Staking Manager Set Logs: {:?}", stake_manager_set_log);
         return Ok(());
     }
 
     let mut native_store = { native_store.write().await };
 
-    if let Ok(event_log) =
-        native_staking.decode_event_raw("StakeTokenAdded", log.topics.clone(), log.data.clone())
+    if let Ok(event_log) = native_staking
+        .decode_event::<bindings::native_staking::StakeTokenAddedFilter>(
+            "StakeTokenAdded",
+            log.topics.clone(),
+            log.data.clone(),
+        )
     {
         log::debug!("StakeTokenAdded Logs: {:?}", event_log);
-        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
-        let weight = event_log.get(1).unwrap().clone().into_uint().unwrap();
+        // let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        // let weight = event_log.get(1).unwrap().clone().into_uint().unwrap();
+
+        let token = event_log.token;
+        let weight = event_log.weight;
 
         log::debug!("Added token: {} with weight: {}", token, weight);
         native_store.set_lock_token(token, U256::zero());
         return Ok(());
     }
 
-    if let Ok(event_log) =
-        native_staking.decode_event_raw("StakeTokenRemoved", log.topics.clone(), log.data.clone())
+    if let Ok(event_log) = native_staking
+        .decode_event::<bindings::native_staking::StakeTokenRemovedFilter>(
+            "StakeTokenRemoved",
+            log.topics.clone(),
+            log.data.clone(),
+        )
     {
         log::debug!("StakeTokenRemoved Logs: {:?}", event_log);
-        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        // let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+
+        let token = event_log.token;
 
         log::debug!("Removed token: {}", token);
         native_store.remove_lock_token(token);
         return Ok(());
     }
 
-    if let Ok(event_log) =
-        native_staking.decode_event_raw("AmountToLockSet", log.topics.clone(), log.data.clone())
+    if let Ok(event_log) = native_staking
+        .decode_event::<bindings::native_staking::AmountToLockSetFilter>(
+            "AmountToLockSet",
+            log.topics.clone(),
+            log.data.clone(),
+        )
     {
         log::debug!("AmountToLockSet Logs: {:?}", event_log);
-        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
-        let amount = event_log.get(1).unwrap().clone().into_uint().unwrap();
+        // let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        // let amount = event_log.get(1).unwrap().clone().into_uint().unwrap();
+
+        let token = event_log.token;
+        let amount = event_log.amount;
 
         log::debug!("AmountToLockSet: Token: {}  Amount: {}", token, amount);
         native_store.set_lock_token(token, amount);
@@ -85,12 +108,9 @@ pub async fn process_native_staking_logs(
             log.data.clone(),
         )
     {
-        log::debug!(
-            "Native stake Added. Generator: {}",
-            added_stake_log.operator
-        );
+        log::debug!("Native stake Added. Generator: {}", added_stake_log.prover);
 
-        let address = added_stake_log.operator;
+        let address = added_stake_log.prover;
         let amount = added_stake_log.amount;
         let token_address = added_stake_log.token;
 
@@ -121,10 +141,10 @@ pub async fn process_native_staking_logs(
     ) {
         log::debug!(
             "Request stake decrease for Generator: {:?}",
-            request_stake_decrease_log.operator
+            request_stake_decrease_log.prover
         );
 
-        let address = request_stake_decrease_log.operator;
+        let address = request_stake_decrease_log.prover;
         let account = request_stake_decrease_log.account;
         let index = request_stake_decrease_log.index;
         let token = request_stake_decrease_log.token;
@@ -170,12 +190,9 @@ pub async fn process_native_staking_logs(
             log.data.clone(),
         )
     {
-        log::debug!(
-            "Remove stake for Generator: {:?}",
-            remove_stake_log.operator
-        );
+        log::debug!("Remove stake for Generator: {:?}", remove_stake_log.prover);
 
-        let address = remove_stake_log.operator;
+        let address = remove_stake_log.prover;
         let amount = remove_stake_log.amount;
         let token_address = remove_stake_log.token;
         let account = remove_stake_log.account;
@@ -233,7 +250,7 @@ pub async fn process_native_staking_logs(
         )
     {
         log::debug!("Stake Locked: {:?}", stake_lock_logs);
-        let address = stake_lock_logs.operator;
+        let address = stake_lock_logs.prover;
         let stake_locked = stake_lock_logs.amount;
         let token_address = stake_lock_logs.token;
 
@@ -254,7 +271,7 @@ pub async fn process_native_staking_logs(
         )
     {
         log::debug!("Stake Lock Released: {:?}", stake_lock_logs);
-        let address = stake_lock_logs.operator;
+        let address = stake_lock_logs.prover;
         let stake_released = stake_lock_logs.amount;
         let token_address = stake_lock_logs.token;
         generator_store.update_on_stake_released(
@@ -267,14 +284,14 @@ pub async fn process_native_staking_logs(
     }
 
     if let Ok(stake_slash_logs) = native_staking
-        .decode_event::<bindings::native_staking::JobSlashedFilter>(
-            "JobSlashed",
+        .decode_event::<bindings::native_staking::TaskSlashedFilter>(
+            "TaskSlashed",
             log.topics.clone(),
             log.data.clone(),
         )
     {
         log::warn!("Job/Stake Slashed: {:?}", stake_slash_logs);
-        let address = stake_slash_logs.operator;
+        let address = stake_slash_logs.prover;
         let stake_slashed = stake_slash_logs.amount;
         let token_address = stake_slash_logs.token;
 
@@ -338,7 +355,8 @@ pub async fn process_native_staking_logs(
         return Ok(());
     }
 
-    if let Ok(set_withdrawal_duration_logs) = native_staking.decode_event_raw(
+    if let Ok(set_withdrawal_duration_logs) = native_staking
+        .decode_event::<bindings::native_staking::WithdrawalDurationSetFilter>(
         "WithdrawalDurationSet",
         log.topics.clone(),
         log.data.clone(),

@@ -119,8 +119,8 @@ impl Operation for ConfidentialRequest {
         let proof_request_transaction = CommonDeps::send_and_confirm(
             confidential_request_info
                 .proof_marketplace
-                .create_ask(
-                    bindings::proof_marketplace::Ask {
+                .create_bid(
+                    bindings::proof_marketplace::Bid {
                         market_id: confidential_request_info.market_id,
                         reward: confidential_request_info.max_proof_generation_cost,
                         expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
@@ -133,6 +133,7 @@ impl Operation for ConfidentialRequest {
                     0.into(),                       // `secret_type` argument
                     encrypted_private_input.into(), // `encrypted private_inputs` argument
                     acl.into(),                     // `acl` argument
+                    vec![].into(),                  // extra data
                 )
                 .send(),
         )
@@ -231,8 +232,8 @@ impl Operation for NonConfidentialRequest {
         let proof_request_transaction = CommonDeps::send_and_confirm(
             non_confidential_request_info
                 .proof_marketplace
-                .create_ask(
-                    bindings::proof_marketplace::Ask {
+                .create_bid(
+                    bindings::proof_marketplace::Bid {
                         market_id: non_confidential_request_info.market_id,
                         reward: non_confidential_request_info.max_proof_generation_cost,
                         expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
@@ -245,6 +246,7 @@ impl Operation for NonConfidentialRequest {
                     0.into(),      // `secret_type` argument
                     vec![].into(), // `private_inputs` argument
                     vec![].into(), // `acl` argument
+                    vec![].into(), // `extra` data
                 )
                 .send(),
         )

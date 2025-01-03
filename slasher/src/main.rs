@@ -210,7 +210,7 @@ impl SlashingInstance {
                 return;
             }
         };
-        let ask_state = match self.proof_marketplace.get_ask_state(ask_id).await {
+        let ask_state = match self.proof_marketplace.get_bid_state(ask_id).await {
             Ok(data) => data,
             Err(err) => {
                 log::error!("{}", err.to_string());
@@ -228,7 +228,7 @@ impl SlashingInstance {
                 ask_state
             );
 
-            let mut slashing_transaction = self.proof_marketplace.slash_generator(ask_id);
+            let mut slashing_transaction = self.proof_marketplace.refund_fees(vec![ask_id]);
 
             if cfg!(feature = "force_transactions") {
                 slashing_transaction = slashing_transaction.gas(10_000_000);
@@ -274,7 +274,7 @@ impl SlashingInstance {
                 ask_state
             );
 
-            let mut cancellation_transaction = self.proof_marketplace.cancel_ask(ask_id);
+            let mut cancellation_transaction = self.proof_marketplace.cancel_bid(ask_id);
 
             if cfg!(feature = "force_transactions") {
                 cancellation_transaction = cancellation_transaction.gas(10_000_000);

@@ -648,35 +648,35 @@ impl JobCreator {
                     log.topics,
                     log.data,
                 )?;
-                let generator = match key_store.get_generator(&event.generator) {
+                let generator = match key_store.get_generator(&event.prover) {
                     Some(gen) => {
-                        let ask_details: &(pmp::Ask, u8, H160, H160) =
-                            &proof_marketplace_http.list_of_ask(event.ask_id).await?;
+                        let ask_details: &(pmp::Bid, u8, H160, H160) =
+                            &proof_marketplace_http.list_of_bid(event.bid_id).await?;
 
                         log::debug!("Generator Data (on polling): {:?}", &gen);
                         if gen.supported_market_ids.contains(&ask_details.0.market_id) {
                             gen
                         } else {
-                            log::debug!("Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}", event.ask_id, gen.address, ask_details.0.market_id);
+                            log::debug!("Skipping ask: {:?}, because Generator: {:?} doesn't support Market: {:?}", event.bid_id, gen.address, ask_details.0.market_id);
                             continue;
                         }
                     }
                     None => {
                         log::debug!(
                             "Skipping ask: {:?}, because it is not assigned to my generators",
-                            event.ask_id
+                            event.bid_id
                         );
                         continue;
                     }
                 };
 
-                let ask_state = &proof_marketplace_http.get_ask_state(event.ask_id).await?;
+                let ask_state = &proof_marketplace_http.get_bid_state(event.bid_id).await?;
                 let ask_state = ask::get_ask_state(*ask_state);
-                log::info!("Ask: {} state: {:?}", event.ask_id, ask_state);
+                log::info!("Ask: {} state: {:?}", event.bid_id, ask_state);
                 if ask_state == ask::AskState::Assigned {
                     log::info!(
                         "Need to generate proof (polling) for ASK ID : {}",
-                        event.ask_id
+                        event.bid_id
                     );
 
                     with_metrics_lock!(self.metrics, |data: &mut TaskMetrics| data
@@ -701,11 +701,11 @@ impl JobCreator {
 
                         log::info!(
                             "Spin up new thread from proof generation of ask: {}",
-                            event.ask_id
+                            event.bid_id
                         );
                         let binding = vec![]; // TODO: figure out way to fetch old keys from KMS, not in scope now
                         let generate_proof_args = GenerateProofParams {
-                            ask_id: event.ask_id,
+                            ask_id: event.bid_id,
                             new_acl: event.new_acl,
                             proof_market_place_contract_http: proof_market_place_clone_http,
                             ecies_private_key: &gen_ecies_private_key,
@@ -725,7 +725,7 @@ impl JobCreator {
                         {
                             Ok(proof) => proof,
                             Err(err) => {
-                                log::error!("Error generating proof for ask: {}", event.ask_id);
+                                log::error!("Error generating proof for ask: {}", event.bid_id);
                                 log::error!("{}", err.to_string());
                                 return log::error!("{}", err);
                             }
@@ -748,7 +748,7 @@ impl JobCreator {
                                 let mut tx = submitter_pmp_clone_http
                                     .lock()
                                     .await
-                                    .submit_proof(event.ask_id, proof);
+                                    .submit_proof(event.bid_id, proof);
 
                                 if cfg!(feature = "force_transactions") {
                                     tx = tx.gas(10_000_000);
@@ -788,7 +788,7 @@ impl JobCreator {
                                     .lock()
                                     .await
                                     .submit_proof_for_invalid_inputs(
-                                        event.ask_id,
+                                        event.bid_id,
                                         invalid_proof_signature,
                                     );
 
@@ -832,14 +832,14 @@ impl JobCreator {
                             Some(tx_data) => {
                                 log::info!(
                                     "Submitted proof for OLD ask with id : {} via transaction {:?}",
-                                    event.ask_id,
+                                    event.bid_id,
                                     tx_data.transaction_hash
                                 );
                             }
                             None => {
                                 log::error!(
                                     "Error in submitting proof for ASK ID : {}",
-                                    event.ask_id
+                                    event.bid_id
                                 );
                             }
                         }

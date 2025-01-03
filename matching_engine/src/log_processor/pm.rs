@@ -8,6 +8,7 @@ use crate::utility::tx_to_string;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use im::HashSet;
 
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -89,15 +90,15 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
-    if let Ok(parsed_ask_created_log) = proof_market_place.decode_event::<pmp::AskCreatedFilter>(
-        "AskCreated",
+    if let Ok(parsed_ask_created_log) = proof_market_place.decode_event::<pmp::BidCreatedFilter>(
+        "BidCreated",
         log.topics.clone(),
         log.data.clone(),
     ) {
         log::debug!("{:?}", parsed_ask_created_log);
         let mut local_ask_store = { local_ask_store.write().await };
-        let ask_data: (pmp::Ask, _, _, _) = proof_market_place
-            .list_of_ask(parsed_ask_created_log.ask_id)
+        let ask_data: (pmp::Bid, _, _, _) = proof_market_place
+            .list_of_bid(parsed_ask_created_log.bid_id)
             .call()
             .await
             .unwrap();
@@ -108,7 +109,7 @@ pub async fn process_proof_market_place_logs(
             .unwrap_or_default();
 
         let mut ask_to_store = LocalAsk {
-            ask_id: parsed_ask_created_log.ask_id,
+            ask_id: parsed_ask_created_log.bid_id,
             market_id: ask_data.0.market_id,
             reward: ask_data.0.reward,
             expiry: ask_data.0.expiry,
@@ -158,13 +159,13 @@ pub async fn process_proof_market_place_logs(
                 ask_to_store.invalid_secret_flag = true;
                 log::debug!(
                     "Stored private ask with AskId {:?} to store",
-                    parsed_ask_created_log.ask_id
+                    parsed_ask_created_log.bid_id
                 );
             } else {
                 ask_to_store.state = Some(AskState::InvalidSecret).to_owned();
                 log::debug!(
                     "Stored ask with AskId {:?} to store but couldn't infer private inputs",
-                    parsed_ask_created_log.ask_id
+                    parsed_ask_created_log.bid_id
                 );
             }
             local_ask_store.insert(ask_to_store.to_owned());
@@ -172,14 +173,14 @@ pub async fn process_proof_market_place_logs(
             ask_to_store.invalid_secret_flag = true;
             log::debug!(
                 "Stored {:?} ask to store, Market: {}",
-                parsed_ask_created_log.ask_id,
+                parsed_ask_created_log.bid_id,
                 &ask_to_store.market_id
             );
             local_ask_store.insert(ask_to_store.to_owned());
         }
 
         local_ask_store.update_job_created_on_timestamp(
-            &parsed_ask_created_log.ask_id,
+            &parsed_ask_created_log.bid_id,
             get_timestamp_from_l2block_number(rpc_url, &created_on)
                 .await
                 .unwrap_or_default(),
@@ -195,8 +196,8 @@ pub async fn process_proof_market_place_logs(
         log::debug!("{:?}", parsed_task_created_log);
         let mut local_ask_store = { local_ask_store.write().await };
 
-        let ask_id = parsed_task_created_log.ask_id;
-        let generator = parsed_task_created_log.generator;
+        let ask_id = parsed_task_created_log.bid_id;
+        let generator = parsed_task_created_log.prover;
         let new_acl = parsed_task_created_log.new_acl;
 
         local_ask_store.update_ask_generator(&ask_id, Some(generator));
@@ -231,7 +232,7 @@ pub async fn process_proof_market_place_logs(
         log::debug!("{:?}", parsed_proof_created_log);
         let mut local_ask_store = { local_ask_store.write().await };
 
-        let ask_id = parsed_proof_created_log.ask_id;
+        let ask_id = parsed_proof_created_log.bid_id;
         let proof = parsed_proof_created_log.proof;
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
@@ -325,13 +326,13 @@ pub async fn process_proof_market_place_logs(
                 s.insert(market.1.into());
                 s
             },
-            activation_block: market.3,
+            activation_block: U256::from_str(&log.block_number.unwrap().to_string()).unwrap(),
             ivs_images: {
                 let mut s = HashSet::new();
-                s.insert(market.4.into());
+                s.insert(market.2.into());
                 s
             },
-            metadata: market.6,
+            metadata: market.4,
         };
 
         {
@@ -633,8 +634,8 @@ pub async fn process_proof_market_place_logs(
     }
 
     if let Ok(operator_reward_log) = proof_market_place
-        .decode_event::<pmp::OperatorFeeRewardAddedFilter>(
-            "OperatorFeeRewardAdded",
+        .decode_event::<pmp::ProverFeeRewardAddedFilter>(
+            "ProverFeeRewardAdded",
             log.topics.clone(),
             log.data.clone(),
         )
@@ -654,17 +655,7 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
-    // ------ custom patches being handled here --------------------- //
-    let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
-
-    let client = Arc::new(provider_http.clone());
-
-    let pmp_update_marketmetadata_patch = binding_patches::UpdateProofMarketplaceMetadataPatch::new(
-        proof_market_place.address(),
-        client,
-    );
-
-    if let Ok(update_market_metadata_log) = pmp_update_marketmetadata_patch.decode_event_raw(
+    if let Ok(update_market_metadata_log) = proof_market_place.decode_event_raw(
         "MarketMetadataUpdated",
         log.topics.clone(),
         log.data.clone(),
@@ -684,7 +675,7 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
-    if let Ok(operator_reward_share_set_log) = pmp_update_marketmetadata_patch.decode_event_raw(
+    if let Ok(operator_reward_share_set_log) = proof_market_place.decode_event_raw(
         "OperatorRewardShareSet",
         log.topics.clone(),
         log.data.clone(),

@@ -467,7 +467,7 @@ impl MatchingEngine {
         let generator_registry_var = self.config.clone().generator_registry;
         let generator_registry_address = Address::from_str(&generator_registry_var).unwrap();
 
-        let generator_registry = bindings::generator_registry::GeneratorRegistry::new(
+        let generator_registry = bindings::prover_registry::ProverRegistry::new(
             generator_registry_address,
             client.clone(),
         );

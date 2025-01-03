@@ -1,8 +1,0 @@
-[package]
-name = "binding_patches"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-ethers = { version = "2", features = ["rustls"] }
-serde = { version = "1.0", features = ["derive"] }

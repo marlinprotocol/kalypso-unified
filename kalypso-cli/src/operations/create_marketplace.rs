@@ -1,6 +1,6 @@
 use crate::{common_deps::CommonDeps, operations::Operation};
 use async_trait::async_trait;
-use ethers::{signers::Signer, types::U256};
+use ethers::signers::Signer;
 use std::collections::HashMap;
 
 pub struct CreateMarketplace;
@@ -61,10 +61,9 @@ impl Operation for CreateMarketplace {
         let market_creation_transaction = CommonDeps::send_and_confirm(
             market_create_info
                 .proof_marketplace
-                .create_marketplace(
+                .create_market(
                     vec![12, 23].into(),
                     market_create_info.verifier_wrapper,
-                    U256::from(10).pow(U256::from(18)),
                     market_create_info.prover_pcrs.into(),
                     market_create_info.ivs_pcrs.into(),
                 )

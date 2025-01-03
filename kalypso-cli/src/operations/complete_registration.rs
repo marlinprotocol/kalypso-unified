@@ -40,7 +40,7 @@ impl Operation for CompleteRegistration {
 
         match generator_info
             .generator_registry
-            .generator_registry(generator_info.private_key_signer.address())
+            .prover_registry(generator_info.private_key_signer.address())
             .call()
             .await
         {

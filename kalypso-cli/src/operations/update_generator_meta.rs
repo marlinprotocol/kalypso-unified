@@ -16,7 +16,7 @@ impl Operation for UpdateGeneratorMeta {
 
         let generator_data = generator_meta_info
             .read_generator_registry
-            .generator_registry(generator_meta_info.private_key_signer.address())
+            .prover_registry(generator_meta_info.private_key_signer.address())
             .call()
             .await
             .map_err(|e| format!("Failed Reading Generator Registry Contract {}", e))?;
@@ -43,7 +43,7 @@ impl Operation for UpdateGeneratorMeta {
         let tx_hash = CommonDeps::send_and_confirm(
             generator_meta_info
                 .generator_registry
-                .update_generator_data(generator_metadata.into())
+                .update_prover_data(generator_metadata.into())
                 .send(),
         )
         .await?;

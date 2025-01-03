@@ -8,11 +8,11 @@ use crate::utility::TokenTracker;
 
 pub async fn process_generator_registry_logs(
     log: &Log,
-    genertor_registry: &bindings::generator_registry::GeneratorRegistry<
+    genertor_registry: &bindings::prover_registry::ProverRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
-    rpc_url: &str,
+    _rpc_url: &str,
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::GENERATOR_REGISTRY_TOPICS_SKIP
@@ -24,8 +24,8 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(add_ivs_key_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::AddIvsKeyFilter>(
-            "AddIvsKey",
+        .decode_event::<bindings::prover_registry::IvKeyAddedFilter>(
+            "IvsKeyAdded",
             log.topics.clone(),
             log.data.clone(),
         )
@@ -41,25 +41,24 @@ pub async fn process_generator_registry_logs(
     // using here, as above events don' require any write lock
     let mut generator_store = { generator_store.write().await };
 
-    if let Ok(parsed_registered_generator_log) =
-        genertor_registry.decode_event::<bindings::generator_registry::RegisteredGeneratorFilter>(
-            "RegisteredGenerator",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
+    if let Ok(parsed_registered_generator_log) = genertor_registry
+        .decode_event::<bindings::prover_registry::ProverRegisteredFilter>(
+        "ProverRegistered",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
         log::info!(
             "Registered generator {:?} to store",
             parsed_registered_generator_log
         );
 
-        let address = parsed_registered_generator_log.generator.into();
+        let address = parsed_registered_generator_log.prover.into();
         let compute = parsed_registered_generator_log.initial_compute.into();
 
         log::debug!("During registration initial stake is assumed to be 0");
 
         let generator_data = genertor_registry
-            .generator_registry(address)
+            .prover_registry(address)
             .call()
             .await
             .unwrap();
@@ -87,16 +86,20 @@ pub async fn process_generator_registry_logs(
         return Ok(());
     }
 
-    if let Ok(parsed_deregistered_generator_log) = genertor_registry.decode_event_raw(
-        "DeregisteredGenerator",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        let generator_address = {
-            let generator_address_token = parsed_deregistered_generator_log.first().unwrap();
-            let generator_address = generator_address_token.clone().into_address().unwrap();
-            generator_address
-        };
+    if let Ok(parsed_deregistered_generator_log) =
+        genertor_registry.decode_event::<bindings::prover_registry::ProverDeregisteredFilter>(
+            "ProverDeregistered",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
+        // let generator_address = {
+        //     let generator_address_token = parsed_deregistered_generator_log.first().unwrap();
+        //     let generator_address = generator_address_token.clone().into_address().unwrap();
+        //     generator_address
+        // };
+
+        let generator_address = parsed_deregistered_generator_log.prover;
 
         log::debug!("Deregistering Generator: {:?}", generator_address);
         let address = generator_address.into();
@@ -107,19 +110,19 @@ pub async fn process_generator_registry_logs(
 
     if let Ok(generator_reward_address_change_log) =
         genertor_registry
-            .decode_event::<bindings::generator_registry::ChangedGeneratorRewardAddressFilter>(
-                "ChangedGeneratorRewardAddress",
+            .decode_event::<bindings::prover_registry::ProverRewardAddressChangedFilter>(
+                "ProverRewardAddressChanged",
                 log.topics.clone(),
                 log.data.clone(),
             )
     {
         log::debug!(
             "Generator: {:?}, new reward address: {:?}",
-            generator_reward_address_change_log.generator,
+            generator_reward_address_change_log.prover,
             generator_reward_address_change_log.new_reward_address
         );
 
-        let address = generator_reward_address_change_log.generator.into();
+        let address = generator_reward_address_change_log.prover.into();
         let reward_address = generator_reward_address_change_log
             .new_reward_address
             .into();
@@ -129,28 +132,28 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(parsed_joined_market_place_log) =
-        genertor_registry.decode_event::<bindings::generator_registry::JoinedMarketplaceFilter>(
-            "JoinedMarketplace",
+        genertor_registry.decode_event::<bindings::prover_registry::ProverJoinedMarketplaceFilter>(
+            "ProverJoinedMarketplace",
             log.topics.clone(),
             log.data.clone(),
         )
     {
         log::info!(
             "Generator: {:?}, joined Market_ID {:?}",
-            parsed_joined_market_place_log.generator,
+            parsed_joined_market_place_log.prover,
             parsed_joined_market_place_log.market_id
         );
-        let address = parsed_joined_market_place_log.generator;
+        let address = parsed_joined_market_place_log.prover;
         let market_id = parsed_joined_market_place_log.market_id;
 
         let generator_market_data = genertor_registry
-            .generator_info_per_market(address, market_id)
+            .prover_info_per_market(address, market_id)
             .call()
             .await
             .unwrap();
 
         let generator_market = generator_store::GeneratorInfoPerMarket {
-            address: parsed_joined_market_place_log.generator,
+            address: parsed_joined_market_place_log.prover,
             market_id: parsed_joined_market_place_log.market_id,
             compute_required_per_request: parsed_joined_market_place_log.compute_allocation,
             proof_generation_cost: generator_market_data.2,
@@ -166,19 +169,19 @@ pub async fn process_generator_registry_logs(
 
     if let Ok(parsed_requested_for_exit_log) =
         genertor_registry
-            .decode_event::<bindings::generator_registry::RequestExitMarketplaceFilter>(
-                "RequestExitMarketplace",
+            .decode_event::<bindings::prover_registry::ProverRequestedMarketplaceExitFilter>(
+                "ProverRequestedMarketplaceExit",
                 log.topics.clone(),
                 log.data.clone(),
             )
     {
         log::debug!(
             "Generator: {:?}, request for exit from Market_ID: {:?}",
-            parsed_requested_for_exit_log.generator,
+            parsed_requested_for_exit_log.prover,
             parsed_requested_for_exit_log.market_id
         );
 
-        let address = parsed_requested_for_exit_log.generator;
+        let address = parsed_requested_for_exit_log.prover;
         let market_id = parsed_requested_for_exit_log.market_id;
 
         generator_store.update_state(
@@ -190,84 +193,34 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(parsed_left_market_place_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::LeftMarketplaceFilter>(
-        "LeftMarketplace",
+        .decode_event::<bindings::prover_registry::ProverLeftMarketplaceFilter>(
+        "ProverLeftMarketplace",
         log.topics.clone(),
         log.data.clone(),
     ) {
         log::debug!(
             "Generator: {:?}, left Market_ID: {:?}",
-            parsed_left_market_place_log.generator,
+            parsed_left_market_place_log.prover,
             parsed_left_market_place_log.market_id
         );
-        let address = parsed_left_market_place_log.generator;
+        let address = parsed_left_market_place_log.prover;
         let market_id = parsed_left_market_place_log.market_id;
 
         generator_store.remove_by_address_and_market(&address, &market_id);
         return Ok(());
     }
 
-    if let Ok(added_stake_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::AddedStakeFilter>(
-            "AddedStake",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
-        log::debug!(
-            "Added stake to Generator: {:?}",
-            added_stake_log.generator_address
-        );
-
-        log::debug!("Add Stake is now handled in native staking");
-        return Ok(());
-    }
-
-    if let Ok(request_stake_decrease_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::RequestStakeDecreaseFilter>(
-        "RequestStakeDecrease",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        log::debug!(
-            "Request stake decrease for Generator: {:?}",
-            request_stake_decrease_log.generator_address
-        );
-
-        log::debug!(
-            "RequestStakeDecrease is not processed using native_staking::StakeWithdrawalRequested"
-        );
-        return Ok(());
-    }
-
-    if let Ok(remove_stake_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::RemovedStakeFilter>(
-            "RemovedStake",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
-        log::debug!(
-            "Remove stake for Generator: {:?}",
-            remove_stake_log.generator_address
-        );
-
-        log::debug!("Request stake decrese in no processed in native_stake::StakeWithdrawn");
-
-        return Ok(());
-    }
-
     if let Ok(increase_compute_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::IncreasedComputeFilter>(
-        "IncreasedCompute",
+        .decode_event::<bindings::prover_registry::ComputeIncreasedFilter>(
+        "ComputeIncreased",
         log.topics.clone(),
         log.data.clone(),
     ) {
         log::debug!(
             "Increase compute for Generator: {:?}",
-            increase_compute_log.generator
+            increase_compute_log.prover
         );
-        let address = increase_compute_log.generator;
+        let address = increase_compute_log.prover;
         let compute = increase_compute_log.compute;
 
         generator_store.add_extra_compute(&address, compute);
@@ -275,19 +228,18 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(request_compute_decrease_log) =
-        genertor_registry
-            .decode_event::<bindings::generator_registry::RequestComputeDecreaseFilter>(
-                "RequestComputeDecrease",
-                log.topics.clone(),
-                log.data.clone(),
-            )
+        genertor_registry.decode_event::<bindings::prover_registry::ComputeDecreaseRequestedFilter>(
+            "ComputeDecreaseRequested",
+            log.topics.clone(),
+            log.data.clone(),
+        )
     {
         log::debug!(
             "Request compute decrease for Generator: {:?}",
-            request_compute_decrease_log.generator
+            request_compute_decrease_log.prover
         );
 
-        let address = request_compute_decrease_log.generator;
+        let address = request_compute_decrease_log.prover;
         let new_utilization = request_compute_decrease_log.intended_utilization;
 
         generator_store.pause_assignments_across_all_markets(&address);
@@ -296,18 +248,18 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(decrease_compute_log) = genertor_registry
-        .decode_event::<bindings::generator_registry::DecreaseComputeFilter>(
-        "DecreaseCompute",
+        .decode_event::<bindings::prover_registry::ComputeDecreasedFilter>(
+        "ComputeDecreased",
         log.topics.clone(),
         log.data.clone(),
     ) {
         log::debug!(
             "Compute decrease for Generator: {:?} to : {:?}",
-            decrease_compute_log.generator,
+            decrease_compute_log.prover,
             decrease_compute_log.compute
         );
 
-        let address = decrease_compute_log.generator;
+        let address = decrease_compute_log.prover;
         let compute = decrease_compute_log.compute;
 
         generator_store.remove_compute(&address, compute);
@@ -316,115 +268,51 @@ pub async fn process_generator_registry_logs(
         return Ok(());
     }
 
-    if let Ok(stake_lock_logs) = genertor_registry
-        .decode_event::<bindings::generator_registry::StakeLockImposedFilter>(
-        "StakeLockImposed",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        log::debug!("Stake Lock Imposed: {:?}", stake_lock_logs);
-        log::debug!("Stake Lock Imposed is now Handled in native_staking::StakeLocked and symbiotic_staking::StakeLocked separately");
-        return Ok(());
-    }
-
     if let Ok(compute_lock_logs) = genertor_registry
-        .decode_event::<bindings::generator_registry::ComputeLockImposedFilter>(
-        "ComputeLockImposed",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
+        .decode_event::<bindings::prover_registry::ComputeLockedFilter>(
+            "ComputeLocked",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
         log::debug!("Compute Lock Imposed: {:?}", compute_lock_logs);
-        let address = compute_lock_logs.generator;
+        let address = compute_lock_logs.prover;
         let compute_locked = compute_lock_logs.compute;
         generator_store.update_on_compute_locked(&address, compute_locked);
         return Ok(());
     }
 
-    if let Ok(stake_lock_logs) = genertor_registry
-        .decode_event::<bindings::generator_registry::StakeLockReleasedFilter>(
-        "StakeLockReleased",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        log::debug!("Stake Lock Released: {:?}", stake_lock_logs);
-        log::debug!("Stake Lock Released in native_staking::StakeUnlocked and symbiotic_stake::StakeUnlocked separately");
-        return Ok(());
-    }
-
     if let Ok(compute_lock_logs) = genertor_registry
-        .decode_event::<bindings::generator_registry::ComputeLockReleasedFilter>(
-        "ComputeLockReleased",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
+        .decode_event::<bindings::prover_registry::ComputeReleasedFilter>(
+            "ComputeReleased",
+            log.topics.clone(),
+            log.data.clone(),
+        )
+    {
         log::debug!("Compute Lock Released: {:?}", compute_lock_logs);
-        let address = compute_lock_logs.generator;
+        let address = compute_lock_logs.prover;
         let compute_released = compute_lock_logs.compute;
         generator_store.update_on_compute_released(&address, compute_released);
         return Ok(());
     }
 
-    if let Ok(stake_slash_logs) = genertor_registry
-        .decode_event::<bindings::generator_registry::StakeSlashedFilter>(
-            "StakeSlashed",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
-        log::debug!("Stake Slashed: {:?}", stake_slash_logs);
-        log::debug!("Stake slash is now handled in ns::JobSlashed and ss::JobSlashed separately");
-        return Ok(());
-    }
-
-    if let Ok(symbiotic_complete_snapshot_log) = genertor_registry.decode_event_raw(
-        "SymbioticCompleteSnapshot",
+    if let Ok(update_generator_metadata_log) = genertor_registry
+        .decode_event::<bindings::prover_registry::ProverDataUpdatedFilter>(
+        "ProverDataUpdated",
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::debug!(
-            "Processing SymbioticCompleteSnapshot: {:?}",
-            symbiotic_complete_snapshot_log
-        );
-        log::debug!(
-            "SymbioticCompleteSnapshot is now processed using symbiotic::SnapshotConfirmed"
-        );
-        return Ok(());
-    }
+        // let generator_bytes = update_generator_metadata_log.get(0).unwrap();
+        // let generator_address = generator_bytes.clone().into_address().unwrap();
 
-    // ------ custom patches being handled here --------------------- //
-    let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
+        let generator_address = update_generator_metadata_log.prover;
 
-    let client = Arc::new(provider_http.clone());
+        // let generator_bytes = update_generator_metadata_log.get(1).unwrap();
+        // let generator_meta_data = generator_bytes.clone().into_bytes().unwrap().to_vec();
 
-    let gr_update_generator_data_patch =
-        binding_patches::GeneratorRegistryPatch::new(genertor_registry.address(), client);
-
-    if let Ok(update_generator_metadata_log) = gr_update_generator_data_patch.decode_event_raw(
-        "GeneratorDataUpdated",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        let generator_bytes = update_generator_metadata_log.get(0).unwrap();
-        let generator_address = generator_bytes.clone().into_address().unwrap();
-
-        let generator_bytes = update_generator_metadata_log.get(1).unwrap();
-        let generator_meta_data = generator_bytes.clone().into_bytes().unwrap().to_vec();
+        let generator_meta_data = update_generator_metadata_log.prover_data;
 
         generator_store.update_generator_metadata(generator_address, generator_meta_data.into());
-        return Ok(());
-    }
-
-    if let Ok(intend_to_reduce_stake_logs) = gr_update_generator_data_patch.decode_event_raw(
-        "IntendToReduceStake",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
-        log::debug!(
-            "Intend to reduce stake logs {:?}",
-            intend_to_reduce_stake_logs
-        );
-
-        log::debug!("IntendToReduceStake is not processed here");
         return Ok(());
     }
 

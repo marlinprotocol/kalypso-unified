@@ -317,7 +317,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
 
     let generator_registry_contract_address =
         Address::from_str(&generator_registry_contract_address)?;
-    let generator_registry_contract = bindings::generator_registry::GeneratorRegistry::new(
+    let generator_registry_contract = bindings::prover_registry::ProverRegistry::new(
         generator_registry_contract_address,
         Arc::clone(&client),
     );
@@ -376,10 +376,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
         // Checking if generator has registered for the market provided in supported_markets vec
         for market in generator.supported_markets {
             let generator_data = generator_registry_contract
-                .generator_info_per_market(
-                    converted_generator_address,
-                    U256::from_dec_str(&market)?,
-                )
+                .prover_info_per_market(converted_generator_address, U256::from_dec_str(&market)?)
                 .call()
                 .await?;
             log::info!("generator address {}", converted_generator_address);
