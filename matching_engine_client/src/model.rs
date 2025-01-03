@@ -31,6 +31,9 @@ pub struct MatchingEngineConfig {
     pub platform_token: String,
     pub attestation_verifier: String,
     pub entity_registry: String,
+    pub native_staking: String,
+    pub symbiotic_staking: String,
+    pub stake_manager: String,
 }
 
 #[derive(Serialize, Debug, Validate, Deserialize)]
@@ -69,6 +72,18 @@ pub struct MatchingEngineConfigSetupRequestBody {
         message = "entity_registry was not provided in the matching_engine_config"
     ))]
     pub entity_registry: Option<String>,
+    #[validate(required(
+        message = "native_staking was not provided in the matching_engine_config"
+    ))]
+    pub native_staking: Option<String>,
+    #[validate(required(
+        message = "symbiotic_staking was not provided in the matching_engine_config"
+    ))]
+    pub symbiotic_staking: Option<String>,
+    #[validate(required(
+        message = "stake_manager was not provided in the matching_engine_config"
+    ))]
+    pub stake_manager: Option<String>,
 }
 
 #[derive(Serialize, Debug, Deserialize)]

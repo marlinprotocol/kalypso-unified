@@ -103,6 +103,13 @@ pub async fn generate_matching_engine_config_file(
         entity_registry: me_config_body.entity_registry.as_ref().unwrap().to_string(),
         payment_token: me_config_body.payment_token.as_ref().unwrap().to_string(),
         platform_token: me_config_body.platform_token.as_ref().unwrap().to_string(),
+        native_staking: me_config_body.native_staking.as_ref().unwrap().to_string(),
+        symbiotic_staking: me_config_body
+            .symbiotic_staking
+            .as_ref()
+            .unwrap()
+            .to_string(),
+        stake_manager: me_config_body.stake_manager.as_ref().unwrap().to_string(),
     };
 
     //Generating the json config file
