@@ -118,27 +118,12 @@ pub struct MatchingEngineConfig {
     pub proof_market_place: String,
     pub generator_registry: String,
     pub entity_registry: String,
-    #[serde(default = "default_symbiotic_staking")]
     pub symbiotic_staking: String,
-    #[serde(default = "default_native_staking")]
     pub native_staking: String,
-    #[serde(default = "default_staking_manager")]
+
+    #[serde(alias = "stake_manager")]
     pub staking_manager: String,
     pub start_block: String,
-}
-
-// Default function for symbiotic_staking
-// Adding the to avoid changes in ME Client for now
-fn default_symbiotic_staking() -> String {
-    "0xE7136641cB2c94d318779c3B6BEb997dC5B2E574".to_string()
-}
-
-fn default_native_staking() -> String {
-    "0xe9d2Bcc597f943ddA9EDf356DAC7C6A713dDE113".to_string()
-}
-
-fn default_staking_manager() -> String {
-    "0xCe75C0E25b2c70415b237273345105402aEbe79F".to_string()
 }
 
 pub struct MatchingEngine {
