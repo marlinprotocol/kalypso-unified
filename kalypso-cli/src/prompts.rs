@@ -46,6 +46,7 @@ impl<'a> Prompter<'a> {
         validators.insert("payment_token".to_string(), validate_eth_address);
 
         validators.insert("prover_image_id".to_string(), validate_image_id);
+        validators.insert("enclave_image_id".to_string(), validate_image_id);
         validators.insert("matching_engine_image_id".to_string(), validate_image_id);
         validators.insert("verification_image_id".to_string(), validate_image_id);
         validators.insert("verifier_wrapper".to_string(), validate_eth_address);

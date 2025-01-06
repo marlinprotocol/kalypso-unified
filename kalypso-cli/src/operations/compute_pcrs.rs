@@ -1,4 +1,5 @@
 use crate::common_deps::CommonDeps;
+use crate::operations::matching_engine_programs::verify_attestation_with_pcrs;
 use crate::operations::Operation;
 use async_trait::async_trait;
 
@@ -216,5 +217,32 @@ pub fn non_confidential_pcrs() -> PCRS {
         pcr0_vec,
         pcr1_vec,
         pcr2_vec,
+    }
+}
+
+pub struct VerifyAttestion;
+
+#[async_trait]
+impl Operation for VerifyAttestion {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let verify_attestation_info = CommonDeps::verify_remote_attestation_info(&config)?;
+
+        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec(
+            &verify_attestation_info.attestation_utility,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed making building attestation {}", e))?;
+
+        let keys_after_verification =
+            verify_attestation_with_pcrs(&verify_attestation_info.enclave_pcrs, &attestation)
+                .await
+                .map_err(|e| format!("Failed Verifying attestation {}", e))?;
+
+        println!(
+            "Verified Enclave Pubkey: {}",
+            hex::encode(keys_after_verification)
+        );
+        Ok(())
     }
 }

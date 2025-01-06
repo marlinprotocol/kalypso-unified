@@ -117,6 +117,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Verify Matching Engine Keys" => {
             Some(Box::new(matching_engine_programs::VerifyMatchingEngineKeys))
         }
+        "Verify Remote Attestation" => Some(Box::new(compute_pcrs::VerifyAttestion)),
         _ => unimplemented!(),
     }
 }

@@ -85,6 +85,12 @@
       "env_var": "PAYMENT_TOKEN"
     },
     {
+      "field": "enclave_image_id",
+      "prompt": "Enter the enclave pcrs pcrs",
+      "secret": false,
+      "env_var": "ENCLAVE_IMAGE_ID"
+    },
+    {
       "field": "prover_image_id",
       "prompt": "Enter the prover image pcrs",
       "secret": false,
@@ -774,6 +780,14 @@
         "matching_engine_image_id",
         "matching_engine_client_url",
         "matching_engine_attestation_utility"
+      ]
+    },
+    {
+      "name": "Verify Remote Attestation",
+      "description": "Verify Remote Attestation Locally against given PCRS",
+      "required_prompts": [
+        "attestation_server_url", 
+        "enclave_image_id"
       ]
     }
   ]

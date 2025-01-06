@@ -1874,3 +1874,32 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct VerifyRemoteAttestationInfo {
+    pub attestation_utility: String,
+    pub enclave_pcrs: Vec<u8>,
+}
+
+impl CommonDeps {
+    pub fn verify_remote_attestation_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<VerifyRemoteAttestationInfo, String> {
+        get_config_ref!(config, "attestation_server_url", attestation_server_url);
+        get_config_ref!(config, "enclave_image_id", enclave_image_id);
+
+        let enclave_image_id = {
+            let trimmed_key =
+                if enclave_image_id.starts_with("0x") || enclave_image_id.starts_with("0X") {
+                    &enclave_image_id[2..]
+                } else {
+                    enclave_image_id
+                };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid PCRs: {}", e))?
+        };
+
+        Ok(VerifyRemoteAttestationInfo {
+            attestation_utility: attestation_server_url.to_string(),
+            enclave_pcrs: enclave_image_id,
+        })
+    }
+}

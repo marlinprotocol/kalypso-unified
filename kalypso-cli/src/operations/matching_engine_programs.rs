@@ -103,14 +103,14 @@ impl Operation for StopProgram {
     }
 }
 
-async fn verify_attestation_with_pcrs(
-    matching_engine_pcrs: &Vec<u8>,
+pub async fn verify_attestation_with_pcrs(
+    enclave_pcrs: &Vec<u8>,
     attestation: &Vec<u8>,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let types = vec![ParamType::Bytes, ParamType::Bytes, ParamType::Bytes];
 
     // Decode the proof
-    let decoded = ethers::abi::decode(&types, matching_engine_pcrs)
+    let decoded = ethers::abi::decode(&types, enclave_pcrs)
         .map_err(|e| format!("Failed decoding matching pcrs {}", e))?;
     let pcr0 = decoded[0]
         .clone()
