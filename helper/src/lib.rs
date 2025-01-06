@@ -6,7 +6,8 @@ pub mod middlewares;
 pub mod pcr_helpers;
 pub mod prom_client;
 pub mod response;
-pub mod sch_payload;
+pub mod sch_request;
+pub mod sch_response;
 pub mod secret_inputs_helpers;
 pub mod ssc;
 

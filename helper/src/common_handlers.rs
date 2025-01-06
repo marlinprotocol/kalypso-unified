@@ -1,6 +1,6 @@
 use crate::prom_client::ListenerMetrics;
 use crate::response::response;
-use crate::sch_payload::{SCHPayload, ToPayload, ToSchResponse};
+use crate::sch_request::{GenerateEncryptedResponse, SCHPayload, ToPayload};
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{post, web, Responder};
@@ -85,7 +85,7 @@ async fn sign_address_encrypted(
         let signed_address = signed_address.unwrap();
         let sch_response = match jsonbody
             .0
-            .to_sch_response(signed_address, ecies_priv_key.clone())
+            .to_encrypted_response(&signed_address, &ecies_priv_key)
             .await
         {
             Ok(data) => data,
@@ -168,7 +168,7 @@ async fn sign_attestation_encrypted(
         let signed_attestation = signed_attestation.unwrap();
         let sch_response = match jsonbody
             .0
-            .to_sch_response(signed_attestation, ecies_priv_key.clone())
+            .to_encrypted_response(&signed_attestation, &ecies_priv_key)
             .await
         {
             Ok(data) => data,

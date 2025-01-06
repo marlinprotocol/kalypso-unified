@@ -15,7 +15,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
 use helper::response::response;
-use helper::sch_payload::{SCHPayload, ToPayload, ToSchResponse};
+use helper::sch_request::{GenerateEncryptedResponse, SCHPayload, ToPayload};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
@@ -61,7 +61,11 @@ async fn start_matching_engine_handler_encrypted(
 
     if result.is_ok() {
         let result = result.unwrap();
-        let sch_response = match _payload.0.to_sch_response(result, ecies_priv_key).await {
+        let sch_response = match _payload
+            .0
+            .to_encrypted_response(&result, &ecies_priv_key)
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());
@@ -118,7 +122,11 @@ async fn stop_matching_engine_handler_encrypted(
 
     if result.is_ok() {
         let result = result.unwrap();
-        let sch_response = match _payload.0.to_sch_response(result, ecies_priv_key).await {
+        let sch_response = match _payload
+            .0
+            .to_encrypted_response(&result, &ecies_priv_key)
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());
@@ -176,7 +184,11 @@ async fn restart_matching_engine_handler_encrypted(
 
     if result.is_ok() {
         let result = result.unwrap();
-        let sch_response = match _payload.0.to_sch_response(result, ecies_priv_key).await {
+        let sch_response = match _payload
+            .0
+            .to_encrypted_response(&result, &ecies_priv_key)
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());
@@ -278,7 +290,11 @@ async fn generate_config_setup_encrypted(
 
     if result.is_ok() {
         let result = result.unwrap();
-        let sch_response = match jsonbody.0.to_sch_response(result, ecies_priv_key).await {
+        let sch_response = match jsonbody
+            .0
+            .to_encrypted_response(&result, &ecies_priv_key)
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());
@@ -340,7 +356,11 @@ async fn update_matching_engine_config_encrypted(
 
     if result.is_ok() {
         let result = result.unwrap();
-        let sch_response = match jsonbody.0.to_sch_response(result, ecies_priv_key).await {
+        let sch_response = match jsonbody
+            .0
+            .to_encrypted_response(&result, &ecies_priv_key)
+            .await
+        {
             Ok(data) => data,
             Err(e) => {
                 log::error!("{}", &e.to_string());
