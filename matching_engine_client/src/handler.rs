@@ -25,6 +25,16 @@ use validator::Validate;
 struct EmptyPayload {}
 
 // Start matching_engine
+#[get("/test")]
+async fn test_handler() -> impl Responder {
+    return response(
+        "Matching Engine Client is running",
+        StatusCode::OK,
+        Some("Matching Engine Client is running".into()),
+    );
+}
+
+// Start matching_engine
 #[post("/startMatchingEngine")]
 async fn start_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     let result = _start_matching_engine().await;
@@ -443,4 +453,30 @@ pub fn routes(conf: &mut web::ServiceConfig) {
         .service(helper::common_handlers::sign_attestation_encrypted);
 
     conf.service(scope);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::handler;
+    use actix_web::{test, App};
+    use serde_json::{json, Value};
+
+    #[actix_rt::test]
+    async fn test_matching_client_1() {
+        let app = test::init_service(App::new().service(handler::test_handler)).await;
+        let req = test::TestRequest::get().uri("/test").to_request();
+        let resp = test::call_service(&app, req).await;
+
+        dbg!(&resp.status());
+        assert!(resp.status().is_success());
+
+        let result = test::read_body(resp).await;
+        let result_json: Value = serde_json::from_slice(&result).unwrap();
+        let expected_json = json!({
+            "message": "Matching Engine Client is running",
+            "data": "Matching Engine Client is running"
+        });
+
+        assert_eq!(result_json, expected_json);
+    }
 }

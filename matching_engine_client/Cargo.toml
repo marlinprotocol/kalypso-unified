@@ -24,3 +24,6 @@ serde_json="1.0"
 tokio = { version = "1.16.1", features = ["full"] }
 uuid = { version = "1.4.1",features = ["v4","fast-rng","macro-diagnostics"] }
 validator = { version = "0.18.1", features = ["derive"] }
+
+[dev-dependencies]
+actix-rt = "2"
