@@ -193,7 +193,6 @@ struct SignAddressData {
     v: u8,
 }
 
-#[allow(unused)]
 pub async fn get_address_signature(
     address: &str,
     print_logs: bool,

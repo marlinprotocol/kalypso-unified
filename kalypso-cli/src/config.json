@@ -751,6 +751,30 @@
         "matching_engine_image_id",
         "chain_id"
       ]
+    },
+    {
+      "name": "Set Matching Engine Image",
+      "description": "Set matching engine image. (Only by address that has UPDATER role)",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "matching_engine_image_id"
+      ]
+    },
+    {
+      "name": "Verify Matching Engine Keys",
+      "description": "Verify Matching Engine Keys. (Only by address that has UPDATER role)",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "matching_engine_image_id",
+        "matching_engine_client_url",
+        "matching_engine_attestation_utility"
+      ]
     }
   ]
 }

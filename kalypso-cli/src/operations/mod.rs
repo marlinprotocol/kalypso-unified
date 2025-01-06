@@ -111,6 +111,12 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
             Some(Box::new(matching_engine_programs::LoadMatchingEngineConfig))
         }
         "Set Kalypso Delegatee Address" => Some(Box::new(symbiotic_opt_in::SetMiddlewareAddress)),
+        "Set Matching Engine Image" => {
+            Some(Box::new(matching_engine_programs::SetMatchingEngineImage))
+        }
+        "Verify Matching Engine Keys" => {
+            Some(Box::new(matching_engine_programs::VerifyMatchingEngineKeys))
+        }
         _ => unimplemented!(),
     }
 }

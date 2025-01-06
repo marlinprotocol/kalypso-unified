@@ -1764,3 +1764,113 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct MatchingEngineImageInfo {
+    pub matching_engine_pcrs: Vec<u8>,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub signer: LocalWallet,
+}
+
+impl CommonDeps {
+    pub fn matching_engine_image_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<MatchingEngineImageInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+
+        let (proof_marketplace, signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        get_config_ref!(config, "matching_engine_image_id", matching_engine_pcrs);
+
+        let matching_engine_pcrs = {
+            let trimmed_key = if matching_engine_pcrs.starts_with("0x")
+                || matching_engine_pcrs.starts_with("0X")
+            {
+                &matching_engine_pcrs[2..]
+            } else {
+                matching_engine_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        Ok(MatchingEngineImageInfo {
+            matching_engine_pcrs,
+            proof_marketplace,
+            signer,
+        })
+    }
+}
+
+pub struct VerifyMatchingEngineKeysInfo {
+    pub matching_engine_client_url: String,
+    pub matching_engine_attestation_utility: String,
+    pub matching_engine_pcrs: Vec<u8>,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub signer: LocalWallet,
+
+    #[allow(unused)]
+    pub chain_id: U64,
+}
+
+impl CommonDeps {
+    pub fn verify_matching_engine_keys_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<VerifyMatchingEngineKeysInfo, String> {
+        get_config_ref!(config, "chain_id", chain_id);
+
+        get_config_ref!(
+            config,
+            "matching_engine_client_url",
+            matching_engine_client_url
+        );
+
+        get_config_ref!(
+            config,
+            "matching_engine_attestation_utility",
+            matching_engine_attestation_utility
+        );
+        get_config_ref!(config, "matching_engine_image_id", matching_engine_pcrs);
+
+        let matching_engine_pcrs = {
+            let trimmed_key = if matching_engine_pcrs.starts_with("0x")
+                || matching_engine_pcrs.starts_with("0X")
+            {
+                &matching_engine_pcrs[2..]
+            } else {
+                matching_engine_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+
+        let (proof_marketplace, signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        Ok(VerifyMatchingEngineKeysInfo {
+            matching_engine_client_url: matching_engine_client_url.to_string(),
+            matching_engine_attestation_utility: matching_engine_attestation_utility.to_string(),
+            matching_engine_pcrs,
+            chain_id: U64::from_str(&chain_id).unwrap(),
+            proof_marketplace,
+            signer,
+        })
+    }
+}

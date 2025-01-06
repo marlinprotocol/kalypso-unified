@@ -1,9 +1,12 @@
 use async_trait::async_trait;
+use ethers::prelude::*;
 use ethers::{abi::ParamType, core::rand::rngs::OsRng, types::U64};
+use reqwest::header::{HeaderMap, HeaderValue};
 use std::{collections::HashMap, error::Error};
 
 use crate::common_deps::CommonDeps;
 
+use super::update_encryption_key::get_address_signature;
 use super::{update_generator_meta::read_file_from_paths, Operation};
 
 pub struct LoadMatchingEngineConfig;
@@ -354,5 +357,135 @@ async fn load_matching_engine_config(
             status, json_response.message
         )
         .into())
+    }
+}
+
+pub struct SetMatchingEngineImage;
+
+#[async_trait]
+impl Operation for SetMatchingEngineImage {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let set_image_info = CommonDeps::matching_engine_image_info(&config)?;
+
+        let updater_role = set_image_info
+            .proof_marketplace
+            .updater_role()
+            .call()
+            .await
+            .map_err(|e| format!("Failed Reading Updater Role from proof marketplace: {}", e))?;
+
+        let has_role = set_image_info
+            .proof_marketplace
+            .has_role(updater_role.into(), set_image_info.signer.address())
+            .await
+            .map_err(|e| format!("Failed Reading Updater Role from proof marketplace: {}", e))?;
+
+        if !has_role {
+            return Err(format!(
+                "{:?} does not have role to update the matching engine",
+                set_image_info.signer.address()
+            ));
+        }
+
+        let set_image_transaction = CommonDeps::send_and_confirm(
+            set_image_info
+                .proof_marketplace
+                .set_matching_engine_image(set_image_info.matching_engine_pcrs.into())
+                .send(),
+        )
+        .await
+        .map_err(|e| format!("Set Matching Engine Image Transaction failed: {}", e))?;
+
+        println!(
+            "Set Matching Engine Image Transaction: {}",
+            set_image_transaction
+        );
+
+        Ok(())
+    }
+}
+
+pub struct VerifyMatchingEngineKeys;
+
+#[async_trait]
+impl Operation for VerifyMatchingEngineKeys {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let verify_matching_engine_config = CommonDeps::verify_matching_engine_keys_info(&config)?;
+
+        let updater_role = verify_matching_engine_config
+            .proof_marketplace
+            .updater_role()
+            .call()
+            .await
+            .map_err(|e| format!("Failed Reading Updater Role from proof marketplace: {}", e))?;
+
+        let has_role = verify_matching_engine_config
+            .proof_marketplace
+            .has_role(
+                updater_role.into(),
+                verify_matching_engine_config.signer.address(),
+            )
+            .await
+            .map_err(|e| format!("Failed Reading Updater Role from proof marketplace: {}", e))?;
+
+        if !has_role {
+            return Err(format!(
+                "{:?} does not have role to update the matching engine",
+                verify_matching_engine_config.signer.address()
+            ));
+        }
+
+        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec_raw(
+            &verify_matching_engine_config.matching_engine_attestation_utility,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed making building attestation {}", e))?;
+
+        let keys_after_verification = verify_attestation_with_pcrs(
+            &verify_matching_engine_config.matching_engine_pcrs,
+            &attestation,
+        )
+        .await
+        .map_err(|e| format!("Failed Verifying attestation {}", e))?;
+
+        println!(
+            "Verified Enclave Pubkey: {}",
+            hex::encode(keys_after_verification)
+        );
+
+        let address_str = hex::encode(&verify_matching_engine_config.proof_marketplace.address());
+        let mut headers = HeaderMap::new();
+        headers.insert("Content-Type", HeaderValue::from_static("application/json"));
+
+        let address_signature = get_address_signature(
+            &address_str,
+            false,
+            &verify_matching_engine_config.matching_engine_client_url,
+            headers,
+        )
+        .await
+        .map_err(|e| {
+            format!(
+                "Failed fetching the address signature for verifying the keys {}",
+                e
+            )
+        })?;
+
+        let verify_matching_engine_keys = CommonDeps::send_and_confirm(
+            verify_matching_engine_config
+                .proof_marketplace
+                .verify_matching_engine(attestation.into(), address_signature.into())
+                .send(),
+        )
+        .await
+        .map_err(|e| format!("Verify Matching Engine Key Transaction failed: {}", e))?;
+
+        println!(
+            "Verify Matching Engine Keys Transaction: {}",
+            verify_matching_engine_keys
+        );
+
+        Ok(())
     }
 }
