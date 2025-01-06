@@ -360,3 +360,61 @@ impl Operation for SymbioticOptIn {
         Ok(())
     }
 }
+
+pub struct SetMiddlewareAddress;
+
+#[async_trait]
+impl Operation for SetMiddlewareAddress {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let set_middleware_info = CommonDeps::set_middleware_address_info(&config)?;
+
+        abigen!(
+            Middleware,
+            r#"
+                [
+                    {
+                        "inputs": [
+                        {
+                            "internalType": "address",
+                            "name": "_delegate",
+                            "type": "address"
+                        }
+                        ],
+                        "name": "setDelegate",
+                        "outputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                    }
+                    ]
+
+            "#
+        );
+
+        let provider_http = Provider::<Http>::try_from(set_middleware_info.symbiotic_rpc_url)
+            .map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+        // Initialize the SignerMiddleware with the provider and signer
+        let client =
+            SignerMiddleware::new(provider_http.clone(), set_middleware_info.signer.clone());
+        let client_arc = Arc::new(client);
+
+        let middleware =
+            Middleware::new(set_middleware_info.middleware_address, client_arc.clone());
+
+        let tx_hash = CommonDeps::send_and_confirm(
+            middleware
+                .set_delegate(set_middleware_info.operator_address)
+                .send(),
+        )
+        .await
+        .map_err(|e| {
+            format!(
+                "Failed setting operator address in kalypso middleware {}",
+                e
+            )
+        })?;
+
+        println!("Set Operator in Middleware Transaction: {}", tx_hash);
+        Ok(())
+    }
+}

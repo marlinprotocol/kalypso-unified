@@ -1721,3 +1721,46 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct SetMiddlewareAddressInfo {
+    pub signer: LocalWallet,
+    pub symbiotic_rpc_url: String,
+    pub middleware_address: Address,
+    pub operator_address: Address,
+}
+
+impl CommonDeps {
+    pub fn set_middleware_address_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<SetMiddlewareAddressInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "symbiotic_rpc_url", symbiotic_rpc_url);
+        get_config_ref!(config, "symbiotic_chain_id", symbiotic_chain_id);
+        get_config_ref!(config, "middleware_service", middleware_address);
+        get_config_ref!(config, "operator_address", operator_address);
+
+        let operator_address = operator_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Operator Address: {}", e))?;
+
+        let middleware_address = middleware_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Middleware Address: {}", e))?;
+
+        let signer = private_key
+            .parse::<LocalWallet>()
+            .map_err(|e| format!("Failed to parse private key: {}", e))?
+            .with_chain_id(
+                symbiotic_chain_id
+                    .parse::<u64>()
+                    .map_err(|e| format!("Invalid symbiotic_chain_id: {}", e))?,
+            );
+
+        Ok(SetMiddlewareAddressInfo {
+            signer,
+            symbiotic_rpc_url: symbiotic_rpc_url.into(),
+            middleware_address,
+            operator_address,
+        })
+    }
+}

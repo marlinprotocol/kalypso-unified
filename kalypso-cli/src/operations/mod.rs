@@ -110,6 +110,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Load Matching Engine Config" => {
             Some(Box::new(matching_engine_programs::LoadMatchingEngineConfig))
         }
+        "Set Kalypso Delegatee Address" => Some(Box::new(symbiotic_opt_in::SetMiddlewareAddress)),
         _ => unimplemented!(),
     }
 }

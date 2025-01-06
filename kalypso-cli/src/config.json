@@ -134,7 +134,7 @@
     },
     {
       "field": "operator_address",
-      "prompt": "Enter Operator Address",
+      "prompt": "Enter Operator Address on Kalypso",
       "secret": false,
       "env_var": "OPERATOR_ADDRESS"
     },
@@ -215,6 +215,12 @@
       "prompt": "Address of the symbiotic vault opt in contract",
       "secret": false,
       "env_var": "VAULT_OPT_IN_SERVICE"
+    },
+    {
+      "field": "middleware_service",
+      "prompt": "Address of the middleware contract",
+      "secret": false,
+      "env_var": "MIDDLEWARE_SERVICE"
     },
     {
       "field": "network_opt_in_service",
@@ -548,6 +554,17 @@
         "vault_address",
         "network_opt_in_service",
         "network_address"
+      ]
+    },
+    {
+      "name": "Set Kalypso Delegatee Address",
+      "description": "Set Symbiotic Delegate Address",
+      "required_prompts": [
+        "private_key",
+        "symbiotic_rpc_url",
+        "symbiotic_chain_id",
+        "middleware_service",
+        "operator_address"
       ]
     },
     {

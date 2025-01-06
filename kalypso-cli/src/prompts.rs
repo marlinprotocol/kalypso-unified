@@ -80,6 +80,7 @@ impl<'a> Prompter<'a> {
             validate_dec_str_id as Validator,
         );
         validators.insert("vault_opt_in_service".to_string(), validate_eth_address);
+        validators.insert("middleware_service".to_string(), validate_eth_address);
         validators.insert("network_opt_in_service".to_string(), validate_eth_address);
         validators.insert("vault_address".to_string(), validate_eth_address);
         validators.insert("network_address".to_string(), validate_eth_address);
