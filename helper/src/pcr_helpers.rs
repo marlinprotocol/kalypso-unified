@@ -240,6 +240,14 @@ pub fn verify_with_timestamp(
     oyster::verify_with_timestamp(attestation_doc_cbor, pcrs, timestamp)
 }
 
+pub fn verify(
+    attestation_doc_cbor: Vec<u8>,
+    pcrs: [[u8; 48]; 3],
+    max_age: usize,
+) -> Result<Vec<u8>, AttestationError> {
+    oyster::verify(attestation_doc_cbor, pcrs, max_age)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{build_attestation_vec, parse_attestation_doc, verify_attestation};

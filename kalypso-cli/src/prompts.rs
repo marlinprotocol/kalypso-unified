@@ -46,6 +46,7 @@ impl<'a> Prompter<'a> {
         validators.insert("payment_token".to_string(), validate_eth_address);
 
         validators.insert("prover_image_id".to_string(), validate_image_id);
+        validators.insert("matching_engine_image_id".to_string(), validate_image_id);
         validators.insert("verification_image_id".to_string(), validate_image_id);
         validators.insert("verifier_wrapper".to_string(), validate_eth_address);
         validators.insert("attestation_server_url".to_string(), validate_rpc_url);
@@ -64,6 +65,11 @@ impl<'a> Prompter<'a> {
         validators.insert("website".to_string(), validate_string);
         validators.insert("twitter".to_string(), validate_string);
         validators.insert("operator_commission".to_string(), validate_dec_str_id);
+        validators.insert("matching_engine_client_url".to_string(), validate_rpc_url);
+        validators.insert(
+            "matching_engine_attestation_utility".to_string(),
+            validate_rpc_url,
+        );
 
         validators.insert(
             "symbiotic_rpc_url".to_string(),

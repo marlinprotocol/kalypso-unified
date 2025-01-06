@@ -2,6 +2,7 @@
 
 use ethers::prelude::*;
 use std::future::Future;
+use std::str::FromStr;
 use std::sync::Arc;
 
 macro_rules! get_config_ref {
@@ -1671,6 +1672,52 @@ impl CommonDeps {
             private_key_signer,
             native_staking,
             indexer_url: indexer_url.to_string(),
+        })
+    }
+}
+
+pub struct MatchingEngineProgram {
+    pub matching_engine_client_url: String,
+    pub matching_engine_attestation_utility: String,
+    pub matching_engine_pcrs: Vec<u8>,
+    pub chain_id: U64,
+}
+
+impl CommonDeps {
+    pub fn start_matching_engine_program_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<MatchingEngineProgram, String> {
+        get_config_ref!(config, "chain_id", chain_id);
+
+        get_config_ref!(
+            config,
+            "matching_engine_client_url",
+            matching_engine_client_url
+        );
+
+        get_config_ref!(
+            config,
+            "matching_engine_attestation_utility",
+            matching_engine_attestation_utility
+        );
+        get_config_ref!(config, "matching_engine_image_id", matching_engine_pcrs);
+
+        let matching_engine_pcrs = {
+            let trimmed_key = if matching_engine_pcrs.starts_with("0x")
+                || matching_engine_pcrs.starts_with("0X")
+            {
+                &matching_engine_pcrs[2..]
+            } else {
+                matching_engine_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        Ok(MatchingEngineProgram {
+            matching_engine_client_url: matching_engine_client_url.to_string(),
+            matching_engine_attestation_utility: matching_engine_attestation_utility.to_string(),
+            matching_engine_pcrs,
+            chain_id: U64::from_str(&chain_id).unwrap(),
         })
     }
 }

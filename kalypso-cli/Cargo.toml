@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.64" 
 bindings = { path = "../bindings", package = "foundry-contracts" }
+ecies = {version = "0.2.6", features = ["std"]}
 dotenv = "0.15.0"
 dialoguer = "0.10.3"
 ethers = { version = "2", features = ["rustls"] }
@@ -18,6 +19,7 @@ hex = "0.4.3"
 kalypso_helper = {path = "../helper", package = "helper"}
 log = "0.4"
 matching_engine_helpers = { path = "../matching_engine", package = "matching_engine", features = ["use_l1_block_numbers"]}
+matching_engine_client = { path = "../matching_engine_client", package = "matching_engine_client" }
 reqwest = { version = "0.11", features = ["stream"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

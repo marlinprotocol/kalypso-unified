@@ -97,6 +97,12 @@
       "env_var": "IVS_IMAGE_PCRS"
     },
     {
+      "field": "matching_engine_image_id",
+      "prompt": "Enter the matching_engine image pcrs",
+      "secret": false,
+      "env_var": "MATCHING_ENGINE_IMAGE_PCRS"
+    },
+    {
       "field": "verifier_wrapper",
       "prompt": "Enter Proof Verifier Contract Address (refer to Kalypso Standard Wrapper Contract)",
       "secret": false,
@@ -294,6 +300,18 @@
       "prompt": "Enter operator-commission. [0 (0%)- 1000000000000000000 (100%)]",
       "secret": false,
       "env_var": "OPERATOR_COMMISSION"
+    },
+    {
+      "field": "matching_engine_client_url",
+      "prompt": "Enter matching engine client url",
+      "secret": false,
+      "env_var": "MATCHING_ENGINE_CLIENT_URL"
+    },
+    {
+      "field": "matching_engine_attestation_utility",
+      "prompt": "Enter matching engine attestation utility URL",
+      "secret": false,
+      "env_var": "MATCHING_ENGINE_ATTESTATION_UTILITY_URL"
     }
   ],
   "operations": [
@@ -685,6 +703,36 @@
         "native_staking",
         "chain_id",
         "indexer_url"
+      ]
+    },
+    {
+      "name": "Start Matching Engine",
+      "description": "Starts the Matching Engine Enclave",
+      "required_prompts": [
+        "matching_engine_client_url",
+        "matching_engine_attestation_utility",
+        "matching_engine_image_id",
+        "chain_id"
+      ]
+    },
+    {
+      "name": "Stop Matching Engine",
+      "description": "Stops the Matching Engine Enclave",
+      "required_prompts": [
+        "matching_engine_client_url",
+        "matching_engine_attestation_utility",
+        "matching_engine_image_id",
+        "chain_id"
+      ]
+    },
+    {
+      "name": "Load Matching Engine Config",
+      "description": "Securely load the matching engine config into matching engine",
+      "required_prompts": [
+        "matching_engine_client_url",
+        "matching_engine_attestation_utility",
+        "matching_engine_image_id",
+        "chain_id"
       ]
     }
   ]

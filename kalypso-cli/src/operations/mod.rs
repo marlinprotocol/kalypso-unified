@@ -6,9 +6,10 @@ pub mod compute_pcrs;
 pub mod create_marketplace;
 pub mod create_request;
 pub mod generator_config;
+pub mod generator_programs;
 pub mod join_marketplace;
 pub mod leave_or_request_leave_marketplace;
-pub mod programs;
+pub mod matching_engine_programs;
 pub mod read_proof;
 pub mod request;
 pub mod set_operator_commision;
@@ -81,10 +82,10 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Read Proof Bytes" => Some(Box::new(read_proof::ReadProof)),
         "Request Symbiotic Stake" => Some(Box::new(symbiotic_opt_in::SymbioticOptIn)),
         "Load Generator Config" => Some(Box::new(generator_config::GeneratorConfig)),
-        "Start Enclave Program" => Some(Box::new(programs::StartProgam)),
-        "Stop Enclave Program" => Some(Box::new(programs::StopProgram)),
-        "Test Enclave Connection" => Some(Box::new(programs::TestConnection)),
-        "Benchmark Prover" => Some(Box::new(programs::Benchmark)),
+        "Start Enclave Program" => Some(Box::new(generator_programs::StartProgam)),
+        "Stop Enclave Program" => Some(Box::new(generator_programs::StopProgram)),
+        "Test Enclave Connection" => Some(Box::new(generator_programs::TestConnection)),
+        "Benchmark Prover" => Some(Box::new(generator_programs::Benchmark)),
         "Symbiotic Operator Register" => {
             Some(Box::new(symbiotic_opt_in::SymbioticOperatorRegister))
         }
@@ -104,6 +105,11 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         }
         "Request Native Stake Withdrawal" => Some(Box::new(stake::RequestNativeStakeWithdrawal)),
         "Process Withdrawal Requests" => Some(Box::new(stake::ProcessWithdrawalRequests)),
+        "Start Matching Engine" => Some(Box::new(matching_engine_programs::StartProgam)),
+        "Stop Matching Engine" => Some(Box::new(matching_engine_programs::StopProgram)),
+        "Load Matching Engine Config" => {
+            Some(Box::new(matching_engine_programs::LoadMatchingEngineConfig))
+        }
         _ => unimplemented!(),
     }
 }

@@ -30,12 +30,12 @@ impl Operation for UpdateGeneratorMeta {
         let data = read_file_from_paths(&generator_meta_paths)
             .map_err(|e| format!("Failed reading generatormeta.json {}", e))?;
 
-        let market_meta: matching_engine_helpers::generator_lib::generator_store::GeneratorMeta =
+        let generator_meta: matching_engine_helpers::generator_lib::generator_store::GeneratorMeta =
             serde_json::from_str(&data).map_err(|e| {
                 format!("Failed deserde generatormeta.json into GeneratorMeta {}", e)
             })?;
 
-        let json_string = serde_json::to_string(&market_meta)
+        let json_string = serde_json::to_string(&generator_meta)
             .map_err(|e| format!("Failed converting GeneratorMeta to string{}", e))?;
 
         let generator_metadata: Vec<u8> = json_string.into_bytes();
