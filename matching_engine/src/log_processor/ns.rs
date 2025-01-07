@@ -324,7 +324,7 @@ pub async fn process_native_staking_logs(
         {
             use crate::utility::get_timestamp_from_l2block_number;
 
-            let ask_id = stake_slash_logs.job_id; //job _id and ask_id are same
+            let ask_id = stake_slash_logs.bid_id; //job _id and ask_id are same
             let ask = { ask_store.read().await.get_by_ask_id(&ask_id).unwrap() };
 
             let market_id = ask.market_id;

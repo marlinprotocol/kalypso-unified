@@ -25,7 +25,7 @@ log = "0.4"
 once_cell = "1.20.2"
 rayon = "1.10.0"
 reqwest = { version = "0.12.4", features = ["json"] }
-secp256k1 = "0.29.0"
+secp256k1 = "0.30.0"
 serde = { version = "1.0.178", features = ["derive"] }
 serde_json = "1.0.104"
 service_check_helper = {path = "../generator", package = "generator"}
@@ -33,11 +33,12 @@ tokio = { version = "1.15.0", features = ["full"] }
 
 [features]
 # Default mode
-default = ["testnet"]
+default = ["beta"]
 
+beta = []
 # Mode Features
-external_indexer = ["testnet", "disable_match_creation"]
-testnet = [
+external_indexer = ["stagenet", "disable_match_creation"]
+stagenet = [
     "matching_engine_enable_cors",
     "skip_unknown_events",
     "override_symbiotic_slashing_to_zero",
