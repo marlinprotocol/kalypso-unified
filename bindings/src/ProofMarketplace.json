@@ -1,56 +1,24 @@
 [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [],
-    "name": "AccessControlBadConfirmation",
-    "type": "error"
-  },
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "neededRole",
-        "type": "bytes32"
-      }
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
     ],
     "name": "AccessControlUnauthorizedAccount",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "target",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "target", "type": "address" }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ArityMismatch",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "CannotAssignExpiredTasks",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "CannotBeZero",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ArityMismatch", "type": "error" },
+  { "inputs": [], "name": "CannotAssignExpiredTasks", "type": "error" },
+  { "inputs": [], "name": "CannotBeZero", "type": "error" },
   {
     "inputs": [],
     "name": "CannotModifyImagesForPublicMarkets",
@@ -58,115 +26,53 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "marketId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" }
     ],
     "name": "CannotRemoveDefaultImageFromMarket",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "CannotSlashUsingValidInputs",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ECDSAInvalidSignature",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ECDSAInvalidSignature", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "length",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "length", "type": "uint256" }
     ],
     "name": "ECDSAInvalidSignatureLength",
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "s",
-        "type": "bytes32"
-      }
-    ],
+    "inputs": [{ "internalType": "bytes32", "name": "s", "type": "bytes32" }],
     "name": "ECDSAInvalidSignatureS",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "implementation",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "implementation", "type": "address" }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ERC1967NonPayable",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "EnforcedPause",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ExpectedPause",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FailedCall",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
+  { "inputs": [], "name": "EnforcedPause", "type": "error" },
+  { "inputs": [], "name": "ExpectedPause", "type": "error" },
+  { "inputs": [], "name": "FailedCall", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "familyId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "familyId", "type": "bytes32" }
     ],
     "name": "ImageAlreadyInFamily",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "InvalidECIESACL",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidEnclaveKey",
-    "type": "error"
-  },
+  { "inputs": [], "name": "InvalidECIESACL", "type": "error" },
+  { "inputs": [], "name": "InvalidEnclaveKey", "type": "error" },
   {
     "inputs": [
       {
@@ -178,157 +84,81 @@
     "name": "InvalidEnclaveSignature",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "InvalidInitialization",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidInputs",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidMarket",
-    "type": "error"
-  },
+  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
+  { "inputs": [], "name": "InvalidInputs", "type": "error" },
+  { "inputs": [], "name": "InvalidMarket", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "InvalidProof",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "NoRewardToClaim",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotInitializing",
-    "type": "error"
-  },
+  { "inputs": [], "name": "NoRewardToClaim", "type": "error" },
+  { "inputs": [], "name": "NotInitializing", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "NotSlashableBidId",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "OnlyAssignedBidsCanBeProved",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "OnlyExpiredBidsCanBeCancelled",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "OnlyMarketCreator",
-    "type": "error"
-  },
+  { "inputs": [], "name": "OnlyMarketCreator", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "OnlyProverCanDiscardRequest",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "ProofPriceMismatch",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "ProofTimeMismatch",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ReentrancyGuardReentrantCall",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "token", "type": "address" }
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "ShouldBeInAssignedState",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ShouldBeInCreateState",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "UUPSUnauthorizedCallContext",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ShouldBeInCreateState", "type": "error" },
+  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "slot",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
@@ -588,11 +418,11 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "proverRegistry",
+        "name": "proverManager",
         "type": "address"
       }
     ],
-    "name": "ProverRegistrySet",
+    "name": "ProverManagerSet",
     "type": "event"
   },
   {
@@ -851,124 +681,64 @@
   {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "MARKET_ACTIVATION_DELAY",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "MATCHING_ENGINE_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "STAKING_MANAGER_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SYMBIOTIC_STAKING_REWARD_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SYMBIOTIC_STAKING_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPDATER_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "marketId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "_proverPcrs",
-        "type": "bytes[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "_ivsPcrs",
-        "type": "bytes[]"
-      }
+      { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+      { "internalType": "bytes[]", "name": "_proverPcrs", "type": "bytes[]" },
+      { "internalType": "bytes[]", "name": "_ivsPcrs", "type": "bytes[]" }
     ],
     "name": "addExtraImages",
     "outputs": [],
@@ -977,21 +747,9 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes",
-        "name": "new_acl",
-        "type": "bytes"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" },
+      { "internalType": "address", "name": "prover", "type": "address" },
+      { "internalType": "bytes", "name": "new_acl", "type": "bytes" }
     ],
     "name": "assignTask",
     "outputs": [],
@@ -1001,23 +759,13 @@
   {
     "inputs": [],
     "name": "bidCounter",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "cancelBid",
     "outputs": [],
@@ -1040,20 +788,10 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "enum Enum.SecretType",
-        "name": "",
-        "type": "uint8"
-      }
+      { "internalType": "enum Enum.SecretType", "name": "", "type": "uint8" }
     ],
     "name": "costPerInputBytes",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1061,41 +799,21 @@
     "inputs": [
       {
         "components": [
-          {
-            "internalType": "uint256",
-            "name": "marketId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "reward",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expiry",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+          { "internalType": "uint256", "name": "reward", "type": "uint256" },
+          { "internalType": "uint256", "name": "expiry", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "timeTakenForProofGeneration",
             "type": "uint256"
           },
-          {
-            "internalType": "uint256",
-            "name": "deadline",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "deadline", "type": "uint256" },
           {
             "internalType": "address",
             "name": "refundAddress",
             "type": "address"
           },
-          {
-            "internalType": "bytes",
-            "name": "proverData",
-            "type": "bytes"
-          }
+          { "internalType": "bytes", "name": "proverData", "type": "bytes" }
         ],
         "internalType": "struct Struct.Bid",
         "name": "bid",
@@ -1106,21 +824,9 @@
         "name": "secretType",
         "type": "uint8"
       },
-      {
-        "internalType": "bytes",
-        "name": "privateInputs",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "acl",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "extraData",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "privateInputs", "type": "bytes" },
+      { "internalType": "bytes", "name": "acl", "type": "bytes" },
+      { "internalType": "bytes", "name": "extraData", "type": "bytes" }
     ],
     "name": "createBid",
     "outputs": [],
@@ -1129,26 +835,10 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "_marketmetadata",
-        "type": "bytes"
-      },
-      {
-        "internalType": "address",
-        "name": "_verifier",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_proverPcrs",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_ivsPcrs",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "_marketmetadata", "type": "bytes" },
+      { "internalType": "address", "name": "_verifier", "type": "address" },
+      { "internalType": "bytes", "name": "_proverPcrs", "type": "bytes" },
+      { "internalType": "bytes", "name": "_ivsPcrs", "type": "bytes" }
     ],
     "name": "createMarket",
     "outputs": [],
@@ -1157,11 +847,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "discardRequest",
     "outputs": [],
@@ -1170,11 +856,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_transmitter",
-        "type": "address"
-      },
+      { "internalType": "address", "name": "_transmitter", "type": "address" },
       {
         "internalType": "uint256",
         "name": "_feeRewardAmount",
@@ -1189,23 +871,13 @@
   {
     "inputs": [],
     "name": "entityKeyRegistry",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "marketId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "marketId", "type": "uint256" }
     ],
     "name": "freezeMarket",
     "outputs": [],
@@ -1214,19 +886,11 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "getBidState",
     "outputs": [
-      {
-        "internalType": "enum Enum.BidState",
-        "name": "",
-        "type": "uint8"
-      }
+      { "internalType": "enum Enum.BidState", "name": "", "type": "uint8" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1240,99 +904,47 @@
       },
       {
         "components": [
-          {
-            "internalType": "uint256",
-            "name": "marketId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "reward",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expiry",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+          { "internalType": "uint256", "name": "reward", "type": "uint256" },
+          { "internalType": "uint256", "name": "expiry", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "timeTakenForProofGeneration",
             "type": "uint256"
           },
-          {
-            "internalType": "uint256",
-            "name": "deadline",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "deadline", "type": "uint256" },
           {
             "internalType": "address",
             "name": "refundAddress",
             "type": "address"
           },
-          {
-            "internalType": "bytes",
-            "name": "proverData",
-            "type": "bytes"
-          }
+          { "internalType": "bytes", "name": "proverData", "type": "bytes" }
         ],
         "internalType": "struct Struct.Bid",
         "name": "bid",
         "type": "tuple"
       },
-      {
-        "internalType": "bytes",
-        "name": "privateInputs",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "acl",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "privateInputs", "type": "bytes" },
+      { "internalType": "bytes", "name": "acl", "type": "bytes" }
     ],
     "name": "getPlatformFee",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
     ],
     "name": "getRoleAdmin",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -1341,48 +953,22 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "hasRole",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
+      { "internalType": "address", "name": "_admin", "type": "address" },
+      { "internalType": "address", "name": "_paymentToken", "type": "address" },
+      { "internalType": "address", "name": "_treasury", "type": "address" },
       {
         "internalType": "address",
-        "name": "_admin",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_paymentToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_treasury",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_proverRegistry",
+        "name": "_proverManager",
         "type": "address"
       },
       {
@@ -1402,52 +988,26 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "name": "listOfBid",
     "outputs": [
       {
         "components": [
-          {
-            "internalType": "uint256",
-            "name": "marketId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "reward",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "expiry",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+          { "internalType": "uint256", "name": "reward", "type": "uint256" },
+          { "internalType": "uint256", "name": "expiry", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "timeTakenForProofGeneration",
             "type": "uint256"
           },
-          {
-            "internalType": "uint256",
-            "name": "deadline",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "deadline", "type": "uint256" },
           {
             "internalType": "address",
             "name": "refundAddress",
             "type": "address"
           },
-          {
-            "internalType": "bytes",
-            "name": "proverData",
-            "type": "bytes"
-          }
+          { "internalType": "bytes", "name": "proverData", "type": "bytes" }
         ],
         "internalType": "struct Struct.Bid",
         "name": "bid",
@@ -1458,16 +1018,8 @@
         "name": "state",
         "type": "uint8"
       },
-      {
-        "internalType": "address",
-        "name": "requester",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "requester", "type": "address" },
+      { "internalType": "address", "name": "prover", "type": "address" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1475,84 +1027,36 @@
   {
     "inputs": [],
     "name": "marketCounter",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "marketCreationCost",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "name": "marketData",
     "outputs": [
-      {
-        "internalType": "address",
-        "name": "verifier",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "proverImageId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "ivsImageId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "creator",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes",
-        "name": "marketmetadata",
-        "type": "bytes"
-      }
+      { "internalType": "address", "name": "verifier", "type": "address" },
+      { "internalType": "bytes32", "name": "proverImageId", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "ivsImageId", "type": "bytes32" },
+      { "internalType": "address", "name": "creator", "type": "address" },
+      { "internalType": "bytes", "name": "marketmetadata", "type": "bytes" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "enum Enum.SecretType",
-        "name": "",
-        "type": "uint8"
-      }
+      { "internalType": "enum Enum.SecretType", "name": "", "type": "uint8" }
     ],
     "name": "minProvingTime",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1566,81 +1070,41 @@
   {
     "inputs": [],
     "name": "paused",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "paymentToken",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "name": "proverClaimableFeeReward",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "proverRegistry",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "name": "proverManager",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "bidIds",
-        "type": "uint256[]"
-      }
+      { "internalType": "uint256[]", "name": "bidIds", "type": "uint256[]" }
     ],
     "name": "refundFees",
     "outputs": [],
@@ -1649,26 +1113,10 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "bidIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "address[]",
-        "name": "provers",
-        "type": "address[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "newAcls",
-        "type": "bytes[]"
-      },
-      {
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      }
+      { "internalType": "uint256[]", "name": "bidIds", "type": "uint256[]" },
+      { "internalType": "address[]", "name": "provers", "type": "address[]" },
+      { "internalType": "bytes[]", "name": "newAcls", "type": "bytes[]" },
+      { "internalType": "bytes", "name": "signature", "type": "bytes" }
     ],
     "name": "relayBatchAssignTasks",
     "outputs": [],
@@ -1677,21 +1125,9 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "marketId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "_proverPcrs",
-        "type": "bytes[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "_ivsPcrs",
-        "type": "bytes[]"
-      }
+      { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+      { "internalType": "bytes[]", "name": "_proverPcrs", "type": "bytes[]" },
+      { "internalType": "bytes[]", "name": "_ivsPcrs", "type": "bytes[]" }
     ],
     "name": "removeExtraImages",
     "outputs": [],
@@ -1700,11 +1136,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
       {
         "internalType": "address",
         "name": "callerConfirmation",
@@ -1718,16 +1150,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "revokeRole",
     "outputs": [],
@@ -1761,13 +1185,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "pcrs",
-        "type": "bytes"
-      }
-    ],
+    "inputs": [{ "internalType": "bytes", "name": "pcrs", "type": "bytes" }],
     "name": "setMatchingEngineImage",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1775,11 +1193,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_paymentToken",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_paymentToken", "type": "address" }
     ],
     "name": "setPaymentToken",
     "outputs": [],
@@ -1788,24 +1202,16 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_proverRegistry",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_proverManager", "type": "address" }
     ],
-    "name": "setProverRegistry",
+    "name": "setProverManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_treasury",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_treasury", "type": "address" }
     ],
     "name": "setTreasury",
     "outputs": [],
@@ -1814,16 +1220,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "proof",
-        "type": "bytes"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" },
+      { "internalType": "bytes", "name": "proof", "type": "bytes" }
     ],
     "name": "submitProof",
     "outputs": [],
@@ -1832,11 +1230,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      },
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" },
       {
         "internalType": "bytes",
         "name": "invalidProofSignature",
@@ -1850,16 +1244,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "taskIds",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "proofs",
-        "type": "bytes[]"
-      }
+      { "internalType": "uint256[]", "name": "taskIds", "type": "uint256[]" },
+      { "internalType": "bytes[]", "name": "proofs", "type": "bytes[]" }
     ],
     "name": "submitProofs",
     "outputs": [],
@@ -1868,35 +1254,17 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes4",
-        "name": "interfaceId",
-        "type": "bytes4"
-      }
+      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
     ],
     "name": "supportsInterface",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_recipient",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "_recipient", "type": "address" },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
     ],
     "name": "transferFeeToken",
     "outputs": [],
@@ -1904,34 +1272,16 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "name": "transmitterClaimableFeeReward",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "treasury",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1949,11 +1299,7 @@
         "name": "secretType",
         "type": "uint8"
       },
-      {
-        "internalType": "uint256",
-        "name": "costPerByte",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "costPerByte", "type": "uint256" }
     ],
     "name": "updateCostPerBytes",
     "outputs": [],
@@ -1962,16 +1308,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "marketId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "metadata",
-        "type": "bytes"
-      }
+      { "internalType": "uint256", "name": "marketId", "type": "uint256" },
+      { "internalType": "bytes", "name": "metadata", "type": "bytes" }
     ],
     "name": "updateMarketMetadata",
     "outputs": [],
@@ -1985,11 +1323,7 @@
         "name": "secretType",
         "type": "uint8"
       },
-      {
-        "internalType": "uint256",
-        "name": "newProvingTime",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "newProvingTime", "type": "uint256" }
     ],
     "name": "updateMinProvingTime",
     "outputs": [],
@@ -2003,11 +1337,7 @@
         "name": "newImplementation",
         "type": "address"
       },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],
@@ -2016,16 +1346,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "attestationData",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "meSignature",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "attestationData", "type": "bytes" },
+      { "internalType": "bytes", "name": "meSignature", "type": "bytes" }
     ],
     "name": "verifyMatchingEngine",
     "outputs": [],

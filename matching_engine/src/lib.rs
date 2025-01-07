@@ -452,7 +452,7 @@ impl MatchingEngine {
         let generator_registry_var = self.config.clone().generator_registry;
         let generator_registry_address = Address::from_str(&generator_registry_var).unwrap();
 
-        let generator_registry = bindings::prover_registry::ProverRegistry::new(
+        let generator_registry = bindings::prover_manager::ProverManager::new(
             generator_registry_address,
             client.clone(),
         );
@@ -508,8 +508,7 @@ impl MatchingEngine {
 
         let stop_handle_clone1 = stop_handle_clone.clone();
         let stop_handle_clone2 = stop_handle_clone.clone();
-        
-        
+
         tokio::spawn(async move {
             tokio::signal::ctrl_c().await.unwrap();
             stop_handle_clone.store(true, Ordering::Release);
@@ -581,17 +580,17 @@ impl MatchingEngine {
 
         let parser = Arc::new(log_parser);
 
-        let parser_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>=
-        tokio::spawn(async move {
-            match parser.parse().await {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    eprintln!("Parser failed: {}", e); // Log the error.
-                    stop_handle_clone2.store(true, Ordering::Release); // Signal shutdown.
-                    Err(e.into()) // Propagate the error.
+        let parser_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> =
+            tokio::spawn(async move {
+                match parser.parse().await {
+                    Ok(_) => Ok(()),
+                    Err(e) => {
+                        eprintln!("Parser failed: {}", e); // Log the error.
+                        stop_handle_clone2.store(true, Ordering::Release); // Signal shutdown.
+                        Err(e.into()) // Propagate the error.
+                    }
                 }
-            }
-        });
+            });
 
         handles.push(parser_handle);
 

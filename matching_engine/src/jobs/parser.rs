@@ -55,7 +55,7 @@ type ProofMarketplaceInstance = bindings::proof_marketplace::ProofMarketplace<
 >;
 
 type GeneratorRegistryInstance =
-    bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
+    bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
 type SymbioticStakingInstance = bindings::symbiotic_staking::SymbioticStaking<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,

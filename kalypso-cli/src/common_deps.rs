@@ -15,7 +15,7 @@ macro_rules! get_config_ref {
 pub struct GeneratorRegister {
     pub private_key_signer: LocalWallet,
     pub generator_registry:
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub reward_address: Address,
     pub declared_compute: U256,
     pub display_name: String,
@@ -27,7 +27,7 @@ pub struct GeneratorRegister {
 pub struct GeneratorJoinMarket {
     pub private_key_signer: LocalWallet,
     pub generator_registry:
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
     #[allow(unused)] //will be used latter
     pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
         SignerMiddleware<Provider<Http>, LocalWallet>,
@@ -168,7 +168,7 @@ fn get_generator_registry_instance(
     rpc_url: &str,
 ) -> Result<
     (
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
         LocalWallet,
     ),
     String,
@@ -198,7 +198,7 @@ fn get_generator_registry_instance(
     let client_arc = Arc::new(client);
 
     // Initialize the Generator Registry contract instance with the signer-enabled client
-    let generator_registry = bindings::prover_registry::ProverRegistry::new(
+    let generator_registry = bindings::prover_manager::ProverManager::new(
         generator_registry_address,
         client_arc.clone(),
     );
@@ -300,7 +300,7 @@ pub struct MarketExitInfo {
     #[allow(unused)] // will use latter
     pub private_key_signer: LocalWallet,
     pub generator_registry:
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub market_id: U256,
 }
 impl CommonDeps {
@@ -789,7 +789,7 @@ pub struct UpdateEncryptionKeyInfo {
     #[allow(unused)]
     pub private_key_signer: LocalWallet,
     pub generator_registry:
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<Provider<Http>>,
     pub attestation_utility: String,
     pub attestation_verifier: String,
@@ -1439,9 +1439,9 @@ fn update_proof_marketplace_metadata_patch_instance(
 
 pub struct UpdateGeneratorMetaInfo {
     pub generator_registry:
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub read_generator_registry:
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub private_key_signer: LocalWallet,
 }
 
@@ -1483,7 +1483,7 @@ fn update_generator_meta_instance(
     rpc_url: &str,
 ) -> Result<
     (
-        bindings::prover_registry::ProverRegistry<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
         LocalWallet,
     ),
     String,
@@ -1513,7 +1513,7 @@ fn update_generator_meta_instance(
     let client_arc = Arc::new(client);
 
     // Initialize the Generator Registry contract instance with the signer-enabled client
-    let generator_registry = bindings::prover_registry::ProverRegistry::new(
+    let generator_registry = bindings::prover_manager::ProverManager::new(
         generator_registry_address,
         client_arc.clone(),
     );

@@ -212,7 +212,10 @@ impl JobCreator {
             log::set_boxed_logger(Box::new(CustomLogger::new(storage_clone))).unwrap();
             log::set_max_level(log::LevelFilter::Info);
 
-            tokio::spawn(Self::start_logging_server(log_storage.clone(), should_stop.clone()));
+            tokio::spawn(Self::start_logging_server(
+                log_storage.clone(),
+                should_stop.clone(),
+            ));
             Self {
                 config,
                 runtime_config,

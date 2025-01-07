@@ -317,7 +317,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
 
     let generator_registry_contract_address =
         Address::from_str(&generator_registry_contract_address)?;
-    let generator_registry_contract = bindings::prover_registry::ProverRegistry::new(
+    let generator_registry_contract = bindings::prover_manager::ProverManager::new(
         generator_registry_contract_address,
         Arc::clone(&client),
     );

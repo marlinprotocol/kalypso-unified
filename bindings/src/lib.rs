@@ -10,8 +10,8 @@ abigen!(
 );
 
 abigen!(
-    ProverRegistry,              // The Rust struct name you want for your contract
-    "./src/ProverRegistry.json", // Path to the ABI file
+    ProverManager,              // The Rust struct name you want for your contract
+    "./src/ProverManager.json", // Path to the ABI file
     event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
 );
 

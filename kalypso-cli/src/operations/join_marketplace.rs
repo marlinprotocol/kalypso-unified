@@ -15,7 +15,7 @@ impl Operation for JoinMarketplace {
 
         match generator_join_market
             .generator_registry
-            .prover_registry(generator_join_market.private_key_signer.address())
+            .prover_manager(generator_join_market.private_key_signer.address())
             .call()
             .await
         {

@@ -8,7 +8,7 @@ use crate::utility::TokenTracker;
 
 pub async fn process_generator_registry_logs(
     log: &Log,
-    genertor_registry: &bindings::prover_registry::ProverRegistry<
+    genertor_registry: &bindings::prover_manager::ProverManager<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
     generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
@@ -24,7 +24,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(add_ivs_key_log) = genertor_registry
-        .decode_event::<bindings::prover_registry::IvKeyAddedFilter>(
+        .decode_event::<bindings::prover_manager::IvKeyAddedFilter>(
             "IvsKeyAdded",
             log.topics.clone(),
             log.data.clone(),
@@ -42,7 +42,7 @@ pub async fn process_generator_registry_logs(
     let mut generator_store = { generator_store.write().await };
 
     if let Ok(parsed_registered_generator_log) = genertor_registry
-        .decode_event::<bindings::prover_registry::ProverRegisteredFilter>(
+        .decode_event::<bindings::prover_manager::ProverRegisteredFilter>(
         "ProverRegistered",
         log.topics.clone(),
         log.data.clone(),
@@ -58,7 +58,7 @@ pub async fn process_generator_registry_logs(
         log::debug!("During registration initial stake is assumed to be 0");
 
         let generator_data = genertor_registry
-            .prover_registry(address)
+            .prover_manager(address)
             .call()
             .await
             .unwrap();
@@ -87,7 +87,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(parsed_deregistered_generator_log) =
-        genertor_registry.decode_event::<bindings::prover_registry::ProverDeregisteredFilter>(
+        genertor_registry.decode_event::<bindings::prover_manager::ProverDeregisteredFilter>(
             "ProverDeregistered",
             log.topics.clone(),
             log.data.clone(),
@@ -110,7 +110,7 @@ pub async fn process_generator_registry_logs(
 
     if let Ok(generator_reward_address_change_log) =
         genertor_registry
-            .decode_event::<bindings::prover_registry::ProverRewardAddressChangedFilter>(
+            .decode_event::<bindings::prover_manager::ProverRewardAddressChangedFilter>(
                 "ProverRewardAddressChanged",
                 log.topics.clone(),
                 log.data.clone(),
@@ -132,7 +132,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(parsed_joined_market_place_log) =
-        genertor_registry.decode_event::<bindings::prover_registry::ProverJoinedMarketplaceFilter>(
+        genertor_registry.decode_event::<bindings::prover_manager::ProverJoinedMarketplaceFilter>(
             "ProverJoinedMarketplace",
             log.topics.clone(),
             log.data.clone(),
@@ -169,7 +169,7 @@ pub async fn process_generator_registry_logs(
 
     if let Ok(parsed_requested_for_exit_log) =
         genertor_registry
-            .decode_event::<bindings::prover_registry::ProverRequestedMarketplaceExitFilter>(
+            .decode_event::<bindings::prover_manager::ProverRequestedMarketplaceExitFilter>(
                 "ProverRequestedMarketplaceExit",
                 log.topics.clone(),
                 log.data.clone(),
@@ -193,7 +193,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(parsed_left_market_place_log) = genertor_registry
-        .decode_event::<bindings::prover_registry::ProverLeftMarketplaceFilter>(
+        .decode_event::<bindings::prover_manager::ProverLeftMarketplaceFilter>(
         "ProverLeftMarketplace",
         log.topics.clone(),
         log.data.clone(),
@@ -211,7 +211,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(increase_compute_log) = genertor_registry
-        .decode_event::<bindings::prover_registry::ComputeIncreasedFilter>(
+        .decode_event::<bindings::prover_manager::ComputeIncreasedFilter>(
         "ComputeIncreased",
         log.topics.clone(),
         log.data.clone(),
@@ -228,7 +228,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(request_compute_decrease_log) =
-        genertor_registry.decode_event::<bindings::prover_registry::ComputeDecreaseRequestedFilter>(
+        genertor_registry.decode_event::<bindings::prover_manager::ComputeDecreaseRequestedFilter>(
             "ComputeDecreaseRequested",
             log.topics.clone(),
             log.data.clone(),
@@ -248,7 +248,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(decrease_compute_log) = genertor_registry
-        .decode_event::<bindings::prover_registry::ComputeDecreasedFilter>(
+        .decode_event::<bindings::prover_manager::ComputeDecreasedFilter>(
         "ComputeDecreased",
         log.topics.clone(),
         log.data.clone(),
@@ -269,7 +269,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(compute_lock_logs) = genertor_registry
-        .decode_event::<bindings::prover_registry::ComputeLockedFilter>(
+        .decode_event::<bindings::prover_manager::ComputeLockedFilter>(
             "ComputeLocked",
             log.topics.clone(),
             log.data.clone(),
@@ -283,7 +283,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(compute_lock_logs) = genertor_registry
-        .decode_event::<bindings::prover_registry::ComputeReleasedFilter>(
+        .decode_event::<bindings::prover_manager::ComputeReleasedFilter>(
             "ComputeReleased",
             log.topics.clone(),
             log.data.clone(),
@@ -297,7 +297,7 @@ pub async fn process_generator_registry_logs(
     }
 
     if let Ok(update_generator_metadata_log) = genertor_registry
-        .decode_event::<bindings::prover_registry::ProverDataUpdatedFilter>(
+        .decode_event::<bindings::prover_manager::ProverDataUpdatedFilter>(
         "ProverDataUpdated",
         log.topics.clone(),
         log.data.clone(),

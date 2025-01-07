@@ -10,45 +10,25 @@
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
-  {
-    "inputs": [],
-    "name": "AccessControlBadConfirmation",
-    "type": "error"
-  },
+  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "neededRole",
-        "type": "bytes32"
-      }
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
     ],
     "name": "AccessControlUnauthorizedAccount",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "target",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "target", "type": "address" }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" }
     ],
     "name": "AlreadyABlacklistedImage",
     "type": "error"
@@ -68,21 +48,13 @@
     "name": "AttestationAutherImageNotWhitelisted",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "AttestationAutherKeyNotVerified",
-    "type": "error"
-  },
+  { "inputs": [], "name": "AttestationAutherKeyNotVerified", "type": "error" },
   {
     "inputs": [],
     "name": "AttestationAutherMismatchedLengths",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "AttestationAutherPCRsInvalid",
-    "type": "error"
-  },
+  { "inputs": [], "name": "AttestationAutherPCRsInvalid", "type": "error" },
   {
     "inputs": [],
     "name": "AttestationAutherPubkeyLengthInvalid",
@@ -90,89 +62,37 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" }
     ],
     "name": "BlacklistedImage",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "implementation",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "implementation", "type": "address" }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ERC1967NonPayable",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "EnclaveKeyNotVerified",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FailedCall",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InferredImageIdIsDifferent",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidEnclaveKey",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidInitialization",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
+  { "inputs": [], "name": "EnclaveKeyNotVerified", "type": "error" },
+  { "inputs": [], "name": "FailedCall", "type": "error" },
+  { "inputs": [], "name": "InferredImageIdIsDifferent", "type": "error" },
+  { "inputs": [], "name": "InvalidEnclaveKey", "type": "error" },
+  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" }
     ],
     "name": "MustBeAnEnclave",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "NotInitializing",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ReentrancyGuardReentrantCall",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "UUPSUnauthorizedCallContext",
-    "type": "error"
-  },
+  { "inputs": [], "name": "NotInitializing", "type": "error" },
+  { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
+  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "slot",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
@@ -465,13 +385,7 @@
   {
     "inputs": [],
     "name": "ATTESTATION_MAX_AGE",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -491,52 +405,28 @@
   {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "KEY_REGISTER_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "MODERATOR_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -544,27 +434,19 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_proverRegistry",
+        "name": "_generatorRegistry",
         "type": "address"
       }
     ],
-    "name": "addProverRegistry",
+    "name": "addGeneratorRegistry",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "familyId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "_key",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "familyId", "type": "bytes32" },
+      { "internalType": "address", "name": "_key", "type": "address" }
     ],
     "name": "allowOnlyVerifiedFamily",
     "outputs": [],
@@ -572,31 +454,15 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "name": "blackListedImages",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" }
     ],
     "name": "blacklistImage",
     "outputs": [],
@@ -605,69 +471,33 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
     ],
     "name": "getRoleAdmin",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_key",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_key", "type": "address" }
     ],
     "name": "getVerifiedKey",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "_imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "_imageId", "type": "bytes32" }
     ],
     "name": "getWhitelistedImage",
     "outputs": [
       {
         "components": [
-          {
-            "internalType": "bytes",
-            "name": "PCR0",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR1",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR2",
-            "type": "bytes"
-          }
+          { "internalType": "bytes", "name": "PCR0", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR1", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR2", "type": "bytes" }
         ],
         "internalType": "struct AttestationAutherUpgradeable.EnclaveImage",
         "name": "",
@@ -679,16 +509,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -697,52 +519,22 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "hasRole",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_admin",
-        "type": "address"
-      },
+      { "internalType": "address", "name": "_admin", "type": "address" },
       {
         "components": [
-          {
-            "internalType": "bytes",
-            "name": "PCR0",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR1",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR2",
-            "type": "bytes"
-          }
+          { "internalType": "bytes", "name": "PCR0", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR1", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR2", "type": "bytes" }
         ],
         "internalType": "struct AttestationAutherUpgradeable.EnclaveImage[]",
         "name": "initWhitelistImages",
@@ -756,77 +548,35 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "family",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "family", "type": "bytes32" }
     ],
     "name": "isImageInFamily",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "", "type": "address" },
+      { "internalType": "uint256", "name": "", "type": "uint256" }
     ],
     "name": "pub_key",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes", "name": "", "type": "bytes" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "family",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "family", "type": "bytes32" }
     ],
     "name": "removeEnclaveImageFromFamily",
     "outputs": [],
@@ -835,16 +585,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "keyOwner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "keyIndex",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "keyOwner", "type": "address" },
+      { "internalType": "uint256", "name": "keyIndex", "type": "uint256" }
     ],
     "name": "removePubkey",
     "outputs": [],
@@ -853,11 +595,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
       {
         "internalType": "address",
         "name": "callerConfirmation",
@@ -871,16 +609,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "revokeRole",
     "outputs": [],
@@ -889,45 +619,19 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes4",
-        "name": "interfaceId",
-        "type": "bytes4"
-      }
+      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
     ],
     "name": "supportsInterface",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "keyOwner",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "keyIndex",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bytes",
-        "name": "pubkey",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "attestation_data",
-        "type": "bytes"
-      }
+      { "internalType": "address", "name": "keyOwner", "type": "address" },
+      { "internalType": "uint256", "name": "keyIndex", "type": "uint256" },
+      { "internalType": "bytes", "name": "pubkey", "type": "bytes" },
+      { "internalType": "bytes", "name": "attestation_data", "type": "bytes" }
     ],
     "name": "updatePubkey",
     "outputs": [],
@@ -941,11 +645,7 @@
         "name": "newImplementation",
         "type": "address"
       },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],
@@ -954,33 +654,13 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "signature",
-        "type": "bytes"
-      },
+      { "internalType": "bytes", "name": "signature", "type": "bytes" },
       {
         "components": [
-          {
-            "internalType": "bytes",
-            "name": "enclavePubKey",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR0",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR1",
-            "type": "bytes"
-          },
-          {
-            "internalType": "bytes",
-            "name": "PCR2",
-            "type": "bytes"
-          },
+          { "internalType": "bytes", "name": "enclavePubKey", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR0", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR1", "type": "bytes" },
+          { "internalType": "bytes", "name": "PCR2", "type": "bytes" },
           {
             "internalType": "uint256",
             "name": "timestampInMilliseconds",
@@ -993,23 +673,13 @@
       }
     ],
     "name": "verifyEnclaveKey",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "attestation_data",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "attestation_data", "type": "bytes" }
     ],
     "name": "verifyKey",
     "outputs": [],
@@ -1018,16 +688,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "family",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes",
-        "name": "pcrs",
-        "type": "bytes"
-      }
+      { "internalType": "bytes32", "name": "family", "type": "bytes32" },
+      { "internalType": "bytes", "name": "pcrs", "type": "bytes" }
     ],
     "name": "whitelistImageUsingPcrs",
     "outputs": [],
