@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs, io};
 
 use async_trait::async_trait;
 
-use crate::common_deps::CommonDeps;
+use crate::{common_deps::CommonDeps, send_with_optional_gas};
 
 use super::Operation;
 
@@ -27,13 +27,9 @@ impl Operation for UpdateMarketMetadata {
 
         let market_metadata: Vec<u8> = json_string.into_bytes();
 
-        let tx_hash = CommonDeps::send_and_confirm(
-            market_meta_update_info
-                .proof_marketplace
-                .update_market_metadata(market_meta_update_info.market_id, market_metadata.into())
-                .send(),
-        )
-        .await?;
+        let tx_hash = send_with_optional_gas!(market_meta_update_info
+            .proof_marketplace
+            .update_market_metadata(market_meta_update_info.market_id, market_metadata.into()))?;
 
         // Print the transaction hash
         println!("Update Market Metadata Transaction: {}", tx_hash);

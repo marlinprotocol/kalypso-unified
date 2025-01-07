@@ -1,4 +1,4 @@
-use crate::{common_deps::CommonDeps, operations::Operation};
+use crate::{common_deps::CommonDeps, operations::Operation, send_with_optional_gas};
 use async_trait::async_trait;
 use ethers::signers::Signer;
 use std::collections::HashMap;
@@ -43,34 +43,24 @@ impl Operation for CreateMarketplace {
             .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if token_allowance < market_creation_cost {
-            let token_approval_transaction = CommonDeps::send_and_confirm(
-                market_create_info
-                    .payment_token
-                    .approve(
-                        market_create_info.proof_marketplace.address(),
-                        market_creation_cost,
-                    )
-                    .send(),
-            )
-            .await
-            .map_err(|e| format!("Token approval failed: {}", e))?;
+            let token_approval_transaction =
+                send_with_optional_gas!(market_create_info.payment_token.approve(
+                    market_create_info.proof_marketplace.address(),
+                    market_creation_cost,
+                ))
+                .map_err(|e| format!("Token approval failed: {}", e))?;
 
             println!("Token Approval: {}", token_approval_transaction);
         }
 
-        let market_creation_transaction = CommonDeps::send_and_confirm(
-            market_create_info
-                .proof_marketplace
-                .create_market(
-                    vec![12, 23].into(),
-                    market_create_info.verifier_wrapper,
-                    market_create_info.prover_pcrs.into(),
-                    market_create_info.ivs_pcrs.into(),
-                )
-                .send(),
-        )
-        .await
-        .map_err(|e| format!("Market Creation Transaction failed: {}", e))?;
+        let market_creation_transaction =
+            send_with_optional_gas!(market_create_info.proof_marketplace.create_market(
+                vec![12, 23].into(),
+                market_create_info.verifier_wrapper,
+                market_create_info.prover_pcrs.into(),
+                market_create_info.ivs_pcrs.into(),
+            ))
+            .map_err(|e| format!("Market Creation Transaction failed: {}", e))?;
 
         println!(
             "Market Creation Transaction: {}",

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use ethers::prelude::*;
 use std::{collections::HashMap, sync::Arc};
 
-use crate::common_deps::CommonDeps;
+use crate::{common_deps::CommonDeps, send_with_optional_gas};
 
 use super::Operation;
 
@@ -272,8 +272,7 @@ impl Operation for SymbioticOperatorRegister {
         );
 
         let operator_registry_transaction_hash =
-            CommonDeps::send_and_confirm(operator_registry.register_operator().send())
-                .await
+            send_with_optional_gas!(operator_registry.register_operator())
                 .map_err(|e| format!("Failed making symbiotic operator registry {}", e))?;
 
         println!(
@@ -326,31 +325,24 @@ impl Operation for SymbioticOptIn {
         let network_service =
             Service::new(symbiotic_info.network_opt_in_service, client_arc.clone());
 
-        let vault_opt_in_transaction_hash = match CommonDeps::send_and_confirm(
-            vault_service.opt_in(symbiotic_info.vault_address).send(),
-        )
-        .await
-        {
-            Ok(data) => data,
-            Err(e) => {
-                eprintln!("Failed making vault opt in operation {}", e);
-                eprintln!("Run the operation again to retry");
-                "Failed Vault Opt IN".into()
-            }
-        };
+        let vault_opt_in_transaction_hash =
+            match send_with_optional_gas!(vault_service.opt_in(symbiotic_info.vault_address)) {
+                Ok(data) => data,
+                Err(e) => {
+                    eprintln!("Failed making vault opt in operation {}", e);
+                    eprintln!("Run the operation again to retry");
+                    "Failed Vault Opt IN".into()
+                }
+            };
 
         println!(
             "Vault Opt In transaction: {}",
             vault_opt_in_transaction_hash
         );
 
-        let network_opt_in_transaction_hash = CommonDeps::send_and_confirm(
-            network_service
-                .opt_in(symbiotic_info.network_address)
-                .send(),
-        )
-        .await
-        .map_err(|e| format!("Failed making network opt in operation {}", e))?;
+        let network_opt_in_transaction_hash =
+            send_with_optional_gas!(network_service.opt_in(symbiotic_info.network_address))
+                .map_err(|e| format!("Failed making network opt in operation {}", e))?;
 
         println!(
             "Network Opt In transaction: {}",
@@ -401,18 +393,14 @@ impl Operation for SetMiddlewareAddress {
         let middleware =
             Middleware::new(set_middleware_info.middleware_address, client_arc.clone());
 
-        let tx_hash = CommonDeps::send_and_confirm(
-            middleware
-                .set_delegate(set_middleware_info.operator_address)
-                .send(),
-        )
-        .await
-        .map_err(|e| {
-            format!(
-                "Failed setting operator address in kalypso middleware {}",
-                e
-            )
-        })?;
+        let tx_hash =
+            send_with_optional_gas!(middleware.set_delegate(set_middleware_info.operator_address))
+                .map_err(|e| {
+                    format!(
+                        "Failed setting operator address in kalypso middleware {}",
+                        e
+                    )
+                })?;
 
         println!("Set Operator in Middleware Transaction: {}", tx_hash);
         Ok(())

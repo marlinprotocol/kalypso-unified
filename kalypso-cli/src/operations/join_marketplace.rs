@@ -1,4 +1,4 @@
-use crate::{common_deps::CommonDeps, operations::Operation};
+use crate::{common_deps::CommonDeps, operations::Operation, send_with_optional_gas};
 use async_trait::async_trait;
 use ethers::{
     signers::Signer,
@@ -39,22 +39,18 @@ impl Operation for JoinMarketplace {
                         return Err(format!("Generator has already joined the market."));
                     }
 
-                    let tx_hash = CommonDeps::send_and_confirm(
-                        generator_join_market
-                            .generator_registry
-                            .join_marketplace(
-                                generator_join_market.market_id,
-                                generator_join_market.compute_per_request_required,
-                                generator_join_market.proof_generation_cost,
-                                generator_join_market.proposed_time,
-                                0.into(), // TODO, this is commission
-                                false,
-                                vec![].into(),
-                                vec![].into(),
-                            )
-                            .send(),
-                    )
-                    .await?;
+                    let tx_hash = send_with_optional_gas!(generator_join_market
+                        .generator_registry
+                        .join_marketplace(
+                            generator_join_market.market_id,
+                            generator_join_market.compute_per_request_required,
+                            generator_join_market.proof_generation_cost,
+                            generator_join_market.proposed_time,
+                            0.into(), // TODO, this is commission
+                            false,
+                            vec![].into(),
+                            vec![].into(),
+                        ))?;
 
                     // Print the transaction hash
                     println!("{}", tx_hash);

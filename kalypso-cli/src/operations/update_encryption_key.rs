@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use ethers::{signers::Signer, types::H256};
 use futures::StreamExt;
 
-use crate::common_deps::CommonDeps;
+use crate::{common_deps::CommonDeps, send_with_optional_gas};
 
 use super::Operation;
 
@@ -64,18 +64,13 @@ impl Operation for AddIvsKey {
         .await
         .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
 
-        let add_ivskey_transaction = CommonDeps::send_and_confirm(
-            add_ivs_key_info
-                .generator_registry
-                .add_ivs_key(
-                    add_ivs_key_info.market_id,
-                    verified_attestation.into(),
-                    enclave_signature.into(),
-                )
-                .send(),
-        )
-        .await
-        .map_err(|e| format!("Add IVS KEY Transaction failed: {}", e))?;
+        let add_ivskey_transaction =
+            send_with_optional_gas!(add_ivs_key_info.generator_registry.add_ivs_key(
+                add_ivs_key_info.market_id,
+                verified_attestation.into(),
+                enclave_signature.into(),
+            ))
+            .map_err(|e| format!("Add IVS KEY Transaction failed: {}", e))?;
 
         println!("Add IVS Key Transaction: {}", add_ivskey_transaction);
 
@@ -153,17 +148,13 @@ impl Operation for UpdateEncryptionKey {
         .await
         .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
 
-        let update_encryption_key_transaction = CommonDeps::send_and_confirm(
-            update_encryption_info
-                .generator_registry
-                .update_encryption_key(
-                    update_encryption_info.market_id,
-                    verified_attestation.into(),
-                    enclave_signature.into(),
-                )
-                .send(),
-        )
-        .await
+        let update_encryption_key_transaction = send_with_optional_gas!(update_encryption_info
+            .generator_registry
+            .update_encryption_key(
+                update_encryption_info.market_id,
+                verified_attestation.into(),
+                enclave_signature.into(),
+            ))
         .map_err(|e| format!("Update Encryption Key Transaction failed: {}", e))?;
 
         println!(

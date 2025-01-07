@@ -13,6 +13,24 @@ use prompts::Prompter;
 use std::collections::HashMap;
 use std::process;
 
+#[macro_export]
+macro_rules! send_with_optional_gas {
+    ($builder:expr) => {{
+        // Initialize the transaction builder as mutable
+        let mut __tx_builder = $builder;
+
+        // Conditionally set the gas limit based on the feature flag
+        if cfg!(feature = "force_transactions") {
+            __tx_builder = __tx_builder.gas(1_000_000);
+        }
+
+        // Send and confirm the transaction, handling errors
+        CommonDeps::send_and_confirm(__tx_builder.send())
+            .await
+            .map_err(|e| format!("Claim Reward Transaction failed: {}", e))
+    }};
+}
+
 #[tokio::main]
 async fn main() {
     // Initialize the logger

@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use ethers::providers::Middleware;
 use ethers::{core::rand, signers::Signer, types::U256};
 
+use crate::send_with_optional_gas;
 use crate::{common_deps::CommonDeps, operations::compute_pcrs::non_confidential_pcrs};
 
 use super::Operation;
@@ -55,17 +56,12 @@ impl Operation for ConfidentialRequest {
             .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if token_allowance < confidential_request_info.max_proof_generation_cost {
-            let token_approval_transaction = CommonDeps::send_and_confirm(
-                confidential_request_info
-                    .payment_token
-                    .approve(
-                        confidential_request_info.proof_marketplace.address(),
-                        confidential_request_info.max_proof_generation_cost,
-                    )
-                    .send(),
-            )
-            .await
-            .map_err(|e| format!("Token approval failed: {}", e))?;
+            let token_approval_transaction =
+                send_with_optional_gas!(confidential_request_info.payment_token.approve(
+                    confidential_request_info.proof_marketplace.address(),
+                    confidential_request_info.max_proof_generation_cost,
+                ))
+                .map_err(|e| format!("Token approval failed: {}", e))?;
 
             println!("Token Approval: {}", token_approval_transaction);
         }
@@ -116,28 +112,23 @@ impl Operation for ConfidentialRequest {
             return Err("Failed fetching latest 11 block".into());
         }
 
-        let proof_request_transaction = CommonDeps::send_and_confirm(
-            confidential_request_info
-                .proof_marketplace
-                .create_bid(
-                    bindings::proof_marketplace::Bid {
-                        market_id: confidential_request_info.market_id,
-                        reward: confidential_request_info.max_proof_generation_cost,
-                        expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
-                        time_taken_for_proof_generation: confidential_request_info
-                            .max_proof_generation_time,
-                        deadline: U256::zero(),
-                        refund_address: confidential_request_info.private_key_signer.address(),
-                        prover_data: confidential_request_info.inputs,
-                    },
-                    0.into(),                       // `secret_type` argument
-                    encrypted_private_input.into(), // `encrypted private_inputs` argument
-                    acl.into(),                     // `acl` argument
-                    vec![].into(),                  // extra data
-                )
-                .send(),
-        )
-        .await?;
+        let proof_request_transaction =
+            send_with_optional_gas!(confidential_request_info.proof_marketplace.create_bid(
+                bindings::proof_marketplace::Bid {
+                    market_id: confidential_request_info.market_id,
+                    reward: confidential_request_info.max_proof_generation_cost,
+                    expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
+                    time_taken_for_proof_generation: confidential_request_info
+                        .max_proof_generation_time,
+                    deadline: U256::zero(),
+                    refund_address: confidential_request_info.private_key_signer.address(),
+                    prover_data: confidential_request_info.inputs,
+                },
+                0.into(),                       // `secret_type` argument
+                encrypted_private_input.into(), // `encrypted private_inputs` argument
+                acl.into(),                     // `acl` argument
+                vec![].into(),                  // extra data
+            ))?;
 
         // Print the transaction hash
         println!("proof request transaction: {}", proof_request_transaction);
@@ -193,17 +184,12 @@ impl Operation for NonConfidentialRequest {
             .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
 
         if token_allowance < non_confidential_request_info.max_proof_generation_cost {
-            let token_approval_transaction = CommonDeps::send_and_confirm(
-                non_confidential_request_info
-                    .payment_token
-                    .approve(
-                        non_confidential_request_info.proof_marketplace.address(),
-                        non_confidential_request_info.max_proof_generation_cost,
-                    )
-                    .send(),
-            )
-            .await
-            .map_err(|e| format!("Token approval failed: {}", e))?;
+            let token_approval_transaction =
+                send_with_optional_gas!(non_confidential_request_info.payment_token.approve(
+                    non_confidential_request_info.proof_marketplace.address(),
+                    non_confidential_request_info.max_proof_generation_cost,
+                ))
+                .map_err(|e| format!("Token approval failed: {}", e))?;
 
             println!("Token Approval: {}", token_approval_transaction);
         }
@@ -229,28 +215,23 @@ impl Operation for NonConfidentialRequest {
             return Err("Failed fetching latest 11 block".into());
         }
 
-        let proof_request_transaction = CommonDeps::send_and_confirm(
-            non_confidential_request_info
-                .proof_marketplace
-                .create_bid(
-                    bindings::proof_marketplace::Bid {
-                        market_id: non_confidential_request_info.market_id,
-                        reward: non_confidential_request_info.max_proof_generation_cost,
-                        expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
-                        time_taken_for_proof_generation: non_confidential_request_info
-                            .max_proof_generation_time,
-                        deadline: U256::zero(),
-                        refund_address: non_confidential_request_info.private_key_signer.address(),
-                        prover_data: non_confidential_request_info.inputs,
-                    },
-                    0.into(),      // `secret_type` argument
-                    vec![].into(), // `private_inputs` argument
-                    vec![].into(), // `acl` argument
-                    vec![].into(), // `extra` data
-                )
-                .send(),
-        )
-        .await?;
+        let proof_request_transaction =
+            send_with_optional_gas!(non_confidential_request_info.proof_marketplace.create_bid(
+                bindings::proof_marketplace::Bid {
+                    market_id: non_confidential_request_info.market_id,
+                    reward: non_confidential_request_info.max_proof_generation_cost,
+                    expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
+                    time_taken_for_proof_generation: non_confidential_request_info
+                        .max_proof_generation_time,
+                    deadline: U256::zero(),
+                    refund_address: non_confidential_request_info.private_key_signer.address(),
+                    prover_data: non_confidential_request_info.inputs,
+                },
+                0.into(),      // `secret_type` argument
+                vec![].into(), // `private_inputs` argument
+                vec![].into(), // `acl` argument
+                vec![].into(), // `extra` data
+            ))?;
 
         // Print the transaction hash
         println!("proof request transaction: {}", proof_request_transaction);

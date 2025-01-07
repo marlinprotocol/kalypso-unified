@@ -5,6 +5,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use std::{collections::HashMap, error::Error};
 
 use crate::common_deps::CommonDeps;
+use crate::send_with_optional_gas;
 
 use super::update_encryption_key::get_address_signature;
 use super::{update_generator_meta::read_file_from_paths, Operation};
@@ -387,13 +388,9 @@ impl Operation for SetMatchingEngineImage {
             ));
         }
 
-        let set_image_transaction = CommonDeps::send_and_confirm(
-            set_image_info
-                .proof_marketplace
-                .set_matching_engine_image(set_image_info.matching_engine_pcrs.into())
-                .send(),
-        )
-        .await
+        let set_image_transaction = send_with_optional_gas!(set_image_info
+            .proof_marketplace
+            .set_matching_engine_image(set_image_info.matching_engine_pcrs.into()))
         .map_err(|e| format!("Set Matching Engine Image Transaction failed: {}", e))?;
 
         println!(
@@ -472,13 +469,9 @@ impl Operation for VerifyMatchingEngineKeys {
             )
         })?;
 
-        let verify_matching_engine_keys = CommonDeps::send_and_confirm(
-            verify_matching_engine_config
-                .proof_marketplace
-                .verify_matching_engine(attestation.into(), address_signature.into())
-                .send(),
-        )
-        .await
+        let verify_matching_engine_keys = send_with_optional_gas!(verify_matching_engine_config
+            .proof_marketplace
+            .verify_matching_engine(attestation.into(), address_signature.into()))
         .map_err(|e| format!("Verify Matching Engine Key Transaction failed: {}", e))?;
 
         println!(

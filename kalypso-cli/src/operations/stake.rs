@@ -7,7 +7,7 @@ use ethers::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::common_deps::CommonDeps;
+use crate::{common_deps::CommonDeps, send_with_optional_gas};
 
 use super::Operation;
 
@@ -18,17 +18,13 @@ impl Operation for RequestNativeStakeWithdrawal {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let request_staking_withdrawal_info = CommonDeps::request_stake_withdrawal_info(&config)?;
 
-        let native_unstaking_request_tx = CommonDeps::send_and_confirm(
-            request_staking_withdrawal_info
-                .native_staking
-                .request_stake_withdrawal(
-                    request_staking_withdrawal_info.private_key_signer.address(),
-                    request_staking_withdrawal_info.staking_token.address(),
-                    request_staking_withdrawal_info.staking_amount,
-                )
-                .send(),
-        )
-        .await
+        let native_unstaking_request_tx = send_with_optional_gas!(request_staking_withdrawal_info
+            .native_staking
+            .request_stake_withdrawal(
+                request_staking_withdrawal_info.private_key_signer.address(),
+                request_staking_withdrawal_info.staking_token.address(),
+                request_staking_withdrawal_info.staking_amount,
+            ))
         .map_err(|e| format!("Native Unstaking Request Transaction failed: {}", e))?;
 
         println!(
@@ -101,17 +97,12 @@ impl Operation for ProcessWithdrawalRequests {
             return Err("No Pending Withdrawals available".to_string());
         }
 
-        let withdrawal_transaction_hash = CommonDeps::send_and_confirm(
-            request_staking_info
-                .native_staking
-                .withdraw_stake(
-                    request_staking_info.private_key_signer.address(),
-                    withdrawal_requests.into(),
-                )
-                .send(),
-        )
-        .await
-        .map_err(|e| format!("Native Staking Withdraw Transaction failed: {}", e))?;
+        let withdrawal_transaction_hash =
+            send_with_optional_gas!(request_staking_info.native_staking.withdraw_stake(
+                request_staking_info.private_key_signer.address(),
+                withdrawal_requests.into(),
+            ))
+            .map_err(|e| format!("Native Staking Withdraw Transaction failed: {}", e))?;
 
         println!(
             "Withdrawal Request Transaction: {}",
@@ -154,32 +145,21 @@ impl Operation for NativeStaking {
             .map_err(|e| format!("Failed making call to staking token contract {}", e))?;
 
         if token_allowance < native_stake_info.staking_amount {
-            let token_approval_transaction = CommonDeps::send_and_confirm(
-                native_stake_info
-                    .staking_token
-                    .approve(
-                        native_stake_info.native_staking.address(),
-                        native_stake_info.staking_amount,
-                    )
-                    .send(),
-            )
-            .await
-            .map_err(|e| format!("Token approval failed: {}", e))?;
+            let token_approval_transaction =
+                send_with_optional_gas!(native_stake_info.staking_token.approve(
+                    native_stake_info.native_staking.address(),
+                    native_stake_info.staking_amount,
+                ))
+                .map_err(|e| format!("Token approval failed: {}", e))?;
 
             println!("Token Approval: {}", token_approval_transaction);
         }
 
-        let native_stake_tx = CommonDeps::send_and_confirm(
-            native_stake_info
-                .native_staking
-                .stake(
-                    native_stake_info.staking_token.address(),
-                    native_stake_info.operator_address,
-                    native_stake_info.staking_amount,
-                )
-                .send(),
-        )
-        .await
+        let native_stake_tx = send_with_optional_gas!(native_stake_info.native_staking.stake(
+            native_stake_info.staking_token.address(),
+            native_stake_info.operator_address,
+            native_stake_info.staking_amount,
+        ))
         .map_err(|e| format!("Native Staking Transaction failed: {}", e))?;
 
         println!("Native Staking Transaction: {}", native_stake_tx);

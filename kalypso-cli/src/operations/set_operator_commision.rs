@@ -4,6 +4,7 @@ use ethers::{contract::abigen, types::U256};
 use std::{collections::HashMap, sync::Arc};
 
 use crate::common_deps::CommonDeps;
+use crate::send_with_optional_gas;
 
 use super::Operation;
 
@@ -60,12 +61,8 @@ impl Operation for SetOperatorCommision {
             client_arc.clone(),
         );
 
-        let set_commission_hash = CommonDeps::send_and_confirm(
-            set_reward_share_instance
-                .set_operator_reward_share(set_operator_commission_info.operator_commission)
-                .send(),
-        )
-        .await
+        let set_commission_hash = send_with_optional_gas!(set_reward_share_instance
+            .set_operator_reward_share(set_operator_commission_info.operator_commission))
         .map_err(|e| format!("Failed making call to proof marketplace {}", e))?;
 
         println!(

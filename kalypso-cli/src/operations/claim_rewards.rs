@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use ethers::types::U256;
 
-use crate::common_deps::CommonDeps;
+use crate::{common_deps::CommonDeps, send_with_optional_gas};
 
 use super::Operation;
 
@@ -45,13 +45,9 @@ impl Operation for ClaimRewardsInfo {
             return Err("No Rewards available to claim".to_string());
         }
 
-        let claim_reward_transaction = CommonDeps::send_and_confirm(
-            claim_rewards_info
-                .proof_marketplace
-                .claim_prover_fee_reward()
-                .send(),
-        )
-        .await
+        let claim_reward_transaction = send_with_optional_gas!(claim_rewards_info
+            .proof_marketplace
+            .claim_prover_fee_reward())
         .map_err(|e| format!("Claim Reward Transaction failed: {}", e))?;
 
         println!("Claim Reward Transaction: {}", claim_reward_transaction);

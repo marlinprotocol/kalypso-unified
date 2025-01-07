@@ -2,6 +2,7 @@
 
 use crate::common_deps::CommonDeps;
 use crate::operations::Operation;
+use crate::send_with_optional_gas;
 use async_trait::async_trait;
 use std::collections::HashMap;
 
@@ -13,13 +14,9 @@ impl Operation for RequestMarketPlaceExit {
         // Initialize common dependencies
         let request_exit_info = CommonDeps::marketplace_exit_info(&config)?;
 
-        let tx_hash = CommonDeps::send_and_confirm(
-            request_exit_info
-                .generator_registry
-                .request_for_exit_marketplace(request_exit_info.market_id)
-                .send(),
-        )
-        .await?;
+        let tx_hash = send_with_optional_gas!(request_exit_info
+            .generator_registry
+            .request_for_exit_marketplace(request_exit_info.market_id))?;
 
         // Print the transaction hash
         println!("Request Marketplace Exit tx: {}", tx_hash);
@@ -35,13 +32,9 @@ impl Operation for LeaveMarketPlace {
         // Initialize common dependencies
         let request_exit_info = CommonDeps::marketplace_exit_info(&config)?;
 
-        let tx_hash = CommonDeps::send_and_confirm(
-            request_exit_info
-                .generator_registry
-                .leave_marketplace(request_exit_info.market_id)
-                .send(),
-        )
-        .await?;
+        let tx_hash = send_with_optional_gas!(request_exit_info
+            .generator_registry
+            .leave_marketplace(request_exit_info.market_id))?;
 
         // Print the transaction hash
         println!("Marketplace Exit tx: {}", tx_hash);

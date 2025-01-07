@@ -2,6 +2,7 @@
 
 use crate::common_deps::CommonDeps;
 use crate::operations::Operation;
+use crate::send_with_optional_gas;
 use async_trait::async_trait;
 use ethers::signers::Signer;
 use ethers::types::Address;
@@ -46,17 +47,12 @@ impl Operation for CompleteRegistration {
         {
             Ok(data) => {
                 if data.0.eq(&Address::zero()) {
-                    let tx_hash = CommonDeps::send_and_confirm(
-                        generator_info
-                            .generator_registry
-                            .register(
-                                generator_info.reward_address,
-                                generator_info.declared_compute,
-                                generator_metadata.to_vec().into(),
-                            )
-                            .send(),
-                    )
-                    .await?;
+                    let tx_hash =
+                        send_with_optional_gas!(generator_info.generator_registry.register(
+                            generator_info.reward_address,
+                            generator_info.declared_compute,
+                            generator_metadata.to_vec().into(),
+                        ))?;
 
                     // Print the transaction hash
                     println!("{}", tx_hash);

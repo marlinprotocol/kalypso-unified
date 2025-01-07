@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs, io};
 use async_trait::async_trait;
 use ethers::{signers::Signer, types::Address};
 
-use crate::common_deps::CommonDeps;
+use crate::{common_deps::CommonDeps, send_with_optional_gas};
 
 use super::Operation;
 
@@ -40,13 +40,9 @@ impl Operation for UpdateGeneratorMeta {
 
         let generator_metadata: Vec<u8> = json_string.into_bytes();
 
-        let tx_hash = CommonDeps::send_and_confirm(
-            generator_meta_info
-                .generator_registry
-                .update_prover_data(generator_metadata.into())
-                .send(),
-        )
-        .await?;
+        let tx_hash = send_with_optional_gas!(generator_meta_info
+            .generator_registry
+            .update_prover_data(generator_metadata.into()))?;
 
         // Print the transaction hash
         println!("Update Generator Metadata Transaction: {}", tx_hash);
