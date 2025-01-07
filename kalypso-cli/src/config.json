@@ -1,6 +1,12 @@
 {
   "prompts": [
     {
+      "field": "address_to_check_role_for",
+      "prompt": "Enter address to check role for",
+      "secret": false,
+      "env_var": "CHECK_ROLE_FOR"
+    },
+    {
       "field": "private_key",
       "prompt": "Enter your private key",
       "secret": true,
@@ -35,6 +41,12 @@
       "prompt": "Enter Proof Marketplace Contract Address",
       "secret": false,
       "env_var": "PROOF_MARKETPLACE_ADDRESS"
+    },
+    {
+      "field": "symbiotic_staking",
+      "prompt": "Enter Symbiotic Staking Contract Address",
+      "secret": false,
+      "env_var": "SYMBIOTIC_STAKING_ADDRESS"
     },
     {
       "field": "entity_registry",
@@ -788,6 +800,19 @@
       "required_prompts": [
         "attestation_server_url", 
         "enclave_image_id"
+      ]
+    },
+    {
+      "name": "Check Role Management",
+      "description": "Check role managements in different contracts",
+      "required_prompts": [
+        "rpc_url",
+        "chain_id",
+        "address_to_check_role_for",
+        "proof_marketplace",
+        "generator_registry",
+        "entity_registry",
+        "symbiotic_staking"
       ]
     }
   ]

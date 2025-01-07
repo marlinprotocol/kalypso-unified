@@ -12,6 +12,7 @@ pub mod leave_or_request_leave_marketplace;
 pub mod matching_engine_programs;
 pub mod read_proof;
 pub mod request;
+pub mod role_mgmt;
 pub mod set_operator_commision;
 pub mod stake;
 pub mod stake_data;
@@ -118,6 +119,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
             Some(Box::new(matching_engine_programs::VerifyMatchingEngineKeys))
         }
         "Verify Remote Attestation" => Some(Box::new(compute_pcrs::VerifyAttestion)),
+        "Check Role Management" => Some(Box::new(role_mgmt::RoleCheck)),
         _ => unimplemented!(),
     }
 }

@@ -1903,3 +1903,125 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct RoleManagementCheck {
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub generator_registry:
+        bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
+
+    pub entity_registry: bindings::entity_key_registry::EntityKeyRegistry<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+
+    pub symbiotic_staking: bindings::symbiotic_staking::SymbioticStaking<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+
+    pub address_to_check_role_for: Address,
+}
+
+impl CommonDeps {
+    pub fn role_management_check_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<RoleManagementCheck, String> {
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "generator_registry", generator_registry_address);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "entity_registry", entity_key_registry_address);
+        get_config_ref!(config, "symbiotic_staking", symbiotic_staking);
+        get_config_ref!(
+            config,
+            "address_to_check_role_for",
+            address_to_check_role_for
+        );
+
+        let address_to_check_role_for = address_to_check_role_for
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Address: {}", e))?;
+
+        // some random 64 chars
+        let private_key = "aaaabbbbaaaabbbbaaaabbbbaaaabbbbaaaabbbbaaaabbbbaaaabbbbaaaabbbb";
+
+        let (generator_registry, _) = get_generator_registry_instance(
+            private_key,
+            chain_id,
+            generator_registry_address,
+            rpc_url,
+        )?;
+
+        let (proof_marketplace, _) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let (entity_registry, _) = get_entity_key_registry_instance(
+            private_key,
+            chain_id,
+            entity_key_registry_address,
+            rpc_url,
+        )?;
+
+        let (symbiotic_staking, _) =
+            get_symbiotic_instance(private_key, chain_id, symbiotic_staking, rpc_url)?;
+
+        Ok(RoleManagementCheck {
+            proof_marketplace,
+            generator_registry,
+            entity_registry,
+            address_to_check_role_for,
+            symbiotic_staking,
+        })
+    }
+}
+
+fn get_symbiotic_instance(
+    private_key: &str,
+    chain_id: &str,
+    symbiotic_staking_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::symbiotic_staking::SymbioticStaking<
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+        >,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let symbiotic_staking_address = symbiotic_staking_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Symbiotic Staking address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let symbiotic_staking = bindings::symbiotic_staking::SymbioticStaking::new(
+        symbiotic_staking_address,
+        client_arc.clone(),
+    );
+
+    Ok((symbiotic_staking, private_key_signer))
+}

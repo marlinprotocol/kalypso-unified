@@ -35,6 +35,15 @@ impl<'a> Prompter<'a> {
             validate_eth_address as Validator,
         );
 
+        validators.insert(
+            "symbiotic_staking".to_string(),
+            validate_eth_address as Validator,
+        );
+
+        validators.insert(
+            "address_to_check_role_for".to_string(),
+            validate_eth_address,
+        );
         validators.insert("reward_address".to_string(), validate_eth_address);
         validators.insert("declared_compute".to_string(), validate_dec_str_id);
         validators.insert("stake".to_string(), validate_dec_str_id);
