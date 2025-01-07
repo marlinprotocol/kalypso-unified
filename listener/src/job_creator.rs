@@ -212,7 +212,7 @@ impl JobCreator {
             log::set_boxed_logger(Box::new(CustomLogger::new(storage_clone))).unwrap();
             log::set_max_level(log::LevelFilter::Info);
 
-            tokio::spawn(Self::start_logging_server(log_storage.clone()));
+            tokio::spawn(Self::start_logging_server(log_storage.clone(), should_stop.clone()));
             Self {
                 config,
                 runtime_config,
@@ -239,6 +239,7 @@ impl JobCreator {
 
     fn start_logging_server(
         log_storage: Arc<Mutex<Vec<String>>>,
+        should_stop: Arc<AtomicBool>,
     ) -> impl std::future::Future<Output = ()> + Send {
         let log_route = warp::path::end().map(move || {
             let logs = log_storage.lock().unwrap();
@@ -250,9 +251,14 @@ impl JobCreator {
             .and_then(|val| val.parse().ok())
             .unwrap_or(9998);
 
-        let server = warp::serve(log_route).run(([127, 0, 0, 1], logging_server_port));
+        Box::pin(async move {
+            let server = warp::serve(log_route).run(([127, 0, 0, 1], logging_server_port));
 
-        Box::pin(server)
+            if let Err(e) = tokio::spawn(server).await {
+                eprintln!("Logging server failed to start: {:?}", e);
+                should_stop.store(true, Ordering::Release); // Update stop handle
+            }
+        })
     }
 
     #[allow(clippy::too_many_arguments)]
