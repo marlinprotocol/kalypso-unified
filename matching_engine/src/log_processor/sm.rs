@@ -67,6 +67,37 @@ pub async fn process_staking_manager_log(
         return Ok(());
     }
 
+    // typed event not working
+    // <bindings::staking_manager::ProofMarketplaceSetFilter>
+    if let Ok(event_log) = staking_manager.decode_event_raw(
+        "ProofMarketplaceSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("ProofMarketplaceSet Logs: {:?}", event_log);
+        return Ok(());
+    }
+
+    // typed event not working
+    // <bindings::staking_manager::FeeTokenSetFilter>
+    if let Ok(event_log) =
+        staking_manager.decode_event_raw("FeeTokenSet", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("FeeTokenSet Logs: {:?}", event_log);
+        return Ok(());
+    }
+
+    // typed event not working
+    // <bindings::staking_manager::SymbioticStakingSetFilter>
+    if let Ok(event_log) = staking_manager.decode_event_raw(
+        "SymbioticStakingSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("SymbioticStakingSet Logs: {:?}", event_log);
+        return Ok(());
+    }
+
     if let Ok(event_log) = staking_manager
         .decode_event::<bindings::staking_manager::PoolEnabledSetFilter>(
             "PoolEnabledSet",

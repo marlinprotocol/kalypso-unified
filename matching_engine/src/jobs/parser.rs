@@ -169,7 +169,7 @@ impl LogParser {
 
     pub async fn parse(&self) -> anyhow::Result<()> {
         let mut matches_upto: Option<U64> = None;
-        let mut last_backup_made_at = tokio::time::Instant::now();
+        let mut last_backup_tried_at = tokio::time::Instant::now();
 
         loop {
             if self.should_stop.load(Ordering::Acquire) {
@@ -189,8 +189,8 @@ impl LogParser {
             // once in every n loops, the indexers makes a local backup to avoid parsing from start.
             // this is useless if the shape of the data the indexers creates changes.
 
-            let time_since_last_backup = last_backup_made_at.elapsed();
-            log::info!(
+            let time_since_last_backup = last_backup_tried_at.elapsed();
+            log::debug!(
                 "Time since last backup: {} sec",
                 time_since_last_backup.as_secs_f64()
             );
@@ -219,7 +219,14 @@ impl LogParser {
                     parsed_block: parsed_block.clone(),
                 };
 
-                let dump = dump.create_encrypted_dump().await.unwrap();
+                let dump = match dump.create_encrypted_dump().await {
+                    Ok(data) => data,
+                    Err(err) => {
+                        log::error!("Error creating dump: {}", err);
+                        last_backup_tried_at = tokio::time::Instant::now();
+                        continue;
+                    }
+                };
 
                 use tokio::fs;
                 use tokio::io::AsyncWriteExt;
@@ -264,14 +271,15 @@ impl LogParser {
                     }
                 }
 
-                last_backup_made_at = tokio::time::Instant::now();
+                last_backup_tried_at = tokio::time::Instant::now();
                 continue;
             }
 
-            if let Some(matches_upto) = matches_upto.filter(|&m| m == end_block) {
+            if let Some(_matches_upto) = matches_upto.filter(|&m| m == end_block) {
+                #[cfg(feature = "disable_match_creation")]
                 log::warn!(
                     "All matches made up to {}. Waiting for a few seconds",
-                    matches_upto
+                    _matches_upto
                 );
                 thread::sleep(Duration::from_secs(5));
                 continue;
@@ -279,9 +287,10 @@ impl LogParser {
 
             if start_block + self.confirmations <= end_block {
                 log::info!(
-                    "Processing blocks from {:?} to {:?}",
+                    "Processing blocks from {:?} to {:?}. ==> Range: {:?}",
                     start_block,
-                    end_block
+                    end_block,
+                    end_block - start_block
                 );
 
                 let proof_marketplace_address = self.proof_marketplace.address();
@@ -437,7 +446,9 @@ impl LogParser {
 
             matches_upto = match self.create_match(end_block).await {
                 Ok(upto) => {
+                    #[cfg(not(feature = "disable_match_creation"))]
                     log::info!("Completed match assignment upto: {}", upto);
+
                     Some(upto)
                 }
                 Err(err) => {

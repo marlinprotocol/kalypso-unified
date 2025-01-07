@@ -31,12 +31,13 @@ pub async fn process_symbiotic_staking_logs(
         .get(&log.topics[0])
         .is_some()
     {
-        log::warn!("standard topic to skip found, ignoring it");
+        log::debug!("standard topic to skip found, ignoring it");
         return Ok(());
     }
 
-    if let Ok(stake_manager_set_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::StakingManagerSetFilter>(
+    // typed event not working
+    // <bindings::symbiotic_staking::StakingManagerSetFilter>
+    if let Ok(stake_manager_set_log) = symbiotic_staking.decode_event_raw(
         "StakingManagerSet",
         log.topics.clone(),
         log.data.clone(),
@@ -45,54 +46,52 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::ProofMarketplaceSetFilter>(
-            "ProofMarketplaceSet",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
+    // typed event not working
+    // <bindings::symbiotic_staking::ProofMarketplaceSetFilter>
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "ProofMarketplaceSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
         log::debug!("ProofMarketplaceSet Logs: {:?}", event_log);
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::RewardDistributorSetFilter>(
-            "RewardDistributorSet",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
+    // typed event not working
+    // <bindings::symbiotic_staking::RewardDistributorSetFilter>
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "RewardDistributorSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
         log::debug!("RewardDistributorSet Logs: {:?}", event_log);
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::FeeRewardTokenSetFilter>(
-            "FeeRewardTokenSet",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
+    // typed event not working
+    // <bindings::symbiotic_staking::FeeRewardTokenSetFilter>
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "FeeRewardTokenSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
         log::debug!("FeeRewardTokenSet Logs: {:?}", event_log);
         return Ok(());
     }
 
     let mut symbiotic_stake_store = { symbiotic_stake_store.write().await };
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::StakeTokenAddedFilter>(
-            "StakeTokenAdded",
-            log.topics.clone(),
-            log.data.clone(),
-        )
+    //  typed event not working
+    // <bindings::symbiotic_staking::StakeTokenAddedFilter>
+    if let Ok(event_log) =
+        symbiotic_staking.decode_event_raw("StakeTokenAdded", log.topics.clone(), log.data.clone())
     {
         log::debug!("StakeTokenAdded Logs: {:?}", event_log);
-        // let token = event_log.get(0).unwrap().clone().into_address().unwrap();
-        // let weight = event_log.get(1).unwrap().clone().into_uint().unwrap();
+        let token = event_log.get(0).unwrap().clone().into_address().unwrap();
+        let weight = event_log.get(1).unwrap().clone().into_uint().unwrap();
 
-        let token = event_log.token;
-        let weight = event_log.weight;
+        // let token = event_log.token;
+        // let weight = event_log.weight;
 
         log::debug!("Added token: {} with weight: {}", token, weight);
         symbiotic_stake_store.set_lock_token(token, U256::zero());
@@ -167,13 +166,14 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::AttestationVerifierSetFilter>(
-        "AttestationVerifierUpdated",
+    // typed event not working
+    // <bindings::symbiotic_staking::AttestationVerifierSetFilter>
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "AttestationVerifierSet",
         log.topics.clone(),
         log.data.clone(),
     ) {
-        log::debug!("AttestationVerifierUpdated Logs: {:?}", event_log);
+        log::debug!("AttestationVerifierSet Logs: {:?}", event_log);
         return Ok(());
     }
 

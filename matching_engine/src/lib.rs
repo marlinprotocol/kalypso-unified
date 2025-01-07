@@ -160,22 +160,19 @@ impl Dump {
         // Load matching engine configuration
         let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
         let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
-        let file_content = fs::read_to_string(config_path)
-            .or_else(|_| fs::read_to_string(alt_config_path))
-            .unwrap();
-        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
+        let file_content =
+            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path))?;
+        let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
 
         let rpc_url = config.clone().rpc_url;
         let chain_id = config.clone().chain_id;
 
         let relayer_key = config.clone().relayer_private_key;
         let relayer_signer = relayer_key
-            .parse::<LocalWallet>()
-            .unwrap()
-            .with_chain_id(U64::from_dec_str(&chain_id).unwrap().as_u64());
+            .parse::<LocalWallet>()?
+            .with_chain_id(U64::from_dec_str(&chain_id)?.as_u64());
 
-        let provider_http = Provider::<Http>::try_from(&rpc_url)
-            .unwrap()
+        let provider_http = Provider::<Http>::try_from(&rpc_url)?
             // .with_signer(matching_engine_signer.clone());
             .with_signer(relayer_signer.clone());
 
@@ -197,35 +194,33 @@ impl Dump {
         let matching_engine_key = entity_key_registry
             .pub_key(proof_market_place_addr, U256::from(0))
             .call()
-            .await
-            .unwrap();
+            .await?;
 
         let mut extended_pub_key = vec![0x04];
         extended_pub_key.extend_from_slice(&matching_engine_key);
 
         // Now, `extended_pub_key` is a 65-byte vector with `04` prepended.
-        let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into().unwrap();
-        let me_public_key = ecies::PublicKey::parse(pub_key_array).unwrap();
+        let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into()?;
+        let me_public_key = ecies::PublicKey::parse(pub_key_array)?;
         let me_public_key = me_public_key.serialize_compressed();
         ecies_public_keys.push(me_public_key.to_vec());
 
         // Ensure this matching engine can decrypt
-        let private_key = hex::decode(config.matching_engine_key).unwrap();
-        let private_key: &[u8; 32] = private_key.as_slice().try_into().unwrap();
-        let sk = SecretKey::parse(private_key).unwrap();
+        let private_key = hex::decode(config.matching_engine_key)?;
+        let private_key: &[u8; 32] = private_key.as_slice().try_into()?;
+        let sk = SecretKey::parse(private_key)?;
 
         let public_key = PublicKey::from_secret_key(&sk);
         let public_key = public_key.serialize_compressed();
 
         // Check matching engine key in the ecies key list
         if ecies_public_keys.contains(&public_key.to_vec()) {
-            let dump_value = serde_json::to_value(self).unwrap();
-            let dump = serde_json::to_vec(&dump_value).unwrap();
+            let dump_value = serde_json::to_value(self)?;
+            let dump = serde_json::to_vec(&dump_value)?;
             let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(
                 ecies_public_keys,
                 &dump,
-            )
-            .unwrap();
+            )?;
             let encrypted_dump = EncryptedDump {
                 encrypted: encrypted_data.encrypted_data,
                 acls: encrypted_data.acls,
@@ -242,11 +237,10 @@ impl EncryptedDump {
         // Load matching engine configuration
         let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
         let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
-        let file_content = fs::read_to_string(config_path)
-            .or_else(|_| fs::read_to_string(alt_config_path))
-            .unwrap();
-        let config: MatchingEngineConfig = serde_json::from_str(&file_content).unwrap();
-        let me_private_key_vec = hex::decode(config.matching_engine_key).unwrap();
+        let file_content =
+            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path))?;
+        let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
+        let me_private_key_vec = hex::decode(config.matching_engine_key)?;
 
         let encrypted_dump = self.clone().encrypted;
         let mut decrypted_dump: Dump = Dump::default();
@@ -264,7 +258,7 @@ impl EncryptedDump {
             match decrypted {
                 Ok(data) => {
                     // println!("OK, Loop {:?}", counter);
-                    decrypted_dump = serde_json::from_slice(&data).unwrap();
+                    decrypted_dump = serde_json::from_slice(&data)?;
                     break;
                 }
                 Err(e) => {
@@ -323,7 +317,10 @@ impl MatchingEngine {
         encrypted_dump: EncryptedDump,
         path_to_snapshot: String,
     ) -> anyhow::Result<()> {
-        let dump = encrypted_dump.get_dump().unwrap();
+        let dump = encrypted_dump
+            .get_dump()
+            .map_err(|e| anyhow::anyhow!("Failed to get dump: {}", e))?;
+
         self.run_from_dump(dump, path_to_snapshot).await
     }
 

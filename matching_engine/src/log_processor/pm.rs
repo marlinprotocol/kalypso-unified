@@ -90,6 +90,57 @@ pub async fn process_proof_market_place_logs(
         return Ok(());
     }
 
+    // typed event not working here
+    // <pmp::PaymentTokenSetFilter>
+    if let Ok(event_logs) =
+        proof_market_place.decode_event_raw("PaymentTokenSet", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("PaymentTokenSet {:?}", event_logs);
+        return Ok(());
+    }
+
+    // typed event not working here
+    // <pmp::TreasurySetFilter>
+    if let Ok(event_logs) =
+        proof_market_place.decode_event_raw("TreasurySet", log.topics.clone(), log.data.clone())
+    {
+        log::debug!("TreasurySet {:?}", event_logs);
+        return Ok(());
+    }
+
+    // typed event not working here
+    // <pmp::ProverManagerSetFilter>
+    if let Ok(event_logs) = proof_market_place.decode_event_raw(
+        "ProverManagerSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("ProverManagerSet {:?}", event_logs);
+        return Ok(());
+    }
+
+    // typed event not working here
+    // <pmp::EntityKeyRegistrySetFilter>
+    if let Ok(event_logs) = proof_market_place.decode_event_raw(
+        "EntityKeyRegistrySet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("EntityKeyRegistrySet {:?}", event_logs);
+        return Ok(());
+    }
+
+    // typed event not working here
+    // <pmp::MarketCreationCostSetFilter>
+    if let Ok(event_logs) = proof_market_place.decode_event_raw(
+        "MarketCreationCostSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("MarketCreationCostSet {:?}", event_logs);
+        return Ok(());
+    }
+
     if let Ok(parsed_ask_created_log) = proof_market_place.decode_event::<pmp::BidCreatedFilter>(
         "BidCreated",
         log.topics.clone(),

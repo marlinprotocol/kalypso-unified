@@ -32,12 +32,12 @@ pub async fn process_native_staking_logs(
         log::debug!("standard topic to skip found, ignoring it");
         return Ok(());
     }
-    if let Ok(stake_manager_set_log) = native_staking
-        .decode_event::<bindings::native_staking::StakingManagerSetFilter>(
-        "StakingManagerSet",
-        log.topics.clone(),
-        log.data.clone(),
-    ) {
+
+    // typed event not working
+    // <bindings::native_staking::StakingManagerSetFilter>
+    if let Ok(stake_manager_set_log) =
+        native_staking.decode_event_raw("StakingManagerSet", log.topics.clone(), log.data.clone())
+    {
         log::debug!("Staking Manager Set Logs: {:?}", stake_manager_set_log);
         return Ok(());
     }
@@ -355,8 +355,9 @@ pub async fn process_native_staking_logs(
         return Ok(());
     }
 
-    if let Ok(set_withdrawal_duration_logs) = native_staking
-        .decode_event::<bindings::native_staking::WithdrawalDurationSetFilter>(
+    // typed event not working
+    // <bindings::native_staking::WithdrawalDurationSetFilter>
+    if let Ok(set_withdrawal_duration_logs) = native_staking.decode_event_raw(
         "WithdrawalDurationSet",
         log.topics.clone(),
         log.data.clone(),
