@@ -27,7 +27,7 @@ macro_rules! send_with_optional_gas {
         // Send and confirm the transaction, handling errors
         CommonDeps::send_and_confirm(__tx_builder.send())
             .await
-            .map_err(|e| format!("Claim Reward Transaction failed: {}", e))
+            .map_err(|e| format!("Transaction failed: {}", e))
     }};
 }
 

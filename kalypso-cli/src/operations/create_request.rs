@@ -128,7 +128,8 @@ impl Operation for ConfidentialRequest {
                 encrypted_private_input.into(), // `encrypted private_inputs` argument
                 acl.into(),                     // `acl` argument
                 vec![].into(),                  // extra data
-            ))?;
+            ))
+            .map_err(|e| format!("Failed Creating Proof Request Transaction: {}", e))?;
 
         // Print the transaction hash
         println!("proof request transaction: {}", proof_request_transaction);
@@ -231,7 +232,8 @@ impl Operation for NonConfidentialRequest {
                 vec![].into(), // `private_inputs` argument
                 vec![].into(), // `acl` argument
                 vec![].into(), // `extra` data
-            ))?;
+            ))
+            .map_err(|e| format!("Failed Creating Proof Request Transaction: {}", e))?;
 
         // Print the transaction hash
         println!("proof request transaction: {}", proof_request_transaction);

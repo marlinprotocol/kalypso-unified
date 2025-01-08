@@ -16,7 +16,13 @@ impl Operation for RequestMarketPlaceExit {
 
         let tx_hash = send_with_optional_gas!(request_exit_info
             .generator_registry
-            .request_for_exit_marketplace(request_exit_info.market_id))?;
+            .request_for_exit_marketplace(request_exit_info.market_id))
+        .map_err(|e| {
+            format!(
+                "Failed Creating Request For Exit Marketplace Transaction: {}",
+                e
+            )
+        })?;
 
         // Print the transaction hash
         println!("Request Marketplace Exit tx: {}", tx_hash);
@@ -34,7 +40,8 @@ impl Operation for LeaveMarketPlace {
 
         let tx_hash = send_with_optional_gas!(request_exit_info
             .generator_registry
-            .leave_marketplace(request_exit_info.market_id))?;
+            .leave_marketplace(request_exit_info.market_id))
+        .map_err(|e| format!("Failed Creating Leave Market Place Transaction: {}", e))?;
 
         // Print the transaction hash
         println!("Marketplace Exit tx: {}", tx_hash);

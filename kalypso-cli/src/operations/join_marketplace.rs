@@ -50,7 +50,8 @@ impl Operation for JoinMarketplace {
                             false,
                             vec![].into(),
                             vec![].into(),
-                        ))?;
+                        ))
+                    .map_err(|e| format!("Failed Creating Join Marketplace Transaction: {}", e))?;
 
                     // Print the transaction hash
                     println!("{}", tx_hash);

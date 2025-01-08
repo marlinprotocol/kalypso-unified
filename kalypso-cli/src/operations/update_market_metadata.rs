@@ -29,7 +29,8 @@ impl Operation for UpdateMarketMetadata {
 
         let tx_hash = send_with_optional_gas!(market_meta_update_info
             .proof_marketplace
-            .update_market_metadata(market_meta_update_info.market_id, market_metadata.into()))?;
+            .update_market_metadata(market_meta_update_info.market_id, market_metadata.into()))
+        .map_err(|e| format!("Failed Update Market Metadata Transaction: {}", e))?;
 
         // Print the transaction hash
         println!("Update Market Metadata Transaction: {}", tx_hash);

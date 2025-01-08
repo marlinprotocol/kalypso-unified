@@ -15,7 +15,8 @@ impl Operation for DiscardRequest {
 
         let tx_hash = send_with_optional_gas!(discard_request_info
             .proof_marketplace
-            .discard_request(discard_request_info.ask_id))?;
+            .discard_request(discard_request_info.ask_id))
+        .map_err(|e| format!("Failed Discard Request Transaction: {}", e))?;
 
         // Print the transaction hash
         println!("{}", tx_hash);
