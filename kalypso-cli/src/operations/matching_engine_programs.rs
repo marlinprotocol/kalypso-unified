@@ -5,9 +5,9 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use std::{collections::HashMap, error::Error};
 
 use crate::common_deps::CommonDeps;
+use crate::operations::update_encryption_key::get_attestation_signature;
 use crate::send_with_optional_gas;
 
-use super::update_encryption_key::get_address_signature;
 use super::{update_generator_meta::read_file_from_paths, Operation};
 
 pub struct LoadMatchingEngineConfig;
@@ -17,7 +17,7 @@ impl Operation for LoadMatchingEngineConfig {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let start_program_info = CommonDeps::start_matching_engine_program_info(&config)?;
 
-        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec_raw(
+        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec(
             &start_program_info.matching_engine_attestation_utility,
             false,
         )
@@ -29,13 +29,20 @@ impl Operation for LoadMatchingEngineConfig {
                 .await
                 .map_err(|e| format!("{}", e))?;
 
+        // let public_key_after_verification = std::fs::read("./app/secp.pub").unwrap();
+
         load_matching_engine_config(
             start_program_info.matching_engine_client_url,
             &public_key_after_verification,
             start_program_info.chain_id,
         )
         .await
-        .map_err(|e| format!("Failed to start program in the enclave: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Failed to load matching_engine_config.json in the enclave: {}",
+                e
+            )
+        })?;
 
         Ok(())
     }
@@ -48,7 +55,7 @@ impl Operation for StartProgam {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let start_program_info = CommonDeps::start_matching_engine_program_info(&config)?;
 
-        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec_raw(
+        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec(
             &start_program_info.matching_engine_attestation_utility,
             false,
         )
@@ -80,7 +87,7 @@ impl Operation for StopProgram {
         // start program and stop program require same args
         let start_program_info = CommonDeps::start_matching_engine_program_info(&config)?;
 
-        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec_raw(
+        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec(
             &start_program_info.matching_engine_attestation_utility,
             false,
         )
@@ -327,7 +334,8 @@ async fn load_matching_engine_config(
         .headers(headers)
         .json(&encrypted_payload)
         .send()
-        .await?;
+        .await
+        .map_err(|e| format!("Error Calling Matching Engine Client {:?}", e))?;
 
     // Capture the HTTP status before moving the response
     let status = response.status();
@@ -432,7 +440,7 @@ impl Operation for VerifyMatchingEngineKeys {
             ));
         }
 
-        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec_raw(
+        let attestation = kalypso_helper::pcr_helpers::build_attestation_vec(
             &verify_matching_engine_config.matching_engine_attestation_utility,
             false,
         )
@@ -451,11 +459,21 @@ impl Operation for VerifyMatchingEngineKeys {
             hex::encode(keys_after_verification)
         );
 
+        // this attestation is verified by attestation verifier and will be compatible with AttestationVerifier Contract
+        let attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
+            &verify_matching_engine_config.attestation_verifier,
+            attestation,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Getting Verified Attestation from Verifier {}", e))?;
+
         let address_str = hex::encode(&verify_matching_engine_config.proof_marketplace.address());
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        let address_signature = get_address_signature(
+        let address_signature = get_attestation_signature(
+            hex::encode(&attestation).as_ref(),
             &address_str,
             false,
             &verify_matching_engine_config.matching_engine_client_url,

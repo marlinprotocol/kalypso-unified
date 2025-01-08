@@ -170,20 +170,22 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use serde::Deserialize;
 use std::error::Error;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct SignAddressResponse {
     #[allow(unused)]
     message: String,
     data: SignAddressData,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct SignAddressData {
     r: String,
     s: String,
     v: u8,
 }
 
+#[allow(unused)]
+#[deprecated(note = "Please implement `get_address_signature_encrypted` instead")]
 pub async fn get_address_signature(
     address: &str,
     print_logs: bool,
@@ -243,6 +245,7 @@ pub async fn get_address_signature(
     Ok(signature_bytes)
 }
 
+#[deprecated(note = "Please implement `get_attestation_signature_encrypted` instead")]
 pub async fn get_attestation_signature(
     attestation: &str,
     address: &str,

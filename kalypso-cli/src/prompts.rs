@@ -70,7 +70,7 @@ impl<'a> Prompter<'a> {
         validators.insert("verification_image_id".to_string(), validate_image_id);
         validators.insert("verifier_wrapper".to_string(), validate_eth_address);
         validators.insert("attestation_server_url".to_string(), validate_rpc_url);
-        validators.insert("attestion_verifier_url".to_string(), validate_rpc_url);
+        validators.insert("attestation_verifier_url".to_string(), validate_rpc_url);
         validators.insert("native_staking".to_string(), validate_eth_address);
         validators.insert("operator_address".to_string(), validate_eth_address);
         validators.insert("max_proof_generation_cost".to_string(), validate_dec_str_id);

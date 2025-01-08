@@ -460,11 +460,11 @@ impl CommonDeps {
         config: &std::collections::HashMap<String, String>,
     ) -> Result<ComputePcrsInfo, String> {
         get_config_ref!(config, "attestation_server_url", attestation_server_url);
-        get_config_ref!(config, "attestion_verifier_url", attestion_verifier_url);
+        get_config_ref!(config, "attestation_verifier_url", attestation_verifier_url);
 
         Ok(ComputePcrsInfo {
             attestation_utility: attestation_server_url.to_string(),
-            attestation_verifier: attestion_verifier_url.to_string(),
+            attestation_verifier: attestation_verifier_url.to_string(),
         })
     }
 }
@@ -861,7 +861,7 @@ impl CommonDeps {
         get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
 
         get_config_ref!(config, "attestation_server_url", attestation_server_url);
-        get_config_ref!(config, "attestion_verifier_url", attestion_verifier_url);
+        get_config_ref!(config, "attestation_verifier_url", attestation_verifier_url);
         get_config_ref!(config, "enclave_client_url", enclave_client_url);
         get_config_ref!(config, "market_id", market_id);
 
@@ -882,7 +882,7 @@ impl CommonDeps {
             private_key_signer,
             generator_registry,
             attestation_utility: attestation_server_url.to_string(),
-            attestation_verifier: attestion_verifier_url.to_string(),
+            attestation_verifier: attestation_verifier_url.to_string(),
             enclave_client_url: enclave_client_url.to_string(),
             market_id,
             proof_marketplace,
@@ -1870,7 +1870,7 @@ pub struct VerifyMatchingEngineKeysInfo {
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
     pub signer: LocalWallet,
-
+    pub attestation_verifier: String,
     #[allow(unused)]
     pub chain_id: U64,
 }
@@ -1893,6 +1893,8 @@ impl CommonDeps {
             matching_engine_attestation_utility
         );
         get_config_ref!(config, "matching_engine_image_id", matching_engine_pcrs);
+
+        get_config_ref!(config, "attestation_verifier_url", attestation_verifier_url);
 
         let matching_engine_pcrs = {
             let trimmed_key = if matching_engine_pcrs.starts_with("0x")
@@ -1923,6 +1925,7 @@ impl CommonDeps {
             chain_id: U64::from_str(&chain_id).unwrap(),
             proof_marketplace,
             signer,
+            attestation_verifier: attestation_verifier_url.to_string(),
         })
     }
 }

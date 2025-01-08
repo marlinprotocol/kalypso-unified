@@ -139,7 +139,7 @@
       "env_var": "ATTESTATION_UTILITY_URL"
     },
     {
-      "field": "attestion_verifier_url",
+      "field": "attestation_verifier_url",
       "prompt": "Enter Attestation VERIFIER URL",
       "secret": false,
       "env_var": "ATTESTATION_VERIFIER_URL"
@@ -421,7 +421,7 @@
     {
       "name": "Compute PCRs",
       "description": "Compute PCRs of a given enclave from it's attestation server",
-      "required_prompts": ["attestation_server_url", "attestion_verifier_url"]
+      "required_prompts": ["attestation_server_url", "attestation_verifier_url"]
     },
     {
       "name": "Read Attestation",
@@ -536,7 +536,7 @@
         "generator_registry",
         "market_id",
         "attestation_server_url",
-        "attestion_verifier_url",
+        "attestation_verifier_url",
         "enclave_client_url"
       ]
     },
@@ -550,7 +550,7 @@
         "generator_registry",
         "market_id",
         "attestation_server_url",
-        "attestion_verifier_url",
+        "attestation_verifier_url",
         "enclave_client_url",
         "proof_marketplace"
       ]
@@ -804,7 +804,8 @@
         "proof_marketplace",
         "matching_engine_image_id",
         "matching_engine_client_url",
-        "matching_engine_attestation_utility"
+        "matching_engine_attestation_utility",
+        "attestation_verifier_url"
       ]
     },
     {
