@@ -25,13 +25,13 @@ pub async fn process_generator_registry_logs(
 
     if let Ok(add_ivs_key_log) = genertor_registry
         .decode_event::<bindings::prover_manager::IvKeyAddedFilter>(
-            "IvsKeyAdded",
+            "IvKeyAdded",
             log.topics.clone(),
             log.data.clone(),
         )
     {
         log::debug!(
-            "Ivs key signer: {:?}, market id: {:?}",
+            "Iv key signer: {:?}, market id: {:?}",
             add_ivs_key_log.signer,
             add_ivs_key_log.market_id
         );

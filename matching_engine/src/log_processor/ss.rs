@@ -134,8 +134,9 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::BaseTransmitterComissionRateSetFilter>(
+    //typed event not working here
+    // <bindings::symbiotic_staking::BaseTransmitterComissionRateSetFilter>
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
         "BaseTransmitterComissionRateSet",
         log.topics.clone(),
         log.data.clone(),
@@ -144,13 +145,13 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
-    if let Ok(event_log) = symbiotic_staking
-        .decode_event::<bindings::symbiotic_staking::SubmissionCooldownSetFilter>(
-            "SubmissionCooldownSet",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
+    // type event not working here
+    // <bindings::symbiotic_staking::SubmissionCooldownSetFilter>
+    if let Ok(event_log) = symbiotic_staking.decode_event_raw(
+        "SubmissionCooldownSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
         log::debug!("SubmissionCooldownSet Logs: {:?}", event_log);
         return Ok(());
     }

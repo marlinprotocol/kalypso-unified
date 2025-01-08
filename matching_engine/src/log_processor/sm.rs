@@ -25,16 +25,14 @@ pub async fn process_staking_manager_log(
 
     let mut stake_manager_store = { stake_manager_store.write().await };
 
-    if let Ok(event_log) = staking_manager
-        .decode_event::<bindings::staking_manager::StakingPoolAddedFilter>(
-            "StakingPoolAdded",
-            log.topics.clone(),
-            log.data.clone(),
-        )
+    // typed event not working here
+    // <bindings::staking_manager::StakingPoolAddedFilter>
+    if let Ok(event_log) =
+        staking_manager.decode_event_raw("StakingPoolAdded", log.topics.clone(), log.data.clone())
     {
         log::debug!("StakingPoolAdded Logs: {:?}", event_log);
-        // let staking_pool = event_log.get(0).unwrap().clone().into_address().unwrap();
-        let staking_pool = event_log.pool;
+        let staking_pool = event_log.get(0).unwrap().clone().into_address().unwrap();
+        // let staking_pool = event_log.pool;
         log::warn!("Dynamic stake pool management is not supported yet");
 
         if staking_pool == supported_native_staking_pool
