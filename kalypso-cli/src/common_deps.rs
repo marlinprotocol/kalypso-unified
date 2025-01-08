@@ -1919,6 +1919,16 @@ pub struct RoleManagementCheck {
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
 
+    pub staking_manager:
+        bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
+
+    pub native_staking:
+        bindings::native_staking::NativeStaking<SignerMiddleware<Provider<Http>, LocalWallet>>,
+
+    pub symbiotic_staking_reward: bindings::symbiotic_staking_reward::SymbioticStakingReward<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+
     pub address_to_check_role_for: Address,
 }
 
@@ -1932,6 +1942,10 @@ impl CommonDeps {
         get_config_ref!(config, "chain_id", chain_id);
         get_config_ref!(config, "entity_registry", entity_key_registry_address);
         get_config_ref!(config, "symbiotic_staking", symbiotic_staking);
+        get_config_ref!(config, "native_staking", native_staking_address);
+        get_config_ref!(config, "staking_manager", staking_manager);
+        get_config_ref!(config, "symbiotic_staking_reward", symbiotic_staking_reward);
+
         get_config_ref!(
             config,
             "address_to_check_role_for",
@@ -1969,12 +1983,24 @@ impl CommonDeps {
         let (symbiotic_staking, _) =
             get_symbiotic_instance(private_key, chain_id, symbiotic_staking, rpc_url)?;
 
+        let (native_staking, _) =
+            get_native_staking_instance(private_key, chain_id, native_staking_address, rpc_url)?;
+
+        let (staking_manager, _) =
+            get_staking_manager(private_key, chain_id, staking_manager, rpc_url)?;
+
+        let (symbiotic_staking_reward, _) =
+            get_symbiotic_staking_reward(private_key, chain_id, symbiotic_staking_reward, rpc_url)?;
+
         Ok(RoleManagementCheck {
             proof_marketplace,
             generator_registry,
             entity_registry,
             address_to_check_role_for,
             symbiotic_staking,
+            native_staking,
+            staking_manager,
+            symbiotic_staking_reward,
         })
     }
 }
@@ -2024,4 +2050,94 @@ fn get_symbiotic_instance(
     );
 
     Ok((symbiotic_staking, private_key_signer))
+}
+
+fn get_staking_manager(
+    private_key: &str,
+    chain_id: &str,
+    stake_manager: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let stake_manager = stake_manager
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Staking Manager address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let stake_manager =
+        bindings::staking_manager::StakingManager::new(stake_manager, client_arc.clone());
+
+    Ok((stake_manager, private_key_signer))
+}
+
+fn get_symbiotic_staking_reward(
+    private_key: &str,
+    chain_id: &str,
+    symbiotic_staking_reward: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::symbiotic_staking_reward::SymbioticStakingReward<
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+        >,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let symbiotic_staking_reward = symbiotic_staking_reward
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Symbiotic Staking Reward address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let symbiotic_staking_reward = bindings::symbiotic_staking_reward::SymbioticStakingReward::new(
+        symbiotic_staking_reward,
+        client_arc.clone(),
+    );
+
+    Ok((symbiotic_staking_reward, private_key_signer))
 }

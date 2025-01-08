@@ -78,6 +78,44 @@ impl Operation for RoleCheck {
         );
 
         check_role!(
+            role_management_info.staking_manager,
+            "STAKING_MANAGER",
+            *address_to_check,
+            "CUSTOM_ADDRESS",
+            default_admin_role,
+            "DEFAULT_ADMIN_ROLE"
+        );
+
+        check_role!(
+            role_management_info.native_staking,
+            "NATIVE_STAKING",
+            *address_to_check,
+            "CUSTOM_ADDRESS",
+            default_admin_role,
+            "DEFAULT_ADMIN_ROLE"
+        );
+
+        check_role!(
+            role_management_info.symbiotic_staking_reward,
+            "SYMBIOTIC_STAKING_REWARD",
+            *address_to_check,
+            "CUSTOM_ADDRESS",
+            default_admin_role,
+            "DEFAULT_ADMIN_ROLE"
+        );
+
+        check_role!(
+            role_management_info.symbiotic_staking,
+            "SYMBIOTIC_STAKING",
+            *address_to_check,
+            "CUSTOM_ADDRESS",
+            bridge_enclave_updates_role,
+            "BRIDGE_ENCLAVE_UPDATES_ROLE"
+        );
+
+        println!("\n");
+
+        check_role!(
             role_management_info.entity_registry,
             "ENTITY_KEY_REGISTRY",
             role_management_info.generator_registry.address(),
@@ -130,6 +168,52 @@ impl Operation for RoleCheck {
             proof_market_place_role,
             "PROOF_MARKETPLACE_ROLE"
         );
+
+        check_role!(
+            role_management_info.native_staking,
+            "NATIVE_STAKING",
+            role_management_info.staking_manager.address(),
+            "STAKING_MANAGER",
+            staking_manager_role,
+            "STAKING_MANAGER_ROLE"
+        );
+
+        check_role!(
+            role_management_info.staking_manager,
+            "STAKING_MANAGER",
+            role_management_info.generator_registry.address(),
+            "GENERATOR_REGISTRY",
+            prover_registry_role,
+            "PROVER_REGISTRY_ROLE"
+        );
+
+        check_role!(
+            role_management_info.staking_manager,
+            "STAKING_MANAGER",
+            role_management_info.symbiotic_staking.address(),
+            "SYMBIOTIC_STAKING",
+            symbiotic_staking_role,
+            "SYMBIOTIC_STAKING_ROLE"
+        );
+
+        check_role!(
+            role_management_info.symbiotic_staking,
+            "SYMBIOTIC_STAKING",
+            role_management_info.staking_manager.address(),
+            "STAKING_MANAGER",
+            staking_manager_role,
+            "STAKING_MANAGER_ROLE"
+        );
+
+        check_role!(
+            role_management_info.symbiotic_staking_reward,
+            "SYMBIOTIC_STAKING_REWARD",
+            role_management_info.symbiotic_staking.address(),
+            "SYMBIOTIC_STAKING",
+            symbiotic_staking_role,
+            "SYMBIOTIC_STAKING_ROLE"
+        );
+
         println!("\n");
 
         Ok(())

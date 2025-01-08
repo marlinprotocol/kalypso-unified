@@ -49,6 +49,12 @@
       "env_var": "SYMBIOTIC_STAKING_ADDRESS"
     },
     {
+      "field": "symbiotic_staking_reward",
+      "prompt": "Enter Symbiotic Staking Reward Contract Address",
+      "secret": false,
+      "env_var": "SYMBIOTIC_STAKING_REWARD_ADDRESS"
+    },
+    {
       "field": "entity_registry",
       "prompt": "Enter Entity Key Registry Contract Address",
       "secret": false,
@@ -149,6 +155,12 @@
       "prompt": "Enter Native Staking Contract Address",
       "secret": false,
       "env_var": "NATIVE_STAKING_ADDRESS"
+    },
+    {
+      "field": "staking_manager",
+      "prompt": "Enter Staking Manager Contract Address",
+      "secret": false,
+      "env_var": "STAKING_MANAGER_ADDRESS"
     },
     {
       "field": "operator_address",
@@ -812,7 +824,10 @@
         "proof_marketplace",
         "generator_registry",
         "entity_registry",
-        "symbiotic_staking"
+        "symbiotic_staking",
+        "native_staking",
+        "staking_manager",
+        "symbiotic_staking_reward"
       ]
     }
   ]

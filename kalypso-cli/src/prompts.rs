@@ -36,7 +36,17 @@ impl<'a> Prompter<'a> {
         );
 
         validators.insert(
+            "staking_manager".to_string(),
+            validate_eth_address as Validator,
+        );
+
+        validators.insert(
             "symbiotic_staking".to_string(),
+            validate_eth_address as Validator,
+        );
+
+        validators.insert(
+            "symbiotic_staking_reward".to_string(),
             validate_eth_address as Validator,
         );
 

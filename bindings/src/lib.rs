@@ -40,6 +40,12 @@ abigen!(
 );
 
 abigen!(
+    SymbioticStakingReward, // The Rust struct name you want for your contract
+    "./src/SymbioticStakingReward.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);
+
+abigen!(
     IERC20,              // The Rust struct name you want for your contract
     "./src/IERC20.json", // Path to the ABI file
     event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
