@@ -19,7 +19,13 @@ impl Operation for ReadRewardsInfo {
             .prover_claimable_fee_reward(read_rewards_info.operator)
             .call()
             .await
-            .map_err(|_| "Failed making call to proof marketplace contract".to_string())?;
+            .map_err(|e| {
+                format!(
+                    "{}. {}",
+                    "Failed making call to proof marketplace contract".to_string(),
+                    e
+                )
+            })?;
 
         println!("Available Rewards: {}", available_rewards);
 
@@ -39,7 +45,13 @@ impl Operation for ClaimRewardsInfo {
             .prover_claimable_fee_reward(claim_rewards_info.reward_address)
             .call()
             .await
-            .map_err(|_| "Failed making call to proof marketplace contract".to_string())?;
+            .map_err(|e| {
+                format!(
+                    "{}. {}",
+                    "Failed making call to proof marketplace contract".to_string(),
+                    e
+                )
+            })?;
 
         if available_rewards.eq(&U256::zero()) {
             return Err("No Rewards available to claim".to_string());

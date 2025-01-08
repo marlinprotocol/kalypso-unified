@@ -551,7 +551,8 @@
         "market_id",
         "attestation_server_url",
         "attestion_verifier_url",
-        "enclave_client_url"
+        "enclave_client_url",
+        "proof_marketplace"
       ]
     },
     {

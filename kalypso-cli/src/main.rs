@@ -7,11 +7,19 @@ mod prompts;
 
 use config::Config;
 use dialoguer::{theme::ColorfulTheme, Select};
-use log::{error, info};
 use operations::get_operation;
 use prompts::Prompter;
 use std::collections::HashMap;
 use std::process;
+
+#[macro_export]
+macro_rules! try_read_contract_error {
+    ($error:expr, $error_type:path, $contract_label:expr) => {{
+        if let Some(contract_error) = $error.decode_contract_revert::<$error_type>() {
+            eprintln!("{:?} Error: {:?}", $contract_label, contract_error);
+        }
+    }};
+}
 
 #[macro_export]
 macro_rules! send_with_optional_gas {
@@ -25,17 +33,12 @@ macro_rules! send_with_optional_gas {
         }
 
         // Send and confirm the transaction, handling errors
-        CommonDeps::send_and_confirm(__tx_builder.send())
-            .await
-            .map_err(|e| format!("Transaction failed: {}", e))
+        CommonDeps::send_and_confirm(__tx_builder.send()).await
     }};
 }
 
 #[tokio::main]
 async fn main() {
-    // Initialize the logger
-    env_logger::init();
-
     // Load configuration
     let config = Config::new();
 
@@ -50,7 +53,6 @@ async fn main() {
     };
 
     if operations.is_empty() {
-        error!("No operations defined in config.json.");
         eprintln!("Error: No operations available. Please check your configuration.");
         process::exit(1);
     }
@@ -67,7 +69,6 @@ async fn main() {
             }
             None => {
                 // If the operation name from the environment is invalid, log an error and exit
-                error!("Invalid operation name in OPERATION_NAME: {}", op_name);
                 eprintln!("Error: '{}' is not a valid operation.", op_name);
                 process::exit(1);
             }
@@ -81,8 +82,7 @@ async fn main() {
             .default(0)
             .interact()
             .unwrap_or_else(|e| {
-                error!("Failed to interact with user: {}", e);
-                eprintln!("Error: Failed to select operation.");
+                eprintln!("Error: Failed to select operation: {}", e);
                 process::exit(1);
             });
 
@@ -102,7 +102,6 @@ async fn main() {
         prompter
             .expect_in_env(&selected_operation.required_prompts)
             .unwrap_or_else(|e| {
-                error!("Failed to collect prompts: {}", e);
                 eprintln!("Error: {}", e);
                 process::exit(1);
             })
@@ -110,7 +109,6 @@ async fn main() {
         prompter
             .prompt(&selected_operation.required_prompts)
             .unwrap_or_else(|e| {
-                error!("Failed to collect prompts: {}", e);
                 eprintln!("Error: {}", e);
                 process::exit(1);
             })
@@ -118,10 +116,6 @@ async fn main() {
 
     // Retrieve the corresponding operation handler
     let operation = get_operation(&selected_operation.name).unwrap_or_else(|| {
-        error!(
-            "Operation '{}' is not implemented.",
-            selected_operation.name
-        );
         eprintln!(
             "Error: Operation '{}' is not implemented.",
             selected_operation.name
@@ -136,16 +130,8 @@ async fn main() {
                 "Operation '{}' completed successfully.",
                 selected_operation.name
             );
-            info!(
-                "Operation '{}' completed successfully.",
-                selected_operation.name
-            );
         }
         Err(e) => {
-            error!(
-                "Error during operation '{}': {}",
-                selected_operation.name, e
-            );
             eprintln!(
                 "Error during operation '{}': {}",
                 selected_operation.name, e

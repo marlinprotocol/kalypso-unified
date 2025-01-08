@@ -16,7 +16,7 @@ impl Operation for UpdateGeneratorMeta {
 
         let generator_data = generator_meta_info
             .read_generator_registry
-            .prover_manager(generator_meta_info.private_key_signer.address())
+            .prover_registry(generator_meta_info.private_key_signer.address())
             .call()
             .await
             .map_err(|e| format!("Failed Reading Generator Registry Contract {}", e))?;

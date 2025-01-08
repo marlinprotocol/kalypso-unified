@@ -5,6 +5,8 @@ use std::future::Future;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::try_read_contract_error;
+
 macro_rules! get_config_ref {
     ($config:expr, $key:expr, $var:ident) => {
         let $var = $config.get($key).ok_or(concat!("Missing '", $key, "'"))?;
@@ -28,7 +30,7 @@ pub struct GeneratorJoinMarket {
     pub private_key_signer: LocalWallet,
     pub generator_registry:
         bindings::prover_manager::ProverManager<SignerMiddleware<Provider<Http>, LocalWallet>>,
-    #[allow(unused)] //will be used latter
+
     pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
@@ -41,17 +43,67 @@ pub struct GeneratorJoinMarket {
 pub struct CommonDeps;
 
 impl CommonDeps {
-    pub async fn send_and_confirm<P, E>(
-        send_future: impl Future<Output = Result<PendingTransaction<'_, P>, E>>,
+    pub async fn send_and_confirm<P, M>(
+        send_future: impl Future<Output = Result<PendingTransaction<'_, P>, ContractError<M>>>,
     ) -> Result<String, String>
     where
         P: JsonRpcClient + Send + Sync + 'static,
-        E: std::fmt::Display,
+        M: ethers::middleware::Middleware,
     {
         // Await the send operation
-        let pending_tx = send_future
-            .await
-            .map_err(|e| format!("Failed to send transaction: {}", e))?;
+        let pending_tx = send_future.await.map_err(|e| {
+            // read error bytes here
+            eprintln!("\n=== Transaction Error ===");
+            eprintln!("Error: {}", e);
+            eprintln!("Attempting to parse contract-specific errors:\n");
+
+            try_read_contract_error!(
+                e,
+                bindings::entity_key_registry::EntityKeyRegistryErrors,
+                "EntityKeyRegistry"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::native_staking::NativeStakingErrors,
+                "NativeStaking"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::proof_marketplace::ProofMarketplaceErrors,
+                "ProofMarketplace"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::prover_manager::ProverManagerErrors,
+                "ProverManager"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::staking_manager::StakingManagerErrors,
+                "StakingManager"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::symbiotic_staking::SymbioticStakingErrors,
+                "SymbioticStaking"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::symbiotic_staking_reward::SymbioticStakingRewardErrors,
+                "SymbioticStakingRewards"
+            );
+
+            try_read_contract_error!(e, bindings::error::ErrorErrors, "OtherErrors");
+
+            eprintln!("========================\n");
+            format!("Failed to send transaction: {}", e)
+        })?;
 
         // Await the confirmation with at least 1 confirmation
         let receipt = pending_tx

@@ -183,8 +183,8 @@ impl Operation for RoleCheck {
             "STAKING_MANAGER",
             role_management_info.generator_registry.address(),
             "GENERATOR_REGISTRY",
-            prover_registry_role,
-            "PROVER_REGISTRY_ROLE"
+            prover_manager_role,
+            "PROVER_MANAGER_ROLE"
         );
 
         check_role!(

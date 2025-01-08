@@ -1,57 +1,149 @@
 [
-  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
-  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "address", "name": "account", "type": "address" },
-      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
     ],
     "name": "AccessControlUnauthorizedAccount",
     "type": "error"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "target", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "implementation", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
-  { "inputs": [], "name": "FailedCall", "type": "error" },
-  { "inputs": [], "name": "InvalidFeeToken", "type": "error" },
-  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
-  { "inputs": [], "name": "InvalidLength", "type": "error" },
-  { "inputs": [], "name": "InvalidPool", "type": "error" },
-  { "inputs": [], "name": "InvalidShares", "type": "error" },
-  { "inputs": [], "name": "InvalidStakingManager", "type": "error" },
-  { "inputs": [], "name": "InvalidSymbioticStaking", "type": "error" },
-  { "inputs": [], "name": "NotInitializing", "type": "error" },
-  { "inputs": [], "name": "PoolAlreadyExists", "type": "error" },
-  { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFeeToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPool",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidShares",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidStakingManager",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSymbioticStaking",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PoolAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "address", "name": "token", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
   },
-  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
   },
-  { "inputs": [], "name": "ZeroToAddress", "type": "error" },
-  { "inputs": [], "name": "ZeroTokenAddress", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ZeroToAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroTokenAddress",
+    "type": "error"
+  },
   {
     "anonymous": false,
     "inputs": [
@@ -259,34 +351,62 @@
   {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "PROVER_REGISTRY_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "PROVER_MANAGER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SYMBIOTIC_STAKING_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_stakingPool", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_stakingPool",
+        "type": "address"
+      }
     ],
     "name": "addStakingPool",
     "outputs": [],
@@ -295,8 +415,16 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_token", "type": "address" },
-      { "internalType": "address", "name": "_to", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_to",
+        "type": "address"
+      }
     ],
     "name": "emergencyWithdraw",
     "outputs": [],
@@ -306,20 +434,38 @@
   {
     "inputs": [],
     "name": "feeToken",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_pool", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_pool",
+        "type": "address"
+      }
     ],
     "name": "getPoolConfig",
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "share", "type": "uint256" },
-          { "internalType": "bool", "name": "enabled", "type": "bool" }
+          {
+            "internalType": "uint256",
+            "name": "share",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "enabled",
+            "type": "bool"
+          }
         ],
         "internalType": "struct Struct.PoolConfig",
         "name": "",
@@ -331,17 +477,35 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
     ],
     "name": "getRoleAdmin",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -350,17 +514,35 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "hasRole",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_admin", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_admin",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "_proofMarketplace",
@@ -371,7 +553,11 @@
         "name": "_symbioticStaking",
         "type": "address"
       },
-      { "internalType": "address", "name": "_feeToken", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_feeToken",
+        "type": "address"
+      }
     ],
     "name": "initialize",
     "outputs": [],
@@ -380,10 +566,20 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_pool", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_pool",
+        "type": "address"
+      }
     ],
     "name": "isEnabledPool",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -391,8 +587,16 @@
     "inputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "bidId", "type": "uint256" },
-          { "internalType": "address", "name": "prover", "type": "address" },
+          {
+            "internalType": "uint256",
+            "name": "bidId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "prover",
+            "type": "address"
+          },
           {
             "internalType": "address",
             "name": "rewardAddress",
@@ -411,8 +615,16 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_bidId", "type": "uint256" },
-      { "internalType": "address", "name": "_prover", "type": "address" }
+      {
+        "internalType": "uint256",
+        "name": "_bidId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_prover",
+        "type": "address"
+      }
     ],
     "name": "onTaskAssignment",
     "outputs": [],
@@ -421,8 +633,16 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_bidId", "type": "uint256" },
-      { "internalType": "address", "name": "_prover", "type": "address" },
+      {
+        "internalType": "uint256",
+        "name": "_bidId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_prover",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "_feeRewardAmount",
@@ -437,20 +657,36 @@
   {
     "inputs": [],
     "name": "proofMarketplace",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_stakingPool", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_stakingPool",
+        "type": "address"
+      }
     ],
     "name": "removeStakingPool",
     "outputs": [],
@@ -459,7 +695,11 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
       {
         "internalType": "address",
         "name": "callerConfirmation",
@@ -473,8 +713,16 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "revokeRole",
     "outputs": [],
@@ -483,8 +731,16 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_pool", "type": "address" },
-      { "internalType": "bool", "name": "_enabled", "type": "bool" }
+      {
+        "internalType": "address",
+        "name": "_pool",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_enabled",
+        "type": "bool"
+      }
     ],
     "name": "setEnabledPool",
     "outputs": [],
@@ -493,7 +749,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_feeToken", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_feeToken",
+        "type": "address"
+      }
     ],
     "name": "setFeeToken",
     "outputs": [],
@@ -502,8 +762,16 @@
   },
   {
     "inputs": [
-      { "internalType": "address[]", "name": "_pools", "type": "address[]" },
-      { "internalType": "uint256[]", "name": "_shares", "type": "uint256[]" }
+      {
+        "internalType": "address[]",
+        "name": "_pools",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_shares",
+        "type": "uint256[]"
+      }
     ],
     "name": "setPoolRewardShare",
     "outputs": [],
@@ -538,17 +806,33 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
+      {
+        "internalType": "bytes4",
+        "name": "_interfaceId",
+        "type": "bytes4"
+      }
     ],
     "name": "supportsInterface",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "symbioticStaking",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -559,7 +843,11 @@
         "name": "newImplementation",
         "type": "address"
       },
-      { "internalType": "bytes", "name": "data", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],

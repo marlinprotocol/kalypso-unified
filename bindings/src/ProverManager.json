@@ -1,62 +1,144 @@
 [
-  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
-  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "address", "name": "account", "type": "address" },
-      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
     ],
     "name": "AccessControlUnauthorizedAccount",
     "type": "error"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "target", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
-  { "inputs": [], "name": "AlreadyJoinedMarket", "type": "error" },
-  { "inputs": [], "name": "AssignOnlyToIdleProvers", "type": "error" },
-  { "inputs": [], "name": "CannotBeMoreThanDeclaredCompute", "type": "error" },
-  { "inputs": [], "name": "CannotBeSlashed", "type": "error" },
-  { "inputs": [], "name": "CannotBeZero", "type": "error" },
+  {
+    "inputs": [],
+    "name": "AlreadyJoinedMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AssignOnlyToIdleProvers",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeMoreThanDeclaredCompute",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeSlashed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeZero",
+    "type": "error"
+  },
   {
     "inputs": [],
     "name": "CannotLeaveMarketWithActiveRequest",
     "type": "error"
   },
-  { "inputs": [], "name": "CannotLeaveWithActiveMarket", "type": "error" },
-  { "inputs": [], "name": "ECDSAInvalidSignature", "type": "error" },
+  {
+    "inputs": [],
+    "name": "CannotLeaveWithActiveMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ECDSAInvalidSignature",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "length", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "length",
+        "type": "uint256"
+      }
     ],
     "name": "ECDSAInvalidSignatureLength",
     "type": "error"
   },
   {
-    "inputs": [{ "internalType": "bytes32", "name": "s", "type": "bytes32" }],
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
     "name": "ECDSAInvalidSignatureS",
     "type": "error"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "implementation", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
-  { "inputs": [], "name": "ExceedsAcceptableRange", "type": "error" },
-  { "inputs": [], "name": "FailedCall", "type": "error" },
-  { "inputs": [], "name": "IncorrectImageId", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExceedsAcceptableRange",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectImageId",
+    "type": "error"
+  },
   {
     "inputs": [],
     "name": "InsufficientProverComputeAvailable",
     "type": "error"
   },
-  { "inputs": [], "name": "InvalidEnclaveKey", "type": "error" },
+  {
+    "inputs": [],
+    "name": "InvalidEnclaveKey",
+    "type": "error"
+  },
   {
     "inputs": [
       {
@@ -68,37 +150,122 @@
     "name": "InvalidEnclaveSignature",
     "type": "error"
   },
-  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
-  { "inputs": [], "name": "InvalidMarket", "type": "error" },
-  { "inputs": [], "name": "InvalidProver", "type": "error" },
-  { "inputs": [], "name": "InvalidProverCommission", "type": "error" },
-  { "inputs": [], "name": "InvalidProverStatePerMarket", "type": "error" },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProver",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProverCommission",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProverStatePerMarket",
+    "type": "error"
+  },
   {
     "inputs": [],
     "name": "MaxParallelRequestsPerMarketExceeded",
     "type": "error"
   },
-  { "inputs": [], "name": "NotInitializing", "type": "error" },
-  { "inputs": [], "name": "OnlyValidProversCanRequestExit", "type": "error" },
-  { "inputs": [], "name": "OnlyWorkingProvers", "type": "error" },
-  { "inputs": [], "name": "ProverAlreadyExists", "type": "error" },
-  { "inputs": [], "name": "ProverNotRegistered", "type": "error" },
-  { "inputs": [], "name": "PublicMarketsDontNeedKey", "type": "error" },
-  { "inputs": [], "name": "ReduceComputeRequestNotInPlace", "type": "error" },
-  { "inputs": [], "name": "ReductionRequestNotValid", "type": "error" },
-  { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
-  { "inputs": [], "name": "RequestAlreadyInPlace", "type": "error" },
-  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyValidProversCanRequestExit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyWorkingProvers",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ProverAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ProverNotRegistered",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PublicMarketsDontNeedKey",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReduceComputeRequestNotInPlace",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReductionRequestNotValid",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RequestAlreadyInPlace",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
   },
-  { "inputs": [], "name": "ZeroComputeToIncrease", "type": "error" },
-  { "inputs": [], "name": "ZeroComputeToReduce", "type": "error" },
-  { "inputs": [], "name": "ZeroNewRewardAddress", "type": "error" },
+  {
+    "inputs": [],
+    "name": "ZeroComputeToIncrease",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroComputeToReduce",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroNewRewardAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroProverDataLength",
+    "type": "error"
+  },
   {
     "anonymous": false,
     "inputs": [
@@ -234,6 +401,25 @@
         "internalType": "address",
         "name": "prover",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "proverData",
+        "type": "bytes"
+      }
+    ],
+    "name": "ProverDataUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "prover",
+        "type": "address"
       }
     ],
     "name": "ProverDeregistered",
@@ -303,6 +489,12 @@
         "internalType": "uint256",
         "name": "initialCompute",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "proverData",
+        "type": "bytes"
       }
     ],
     "name": "ProverRegistered",
@@ -437,43 +629,85 @@
   {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "PARALLEL_REQUESTS_UPPER_LIMIT",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "PROOF_MARKET_PLACE_ROLE",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UNLOCK_WAIT_BLOCKS",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
-      { "internalType": "bytes", "name": "_attestationData", "type": "bytes" },
-      { "internalType": "bytes", "name": "_enclaveSignature", "type": "bytes" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_attestationData",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_enclaveSignature",
+        "type": "bytes"
+      }
     ],
     "name": "addIvsKey",
     "outputs": [],
@@ -482,13 +716,21 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_bidId", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "_bidId",
+        "type": "uint256"
+      },
       {
         "internalType": "address",
         "name": "_proverAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "assignProverTask",
     "outputs": [],
@@ -497,14 +739,26 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_bidId", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "_bidId",
+        "type": "uint256"
+      },
       {
         "internalType": "address",
         "name": "_proverAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
-      { "internalType": "uint256", "name": "_feeReward", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_feeReward",
+        "type": "uint256"
+      }
     ],
     "name": "completeProverTask",
     "outputs": [],
@@ -528,7 +782,13 @@
   {
     "inputs": [],
     "name": "entityKeyRegistry",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -539,23 +799,49 @@
         "name": "_proverAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "getProverAssignmentDetails",
     "outputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "marketId", "type": "uint256" },
-      { "internalType": "address", "name": "proverAddress", "type": "address" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_proverAddress",
+        "type": "address"
+      }
     ],
     "name": "getProverCommission",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -566,12 +852,24 @@
         "name": "_proverAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "getProverRewardDetails",
     "outputs": [
-      { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -583,29 +881,59 @@
         "name": "_proverAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "getProverState",
     "outputs": [
-      { "internalType": "enum Enum.ProverState", "name": "", "type": "uint8" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "enum Enum.ProverState",
+        "name": "",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
     ],
     "name": "getRoleAdmin",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -614,11 +942,25 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "hasRole",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -637,7 +979,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_admin", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_admin",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "_proofMarketplace",
@@ -674,7 +1020,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "_computePerRequestRequired",
@@ -685,15 +1035,31 @@
         "name": "_proofGenerationCost",
         "type": "uint256"
       },
-      { "internalType": "uint256", "name": "_proposedTime", "type": "uint256" },
-      { "internalType": "uint256", "name": "_commission", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "_proposedTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_commission",
+        "type": "uint256"
+      },
       {
         "internalType": "bool",
         "name": "_updateMarketDedicatedKey",
         "type": "bool"
       },
-      { "internalType": "bytes", "name": "_attestationData", "type": "bytes" },
-      { "internalType": "bytes", "name": "_enclaveSignature", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "_attestationData",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_enclaveSignature",
+        "type": "bytes"
+      }
     ],
     "name": "joinMarketplace",
     "outputs": [],
@@ -702,7 +1068,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "leaveMarketplace",
     "outputs": [],
@@ -711,7 +1081,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256[]", "name": "marketIds", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "marketIds",
+        "type": "uint256[]"
+      }
     ],
     "name": "leaveMarketplaces",
     "outputs": [],
@@ -721,14 +1095,28 @@
   {
     "inputs": [],
     "name": "proofMarketplace",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "name": "proverInfoPerMarket",
     "outputs": [
@@ -742,23 +1130,45 @@
         "name": "computePerRequestRequired",
         "type": "uint256"
       },
-      { "internalType": "uint256", "name": "commission", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "commission",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "proofGenerationCost",
         "type": "uint256"
       },
-      { "internalType": "uint256", "name": "proposedTime", "type": "uint256" },
-      { "internalType": "uint256", "name": "activeRequests", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "proposedTime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "activeRequests",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
-    "name": "proverManager",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "proverRegistry",
     "outputs": [
-      { "internalType": "address", "name": "rewardAddress", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "rewardAddress",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "sumOfComputeAllocations",
@@ -784,7 +1194,11 @@
         "name": "intendedComputeUtilization",
         "type": "uint256"
       },
-      { "internalType": "bytes", "name": "proverData", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "proverData",
+        "type": "bytes"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -792,19 +1206,33 @@
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "rewardAddress", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_rewardAddress",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
-        "name": "declaredCompute",
+        "name": "_declaredCompute",
         "type": "uint256"
       },
-      { "internalType": "bytes", "name": "proverData", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "_proverData",
+        "type": "bytes"
+      }
     ],
     "name": "register",
     "outputs": [],
@@ -818,7 +1246,11 @@
         "name": "_proverAddress",
         "type": "address"
       },
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "releaseProverCompute",
     "outputs": [],
@@ -827,7 +1259,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "removeEncryptionKey",
     "outputs": [],
@@ -836,7 +1272,11 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
       {
         "internalType": "address",
         "name": "callerConfirmation",
@@ -850,7 +1290,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      }
     ],
     "name": "requestForExitMarketplace",
     "outputs": [],
@@ -859,7 +1303,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256[]", "name": "_marketIds", "type": "uint256[]" }
+      {
+        "internalType": "uint256[]",
+        "name": "_marketIds",
+        "type": "uint256[]"
+      }
     ],
     "name": "requestForExitMarketplaces",
     "outputs": [],
@@ -868,8 +1316,16 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
-      { "internalType": "address", "name": "account", "type": "address" }
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
     ],
     "name": "revokeRole",
     "outputs": [],
@@ -879,26 +1335,67 @@
   {
     "inputs": [],
     "name": "stakingManager",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "bytes4", "name": "_interfaceId", "type": "bytes4" }
+      {
+        "internalType": "bytes4",
+        "name": "_interfaceId",
+        "type": "bytes4"
+      }
     ],
     "name": "supportsInterface",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_marketId", "type": "uint256" },
-      { "internalType": "bytes", "name": "_attestationData", "type": "bytes" },
-      { "internalType": "bytes", "name": "_enclaveSignature", "type": "bytes" }
+      {
+        "internalType": "uint256",
+        "name": "_marketId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_attestationData",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_enclaveSignature",
+        "type": "bytes"
+      }
     ],
     "name": "updateEncryptionKey",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_proverData",
+        "type": "bytes"
+      }
+    ],
+    "name": "updateProverData",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -923,43 +1420,15 @@
         "name": "newImplementation",
         "type": "address"
       },
-      { "internalType": "bytes", "name": "data", "type": "bytes" }
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes",
-        "name": "proverData",
-        "type": "bytes"
-      }
-    ],
-    "name": "ProverDataUpdated",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "proverData",
-        "type": "bytes"
-      }
-    ],
-    "name": "updateProverData",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

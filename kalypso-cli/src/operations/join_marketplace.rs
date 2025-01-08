@@ -1,4 +1,6 @@
-use crate::{common_deps::CommonDeps, operations::Operation, send_with_optional_gas};
+use crate::{
+    common_deps::CommonDeps, operations::Operation, send_with_optional_gas, try_read_contract_error,
+};
 use async_trait::async_trait;
 use ethers::{
     signers::Signer,
@@ -15,7 +17,7 @@ impl Operation for JoinMarketplace {
 
         match generator_join_market
             .generator_registry
-            .prover_manager(generator_join_market.private_key_signer.address())
+            .prover_registry(generator_join_market.private_key_signer.address())
             .call()
             .await
         {
@@ -31,13 +33,35 @@ impl Operation for JoinMarketplace {
                         )
                         .call()
                         .await
-                        .map_err(|e| {
-                            format!("Failed making call to generator registry contract {}", e)
-                        })?;
+                        .map_err(|e| format!("Failed calling generator registry contract {}", e))?;
 
                     if info_per_market.0 != 0 {
                         return Err(format!("Generator has already joined the market."));
                     }
+
+                    let market_data = generator_join_market
+                        .proof_marketplace
+                        .market_data(generator_join_market.market_id)
+                        .call()
+                        .await
+                        .map_err(|e| {
+                            try_read_contract_error!(
+                                e,
+                                bindings::proof_marketplace::ProofMarketplaceErrors,
+                                "ProofMarketplace"
+                            );
+
+                            try_read_contract_error!(
+                                e,
+                                bindings::error::ErrorErrors,
+                                "OtherErrors"
+                            );
+
+                            format!(
+                                "Failed reading market data from proof marketplace contract {}",
+                                e
+                            )
+                        })?;
 
                     let tx_hash = send_with_optional_gas!(generator_join_market
                         .generator_registry
@@ -56,24 +80,13 @@ impl Operation for JoinMarketplace {
                     // Print the transaction hash
                     println!("{}", tx_hash);
 
-                    let market_data = generator_join_market
-                        .proof_marketplace
-                        .market_data(generator_join_market.market_id)
-                        .call()
-                        .await
-                        .map_err(|e| {
-                            format!("Failed making call to proof marketplace contract {}", e)
-                        })?;
-
                     if H256::from_slice(&market_data.1.to_vec()) != kalypso_helper::image_id_helpers::hashed_image_id_for_non_confidential_market() {
                         println!("Market: {} is a confidential market. Please Update Encryption Key after doing so. Else the prover will not receive jobs", generator_join_market.market_id);
                     }
                 }
             }
-            Err(_) => {
-                return Err(format!(
-                    "Failed making call to generator registry contract."
-                ));
+            Err(e) => {
+                return Err(format!("{}", e));
             }
         }
         Ok(())

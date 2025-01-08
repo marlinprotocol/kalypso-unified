@@ -271,7 +271,7 @@ fn prepare_encrypted_data(
         kalypso_helper::secret_inputs_helpers::encrypt_aes_gcm(data, pubkey, associated_data)
             .map_err(|e| format!("Failed making call to payment token contract {}", e))?;
     let acl = kalypso_helper::secret_inputs_helpers::encrypt_ecies(pubkey, &cipher)
-        .map_err(|_| "Failed encrypting cipher key".to_string())?;
+        .map_err(|e| format!("{}. {}", "Failed encrypting cipher key".to_string(), e))?;
 
     Ok((encrypted_data, acl))
 }

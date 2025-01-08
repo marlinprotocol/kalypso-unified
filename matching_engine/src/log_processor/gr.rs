@@ -58,7 +58,7 @@ pub async fn process_generator_registry_logs(
         log::debug!("During registration initial stake is assumed to be 0");
 
         let generator_data = genertor_registry
-            .prover_manager(address)
+            .prover_registry(address)
             .call()
             .await
             .unwrap();

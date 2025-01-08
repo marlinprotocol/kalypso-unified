@@ -1,0 +1,726 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AlreadyABlacklistedImage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyJoinedMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ArityMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AssignOnlyToIdleProvers",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AttestationTimeout",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "BlacklistedImage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotAssignExpiredTasks",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeAdminLess",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeMoreThanDeclaredCompute",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeSlashed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotBeZero",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotLeaveMarketWithActiveRequest",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotLeaveWithActiveMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotModifyImagesForPublicMarkets",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "marketId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "CannotRemoveDefaultImageFromMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "CannotSlashUsingValidInputs",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CannotUseMatchingEngineRole",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CooldownPeriodNotPassed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "DeadlineNotCrossed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EnclaveKeyMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EnclaveKeyNotVerified",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EndBlockBeforeStartBlock",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExceedsAcceptableRange",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "familyId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "FailedAddingToFamily",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "FailedWhitelistingImages",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ImageAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "familyId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ImageAlreadyInFamily",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ImageNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InactiveMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectImageId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InferredImageIdIsDifferent",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientProverComputeAvailable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientStake",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientStakeAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientStakeToLock",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCaptureTimestamp",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidComissionRate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidContractAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidECIESACL",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidEnclaveKey",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "invalidSignerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidEnclaveSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFeeToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidImage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidIndex",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidIndexLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInputs",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidLastBlockNumber",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPCR0Length",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPCR1Length",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPCR2Length",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPool",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidProof",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProver",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProverCommission",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProverRewardShare",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProverStatePerMarket",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPublicKeyLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidShares",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignatureLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSlashResultBlockRange",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidStakingManager",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSymbioticStaking",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidWithdrawalAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidWithdrawalDuration",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_address",
+        "type": "address"
+      }
+    ],
+    "name": "KeyAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MarketAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MaxParallelRequestsPerMarketExceeded",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "imageId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "MustBeAnEnclave",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoRewardToClaim",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoStakeTokenAvailableToLock",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoStakeTokensAvailable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotIdxToSubmit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotRegisteredBlockNumber",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotRegisteredTransmitter",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "NotSlashableBidId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyAdminCanCall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "OnlyAssignedBidsCanBeProved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "OnlyExpiredBidsCanBeCancelled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyMarketCreator",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyMatchingEngineCanAssign",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "OnlyProverCanDiscardRequest",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyProverCanStake",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyProverCanWithdrawStake",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyStakingManager",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyValidProversCanRequestExit",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OnlyWorkingProvers",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PoolAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProofPriceMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProofTimeMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ProverAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ProverNotRegistered",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PublicMarketsDontNeedKey",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReduceComputeRequestNotInPlace",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReductionRequestNotValid",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RequestAlreadyInPlace",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ShouldBeInAssignedState",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ShouldBeInCreateState",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SubmissionAlreadyCompleted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenDoesNotExist",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenNotSupported",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnstakeRequestNotInPlace",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WithdrawalTimeNotReached",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroComputeToIncrease",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroComputeToReduce",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroDeclaredCompute",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroNewRewardAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroNumOfTxs",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroProofMarketplaceAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroProverDataLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroRewardAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroStakeTokenSelectionWeightSum",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroSymbioticStakingAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroToAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroTokenAddress",
+    "type": "error"
+  },
+  {
+    "type": "error",
+    "name": "Panic",
+    "inputs": [
+      {
+        "name": "code",
+        "type": "uint256"
+      }
+    ]
+  }
+]

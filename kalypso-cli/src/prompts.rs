@@ -305,7 +305,7 @@ fn validate_inputs(key: &str) -> Result<(), String> {
         return Err("Hex string has an invalid length".to_string());
     }
 
-    hex::decode(trimmed_key).map_err(|_| "Invalid Input Bytes".to_string())?;
+    hex::decode(trimmed_key).map_err(|e| format!("{}.{}", "Invalid Input Bytes".to_string(), e))?;
 
     Ok(())
 }
@@ -320,8 +320,13 @@ fn validate_image_id(key: &str) -> Result<(), String> {
         return Err("Hex string has an invalid length".to_string());
     }
 
-    let pcrs = hex::decode(trimmed_key)
-        .map_err(|_| "Invalid Image ID: Hex decoding failed".to_string())?;
+    let pcrs = hex::decode(trimmed_key).map_err(|e| {
+        format!(
+            "{}. {}",
+            "Invalid Image ID: Hex decoding failed".to_string(),
+            e
+        )
+    })?;
     let _image_id =
         get_image_id_from_pcrs(&pcrs).map_err(|e| format!("Error computing image ID: {}", e))?;
 
@@ -386,7 +391,7 @@ fn get_image_id_from_pcrs_inner(
     let image_id: [u8; 32] = result
         .as_slice()
         .try_into()
-        .map_err(|_| "Hash output is not 32 bytes")?;
+        .map_err(|e| format!("{}. {}", "Hash output is not 32 bytes", e))?;
 
     Ok(image_id)
 }
