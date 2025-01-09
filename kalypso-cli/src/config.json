@@ -86,7 +86,7 @@
     },
     {
       "field": "proposed_time",
-      "prompt": "Enter Maximum Time (in blocks) in which you can submit the proof",
+      "prompt": "Enter Maximum Time (in seconds) in which you can submit the proof",
       "secret": false,
       "env_var": "PROPOSED_TIME"
     },
@@ -176,7 +176,7 @@
     },
     {
       "field": "max_proof_generation_time",
-      "prompt": "Enter Maximum time in blocks you can wait for proof to be generated",
+      "prompt": "Enter Maximum time in seconds you can wait for proof to be generated",
       "secret": false,
       "env_var": "MAX_PROOF_GENERATION_TIME"
     },
