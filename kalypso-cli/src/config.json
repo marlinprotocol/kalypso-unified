@@ -194,9 +194,9 @@
     },
     {
       "field": "ask_id",
-      "prompt": "Enter Ask ID/ Request ID",
+      "prompt": "Enter BID ID/ Request ID",
       "secret": false,
-      "env_var": "ASK_ID"
+      "env_var": "BID_ID"
     },
     {
       "field": "enclave_client_url",
