@@ -108,7 +108,7 @@ pub async fn get_verified_attestation(
     verifier_url: &str,
     attestation_data: Vec<u8>,
     print_logs: bool,
-) -> Result<Vec<u8>, Box<dyn Error>> {
+) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
     // Construct the verify endpoint URL
     let verify_endpoint = utility_url(verifier_url, "/verify/raw");
 
@@ -164,14 +164,14 @@ pub async fn get_verified_attestation(
 
     let encoded = ethers::abi::encode(&[
         ethers::abi::Token::Bytes(signature_vec.into()),
-        ethers::abi::Token::Bytes(ecies_pubkey_vec.into()),
+        ethers::abi::Token::Bytes(ecies_pubkey_vec.clone().into()),
         ethers::abi::Token::Bytes(pcr0_vec.into()),
         ethers::abi::Token::Bytes(pcr1_vec.into()),
         ethers::abi::Token::Bytes(pcr2_vec.into()),
         ethers::abi::Token::Uint(timestamp_u256),
     ]);
 
-    Ok(encoded)
+    Ok((encoded, ecies_pubkey_vec))
 }
 
 pub async fn verify_attestation(

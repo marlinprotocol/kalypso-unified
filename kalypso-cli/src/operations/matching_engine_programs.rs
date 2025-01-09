@@ -5,7 +5,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use std::{collections::HashMap, error::Error};
 
 use crate::common_deps::CommonDeps;
-use crate::operations::update_encryption_key::get_attestation_signature;
+use crate::operations::update_encryption_key::get_attestation_signature_encrypted;
 use crate::send_with_optional_gas;
 
 use super::{update_generator_meta::read_file_from_paths, Operation};
@@ -460,7 +460,7 @@ impl Operation for VerifyMatchingEngineKeys {
         );
 
         // this attestation is verified by attestation verifier and will be compatible with AttestationVerifier Contract
-        let attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
+        let (attestation, ecies_pubkey) = kalypso_helper::pcr_helpers::get_verified_attestation(
             &verify_matching_engine_config.attestation_verifier,
             attestation,
             false,
@@ -472,12 +472,14 @@ impl Operation for VerifyMatchingEngineKeys {
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        let address_signature = get_attestation_signature(
+        let address_signature = get_attestation_signature_encrypted(
             hex::encode(&attestation).as_ref(),
             &address_str,
             false,
             &verify_matching_engine_config.matching_engine_client_url,
             headers,
+            &ecies_pubkey,
+            verify_matching_engine_config.chain_id,
         )
         .await
         .map_err(|e| {

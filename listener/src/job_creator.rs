@@ -146,6 +146,7 @@ impl JobCreator {
         max_threads: usize,
         enable_logging_server: bool,
         skip_input_verification: bool,
+        prometheus_port: u16,
     ) -> Self {
         Self::initialize(
             config,
@@ -153,6 +154,7 @@ impl JobCreator {
             enable_logging_server,
             skip_input_verification,
             max_threads,
+            prometheus_port,
         )
     }
 
@@ -162,6 +164,7 @@ impl JobCreator {
         enable_logging_server: bool,
         skip_input_verification: bool,
         max_threads: usize,
+        prometheus_port: u16,
     ) -> Self {
         let service_name = Uuid::new_v4().to_string();
         let shared_latest_block = Arc::new(Mutex::new(U64::zero()));
@@ -197,11 +200,6 @@ impl JobCreator {
             should_stop.clone(),
             shared_app_state.clone(),
         );
-
-        let prometheus_port: u16 = std::env::var("PROMETHEUS_PORT")
-            .ok()
-            .and_then(|val| val.parse().ok())
-            .unwrap_or(9999);
 
         tokio::spawn(health_check_service.start_server(prometheus_port, false));
 
@@ -279,6 +277,7 @@ impl JobCreator {
         enable_logging_server: bool,
         max_threads: usize,
         skip_input_verification: bool,
+        prometheus_port: u16,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -324,6 +323,7 @@ impl JobCreator {
             enable_logging_server,
             skip_input_verification,
             max_threads,
+            prometheus_port,
         )
     }
 
@@ -341,6 +341,7 @@ impl JobCreator {
         enable_logging_server: bool,
         max_threads: usize,
         skip_input_verification: bool,
+        prometheus_port: u16,
     ) -> Self {
         let config = Config {
             generator_config: generator_configs,
@@ -382,6 +383,7 @@ impl JobCreator {
             enable_logging_server,
             skip_input_verification,
             max_threads,
+            prometheus_port,
         )
     }
 
@@ -400,6 +402,7 @@ impl JobCreator {
         enable_logging_server: bool,
         max_threads: usize,
         skip_input_verification: bool,
+        prometheus_port: u16,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -445,6 +448,7 @@ impl JobCreator {
             enable_logging_server,
             skip_input_verification,
             max_threads,
+            prometheus_port,
         )
     }
 
@@ -454,6 +458,7 @@ impl JobCreator {
         enable_logging_server: bool,
         max_threads: usize,
         skip_input_verification: bool,
+        prometheus_port: u16,
     ) -> anyhow::Result<Self> {
         let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
@@ -467,6 +472,7 @@ impl JobCreator {
             enable_logging_server,
             skip_input_verification,
             max_threads,
+            prometheus_port,
         ))
     }
 

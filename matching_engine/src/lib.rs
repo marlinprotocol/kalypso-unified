@@ -189,7 +189,7 @@ impl Dump {
             client.clone(),
         );
 
-        // Get the matching engine keys
+        // Get the matching engine keys from contract
         let mut ecies_public_keys = vec![];
         let matching_engine_key = entity_key_registry
             .pub_key(proof_market_place_addr, U256::from(0))
@@ -213,22 +213,18 @@ impl Dump {
         let public_key = PublicKey::from_secret_key(&sk);
         let public_key = public_key.serialize_compressed();
 
+        ecies_public_keys.push(public_key.to_vec());
+
         // Check matching engine key in the ecies key list
-        if ecies_public_keys.contains(&public_key.to_vec()) {
-            let dump_value = serde_json::to_value(self)?;
-            let dump = serde_json::to_vec(&dump_value)?;
-            let encrypted_data = secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(
-                ecies_public_keys,
-                &dump,
-            )?;
-            let encrypted_dump = EncryptedDump {
-                encrypted: encrypted_data.encrypted_data,
-                acls: encrypted_data.acls,
-            };
-            Ok(encrypted_dump)
-        } else {
-            Err("Matching engine key not found in key list".into())
-        }
+        let dump_value = serde_json::to_value(self)?;
+        let dump = serde_json::to_vec(&dump_value)?;
+        let encrypted_data =
+            secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump)?;
+        let encrypted_dump = EncryptedDump {
+            encrypted: encrypted_data.encrypted_data,
+            acls: encrypted_data.acls,
+        };
+        Ok(encrypted_dump)
     }
 }
 

@@ -847,6 +847,7 @@ pub struct UpdateEncryptionKeyInfo {
     pub attestation_verifier: String,
     pub enclave_client_url: String,
     pub market_id: U256,
+    pub chain_id: U256,
 }
 
 impl CommonDeps {
@@ -878,6 +879,9 @@ impl CommonDeps {
         let (proof_marketplace, _) =
             get_proof_marketplace_instance_without_signer(proof_marketplace_address, rpc_url)?;
 
+        let chain_id = U256::from_dec_str(&&chain_id.as_str())
+            .map_err(|e| format!("Invalid Chain ID: {}", e))?;
+
         Ok(UpdateEncryptionKeyInfo {
             private_key_signer,
             generator_registry,
@@ -886,6 +890,7 @@ impl CommonDeps {
             enclave_client_url: enclave_client_url.to_string(),
             market_id,
             proof_marketplace,
+            chain_id,
         })
     }
 }
