@@ -712,5 +712,15 @@
     "inputs": [],
     "name": "ZeroTokenAddress",
     "type": "error"
+  },
+  {
+    "type": "error",
+    "name": "Panic",
+    "inputs": [
+      {
+        "name": "code",
+        "type": "uint256"
+      }
+    ]
   }
 ]
