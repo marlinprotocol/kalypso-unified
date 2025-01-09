@@ -41,7 +41,7 @@ impl Operation for AddIvsKey {
             })
             .await;
 
-        let (verified_attestation, ecies_pubkey) =
+        let (verified_attestation, _ecies_pubkey) =
             kalypso_helper::pcr_helpers::get_verified_attestation(
                 &add_ivs_key_info.attestation_verifier,
                 attestation_data,
@@ -53,7 +53,26 @@ impl Operation for AddIvsKey {
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        let enclave_signature = get_attestation_signature_encrypted(
+        // let enclave_signature = get_attestation_signature_encrypted(
+        //     hex::encode(&verified_attestation).as_ref(),
+        //     hex::encode(
+        //         add_ivs_key_info
+        //             .private_key_signer
+        //             .address()
+        //             .as_bytes()
+        //             .to_vec(),
+        //     )
+        //     .as_ref(),
+        //     false,
+        //     &add_ivs_key_info.enclave_client_url,
+        //     headers,
+        //     &ecies_pubkey,
+        //     add_ivs_key_info.chain_id.as_u64().into(),
+        // )
+        // .await
+        // .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
+
+        let enclave_signature = get_attestation_signature(
             hex::encode(&verified_attestation).as_ref(),
             hex::encode(
                 add_ivs_key_info
@@ -66,8 +85,6 @@ impl Operation for AddIvsKey {
             false,
             &add_ivs_key_info.enclave_client_url,
             headers,
-            &ecies_pubkey,
-            add_ivs_key_info.chain_id.as_u64().into(),
         )
         .await
         .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
@@ -128,7 +145,7 @@ impl Operation for UpdateEncryptionKey {
             })
             .await;
 
-        let (verified_attestation, ecies_pubkey) =
+        let (verified_attestation, _ecies_pubkey) =
             kalypso_helper::pcr_helpers::get_verified_attestation(
                 &update_encryption_info.attestation_verifier,
                 attestation_data,
@@ -140,7 +157,26 @@ impl Operation for UpdateEncryptionKey {
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        let enclave_signature = get_attestation_signature_encrypted(
+        // let enclave_signature = get_attestation_signature_encrypted(
+        //     hex::encode(&verified_attestation).as_ref(),
+        //     hex::encode(
+        //         update_encryption_info
+        //             .private_key_signer
+        //             .address()
+        //             .as_bytes()
+        //             .to_vec(),
+        //     )
+        //     .as_ref(),
+        //     false,
+        //     &update_encryption_info.enclave_client_url,
+        //     headers,
+        //     &ecies_pubkey,
+        //     update_encryption_info.chain_id.as_u64().into(),
+        // )
+        // .await
+        // .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
+
+        let enclave_signature = get_attestation_signature(
             hex::encode(&verified_attestation).as_ref(),
             hex::encode(
                 update_encryption_info
@@ -153,8 +189,6 @@ impl Operation for UpdateEncryptionKey {
             false,
             &update_encryption_info.enclave_client_url,
             headers,
-            &ecies_pubkey,
-            update_encryption_info.chain_id.as_u64().into(),
         )
         .await
         .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
@@ -182,14 +216,14 @@ use serde::Deserialize;
 use std::error::Error;
 
 #[derive(Deserialize, Debug)]
-struct SignAddressResponse {
+struct SignAddressOrAttestationResponse<T> {
     #[allow(unused)]
     message: String,
-    data: SignAddressData,
+    pub data: T,
 }
 
 #[derive(Deserialize, Debug)]
-struct SignAddressData {
+struct SignAddressOrAttestationData {
     r: String,
     s: String,
     v: u8,
@@ -227,7 +261,8 @@ pub async fn get_address_signature(
         return Err(format!("Error: {}", response.status()).into());
     }
 
-    let response_json: SignAddressResponse = response.json().await?;
+    let response_json: SignAddressOrAttestationResponse<SignAddressOrAttestationData> =
+        response.json().await?;
     let _v = match response_json.data.v {
         27 => "1b",
         28 => "1c",
@@ -301,29 +336,30 @@ pub async fn get_address_signature_encrypted(
         return Err(format!("Error: {}", response.status()).into());
     }
 
-    let response_json: EncryptedResponse = response.json().await?;
+    let response_json: SignAddressOrAttestationResponse<EncryptedResponse> =
+        response.json().await?;
 
-    let response_json: SignAddressResponse =
-        response_json.to_payload(enclave_pub_key, &self_priv_key.serialize().to_vec())?;
-    let _v = match response_json.data.v {
+    let response_json: SignAddressOrAttestationData = response_json
+        .data
+        .to_payload(enclave_pub_key, &self_priv_key.serialize().to_vec())?;
+    let _v = match response_json.v {
         27 => "1b",
         28 => "1c",
         other => return Err(format!("Unexpected value for v: {}", other).into()),
     };
 
     let s_clean = response_json
-        .data
         .s
         .strip_prefix("0x")
-        .unwrap_or(&response_json.data.s);
+        .unwrap_or(&response_json.s);
 
-    if !response_json.data.r.starts_with("0x") || s_clean.len() != 64 {
+    if !response_json.r.starts_with("0x") || s_clean.len() != 64 {
         return Err("Invalid `r` or `s` format in response".into());
     }
 
     let signature_str = format!(
         "{}{}{}",
-        response_json.data.r.trim_start_matches("0x"),
+        response_json.r.trim_start_matches("0x"),
         s_clean,
         _v
     );
@@ -366,7 +402,8 @@ pub async fn get_attestation_signature(
         return Err(format!("Error: {}", response.status()).into());
     }
 
-    let response_json: SignAddressResponse = response.json().await?;
+    let response_json: SignAddressOrAttestationResponse<SignAddressOrAttestationData> =
+        response.json().await?;
     let _v = match response_json.data.v {
         27 => "1b",
         28 => "1c",
@@ -395,6 +432,10 @@ pub async fn get_attestation_signature(
     Ok(signature_bytes)
 }
 
+#[allow(unused)]
+#[deprecated(
+    note = "Use `get_attestation_signature_encrypted` is unable to decode the response, fix this and then use it"
+)]
 pub async fn get_attestation_signature_encrypted(
     attestation: &str,
     address: &str,
@@ -440,30 +481,32 @@ pub async fn get_attestation_signature_encrypted(
         return Err(format!("Error: {}", response.status()).into());
     }
 
-    let response_json: EncryptedResponse = response.json().await?;
+    let response_json: SignAddressOrAttestationResponse<EncryptedResponse> =
+        response.json().await?;
 
-    let response_json: SignAddressResponse =
-        response_json.to_payload(enclave_pub_key, &self_priv_key.serialize().to_vec())?;
+    let response_json: SignAddressOrAttestationData = response_json
+        .data
+        .to_payload(enclave_pub_key, &self_priv_key.serialize().to_vec())
+        .map_err(|e| format!("Failed Decoding Attestation Reponse {}", e))?;
 
-    let _v = match response_json.data.v {
+    let _v = match response_json.v {
         27 => "1b",
         28 => "1c",
         other => return Err(format!("Unexpected value for v: {}", other).into()),
     };
 
     let s_clean = response_json
-        .data
         .s
         .strip_prefix("0x")
-        .unwrap_or(&response_json.data.s);
+        .unwrap_or(&response_json.s);
 
-    if !response_json.data.r.starts_with("0x") || s_clean.len() != 64 {
+    if !response_json.r.starts_with("0x") || s_clean.len() != 64 {
         return Err("Invalid `r` or `s` format in response".into());
     }
 
     let signature_str = format!(
         "{}{}{}",
-        response_json.data.r.trim_start_matches("0x"),
+        response_json.r.trim_start_matches("0x"),
         s_clean,
         _v
     );

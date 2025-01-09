@@ -26,7 +26,7 @@ pub async fn _generate_config_setup(
     };
 
     if !validation_status_result {
-        return Err(anyhow::Error::msg("Matching engine private_key doesn't have enough balance, minimum balance required is 0.05ETH".to_string()));
+        return Err(anyhow::Error::msg("Generator Relay private_key doesn't have enough balance, minimum balance required is 0.05ETH".to_string()));
     }
 
     let ecies_priv_key = hex::encode(ecies_priv_key);

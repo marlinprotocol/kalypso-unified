@@ -847,6 +847,7 @@ pub struct UpdateEncryptionKeyInfo {
     pub attestation_verifier: String,
     pub enclave_client_url: String,
     pub market_id: U256,
+    #[allow(unused)]
     pub chain_id: U256,
 }
 
