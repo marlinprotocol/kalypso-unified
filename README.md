@@ -1,1 +1,3 @@
-All common components of Kalypso in a single repository
+# Kalypso Monorepo
+
+All major components required for kalypso ecosystem.
