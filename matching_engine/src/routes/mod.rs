@@ -77,6 +77,7 @@ pub fn get_stats_scope() -> actix_web::Scope {
             "/getAskStatus",
             web::post().to(ask_status::get_ask_status_askid),
         )
+        .route("/getAsk/{id}", web::get().to(ask_status::get_ask))
         .route(
             "/getProof",
             web::post().to(ask_status::get_ask_proof_by_ask_id),

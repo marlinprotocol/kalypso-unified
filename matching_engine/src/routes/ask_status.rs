@@ -11,6 +11,7 @@ use actix_web::web;
 use actix_web::web::Data;
 use actix_web::HttpResponse;
 use ethers::core::types::U256;
+use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -131,4 +132,59 @@ pub async fn get_ask_status_askid(
     return Ok(HttpResponse::Ok().json(GetAskStatusResponse {
         state: ask_state.to_owned(),
     }));
+}
+
+pub async fn get_ask(
+    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    path: web::Path<(String,)>,
+) -> actix_web::Result<HttpResponse> {
+    let ask_id = match U256::from_dec_str(&path.into_inner().0) {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
+                status: "Invalid Generator Id".into(),
+            }))
+        }
+    };
+
+    let local_ask_store = {
+        match _local_ask_store.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    let ask = local_ask_store.get_by_ask_id(&ask_id);
+
+    if ask.is_none() {
+        return Ok(HttpResponse::NotFound().json(GetAskStatusResponse {
+            state: "Request Not Found".to_owned(),
+        }));
+    }
+
+    let mut ask = ask.unwrap();
+    ask.secret_data = None;
+
+    let response = json!({
+        "ask_id": ask.ask_id.to_string(),
+        "market_id": ask.market_id.to_string(),
+        "reward": ask.reward.to_string(),
+        "expiry": ask.expiry.to_string(),
+        "deadline": ask.deadline.to_string(),
+        "time_requested_for_proof_generation": ask.time_requested_for_proof_generation.to_string(),
+        "prover_refund_address": format!("{:?}", ask.prover_refund_address),
+        "prover_data": hex::encode(&ask.prover_data),
+        "has_private_inputs": ask.has_private_inputs,
+        "state": ask.state.as_ref().map(|state| format!("{:?}", state)),
+        "generator": ask.generator.map(|addr| format!("{:?}", addr)),
+        "invalid_secret_flag": ask.invalid_secret_flag,
+        "created_on": ask.created_on.to_string(),
+        "create_transaction": format!("{:?}", ask.create_transaction),
+    });
+
+    return Ok(HttpResponse::Locked().json(response));
 }

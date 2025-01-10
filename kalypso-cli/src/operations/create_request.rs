@@ -90,17 +90,12 @@ impl Operation for ConfidentialRequest {
         )
         .map_err(|e| format!("Failed Encryption: {}", e))?;
 
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|e| format!("Timestamp Calculation failed: {}", e))?;
-        let current_timestamp = now.as_millis();
-
         let proof_request_transaction =
             send_with_optional_gas!(confidential_request_info.proof_marketplace.create_bid(
                 bindings::proof_marketplace::Bid {
                     market_id: confidential_request_info.market_id,
                     reward: confidential_request_info.max_proof_generation_cost,
-                    expiry: (current_timestamp + 20000).into(),
+                    expiry: get_expiry_time().await?,
                     time_taken_for_proof_generation: confidential_request_info
                         .max_proof_generation_time,
                     deadline: U256::zero(),
@@ -178,17 +173,12 @@ impl Operation for NonConfidentialRequest {
             println!("Token Approval: {}", token_approval_transaction);
         }
 
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|e| format!("Timestamp Calculation failed: {}", e))?;
-        let current_timestamp = now.as_millis();
-
         let proof_request_transaction =
             send_with_optional_gas!(non_confidential_request_info.proof_marketplace.create_bid(
                 bindings::proof_marketplace::Bid {
                     market_id: non_confidential_request_info.market_id,
                     reward: non_confidential_request_info.max_proof_generation_cost,
-                    expiry: (current_timestamp + 20000).into(),
+                    expiry: get_expiry_time().await?,
                     time_taken_for_proof_generation: non_confidential_request_info
                         .max_proof_generation_time,
                     deadline: U256::zero(),
@@ -241,4 +231,16 @@ fn prepare_encrypted_data(
         .map_err(|e| format!("{}. {}", "Failed encrypting cipher key".to_string(), e))?;
 
     Ok((encrypted_data, acl))
+}
+
+async fn get_expiry_time() -> Result<U256, String> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| format!("Current Timestamp Calculation failed: {}", e))?;
+    let current_timestamp = now.as_millis();
+
+    let max_age_in_ms = 60000;
+    let expiry = current_timestamp + max_age_in_ms;
+
+    Ok(U256::from_dec_str(&expiry.to_string()).unwrap() / 1000)
 }

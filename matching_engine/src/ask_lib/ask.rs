@@ -25,6 +25,8 @@ pub struct LocalAsk {
     pub create_transaction: H256,
 }
 
+impl LocalAsk {}
+
 use std::{
     cmp::Ordering,
     hash::{Hash, Hasher},
