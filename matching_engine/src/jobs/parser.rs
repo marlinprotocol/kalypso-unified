@@ -815,7 +815,6 @@ impl LogParser {
         log::debug!("Signature: {:?}", signature);
         log::debug!("Tx signed at {:?}", std::time::Instant::now());
 
-        // todo!("create and broad cast tx");
         // // Assign batch task here
         let mut batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
             ask_ids.clone(),

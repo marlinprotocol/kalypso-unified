@@ -648,7 +648,10 @@ pub struct NonConfidentialRequest {
     pub max_proof_generation_time: U256,
     pub inputs: ethers::types::Bytes,
     pub market_id: U256,
+
+    #[allow(unused)]
     pub provider_http: Provider<Http>,
+    #[allow(unused)]
     pub kalypso_rpc_url: String,
 }
 
@@ -1000,7 +1003,9 @@ pub struct ConfidentialRequest {
     pub entity_registry: bindings::entity_key_registry::EntityKeyRegistry<
         SignerMiddleware<Provider<Http>, LocalWallet>,
     >,
+    #[allow(unused)]
     pub provider_http: Provider<Http>,
+    #[allow(unused)]
     pub kalypso_rpc_url: String,
 }
 

@@ -257,8 +257,7 @@
       "prompt": "Address of the symbiotic network opt in contract",
       "secret": false,
       "env_var": "NETWORK_OPT_IN_SERVICE"
-    }
-    ,
+    },
     {
       "field": "vault_address",
       "prompt": "Address of the vault to opt in",
@@ -353,7 +352,7 @@
   "operations": [
     {
       "name": "Register",
-      "description": "Registers a new user",
+      "description": "Register a new operator on Kalypso Marketplace",
       "required_prompts": [
         "private_key",
         "rpc_url",
@@ -369,7 +368,7 @@
     },
     {
       "name": "Join Marketplace",
-      "description": "Joins a new marketplace",
+      "description": "Join a new marketplace on Kalypso. Operator must have 'Register'ed before joining the market",
       "required_prompts": [
         "private_key",
         "rpc_url",
@@ -421,7 +420,7 @@
     },
     {
       "name": "Compute PCRs",
-      "description": "Compute PCRs of a given enclave from it's attestation server",
+      "description": "Compute PCRs of a given enclave from it's attestation server/ attestation utility",
       "required_prompts": ["attestation_server_url", "attestation_verifier_url"]
     },
     {
@@ -570,10 +569,7 @@
     {
       "name": "Read Stake Data",
       "description": "Read Stake Data across Native and Symbiotic Staking modules",
-      "required_prompts": [
-        "indexer_url", 
-        "operator_address"
-      ]
+      "required_prompts": ["indexer_url", "operator_address"]
     },
     {
       "name": "Request Symbiotic Stake",
@@ -620,32 +616,22 @@
     {
       "name": "Start Enclave Program",
       "description": "Starts a program inside enclave",
-      "required_prompts": [
-        "generator_client_url",
-        "prover_program_name"
-      ]
+      "required_prompts": ["generator_client_url", "prover_program_name"]
     },
     {
       "name": "Stop Enclave Program",
       "description": "Stop a program inside enclave",
-      "required_prompts": [
-        "generator_client_url",
-        "prover_program_name"
-      ]
+      "required_prompts": ["generator_client_url", "prover_program_name"]
     },
     {
       "name": "Test Enclave Connection",
       "description": "Test Enclave Connection",
-      "required_prompts": [
-        "enclave_client_url"
-      ]
+      "required_prompts": ["enclave_client_url"]
     },
     {
       "name": "Benchmark Prover",
       "description": "Get Benchmark results of prover",
-      "required_prompts": [
-        "benchmark_url"
-      ]
+      "required_prompts": ["benchmark_url"]
     },
     {
       "name": "Symbiotic Operator Register",
@@ -665,13 +651,13 @@
         "rpc_url",
         "chain_id",
         "proof_marketplace",
-        "market_id"        
+        "market_id"
       ]
     },
     {
       "name": "Update Generator Metadata",
       "description": "Update the generator info in the registry. It reads info from generatormeta.json and updates in the generator registry. Operation can be performed only by relevant operator",
-      "required_prompts":[
+      "required_prompts": [
         "private_key",
         "rpc_url",
         "chain_id",
@@ -714,10 +700,7 @@
     {
       "name": "Read Native Staking Pending Withdrawals",
       "description": "Reads Native Staking pending withdrawals",
-      "required_prompts":[
-        "indexer_url", 
-        "operator_address"
-      ]
+      "required_prompts": ["indexer_url", "operator_address"]
     },
     {
       "name": "Request Native Stake Withdrawal",
@@ -800,10 +783,7 @@
     {
       "name": "Verify Remote Attestation",
       "description": "Verify Remote Attestation Locally against given PCRS",
-      "required_prompts": [
-        "attestation_server_url", 
-        "enclave_image_id"
-      ]
+      "required_prompts": ["attestation_server_url", "enclave_image_id"]
     },
     {
       "name": "Check Role Management",

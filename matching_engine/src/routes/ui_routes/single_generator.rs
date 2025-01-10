@@ -7,13 +7,13 @@ use crate::generator_lib::key_store::Key;
 use crate::generator_lib::key_store::KeyStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::market_metadata::MarketMetadataStore;
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::address_to_string;
 use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
 use crate::utility::convert_to_option_string;
-use crate::utility::random_usize;
 use crate::utility::tx_to_string;
 use crate::utility::TokenAmount;
 use crate::utility::TokenTracker;
@@ -189,15 +189,16 @@ struct Market {
     proofs_generated: String,
     pending_proofs: String,
     slashing_penalties_incured: String,
-    min_hardware_requirement: MinHardware,
+    min_hardware_requirement: Option<MinHardware>,
     enclave_key: Option<Key>,
     kalypso_points: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct MinHardware {
-    instance_type: String,
-    vcpus: usize,
+    instance_type: Option<String>,
+    vcpus: Option<usize>,
+    vgpus: Option<usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -257,6 +258,8 @@ pub async fn single_generator(
     _local_key_store: Data<Arc<RwLock<KeyStore>>>,
     _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+
     path: web::Path<(String,)>,
     query: web::Query<QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
@@ -301,6 +304,7 @@ pub async fn single_generator(
     try_read_or_lock!(_local_generator_store, local_generator_store);
     try_read_or_lock!(_local_native_store, local_native_store);
     try_read_or_lock!(_local_symbiotic_store, local_symbiotic_store);
+    try_read_or_lock!(_local_market_store, local_market_store);
 
     // Step 1: Recompute the response every time
     let new_response = recompute_single_generator_response(
@@ -311,6 +315,7 @@ pub async fn single_generator(
         local_key_store,
         local_native_store,
         local_symbiotic_store,
+        local_market_store,
     )
     .await;
 
@@ -341,6 +346,7 @@ async fn recompute_single_generator_response<'a>(
     local_key_store: RwLockReadGuard<'a, KeyStore>,
     local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
     local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
+    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
 ) -> Option<GeneratorResponse> {
     let generator_data = local_generator_store.get_by_address(&generator_id);
 
@@ -431,9 +437,18 @@ async fn recompute_single_generator_response<'a>(
                 proofs_generated: info.proofs_submitted.to_string(),
                 slashing_penalties_incured: info.proofs_slashed.to_string(),
                 pending_proofs: info.active_requests.to_string(),
-                min_hardware_requirement: MinHardware {
-                    instance_type: "todo".into(),
-                    vcpus: random_usize(),
+                min_hardware_requirement: {
+                    let info = local_market_store.get_market_by_market_id(&info.market_id);
+                    if info.is_none() {
+                        None
+                    } else {
+                        let market_setup_data = info.unwrap().deserialize_market_bytes();
+                        Some(MinHardware {
+                            instance_type: market_setup_data.min_hardware.instance_type,
+                            vcpus: market_setup_data.min_hardware.vcpus,
+                            vgpus: market_setup_data.min_hardware.vgpus,
+                        })
+                    }
                 },
                 kalypso_points: local_generator_store
                     .get_kalypso_points_per_market(&generator_id, &info.market_id)

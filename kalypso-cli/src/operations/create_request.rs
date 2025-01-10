@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use ethers::providers::Middleware;
 use ethers::{core::rand, signers::Signer, types::U256};
 
 use crate::send_with_optional_gas;
@@ -91,33 +90,17 @@ impl Operation for ConfidentialRequest {
         )
         .map_err(|e| format!("Failed Encryption: {}", e))?;
 
-        let latest_l2_block = confidential_request_info
-            .provider_http
-            .get_block_number()
-            .await
-            .map_err(|e| {
-                format!(
-                    "Failed fetching latest kalypso block number from chain: {}",
-                    e
-                )
-            })?;
-
-        let latest_l1_block = matching_engine_helpers::utility::get_l1_block_from_l2_block(
-            &confidential_request_info.kalypso_rpc_url,
-            latest_l2_block.as_u64().into(),
-        )
-        .await;
-
-        if latest_l1_block.is_none() {
-            return Err("Failed fetching latest 11 block".into());
-        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|e| format!("Timestamp Calculation failed: {}", e))?;
+        let current_timestamp = now.as_millis();
 
         let proof_request_transaction =
             send_with_optional_gas!(confidential_request_info.proof_marketplace.create_bid(
                 bindings::proof_marketplace::Bid {
                     market_id: confidential_request_info.market_id,
                     reward: confidential_request_info.max_proof_generation_cost,
-                    expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
+                    expiry: (current_timestamp + 20000).into(),
                     time_taken_for_proof_generation: confidential_request_info
                         .max_proof_generation_time,
                     deadline: U256::zero(),
@@ -195,33 +178,17 @@ impl Operation for NonConfidentialRequest {
             println!("Token Approval: {}", token_approval_transaction);
         }
 
-        let latest_l2_block = non_confidential_request_info
-            .provider_http
-            .get_block_number()
-            .await
-            .map_err(|e| {
-                format!(
-                    "Failed fetching latest kalypso block number from chain: {}",
-                    e
-                )
-            })?;
-
-        let latest_l1_block = matching_engine_helpers::utility::get_l1_block_from_l2_block(
-            &non_confidential_request_info.kalypso_rpc_url,
-            latest_l2_block.as_u64().into(),
-        )
-        .await;
-
-        if latest_l1_block.is_none() {
-            return Err("Failed fetching latest 11 block".into());
-        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|e| format!("Timestamp Calculation failed: {}", e))?;
+        let current_timestamp = now.as_millis();
 
         let proof_request_transaction =
             send_with_optional_gas!(non_confidential_request_info.proof_marketplace.create_bid(
                 bindings::proof_marketplace::Bid {
                     market_id: non_confidential_request_info.market_id,
                     reward: non_confidential_request_info.max_proof_generation_cost,
-                    expiry: (latest_l1_block.unwrap().as_u64() + 200).into(),
+                    expiry: (current_timestamp + 20000).into(),
                     time_taken_for_proof_generation: non_confidential_request_info
                         .max_proof_generation_time,
                     deadline: U256::zero(),

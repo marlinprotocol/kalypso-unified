@@ -216,7 +216,7 @@ pub async fn metrics_handler(
 ) -> actix_web::Result<actix_web::HttpResponse> {
     let state = match state.lock() {
         Ok(data) => data,
-        Err(_) => todo!(),
+        Err(err) => return Ok(actix_web::HttpResponse::BadRequest().body(err.to_string())),
     };
     let mut body = String::new();
     match prometheus_client::encoding::text::encode(&mut body, &state.registry) {
