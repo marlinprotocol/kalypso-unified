@@ -356,6 +356,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidProverProposedTime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidProverRewardShare",
     "type": "error"
   },
@@ -392,6 +397,11 @@
   {
     "inputs": [],
     "name": "InvalidSymbioticStaking",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTimeForProofGeneration",
     "type": "error"
   },
   {
@@ -712,15 +722,5 @@
     "inputs": [],
     "name": "ZeroTokenAddress",
     "type": "error"
-  },
-  {
-    "type": "error",
-    "name": "Panic",
-    "inputs": [
-      {
-        "name": "code",
-        "type": "uint256"
-      }
-    ]
   }
 ]

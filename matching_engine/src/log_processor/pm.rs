@@ -174,7 +174,7 @@ pub async fn process_proof_market_place_logs(
             generator: None,
             invalid_secret_flag: false,
             created_on: created_on_l1,
-            time_requested_for_proof_generation: ask_data.0.time_taken_for_proof_generation,
+            time_requested_for_proof_generation: ask_data.0.time_for_proof_generation,
             create_transaction: log.transaction_hash.unwrap().clone(),
         };
 
@@ -247,23 +247,23 @@ pub async fn process_proof_market_place_logs(
         log::debug!("{:?}", parsed_task_created_log);
         let mut local_ask_store = { local_ask_store.write().await };
 
-        let ask_id = parsed_task_created_log.bid_id;
+        let bid_id = parsed_task_created_log.bid_id;
         let generator = parsed_task_created_log.prover;
         let new_acl = parsed_task_created_log.new_acl;
 
-        local_ask_store.update_ask_generator(&ask_id, Some(generator));
-        local_ask_store.update_ask_acl(&ask_id, Some(new_acl));
+        local_ask_store.update_ask_generator(&bid_id, Some(generator));
+        local_ask_store.update_ask_acl(&bid_id, Some(new_acl));
 
-        local_ask_store.modify_state(&ask_id, AskState::Assigned);
+        local_ask_store.modify_state(&bid_id, AskState::Assigned);
 
         local_ask_store.update_job_matched_on_timestamp(
-            &ask_id,
+            &bid_id,
             get_timestamp_from_l2block_number(rpc_url, &log.block_number.unwrap().as_u64().into())
                 .await
                 .unwrap_or_default(),
         );
 
-        let market_id = { local_ask_store.get_by_ask_id(&ask_id).unwrap().market_id };
+        let market_id = { local_ask_store.get_by_ask_id(&bid_id).unwrap().market_id };
 
         generator_store
             .write()
@@ -283,7 +283,7 @@ pub async fn process_proof_market_place_logs(
         log::debug!("{:?}", parsed_proof_created_log);
         let mut local_ask_store = { local_ask_store.write().await };
 
-        let ask_id = parsed_proof_created_log.bid_id;
+        let bid_id = parsed_proof_created_log.bid_id;
         let proof = parsed_proof_created_log.proof;
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
@@ -292,18 +292,18 @@ pub async fn process_proof_market_place_logs(
                 .await
                 .unwrap_or_default();
 
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
-        local_ask_store.modify_state(&ask_id, AskState::Complete);
+        local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
+        local_ask_store.modify_state(&bid_id, AskState::Complete);
 
         local_ask_store.update_job_completed_on_timestamp(
-            &ask_id,
+            &bid_id,
             get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
                 .await
                 .unwrap_or_default(),
         );
 
         let (generator_address, market_id) = {
-            let data = local_ask_store.get_by_ask_id(&ask_id).unwrap();
+            let data = local_ask_store.get_by_ask_id(&bid_id).unwrap();
             let generator_address = data.generator.unwrap().into();
             let market_id = data.market_id;
             (generator_address, market_id)
@@ -317,17 +317,17 @@ pub async fn process_proof_market_place_logs(
                 generator_info.proof_generation_cost.clone()
             });
 
-        let created_on = { local_ask_store.get_by_ask_id(&ask_id).unwrap().created_on };
+        let created_on = { local_ask_store.get_by_ask_id(&bid_id).unwrap().created_on };
         let proof_time = proof_cycle_completed_on_l1.saturating_sub(created_on);
 
         local_ask_store.store_valid_proof(
-            &ask_id,
+            &bid_id,
             proof,
             proof_time,
             proof_generator_cost,
             tx_to_string(&log.transaction_hash.unwrap()),
         );
-        local_ask_store.remove_ask_only_if_completed(&ask_id);
+        local_ask_store.remove_ask_only_if_completed(&bid_id);
 
         {
             generator_store.write().await.update_on_submit_proof(
@@ -483,16 +483,16 @@ pub async fn process_proof_market_place_logs(
     }
 
     if let Ok(ask_cancelled_log) =
-        proof_market_place.decode_event_raw("AskCancelled", log.topics.clone(), log.data.clone())
+        proof_market_place.decode_event_raw("BidCancelled", log.topics.clone(), log.data.clone())
     {
-        let ask_id = ask_cancelled_log
+        let bid_id = ask_cancelled_log
             .get(0)
             .unwrap()
             .clone()
             .into_uint()
             .unwrap();
 
-        log::debug!("Ask has been cancelled {:?}", ask_id);
+        log::debug!("Bid has been cancelled {:?}", bid_id);
         let mut local_ask_store = { local_ask_store.write().await };
 
         let proof_cycle_completed_on: U256 = log.block_number.unwrap().as_u64().into();
@@ -501,9 +501,9 @@ pub async fn process_proof_market_place_logs(
                 .await
                 .unwrap_or_default();
 
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
-        local_ask_store.modify_state(&ask_id, AskState::Complete);
-        local_ask_store.remove_ask_only_if_completed(&ask_id);
+        local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
+        local_ask_store.modify_state(&bid_id, AskState::Complete);
+        local_ask_store.remove_ask_only_if_completed(&bid_id);
         return Ok(());
     }
 
@@ -512,7 +512,7 @@ pub async fn process_proof_market_place_logs(
         log.topics.clone(),
         log.data.clone(),
     ) {
-        let ask_id = ask_not_generated
+        let bid_id = ask_not_generated
             .get(0)
             .unwrap()
             .clone()
@@ -523,7 +523,7 @@ pub async fn process_proof_market_place_logs(
         log::debug!("Avoid it get error during compilation itself");
         log::debug!(
             "Ask's proof not generated {:?}. Generator is likely slashed",
-            ask_id
+            bid_id
         );
         let mut local_ask_store = { local_ask_store.write().await };
 
@@ -533,13 +533,13 @@ pub async fn process_proof_market_place_logs(
                 .await
                 .unwrap_or_default();
 
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
-        local_ask_store.modify_state(&ask_id, AskState::Complete);
-        local_ask_store.note_proof_denied(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
+        local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
+        local_ask_store.modify_state(&bid_id, AskState::Complete);
+        local_ask_store.note_proof_denied(&bid_id, tx_to_string(&log.transaction_hash.unwrap()));
 
         log::debug!("Proof not Generated: update generator state");
         let (generator_address, _) = {
-            let data = local_ask_store.get_by_ask_id(&ask_id).unwrap();
+            let data = local_ask_store.get_by_ask_id(&bid_id).unwrap();
             let generator_address: Address = data.generator.unwrap().into();
             let market_id = data.market_id;
             (generator_address, market_id)
@@ -547,8 +547,8 @@ pub async fn process_proof_market_place_logs(
 
         log::debug!("Proof not Generated: update on slashing penalty");
 
-        let ask = local_ask_store.get_by_ask_id(&ask_id).unwrap();
-        local_ask_store.remove_ask_only_if_completed(&ask_id);
+        let ask = local_ask_store.get_by_ask_id(&bid_id).unwrap();
+        local_ask_store.remove_ask_only_if_completed(&bid_id);
 
         let mut generator_store = generator_store.write().await;
 
@@ -578,7 +578,7 @@ pub async fn process_proof_market_place_logs(
             // only notes the slashing entry, doesn't update stake
             generator_store.note_entry_slashing(
                 &generator_address,
-                &ask_id,
+                &bid_id,
                 &ask.market_id,
                 native_slashing_tokens,
                 native_slashings,
@@ -606,7 +606,7 @@ pub async fn process_proof_market_place_logs(
         log::debug!("Decode Raw Event is being used to detect InvalidInputsDetected");
         log::debug!("fix this to ensure that you receive all errors during compilation");
 
-        let ask_id = invalid_inputs_detected_log
+        let bid_id = invalid_inputs_detected_log
             .get(0)
             .unwrap()
             .clone()
@@ -614,8 +614,8 @@ pub async fn process_proof_market_place_logs(
             .unwrap();
 
         log::debug!(
-            "Ask's inputs were wrong {:?}. Submitted attestation for invalid input",
-            ask_id
+            "Bid's inputs were wrong {:?}. Submitted attestation for invalid input",
+            bid_id
         );
         let mut local_ask_store = { local_ask_store.write().await };
 
@@ -624,25 +624,25 @@ pub async fn process_proof_market_place_logs(
             get_l1_block_from_l2_block(rpc_url, proof_cycle_completed_on)
                 .await
                 .unwrap_or_default();
-        local_ask_store.update_proof_proof_cycle_completed_on(&ask_id, proof_cycle_completed_on_l1);
-        local_ask_store.modify_state(&ask_id, AskState::Complete);
-        local_ask_store.note_invalid_inputs(&ask_id, tx_to_string(&log.transaction_hash.unwrap()));
+        local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
+        local_ask_store.modify_state(&bid_id, AskState::Complete);
+        local_ask_store.note_invalid_inputs(&bid_id, tx_to_string(&log.transaction_hash.unwrap()));
 
         local_ask_store.update_job_completed_on_timestamp(
-            &ask_id,
+            &bid_id,
             get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
                 .await
                 .unwrap_or_default(),
         );
 
         let (generator_address, market_id) = {
-            let data = local_ask_store.get_by_ask_id(&ask_id).unwrap();
+            let data = local_ask_store.get_by_ask_id(&bid_id).unwrap();
             let generator_address = data.generator.unwrap().into();
             let market_id = data.market_id;
             (generator_address, market_id)
         };
 
-        local_ask_store.remove_ask_only_if_completed(&ask_id);
+        local_ask_store.remove_ask_only_if_completed(&bid_id);
 
         {
             let proof_generator_cost = generator_store

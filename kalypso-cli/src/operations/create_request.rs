@@ -96,7 +96,7 @@ impl Operation for ConfidentialRequest {
                     market_id: confidential_request_info.market_id,
                     reward: confidential_request_info.max_proof_generation_cost,
                     expiry: get_expiry_time().await?,
-                    time_taken_for_proof_generation: confidential_request_info
+                    time_for_proof_generation: confidential_request_info
                         .max_proof_generation_time,
                     deadline: U256::zero(),
                     refund_address: confidential_request_info.private_key_signer.address(),
@@ -179,7 +179,7 @@ impl Operation for NonConfidentialRequest {
                     market_id: non_confidential_request_info.market_id,
                     reward: non_confidential_request_info.max_proof_generation_cost,
                     expiry: get_expiry_time().await?,
-                    time_taken_for_proof_generation: non_confidential_request_info
+                    time_for_proof_generation: non_confidential_request_info
                         .max_proof_generation_time,
                     deadline: U256::zero(),
                     refund_address: non_confidential_request_info.private_key_signer.address(),
@@ -239,7 +239,7 @@ async fn get_expiry_time() -> Result<U256, String> {
         .map_err(|e| format!("Current Timestamp Calculation failed: {}", e))?;
     let current_timestamp = now.as_millis();
 
-    let max_age_in_ms = 60000;
+    let max_age_in_ms = 300000;
     let expiry = current_timestamp + max_age_in_ms;
 
     Ok(U256::from_dec_str(&expiry.to_string()).unwrap() / 1000)
