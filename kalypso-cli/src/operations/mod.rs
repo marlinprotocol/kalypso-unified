@@ -13,7 +13,6 @@ pub mod matching_engine_programs;
 pub mod read_proof;
 pub mod request;
 pub mod role_mgmt;
-pub mod set_operator_commision;
 pub mod stake;
 pub mod stake_data;
 pub mod symbiotic_opt_in;
@@ -97,9 +96,6 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         )),
         "Check Symbiotic Optin Info" => Some(Box::new(symbiotic_opt_in::SymbioticOptinInfo)),
         "Read Stake Data" => Some(Box::new(stake_data::StakeData)),
-        "Set Operator Reward Commission" => {
-            Some(Box::new(set_operator_commision::SetOperatorCommision))
-        }
         "Read Rewards Info" => Some(Box::new(claim_rewards::ReadRewardsInfo)),
         "Read Native Staking Pending Withdrawals" => {
             Some(Box::new(stake::ReadWithdrawalRequestIds))

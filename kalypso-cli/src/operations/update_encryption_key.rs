@@ -41,38 +41,25 @@ impl Operation for AddIvsKey {
             })
             .await;
 
-        let (verified_attestation, _ecies_pubkey) =
-            kalypso_helper::pcr_helpers::get_verified_attestation(
-                &add_ivs_key_info.attestation_verifier,
-                attestation_data,
-                false,
-            )
-            .await
-            .map_err(|e| format!("Failed Verifying attestation {}", e))?;
+        let ecies_pubkey =
+            kalypso_helper::pcr_helpers::get_pubkey_from_attestation(attestation_data.clone())
+                .map_err(|e| format!("Failed Getting Pubkey From Attestation {}", e))?;
+
+        let ecies_pubkey = kalypso_helper::secret_inputs_helpers::parse_ecies_pubkey(ecies_pubkey)
+            .map_err(|e| format!("Failed Parse Ecies Pubkey {}", e))?;
+
+        let verified_attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
+            &add_ivs_key_info.attestation_verifier,
+            attestation_data,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Verifying attestation {}", e))?;
 
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        // let enclave_signature = get_attestation_signature_encrypted(
-        //     hex::encode(&verified_attestation).as_ref(),
-        //     hex::encode(
-        //         add_ivs_key_info
-        //             .private_key_signer
-        //             .address()
-        //             .as_bytes()
-        //             .to_vec(),
-        //     )
-        //     .as_ref(),
-        //     false,
-        //     &add_ivs_key_info.enclave_client_url,
-        //     headers,
-        //     &ecies_pubkey,
-        //     add_ivs_key_info.chain_id.as_u64().into(),
-        // )
-        // .await
-        // .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
-
-        let enclave_signature = get_attestation_signature(
+        let enclave_signature = get_attestation_signature_encrypted(
             hex::encode(&verified_attestation).as_ref(),
             hex::encode(
                 add_ivs_key_info
@@ -85,6 +72,8 @@ impl Operation for AddIvsKey {
             false,
             &add_ivs_key_info.enclave_client_url,
             headers,
+            &ecies_pubkey,
+            add_ivs_key_info.chain_id.as_u64().into(),
         )
         .await
         .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
@@ -145,38 +134,25 @@ impl Operation for UpdateEncryptionKey {
             })
             .await;
 
-        let (verified_attestation, _ecies_pubkey) =
-            kalypso_helper::pcr_helpers::get_verified_attestation(
-                &update_encryption_info.attestation_verifier,
-                attestation_data,
-                false,
-            )
-            .await
-            .map_err(|e| format!("Failed Verifying attestation {}", e))?;
+        let ecies_pubkey =
+            kalypso_helper::pcr_helpers::get_pubkey_from_attestation(attestation_data.clone())
+                .map_err(|e| format!("Failed Getting Pubkey From Attestation {}", e))?;
+
+        let ecies_pubkey = kalypso_helper::secret_inputs_helpers::parse_ecies_pubkey(ecies_pubkey)
+            .map_err(|e| format!("Failed Parse Ecies Pubkey {}", e))?;
+
+        let verified_attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
+            &update_encryption_info.attestation_verifier,
+            attestation_data,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Verifying attestation {}", e))?;
 
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        // let enclave_signature = get_attestation_signature_encrypted(
-        //     hex::encode(&verified_attestation).as_ref(),
-        //     hex::encode(
-        //         update_encryption_info
-        //             .private_key_signer
-        //             .address()
-        //             .as_bytes()
-        //             .to_vec(),
-        //     )
-        //     .as_ref(),
-        //     false,
-        //     &update_encryption_info.enclave_client_url,
-        //     headers,
-        //     &ecies_pubkey,
-        //     update_encryption_info.chain_id.as_u64().into(),
-        // )
-        // .await
-        // .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
-
-        let enclave_signature = get_attestation_signature(
+        let enclave_signature = get_attestation_signature_encrypted(
             hex::encode(&verified_attestation).as_ref(),
             hex::encode(
                 update_encryption_info
@@ -189,6 +165,8 @@ impl Operation for UpdateEncryptionKey {
             false,
             &update_encryption_info.enclave_client_url,
             headers,
+            &ecies_pubkey,
+            update_encryption_info.chain_id.as_u64().into(),
         )
         .await
         .map_err(|e| format!("Failed Getting Attestation Signature {}", e))?;
@@ -297,7 +275,7 @@ pub async fn get_address_signature_encrypted(
     print_logs: bool,
     enclave_client_url: &str,
     headers: HeaderMap,
-    enclave_pub_key: &Vec<u8>,
+    enclave_pub_key: &ecies::PublicKey,
     chain_id: U64,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let full_url = format!("{}/api/signAddressEncrypted", enclave_client_url);
@@ -312,7 +290,7 @@ pub async fn get_address_signature_encrypted(
 
     let encrypted_payload = kalypso_helper::sch_request::prepare_sch_payload(
         payload,
-        enclave_pub_key,
+        &enclave_pub_key.serialize(),
         &self_priv_key.serialize(),
         &chain_id,
     )
@@ -339,9 +317,10 @@ pub async fn get_address_signature_encrypted(
     let response_json: SignAddressOrAttestationResponse<EncryptedResponse> =
         response.json().await?;
 
-    let response_json: SignAddressOrAttestationData = response_json
-        .data
-        .to_payload(enclave_pub_key, &self_priv_key.serialize().to_vec())?;
+    let response_json: SignAddressOrAttestationData = response_json.data.to_payload(
+        &enclave_pub_key.serialize().into(),
+        &self_priv_key.serialize().to_vec(),
+    )?;
     let _v = match response_json.v {
         27 => "1b",
         28 => "1c",
@@ -433,16 +412,13 @@ pub async fn get_attestation_signature(
 }
 
 #[allow(unused)]
-#[deprecated(
-    note = "Use `get_attestation_signature_encrypted` is unable to decode the response, fix this and then use it"
-)]
 pub async fn get_attestation_signature_encrypted(
     attestation: &str,
     address: &str,
     print_logs: bool,
     enclave_client_url: &str,
     headers: HeaderMap,
-    enclave_pub_key: &Vec<u8>,
+    enclave_pub_key: &ecies::PublicKey,
     chain_id: U64,
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let full_url = format!("{}/api/signAttestationEncrypted", enclave_client_url);
@@ -457,7 +433,7 @@ pub async fn get_attestation_signature_encrypted(
 
     let encrypted_payload = kalypso_helper::sch_request::prepare_sch_payload(
         payload,
-        enclave_pub_key,
+        &enclave_pub_key.serialize(),
         &self_priv_key.serialize(),
         &chain_id,
     )
@@ -486,7 +462,10 @@ pub async fn get_attestation_signature_encrypted(
 
     let response_json: SignAddressOrAttestationData = response_json
         .data
-        .to_payload(enclave_pub_key, &self_priv_key.serialize().to_vec())
+        .to_payload(
+            &enclave_pub_key.serialize().into(),
+            &self_priv_key.serialize().to_vec(),
+        )
         .map_err(|e| format!("Failed Decoding Attestation Reponse {}", e))?;
 
     let _v = match response_json.v {

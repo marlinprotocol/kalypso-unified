@@ -11,36 +11,6 @@ pub struct SymbioticOptinInfo;
 #[async_trait]
 impl Operation for SymbioticOptinInfo {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
-        abigen!(
-            OptInService,
-            r#"[
-                {
-                    "inputs": [
-                        {
-                            "internalType": "address",
-                            "name": "who",
-                            "type": "address"
-                        },
-                        {
-                            "internalType": "address",
-                            "name": "where",
-                            "type": "address"
-                        }
-                    ],
-                    "name": "isOptedIn",
-                    "outputs": [
-                        {
-                            "internalType": "bool",
-                            "name": "",
-                            "type": "bool"
-                        }
-                    ],
-                    "stateMutability": "view",
-                    "type": "function"
-                }
-            ]"#
-        );
-
         let symbiotic_optin_info = CommonDeps::symbiotic_opt_in_info(&config)?;
 
         // Initialize the provider
@@ -52,12 +22,12 @@ impl Operation for SymbioticOptinInfo {
             SignerMiddleware::new(provider_http.clone(), symbiotic_optin_info.signer.clone());
         let client_arc = Arc::new(client);
 
-        let vault_service = OptInService::new(
+        let vault_service = bindings::OptInService::new(
             symbiotic_optin_info.vault_opt_in_service,
             client_arc.clone(),
         );
 
-        let network_service = OptInService::new(
+        let network_service = bindings::OptInService::new(
             symbiotic_optin_info.network_opt_in_service,
             client_arc.clone(),
         );
@@ -127,76 +97,6 @@ pub struct SymbioticOperatorRegistrationInfo;
 #[async_trait]
 impl Operation for SymbioticOperatorRegistrationInfo {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
-        abigen!(
-            IRegistry,
-            r#"[
-                {
-                    "anonymous": false,
-                    "inputs": [
-                        {
-                            "indexed": true,
-                            "internalType": "address",
-                            "name": "entity",
-                            "type": "address"
-                        }
-                    ],
-                    "name": "AddEntity",
-                    "type": "event"
-                },
-                {
-                    "inputs": [
-                        {
-                            "internalType": "address",
-                            "name": "account",
-                            "type": "address"
-                        }
-                    ],
-                    "name": "isEntity",
-                    "outputs": [
-                        {
-                            "internalType": "bool",
-                            "name": "",
-                            "type": "bool"
-                        }
-                    ],
-                    "stateMutability": "view",
-                    "type": "function"
-                },
-                {
-                    "inputs": [],
-                    "name": "totalEntities",
-                    "outputs": [
-                        {
-                            "internalType": "uint256",
-                            "name": "",
-                            "type": "uint256"
-                        }
-                    ],
-                    "stateMutability": "view",
-                    "type": "function"
-                },
-                {
-                    "inputs": [
-                        {
-                            "internalType": "uint256",
-                            "name": "index",
-                            "type": "uint256"
-                        }
-                    ],
-                    "name": "entity",
-                    "outputs": [
-                        {
-                            "internalType": "address",
-                            "name": "",
-                            "type": "address"
-                        }
-                    ],
-                    "stateMutability": "view",
-                    "type": "function"
-                }
-            ]"#
-        );
-
         let symbiotic_register_info = CommonDeps::symbiotic_operator_registry_info(&config)?;
 
         // Initialize the provider
@@ -210,7 +110,7 @@ impl Operation for SymbioticOperatorRegistrationInfo {
         );
         let client_arc = Arc::new(client);
 
-        let operator_registry = IRegistry::new(
+        let operator_registry = bindings::operator_registry::OperatorRegistry::new(
             symbiotic_register_info.symbiotic_operator_registry,
             client_arc.clone(),
         );
@@ -242,18 +142,6 @@ pub struct SymbioticOperatorRegister;
 impl Operation for SymbioticOperatorRegister {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let symbiotic_register_info = CommonDeps::symbiotic_operator_registry_info(&config)?;
-        abigen!(
-            OperatorRegistryContract,
-            r#"[
-                {
-                    "inputs": [],
-                    "name": "registerOperator",
-                    "outputs": [],
-                    "stateMutability": "nonpayable",
-                    "type": "function"
-                }
-            ]"#
-        );
 
         // Initialize the provider
         let provider_http = Provider::<Http>::try_from(symbiotic_register_info.symbiotic_rpc_url)
@@ -266,7 +154,7 @@ impl Operation for SymbioticOperatorRegister {
         );
         let client_arc = Arc::new(client);
 
-        let operator_registry = OperatorRegistryContract::new(
+        let operator_registry = bindings::operator_registry::OperatorRegistry::new(
             symbiotic_register_info.symbiotic_operator_registry,
             client_arc.clone(),
         );
@@ -291,27 +179,6 @@ impl Operation for SymbioticOptIn {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let symbiotic_info = CommonDeps::symbiotic_opt_in_info(&config)?;
 
-        abigen!(
-            Service,
-            r#"
-                [
-                    {
-                        "inputs": [
-                            {
-                                "internalType": "address",
-                                "name": "network",
-                                "type": "address"
-                            }
-                        ],
-                        "name": "optIn",
-                        "outputs": [],
-                        "stateMutability": "nonpayable",
-                        "type": "function"
-                    }
-                ]
-            "#
-        );
-
         // Initialize the provider
         let provider_http = Provider::<Http>::try_from(symbiotic_info.symbiotic_rpc_url)
             .map_err(|e| format!("Invalid RPC URL: {}", e))?;
@@ -320,10 +187,11 @@ impl Operation for SymbioticOptIn {
         let client = SignerMiddleware::new(provider_http.clone(), symbiotic_info.signer.clone());
         let client_arc = Arc::new(client);
 
-        let vault_service = Service::new(symbiotic_info.vault_opt_in_service, client_arc.clone());
+        let vault_service =
+            bindings::OptInService::new(symbiotic_info.vault_opt_in_service, client_arc.clone());
 
         let network_service =
-            Service::new(symbiotic_info.network_opt_in_service, client_arc.clone());
+            bindings::OptInService::new(symbiotic_info.network_opt_in_service, client_arc.clone());
 
         let vault_opt_in_transaction_hash =
             match send_with_optional_gas!(vault_service.opt_in(symbiotic_info.vault_address)) {
@@ -360,28 +228,6 @@ impl Operation for SetMiddlewareAddress {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let set_middleware_info = CommonDeps::set_middleware_address_info(&config)?;
 
-        abigen!(
-            Middleware,
-            r#"
-                [
-                    {
-                        "inputs": [
-                        {
-                            "internalType": "address",
-                            "name": "_delegate",
-                            "type": "address"
-                        }
-                        ],
-                        "name": "setDelegate",
-                        "outputs": [],
-                        "stateMutability": "nonpayable",
-                        "type": "function"
-                    }
-                    ]
-
-            "#
-        );
-
         let provider_http = Provider::<Http>::try_from(set_middleware_info.symbiotic_rpc_url)
             .map_err(|e| format!("Invalid RPC URL: {}", e))?;
 
@@ -390,8 +236,10 @@ impl Operation for SetMiddlewareAddress {
             SignerMiddleware::new(provider_http.clone(), set_middleware_info.signer.clone());
         let client_arc = Arc::new(client);
 
-        let middleware =
-            Middleware::new(set_middleware_info.middleware_address, client_arc.clone());
+        let middleware = bindings::middleware::Middleware::new(
+            set_middleware_info.middleware_address,
+            client_arc.clone(),
+        );
 
         let tx_hash =
             send_with_optional_gas!(middleware.set_delegate(set_middleware_info.operator_address))

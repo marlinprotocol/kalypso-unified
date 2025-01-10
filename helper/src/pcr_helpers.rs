@@ -108,7 +108,7 @@ pub async fn get_verified_attestation(
     verifier_url: &str,
     attestation_data: Vec<u8>,
     print_logs: bool,
-) -> Result<(Vec<u8>, Vec<u8>), Box<dyn Error>> {
+) -> Result<Vec<u8>, Box<dyn Error>> {
     // Construct the verify endpoint URL
     let verify_endpoint = utility_url(verifier_url, "/verify/raw");
 
@@ -171,7 +171,7 @@ pub async fn get_verified_attestation(
         ethers::abi::Token::Uint(timestamp_u256),
     ]);
 
-    Ok((encoded, ecies_pubkey_vec))
+    Ok(encoded)
 }
 
 pub async fn verify_attestation(
@@ -246,6 +246,10 @@ pub fn verify(
     max_age: usize,
 ) -> Result<Vec<u8>, AttestationError> {
     oyster::verify(attestation_doc_cbor, pcrs, max_age)
+}
+
+pub fn get_pubkey_from_attestation(attestation_doc: Vec<u8>) -> Result<Vec<u8>, AttestationError> {
+    Ok(oyster::decode_attestation(attestation_doc)?.public_key)
 }
 
 #[cfg(test)]

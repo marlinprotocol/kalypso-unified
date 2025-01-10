@@ -250,10 +250,17 @@ mod tests {
 
         assert_eq!(payload_seen_by_server, nested_json_to_send);
 
-        // step 3: servers send the same data as response to client. (It can be anything, but in this test we send the same)
+        // step 3: servers send some data as response to client.
+        let plain_response_sent_by_server = json!({
+            "message": "I have seen the data",
+            "come": [
+                "collect", "tokens", "here"
+            ]
+        });
+
         let response_to_client = payload
             .to_encrypted_response(
-                &payload_seen_by_server,
+                &plain_response_sent_by_server,
                 &enclave_priv_key.serialize().into(),
             )
             .await
@@ -264,6 +271,6 @@ mod tests {
             .to_payload(&enclave_pub_key.into(), &client_priv_key.serialize().into())
             .unwrap();
 
-        assert_eq!(payload_seen_by_client, payload_seen_by_server);
+        assert_eq!(payload_seen_by_client, plain_response_sent_by_server);
     }
 }

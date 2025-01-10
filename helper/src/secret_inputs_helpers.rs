@@ -247,6 +247,38 @@ pub fn get_uncompressed_ecies_pubkey(private_key: &[u8; 32]) -> Vec<u8> {
     public_key.into()
 }
 
+use std::convert::TryInto; // Import the TryInto trait
+
+pub fn parse_ecies_pubkey(
+    ecies_pubkey: Vec<u8>,
+) -> Result<ecies::PublicKey, Box<dyn std::error::Error>> {
+    let ecies_pubkey = if ecies_pubkey.len() == 64 {
+        const UNCOMPRESSED_PREFIX: u8 = 0x04;
+        let mut prefixed = Vec::with_capacity(65);
+        prefixed.push(UNCOMPRESSED_PREFIX);
+        prefixed.extend_from_slice(&ecies_pubkey);
+        prefixed
+    } else {
+        ecies_pubkey
+    };
+
+    // Ensure the Vec has exactly 65 bytes
+    if ecies_pubkey.len() != 65 {
+        return Err("Invalid ECIES public key length".into());
+    }
+
+    // Attempt to convert Vec<u8> to &[u8; 65]
+    let ecies_pubkey_array: &[u8; 65] = ecies_pubkey
+        .as_slice()
+        .try_into()
+        .map_err(|_| "Failed to convert Vec<u8> to &[u8; 65]")?;
+
+    // Parse the public key
+    let ecies_pubkey_parsed = ecies::PublicKey::parse(ecies_pubkey_array)?;
+
+    Ok(ecies_pubkey_parsed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{

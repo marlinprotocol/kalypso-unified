@@ -13,4 +13,5 @@ pub mod ssc;
 
 // added this because oyster-sdk-rs import is not directly working
 #[allow(unused)]
+// #[deprecated(note = "Use `oyster_monorepo` directly for verification")]
 mod oyster;

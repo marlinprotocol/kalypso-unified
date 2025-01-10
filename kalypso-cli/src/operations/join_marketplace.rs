@@ -4,7 +4,7 @@ use crate::{
 use async_trait::async_trait;
 use ethers::{
     signers::Signer,
-    types::{Address, H256},
+    types::{Address, H256, U256},
 };
 use std::collections::HashMap;
 
@@ -14,6 +14,10 @@ pub struct JoinMarketplace;
 impl Operation for JoinMarketplace {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let generator_join_market = CommonDeps::generator_join_market_instance(&config)?;
+
+        if generator_join_market.commission > U256::from_dec_str("1000000000000000000").unwrap() {
+            return Err("Operator Commission can't be more than 1000000000000000000".to_string());
+        }
 
         match generator_join_market
             .generator_registry
@@ -70,7 +74,7 @@ impl Operation for JoinMarketplace {
                             generator_join_market.compute_per_request_required,
                             generator_join_market.proof_generation_cost,
                             generator_join_market.proposed_time,
-                            0.into(), // TODO, this is commission
+                            generator_join_market.commission,
                             false,
                             vec![].into(),
                             vec![].into(),

@@ -5,9 +5,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use std::{collections::HashMap, error::Error};
 
 use crate::common_deps::CommonDeps;
-use crate::operations::update_encryption_key::{
-    get_attestation_signature, get_attestation_signature_encrypted,
-};
+use crate::operations::update_encryption_key::get_attestation_signature_encrypted;
 use crate::send_with_optional_gas;
 
 use super::{update_generator_meta::read_file_from_paths, Operation};
@@ -449,20 +447,24 @@ impl Operation for VerifyMatchingEngineKeys {
         .await
         .map_err(|e| format!("Failed making building attestation {}", e))?;
 
-        let keys_after_verification = verify_attestation_with_pcrs(
+        let keys_after_matching_pcrs = verify_attestation_with_pcrs(
             &verify_matching_engine_config.matching_engine_pcrs,
             &attestation,
         )
         .await
         .map_err(|e| format!("Failed Verifying attestation {}", e))?;
 
-        println!(
-            "Verified Enclave Pubkey: {}",
-            hex::encode(keys_after_verification)
-        );
+        println!("Enclave Pub Key: {}", hex::encode(keys_after_matching_pcrs));
+
+        let ecies_pubkey =
+            kalypso_helper::pcr_helpers::get_pubkey_from_attestation(attestation.clone())
+                .map_err(|e| format!("Failed Getting Pubkey From Attestation {}", e))?;
+
+        let ecies_pubkey = kalypso_helper::secret_inputs_helpers::parse_ecies_pubkey(ecies_pubkey)
+            .map_err(|e| format!("Failed Parse Ecies Pubkey {}", e))?;
 
         // this attestation is verified by attestation verifier and will be compatible with AttestationVerifier Contract
-        let (attestation, _ecies_pubkey) = kalypso_helper::pcr_helpers::get_verified_attestation(
+        let attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
             &verify_matching_engine_config.attestation_verifier,
             attestation,
             false,
@@ -474,29 +476,14 @@ impl Operation for VerifyMatchingEngineKeys {
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-        // let attestation_signature = get_attestation_signature_encrypted(
-        //     hex::encode(&attestation).as_ref(),
-        //     &address_str,
-        //     false,
-        //     &verify_matching_engine_config.matching_engine_client_url,
-        //     headers,
-        //     &ecies_pubkey,
-        //     verify_matching_engine_config.chain_id,
-        // )
-        // .await
-        // .map_err(|e| {
-        //     format!(
-        //         "Failed fetching the attestation signature for verifying the keys {}",
-        //         e
-        //     )
-        // })?;
-
-        let attestation_signature = get_attestation_signature(
+        let attestation_signature = get_attestation_signature_encrypted(
             hex::encode(&attestation).as_ref(),
             &address_str,
             false,
             &verify_matching_engine_config.matching_engine_client_url,
             headers,
+            &ecies_pubkey,
+            verify_matching_engine_config.chain_id,
         )
         .await
         .map_err(|e| {

@@ -38,6 +38,7 @@ pub struct GeneratorJoinMarket {
     pub compute_per_request_required: U256,
     pub proof_generation_cost: U256,
     pub proposed_time: U256,
+    pub commission: U256,
 }
 
 pub struct CommonDeps;
@@ -99,8 +100,25 @@ impl CommonDeps {
                 "SymbioticStakingRewards"
             );
 
-            try_read_contract_error!(e, bindings::error::ErrorErrors, "OtherErrors");
+            try_read_contract_error!(
+                e,
+                bindings::middleware::MiddlewareErrors,
+                "MiddlewareErrors:Holesky"
+            );
 
+            try_read_contract_error!(
+                e,
+                bindings::operator_registry::OperatorRegistryErrors,
+                "OperatorRegistryErrors:Holesky"
+            );
+
+            try_read_contract_error!(
+                e,
+                bindings::opt_in_service::OptInServiceErrors,
+                "OptInService:Holesky"
+            );
+
+            try_read_contract_error!(e, bindings::error::ErrorErrors, "OtherErrors");
             eprintln!("========================\n");
             format!("Failed to send transaction: {}", e)
         })?;
@@ -131,6 +149,7 @@ impl CommonDeps {
         get_config_ref!(config, "compute_per_request", compute_per_request);
         get_config_ref!(config, "proof_generation_cost", proof_generation_cost);
         get_config_ref!(config, "proposed_time", proposed_time);
+        get_config_ref!(config, "operator_commission", operator_commission);
 
         let (generator_registry, private_key_signer) = get_generator_registry_instance(
             private_key,
@@ -158,6 +177,9 @@ impl CommonDeps {
         let proposed_time = U256::from_dec_str(&proposed_time.as_str())
             .map_err(|e| format!("Invalid Proposed Time: {}", e))?;
 
+        let operator_commission = U256::from_dec_str(&operator_commission.as_str())
+            .map_err(|e| format!("Invalid Operator Commission: {}", e))?;
+
         Ok(GeneratorJoinMarket {
             private_key_signer,
             generator_registry,
@@ -165,6 +187,7 @@ impl CommonDeps {
             market_id,
             compute_per_request_required: compute_per_request,
             proof_generation_cost,
+            commission: operator_commission,
             proposed_time: proposed_time * 1000, // converts into ms required by contract
         })
     }
@@ -305,7 +328,6 @@ fn get_proof_marketplace_instance(
     Ok((proof_marketplace, private_key_signer))
 }
 
-#[allow(unused)] //will be required latter
 fn get_token_instance(
     private_key: &str,
     chain_id: &str,
@@ -1598,45 +1620,6 @@ impl CommonDeps {
         Ok(ReadStakeDataInfo {
             operator_address,
             indexer_url: indexer_url.to_string(),
-        })
-    }
-}
-
-pub struct SetOperatorCommission {
-    pub private_key_signer: LocalWallet,
-    pub rpc_url: String,
-    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
-        SignerMiddleware<Provider<Http>, LocalWallet>,
-    >,
-    pub operator_commission: U256,
-}
-
-impl CommonDeps {
-    pub fn set_operator_commission_info(
-        config: &std::collections::HashMap<String, String>,
-    ) -> Result<SetOperatorCommission, String> {
-        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
-        get_config_ref!(config, "private_key", private_key);
-        get_config_ref!(config, "rpc_url", rpc_url);
-        get_config_ref!(config, "chain_id", chain_id);
-
-        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
-            private_key,
-            chain_id,
-            proof_marketplace_address,
-            rpc_url,
-        )?;
-
-        get_config_ref!(config, "operator_commission", operator_commission);
-
-        let operator_commission = U256::from_dec_str(&operator_commission.as_str())
-            .map_err(|e| format!("Invalid Operator Commission: {}", e))?;
-
-        Ok(SetOperatorCommission {
-            private_key_signer,
-            proof_marketplace,
-            operator_commission,
-            rpc_url: rpc_url.to_string(),
         })
     }
 }

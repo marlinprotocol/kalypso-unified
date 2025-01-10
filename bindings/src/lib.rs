@@ -56,3 +56,21 @@ abigen!(
     "./src/Error.json", // Path to the ABI file
     event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
 );
+
+abigen!(
+    OptInService,              // The Rust struct name you want for your contract
+    "./src/OptInService.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);
+
+abigen!(
+    Middleware,              // The Rust struct name you want for your contract
+    "./src/Middleware.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);
+
+abigen!(
+    OperatorRegistry,              // The Rust struct name you want for your contract
+    "./src/OperatorRegistry.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);
