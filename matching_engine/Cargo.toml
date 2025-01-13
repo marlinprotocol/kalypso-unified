@@ -38,7 +38,9 @@ default = ["beta"]
 beta = []
 # Mode Features
 external_indexer = ["stagenet", "disable_match_creation"]
-stagenet = [
+stagenet = ["complete"]
+
+complete = [
     "matching_engine_enable_cors",
     "skip_unknown_events",
     "override_symbiotic_slashing_to_zero",

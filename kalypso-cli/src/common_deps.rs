@@ -188,7 +188,7 @@ impl CommonDeps {
             compute_per_request_required: compute_per_request,
             proof_generation_cost,
             commission: operator_commission,
-            proposed_time: proposed_time * 1000, // converts into ms required by contract
+            proposed_time,
         })
     }
 
@@ -718,7 +718,7 @@ impl CommonDeps {
             proof_marketplace,
             payment_token,
             max_proof_generation_cost,
-            max_proof_generation_time: max_proof_generation_time * 1000,
+            max_proof_generation_time,
             inputs,
             market_id,
             provider_http,
@@ -1103,7 +1103,7 @@ impl CommonDeps {
             proof_marketplace,
             payment_token,
             max_proof_generation_cost,
-            max_proof_generation_time: max_proof_generation_time * 1000,
+            max_proof_generation_time,
             inputs,
             market_id,
             private_inputs,
