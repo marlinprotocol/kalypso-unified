@@ -14,6 +14,7 @@ mod chain_status;
 mod decrypt_request;
 mod get_priv_inputs;
 mod market_info;
+mod symbiotic_snapshot;
 mod ui_routes;
 mod unhandled_logs;
 
@@ -103,6 +104,10 @@ pub fn get_stats_scope() -> actix_web::Scope {
         .route(
             "/unhandled_logs",
             web::get().to(unhandled_logs::get_unhandled_logs),
+        )
+        .route(
+            "/symbiotic_snapshot",
+            web::get().to(symbiotic_snapshot::get_snapshot),
         )
 }
 

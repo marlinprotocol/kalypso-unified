@@ -9,11 +9,11 @@ use crate::utility::TokenTracker;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SymbioticStakeStore {
-    operators: HashMap<Address, TokenTracker>,
-    vault_snapshots: HashMap<U256, HashMap<U256, VaultSnapshot>>, // vault snapshot indexed with captures timestamps, then index
-    slash_results: HashMap<U256, HashMap<U256, SlashResult>>, // slash result indexed with captures timestamps, then index
-    vault_snapshot_indexes: Vec<U256>,
-    slash_result_indexes: Vec<U256>,
+    pub operators: HashMap<Address, TokenTracker>,
+    pub vault_snapshots: HashMap<U256, HashMap<U256, VaultSnapshot>>, // vault snapshot indexed with captures timestamps, then index
+    pub slash_results: HashMap<U256, HashMap<U256, SlashResult>>, // slash result indexed with captures timestamps, then index
+    pub vault_snapshot_indexes: Vec<U256>,
+    pub slash_result_indexes: Vec<U256>,
     pub tokens_to_lock: TokenTracker,
 }
 
