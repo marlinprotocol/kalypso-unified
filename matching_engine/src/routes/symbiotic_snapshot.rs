@@ -43,7 +43,7 @@ pub async fn get_snapshot(
                     json!({
                         "index": index.to_string(),
                         "snapshot": {
-                            "transmitter": hex::encode(&snap.transmitter),
+                            "transmitter": address_to_string(&snap.transmitter),
                             "index": snap.index.to_string(),
                             "captured_timestamp": snap.captured_timestamp.to_string(),
                             "num_of_transactions": snap.num_of_transactions.to_string(),
@@ -73,7 +73,7 @@ pub async fn get_snapshot(
                     json!({
                         "index": index.to_string(),
                         "slash": {
-                            "transmitter": hex::encode(&slash.transmitter),
+                            "transmitter": address_to_string(&slash.transmitter),
                             "index": slash.index.to_string(),
                             "captured_timestamp": slash.captured_timestamp.to_string(),
                             "num_of_transactions": slash.num_of_transactions.to_string(),
