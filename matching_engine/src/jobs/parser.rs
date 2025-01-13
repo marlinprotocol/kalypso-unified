@@ -836,7 +836,7 @@ impl LogParser {
                 .send()
                 .await
                 .map_err(|e: ContractError<_>| {
-                    eprintln!("========================\n");
+                    log::error!("========================\n");
                     try_read_contract_error_log!(
                         e,
                         bindings::proof_marketplace::ProofMarketplaceErrors,

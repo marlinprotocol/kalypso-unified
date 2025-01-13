@@ -257,7 +257,7 @@ impl JobCreator {
             let server = warp::serve(log_route).run(([127, 0, 0, 1], logging_server_port));
 
             if let Err(e) = tokio::spawn(server).await {
-                eprintln!("Logging server failed to start: {:?}", e);
+                log::error!("Logging server failed to start: {:?}", e);
                 should_stop.store(true, Ordering::Release); // Update stop handle
             }
         })
@@ -771,7 +771,7 @@ impl JobCreator {
                                 }
 
                                 match tx.clone().send().await.map_err(|e: ContractError<_>| {
-                                    eprintln!("========================\n");
+                                    log::error!("========================\n");
                                     try_read_contract_error_log!(
                                         e,
                                         bindings::proof_marketplace::ProofMarketplaceErrors,
@@ -827,7 +827,7 @@ impl JobCreator {
                                 }
 
                                 match tx.clone().send().await.map_err(|e: ContractError<_>| {
-                                    eprintln!("========================\n");
+                                    log::error!("========================\n");
                                     try_read_contract_error_log!(
                                         e,
                                         bindings::proof_marketplace::ProofMarketplaceErrors,

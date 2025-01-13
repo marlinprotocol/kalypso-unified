@@ -531,7 +531,7 @@ impl MatchingEngine {
                 match server.start_server(matching_engine_port, false).await {
                     Ok(_) => Ok(()), // If successful, return Ok(()).
                     Err(e) => {
-                        eprintln!("Server failed to start: {}", e); // Log the error.
+                        log::error!("Server failed to start: {}", e); // Log the error.
                         stop_handle_clone1.store(true, Ordering::Release); // Signal shutdown.
                         Err(e.into()) // Propagate the error.
                     }
@@ -578,7 +578,7 @@ impl MatchingEngine {
                 match parser.parse().await {
                     Ok(_) => Ok(()),
                     Err(e) => {
-                        eprintln!("Parser failed: {}", e); // Log the error.
+                        log::error!("Parser failed: {}", e); // Log the error.
                         stop_handle_clone2.store(true, Ordering::Release); // Signal shutdown.
                         Err(e.into()) // Propagate the error.
                     }
