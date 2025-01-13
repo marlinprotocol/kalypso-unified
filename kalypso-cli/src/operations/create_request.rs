@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use ethers::{core::rand, signers::Signer, types::U256};
 
-use crate::send_with_optional_gas;
 use crate::{common_deps::CommonDeps, operations::compute_pcrs::non_confidential_pcrs};
+use kalypso_helper::send_with_optional_gas;
 
 use super::Operation;
 
@@ -96,8 +96,7 @@ impl Operation for ConfidentialRequest {
                     market_id: confidential_request_info.market_id,
                     reward: confidential_request_info.max_proof_generation_cost,
                     expiry: get_expiry_time().await?,
-                    time_for_proof_generation: confidential_request_info
-                        .max_proof_generation_time,
+                    time_for_proof_generation: confidential_request_info.max_proof_generation_time,
                     deadline: U256::zero(),
                     refund_address: confidential_request_info.private_key_signer.address(),
                     prover_data: confidential_request_info.inputs,

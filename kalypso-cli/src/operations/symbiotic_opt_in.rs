@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use ethers::prelude::*;
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{common_deps::CommonDeps, send_with_optional_gas};
+use crate::common_deps::CommonDeps;
+use kalypso_helper::send_with_optional_gas;
 
 use super::Operation;
 

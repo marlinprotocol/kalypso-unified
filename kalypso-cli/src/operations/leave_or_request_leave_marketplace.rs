@@ -2,8 +2,8 @@
 
 use crate::common_deps::CommonDeps;
 use crate::operations::Operation;
-use crate::send_with_optional_gas;
 use async_trait::async_trait;
+use kalypso_helper::send_with_optional_gas;
 use std::collections::HashMap;
 
 pub struct RequestMarketPlaceExit;

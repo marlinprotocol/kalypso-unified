@@ -5,6 +5,7 @@ use ethers::types::U256;
 use ethers::{abi::Address, providers::Provider};
 use kalypso_helper::custom_logger::CustomLogger;
 use kalypso_helper::prom_client::TaskMetrics;
+use kalypso_helper::try_read_contract_error_log;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -769,7 +770,21 @@ impl JobCreator {
                                     tx = tx.gas(10_000_000);
                                 }
 
-                                match tx.clone().send().await {
+                                match tx.clone().send().await.map_err(|e: ContractError<_>| {
+                                    eprintln!("========================\n");
+                                    try_read_contract_error_log!(
+                                        e,
+                                        bindings::proof_marketplace::ProofMarketplaceErrors,
+                                        "ProofMarketplace"
+                                    );
+
+                                    try_read_contract_error_log!(
+                                        e,
+                                        bindings::error::ErrorErrors,
+                                        "OtherErrors"
+                                    );
+                                    format!("Failed to send transaction: {}", e)
+                                }) {
                                     Ok(submit_response) => match submit_response
                                         .confirmations(10)
                                         .await
@@ -811,7 +826,21 @@ impl JobCreator {
                                     tx = tx.gas(10_000_000);
                                 }
 
-                                match tx.clone().send().await {
+                                match tx.clone().send().await.map_err(|e: ContractError<_>| {
+                                    eprintln!("========================\n");
+                                    try_read_contract_error_log!(
+                                        e,
+                                        bindings::proof_marketplace::ProofMarketplaceErrors,
+                                        "ProofMarketplace"
+                                    );
+
+                                    try_read_contract_error_log!(
+                                        e,
+                                        bindings::error::ErrorErrors,
+                                        "OtherErrors"
+                                    );
+                                    format!("Failed to send transaction: {}", e)
+                                }) {
                                     Ok(submit_response) => match submit_response
                                         .confirmations(10)
                                         .await

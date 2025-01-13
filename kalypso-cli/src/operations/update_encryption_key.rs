@@ -9,7 +9,8 @@ use ethers::{
 use futures::StreamExt;
 use kalypso_helper::sch_response::{EncryptedResponse, ToVerifiedAndDecryptedResponse};
 
-use crate::{common_deps::CommonDeps, send_with_optional_gas};
+use crate::common_deps::CommonDeps;
+use kalypso_helper::send_with_optional_gas;
 
 use super::Operation;
 

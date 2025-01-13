@@ -490,6 +490,8 @@ impl LogParser {
 
     #[cfg(not(feature = "disable_match_creation"))]
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
+        use kalypso_helper::try_read_contract_error_log;
+
         use crate::utility::TokenTracker;
 
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
@@ -829,15 +831,29 @@ impl LogParser {
             batch_relay_tx_pending = batch_relay_tx_pending.gas(10_000_000);
         }
 
-        let batch_relay_tx = match batch_relay_tx_pending.send().await {
-            Ok(data) => data.confirmations(10),
-            Err(err) => {
-                log::error!("{}", err);
-                log::error!("failed sending the transaction");
-                thread::sleep(Duration::from_secs(2));
-                return Err("Failed creating matching".into());
-            }
-        };
+        let batch_relay_tx =
+            match batch_relay_tx_pending
+                .send()
+                .await
+                .map_err(|e: ContractError<_>| {
+                    eprintln!("========================\n");
+                    try_read_contract_error_log!(
+                        e,
+                        bindings::proof_marketplace::ProofMarketplaceErrors,
+                        "ProofMarketplace"
+                    );
+
+                    try_read_contract_error_log!(e, bindings::error::ErrorErrors, "OtherErrors");
+                    format!("Failed to send transaction: {}", e)
+                }) {
+                Ok(data) => data.confirmations(10),
+                Err(err) => {
+                    log::error!("{}", err);
+                    log::error!("failed sending the transaction");
+                    thread::sleep(Duration::from_secs(2));
+                    return Err("Failed creating matching".into());
+                }
+            };
 
         let batch_relay_tx = batch_relay_tx.await.unwrap().unwrap();
 

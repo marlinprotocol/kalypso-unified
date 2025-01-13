@@ -6,7 +6,7 @@ use std::{collections::HashMap, error::Error};
 
 use crate::common_deps::CommonDeps;
 use crate::operations::update_encryption_key::get_attestation_signature_encrypted;
-use crate::send_with_optional_gas;
+use kalypso_helper::send_with_optional_gas;
 
 use super::{update_generator_meta::read_file_from_paths, Operation};
 

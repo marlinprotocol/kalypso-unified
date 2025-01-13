@@ -5,7 +5,7 @@ use std::future::Future;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::try_read_contract_error;
+use kalypso_helper::try_read_contract_error;
 
 macro_rules! get_config_ref {
     ($config:expr, $key:expr, $var:ident) => {
