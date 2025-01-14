@@ -842,6 +842,30 @@ impl LogParser {
                         "ProofMarketplace"
                     );
 
+                    try_read_contract_error_log!(
+                        e,
+                        bindings::entity_key_registry::EntityKeyRegistryErrors,
+                        "EntityKeyRegistry"
+                    );
+
+                    try_read_contract_error_log!(
+                        e,
+                        bindings::native_staking::NativeStakingErrors,
+                        "NativeStaking"
+                    );
+
+                    try_read_contract_error_log!(
+                        e,
+                        bindings::symbiotic_staking::SymbioticStakingErrors,
+                        "SymbioticStaking"
+                    );
+
+                    try_read_contract_error_log!(
+                        e,
+                        bindings::staking_manager::StakingManagerErrors,
+                        "StakeManager"
+                    );
+
                     try_read_contract_error_log!(e, bindings::error::ErrorErrors, "OtherErrors");
                     format!("Failed to send transaction: {}", e)
                 }) {
