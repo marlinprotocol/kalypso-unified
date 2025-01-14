@@ -737,10 +737,9 @@ impl LogParser {
             }
 
             log::info!(
-                "Assigned ask: {} to generator: {}, at {:?}",
+                "Assigned ask: {} to generator: {:?}, at {:#?}",
                 &random_pending_ask.ask_id,
                 &idle_generator.address,
-                // provider_http.get_block_number().await.unwrap()
                 std::time::Instant::now()
             );
             task_list.push((random_pending_ask, idle_generator, new_acl));

@@ -196,7 +196,7 @@ async fn fetch_decoded_secret(
 
     let parsed_ask_created_log = proof_market_place_contract_http
         .decode_event::<bindings::proof_marketplace::BidCreatedFilter>(
-            "AskCreated",
+            "BidCreated",
             ask_log[0].topics.clone(),
             ask_log[0].data.clone(),
         )
