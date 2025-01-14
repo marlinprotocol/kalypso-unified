@@ -640,7 +640,7 @@ impl JobCreator {
                 "Searching for TASKs from Block {} to {}. Range: {}",
                 start_block,
                 end,
-                end - start_block
+                end - start_block + 1
             );
 
             let filter = proof_marketplace_http
