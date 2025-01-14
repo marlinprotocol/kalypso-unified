@@ -10,6 +10,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tokio::time::{sleep, Duration};
 
+use kalypso_helper::try_read_contract_error_log;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -234,14 +236,31 @@ impl SlashingInstance {
                 slashing_transaction = slashing_transaction.gas(10_000_000);
             }
 
-            let slashing_transaction = match slashing_transaction.send().await {
-                Ok(data) => data.confirmations(self.confirmations),
-                Err(err) => {
-                    log::error!("{}", err);
-                    log::error!("failed sending the transaction");
-                    return;
-                }
-            };
+            let slashing_transaction =
+                match slashing_transaction
+                    .send()
+                    .await
+                    .map_err(|e: ContractError<_>| {
+                        log::error!("========================\n");
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::proof_marketplace::ProofMarketplaceErrors,
+                            "ProofMarketplace"
+                        );
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::error::ErrorErrors,
+                            "OtherErrors"
+                        );
+                        format!("Failed to send transaction: {}", e)
+                    }) {
+                    Ok(data) => data.confirmations(self.confirmations),
+                    Err(err) => {
+                        log::error!("{}", err);
+                        log::error!("failed sending the transaction");
+                        return;
+                    }
+                };
 
             let slashing_transaction = match slashing_transaction.await {
                 Ok(data) => data,
@@ -280,14 +299,31 @@ impl SlashingInstance {
                 cancellation_transaction = cancellation_transaction.gas(10_000_000);
             }
 
-            let cancellation_transaction = match cancellation_transaction.send().await {
-                Ok(data) => data.confirmations(self.confirmations),
-                Err(err) => {
-                    log::error!("{}", err);
-                    log::error!("failed sending the transaction");
-                    return;
-                }
-            };
+            let cancellation_transaction =
+                match cancellation_transaction
+                    .send()
+                    .await
+                    .map_err(|e: ContractError<_>| {
+                        log::error!("========================\n");
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::proof_marketplace::ProofMarketplaceErrors,
+                            "ProofMarketplace"
+                        );
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::error::ErrorErrors,
+                            "OtherErrors"
+                        );
+                        format!("Failed to send transaction: {}", e)
+                    }) {
+                    Ok(data) => data.confirmations(self.confirmations),
+                    Err(err) => {
+                        log::error!("{}", err);
+                        log::error!("failed sending the transaction");
+                        return;
+                    }
+                };
 
             let cancellation_transaction = match cancellation_transaction.await {
                 Ok(data) => data,
