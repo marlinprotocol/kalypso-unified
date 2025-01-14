@@ -381,6 +381,13 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
                 .await?;
             log::info!("generator address {}", converted_generator_address);
             log::info!("market {}", &market);
+
+            // Enum.ProverState state;
+            // uint256 computePerRequestRequired;
+            // uint256 commission;
+            // uint256 proofGenerationCost;
+            // uint256 proposedTime;
+            // uint256 activeRequests;
             dbg!(&generator_data);
 
             if generator_data.0 == 0 {

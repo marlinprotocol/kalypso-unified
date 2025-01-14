@@ -146,6 +146,12 @@ pub async fn process_generator_registry_logs(
         let address = parsed_joined_market_place_log.prover;
         let market_id = parsed_joined_market_place_log.market_id;
 
+        // 0 Enum.ProverState state;
+        // 1 uint256 computePerRequestRequired;
+        // 2 uint256 commission;
+        // 3 uint256 proofGenerationCost;
+        // 4 uint256 proposedTime;
+        // 5 uint256 activeRequests;
         let generator_market_data = genertor_registry
             .prover_info_per_market(address, market_id)
             .call()
@@ -156,8 +162,8 @@ pub async fn process_generator_registry_logs(
             address: parsed_joined_market_place_log.prover,
             market_id: parsed_joined_market_place_log.market_id,
             compute_required_per_request: parsed_joined_market_place_log.compute_allocation,
-            proof_generation_cost: generator_market_data.2,
-            proposed_time: generator_market_data.3,
+            proof_generation_cost: generator_market_data.3,
+            proposed_time: generator_market_data.4,
             active_requests: 0.into(),
             proofs_submitted: 0.into(),
             proofs_slashed: 0.into(),

@@ -32,11 +32,19 @@ impl<'a> GeneratorQueryResult<'a> {
         self.generator_markets = self
             .generator_markets
             .into_iter()
-            .filter(|&gen| gen.proposed_time.lt(&task_time))
+            .filter(|&gen| {
+                log::debug!(
+                    "Generator: {:?} proposed time: {:?} vs task time: {:?}",
+                    gen.address,
+                    gen.proposed_time,
+                    &task_time
+                );
+                gen.proposed_time.lt(&task_time)
+            })
             .collect();
 
         log::debug!(
-            "Generators filtered by time: {:?} = {}",
+            "Generators with time: {:?} = {}",
             task_time,
             self.generator_markets.len()
         );

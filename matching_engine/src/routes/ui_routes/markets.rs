@@ -96,7 +96,7 @@ async fn recompute_market_response<'a>(
     local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
     local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
 ) -> MarketResponse {
-    log::debug!("Starting recompute_market_response");
+    log::trace!("Starting recompute_market_response");
 
     // Step 1: Acquire both locks and extract all necessary data within a scoped block
     let (
@@ -183,7 +183,7 @@ async fn recompute_market_response<'a>(
         )
     }; // Both locks are released here
 
-    log::debug!("Released locks on MarketMetadataStore and LocalAskStore");
+    log::trace!("Released locks on MarketMetadataStore and LocalAskStore");
 
     // Step 2: Process the data using explicit loops without holding any locks
     let mut markets = Vec::with_capacity(all_markets_meta.len());
@@ -232,7 +232,7 @@ async fn recompute_market_response<'a>(
         markets.push(market);
     }
 
-    log::debug!("Finished processing market data");
+    log::trace!("Finished processing market data");
 
     MarketResponse {
         result: markets,

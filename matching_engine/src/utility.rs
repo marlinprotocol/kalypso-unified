@@ -239,7 +239,10 @@ impl TokenTracker {
         }
     }
 
-    // Subtract tokens from the tracker, but set balance to 0 in case of underflow
+    #[allow(unused)]
+    #[deprecated(
+        note = "Use `sub_token` instead. If whole indexer is right, sub_token should work"
+    )]
     pub fn sub_token_saturating(&mut self, token: &Address, amount: &U256) {
         log::debug!("using sub_token_saturation in TokenTracker. User sub_token instead");
         if let Some(entry) = self.tokens.get_mut(token) {
@@ -279,7 +282,7 @@ impl Sub for TokenTracker {
 
         // Iterate over the other TokenTracker's tokens
         for (address, amount) in other.tokens.iter() {
-            result.sub_token_saturating(address, amount); // Use the updated sub_token_saturating method
+            result.sub_token(address, amount).unwrap();
         }
 
         result

@@ -683,7 +683,8 @@ impl GeneratorStore {
                     log::debug!("Token to remove: {:?}, Amount: {:?}", token_address, amount);
                     generator
                         .total_native_stake
-                        .sub_token_saturating(token_address, amount);
+                        .sub_token(token_address, amount)
+                        .unwrap();
                 }
 
                 super::delegation::Source::Symbiotic => {
@@ -694,7 +695,8 @@ impl GeneratorStore {
                     log::debug!("Token to remove: {:?}, Amount: {:?}", token_address, amount);
                     generator
                         .total_symbiotic_stake
-                        .sub_token_saturating(token_address, amount);
+                        .sub_token(token_address, amount)
+                        .unwrap();
                 }
             }
 
@@ -943,10 +945,12 @@ impl GeneratorStore {
             match source {
                 super::delegation::Source::Native => generator
                     .native_stake_locked
-                    .sub_token_saturating(token_address, &stake_released),
+                    .sub_token(token_address, &stake_released)
+                    .unwrap(),
                 super::delegation::Source::Symbiotic => generator
                     .symbiotic_stake_locked
-                    .sub_token_saturating(token_address, &stake_released),
+                    .sub_token(token_address, &stake_released)
+                    .unwrap(),
             }
         }
     }
