@@ -12,13 +12,8 @@ impl<'a> GeneratorQueryResult<'a> {
         Self { generator_markets }
     }
 
-    fn count(&self) -> usize {
-        self.generator_markets.len()
-    }
-
     // Filter by reward
     pub fn filter_by_reward(mut self, task_reward: U256) -> Self {
-        log::debug!("Filter by reward");
         self.generator_markets = self
             .generator_markets
             .into_iter()
@@ -28,20 +23,23 @@ impl<'a> GeneratorQueryResult<'a> {
         log::debug!(
             "Generators with reward: {:?} = {}",
             task_reward,
-            self.count()
+            self.generator_markets.len()
         );
         self
     }
 
     pub fn filter_by_time(mut self, task_time: U256) -> Self {
-        log::debug!("Filter by time");
         self.generator_markets = self
             .generator_markets
             .into_iter()
             .filter(|&gen| gen.proposed_time.lt(&task_time))
             .collect();
 
-        log::debug!("Generators with time: {:?} = {}", task_time, self.count());
+        log::debug!(
+            "Generators filtered by time: {:?} = {}",
+            task_time,
+            self.generator_markets.len()
+        );
         self
     }
 
@@ -61,7 +59,11 @@ impl<'a> GeneratorQueryResult<'a> {
             })
             .collect(); // Collect the filtered generator markets into a Vec
 
-        log::debug!("Generators with state: {:?} = {}", states_set, self.count());
+        log::debug!(
+            "Generators with state: {:?} = {}",
+            states_set,
+            self.generator_markets.len()
+        );
         self
     }
 

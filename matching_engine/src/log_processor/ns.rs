@@ -153,6 +153,14 @@ pub async fn process_native_staking_logs(
         log::warn!("pausing all assignments across all markets");
         log::warn!("will be unpaused once the request if fully withdrawn");
 
+        log::debug!("Address: {:?}, account: {:?}", address, account);
+        log::debug!(
+            "Index: {:?}, Token: {:?}, Amount: {:?}",
+            index,
+            token,
+            amount
+        );
+
         let withdrawal_request_time = match native_staking
             .withdrawal_requests(account, address, index)
             .call()
