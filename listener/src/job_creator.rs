@@ -637,9 +637,10 @@ impl JobCreator {
             }
 
             log::info!(
-                "Searching for TASKs from Block {} to {}...",
+                "Searching for TASKs from Block {} to {}. Range: {}",
                 start_block,
-                end
+                end,
+                end - start_block
             );
 
             let filter = proof_marketplace_http

@@ -722,5 +722,42 @@
     "inputs": [],
     "name": "ZeroTokenAddress",
     "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "received",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "expected",
+        "type": "bytes4"
+      }
+    ],
+    "name": "SelectorMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VerificationFailed",
+    "type": "error"
   }
 ]
