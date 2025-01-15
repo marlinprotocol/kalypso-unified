@@ -138,6 +138,7 @@ pub struct JobCreator {
     should_stop: Arc<AtomicBool>,
     skip_input_verification: bool,
     metrics: Data<Arc<Mutex<TaskMetrics>>>,
+    polling_interval: Duration,
 }
 
 impl JobCreator {
@@ -156,6 +157,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
+            Duration::from_secs(2),
         )
     }
 
@@ -166,6 +168,7 @@ impl JobCreator {
         skip_input_verification: bool,
         max_threads: usize,
         prometheus_port: u16,
+        polling_interval: Duration,
     ) -> Self {
         let service_name = Uuid::new_v4().to_string();
         let shared_latest_block = Arc::new(Mutex::new(U64::zero()));
@@ -224,6 +227,7 @@ impl JobCreator {
                 should_stop,
                 skip_input_verification,
                 metrics: task_metrics,
+                polling_interval,
             }
         } else {
             Self {
@@ -235,6 +239,7 @@ impl JobCreator {
                 should_stop,
                 skip_input_verification,
                 metrics: task_metrics,
+                polling_interval,
             }
         }
     }
@@ -325,6 +330,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
+            Duration::from_secs(2),
         )
     }
 
@@ -385,6 +391,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
+            Duration::from_secs(2),
         )
     }
 
@@ -450,6 +457,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
+            Duration::from_secs(2),
         )
     }
 
@@ -474,6 +482,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
+            Duration::from_secs(2),
         ))
     }
 
@@ -608,6 +617,8 @@ impl JobCreator {
         let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
         loop {
+            thread::sleep(self.polling_interval);
+
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
