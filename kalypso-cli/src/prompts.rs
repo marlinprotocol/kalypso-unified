@@ -143,8 +143,7 @@ impl<'a> Prompter<'a> {
                 if let Some(env_val) = self.config.get_env(&prompt_config.env_var) {
                     println!(
                         "Using {} from environment variable {}",
-                        prompt_config.field.to_uppercase(),
-                        prompt_config.env_var
+                        prompt_config.field, prompt_config.env_var
                     );
                     final_config.insert(prompt_config.field.clone(), env_val);
                 } else {
@@ -194,15 +193,13 @@ impl<'a> Prompter<'a> {
                 if let Some(env_val) = self.config.get_env(&prompt_config.env_var) {
                     println!(
                         "Using {} from environment variable {}",
-                        prompt_config.field.to_uppercase(),
-                        prompt_config.env_var
+                        prompt_config.field, prompt_config.env_var
                     );
                     final_config.insert(prompt_config.field.clone(), env_val);
                 } else {
                     return Err(format!(
                         "Not Found {} from environment variable {}",
-                        prompt_config.field.to_uppercase(),
-                        prompt_config.env_var
+                        prompt_config.field, prompt_config.env_var
                     )
                     .into());
                 }
