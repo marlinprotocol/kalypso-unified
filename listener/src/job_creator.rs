@@ -157,7 +157,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(2),
+            Duration::from_secs(10),
         )
     }
 
@@ -330,7 +330,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(2),
+            Duration::from_secs(10),
         )
     }
 
@@ -391,7 +391,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(2),
+            Duration::from_secs(10),
         )
     }
 
@@ -457,7 +457,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(2),
+            Duration::from_secs(10),
         )
     }
 
@@ -482,7 +482,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(2),
+            Duration::from_secs(10),
         ))
     }
 
@@ -617,8 +617,6 @@ impl JobCreator {
         let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
         loop {
-            thread::sleep(self.polling_interval);
-
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
@@ -638,6 +636,8 @@ impl JobCreator {
                 .note_block_parsed_to(start_block));
 
             let end = if start_block + blocks_at_once > latest_block {
+                // when parsed till latest block, induces polling interval to slow down
+                thread::sleep(self.polling_interval);
                 latest_block - 1
             } else {
                 start_block + blocks_at_once - 1
