@@ -149,6 +149,7 @@ impl JobCreator {
         enable_logging_server: bool,
         skip_input_verification: bool,
         prometheus_port: u16,
+        polling_interval_in_ms: u64,
     ) -> Self {
         Self::initialize(
             config,
@@ -157,7 +158,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_millis(10),
+            Duration::from_millis(polling_interval_in_ms),
         )
     }
 
@@ -284,6 +285,7 @@ impl JobCreator {
         max_threads: usize,
         skip_input_verification: bool,
         prometheus_port: u16,
+        polling_interval_in_ms: u64,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -330,7 +332,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_millis(10),
+            Duration::from_millis(polling_interval_in_ms),
         )
     }
 
@@ -349,6 +351,7 @@ impl JobCreator {
         max_threads: usize,
         skip_input_verification: bool,
         prometheus_port: u16,
+        polling_interval_in_ms: u64,
     ) -> Self {
         let config = Config {
             generator_config: generator_configs,
@@ -391,7 +394,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_millis(10),
+            Duration::from_millis(polling_interval_in_ms),
         )
     }
 
@@ -411,6 +414,7 @@ impl JobCreator {
         max_threads: usize,
         skip_input_verification: bool,
         prometheus_port: u16,
+        polling_interval_in_ms: u64,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -457,7 +461,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_millis(10),
+            Duration::from_millis(polling_interval_in_ms),
         )
     }
 
@@ -468,6 +472,7 @@ impl JobCreator {
         max_threads: usize,
         skip_input_verification: bool,
         prometheus_port: u16,
+        polling_interval_in_ms: u64,
     ) -> anyhow::Result<Self> {
         let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
@@ -482,7 +487,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_millis(10),
+            Duration::from_millis(polling_interval_in_ms),
         ))
     }
 
