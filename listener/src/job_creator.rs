@@ -157,7 +157,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(10),
+            Duration::from_millis(10),
         )
     }
 
@@ -330,7 +330,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(10),
+            Duration::from_millis(10),
         )
     }
 
@@ -391,7 +391,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(10),
+            Duration::from_millis(10),
         )
     }
 
@@ -457,7 +457,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(10),
+            Duration::from_millis(10),
         )
     }
 
@@ -482,7 +482,7 @@ impl JobCreator {
             skip_input_verification,
             max_threads,
             prometheus_port,
-            Duration::from_secs(10),
+            Duration::from_millis(10),
         ))
     }
 
