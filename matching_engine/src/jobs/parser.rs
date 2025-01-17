@@ -176,11 +176,15 @@ impl LogParser {
                 break;
             }
 
-            let (mut start_block, end_block) = match self.get_start_end_block().await {
+            let (mut start_block, end_block) = match self
+                .get_start_end_block()
+                .await
+                .map_err(|e| format!("Failed to get start and end block: {}", e.to_string()))
+            {
                 Ok(data) => data,
-                Err(_) => {
-                    log::warn!("Could fetch start_block and end_block, pausing ME");
-                    std::thread::sleep(Duration::from_secs(5));
+                Err(e) => {
+                    log::warn!("Could fetch start_block and end_block, pausing ME. {}", e);
+                    tokio::time::sleep(Duration::from_secs(5)).await;
                     continue;
                 }
             };
@@ -443,7 +447,11 @@ impl LogParser {
                 continue;
             }
 
-            matches_upto = match self.create_match(end_block).await {
+            matches_upto = match self
+                .create_match(end_block)
+                .await
+                .map_err(|e| format!("Failed to create match: {}", e.to_string()))
+            {
                 Ok(upto) => {
                     #[cfg(not(feature = "disable_match_creation"))]
                     log::info!("Completed match assignment upto: {}", upto);
@@ -453,7 +461,7 @@ impl LogParser {
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("Match Creation Failed, retyring in couple of seconds");
-                    std::thread::sleep(Duration::from_secs(4));
+                    tokio::time::sleep(Duration::from_secs(4)).await;
                     None
                 }
             };
