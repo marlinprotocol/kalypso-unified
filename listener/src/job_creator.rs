@@ -631,7 +631,7 @@ impl JobCreator {
 
             if should_pause {
                 let time_elapsed = when_to_pause.elapsed();
-                if time_elapsed.lt(&self.polling_interval){
+                if time_elapsed.lt(&self.polling_interval) {
                     continue;
                 }
                 should_pause = false;
