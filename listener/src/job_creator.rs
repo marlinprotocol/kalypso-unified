@@ -621,7 +621,7 @@ impl JobCreator {
         let invalid_inputs_semaphore = Arc::new(Semaphore::new(5));
         let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
-        let mut should_pause = false;
+        let mut should_slow_down = false;
         let mut when_to_pause = std::time::Instant::now();
         loop {
             if self.should_stop.load(Ordering::Acquire) {
@@ -629,12 +629,12 @@ impl JobCreator {
                 break;
             }
 
-            if should_pause {
+            if should_slow_down {
                 let time_elapsed = when_to_pause.elapsed();
                 if time_elapsed.lt(&self.polling_interval) {
                     continue;
                 }
-                should_pause = false;
+                should_slow_down = false;
                 when_to_pause = std::time::Instant::now() + self.polling_interval;
             }
 
@@ -652,10 +652,10 @@ impl JobCreator {
                 .note_block_parsed_to(start_block));
 
             let end = if start_block + blocks_at_once > latest_block {
-                should_pause = true;
+                should_slow_down = true;
                 latest_block - 1
             } else {
-                should_pause = false;
+                should_slow_down = false;
                 start_block + blocks_at_once - 1
             };
 
