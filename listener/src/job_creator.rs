@@ -632,6 +632,7 @@ impl JobCreator {
             if should_slow_down {
                 let time_elapsed = when_to_pause.elapsed();
                 if time_elapsed.lt(&self.polling_interval) {
+                    thread::sleep(Duration::from_millis(1));
                     continue;
                 }
                 should_slow_down = false;
