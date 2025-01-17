@@ -31,7 +31,6 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
-    thread,
     time::Duration,
 };
 use tokio::sync::RwLock;
@@ -181,7 +180,7 @@ impl LogParser {
                 Ok(data) => data,
                 Err(_) => {
                     log::warn!("Could fetch start_block and end_block, pausing ME");
-                    thread::sleep(Duration::from_secs(5));
+                    std::thread::sleep(Duration::from_secs(5));
                     continue;
                 }
             };
@@ -281,7 +280,7 @@ impl LogParser {
                     "All matches made up to {}. Waiting for a few seconds",
                     _matches_upto
                 );
-                thread::sleep(Duration::from_secs(5));
+                tokio::time::sleep(Duration::from_secs(5)).await;
                 continue;
             }
 
@@ -317,7 +316,7 @@ impl LogParser {
                     Err(err) => {
                         log::error!("Error fetching logs, sleeping the thread to avoid rate limit");
                         log::error!("{}", err);
-                        thread::sleep(Duration::from_secs(5));
+                        tokio::time::sleep(Duration::from_secs(5)).await;
                         continue;
                     }
                 };
@@ -454,7 +453,7 @@ impl LogParser {
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("Match Creation Failed, retyring in couple of seconds");
-                    thread::sleep(Duration::from_secs(4));
+                    std::thread::sleep(Duration::from_secs(4));
                     None
                 }
             };
@@ -468,7 +467,7 @@ impl LogParser {
             Err(err) => {
                 log::error!("Failed fetching the latest block, sleeping to avoid rate limit");
                 log::error!("{}", err);
-                thread::sleep(Duration::from_secs(5));
+                tokio::time::sleep(Duration::from_secs(5)).await;
                 return Err("Failed fetching latest block number".into());
             }
         };
@@ -484,7 +483,7 @@ impl LogParser {
 
     #[cfg(feature = "disable_match_creation")]
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
-        thread::sleep(Duration::from_secs(5)); // just to mimic match creation time and may be free resource for else where
+        tokio::time::sleep(Duration::from_secs(5)).await; // just to mimic match creation time and may be free resource for else where
         Ok(end_block)
     }
 
@@ -873,7 +872,7 @@ impl LogParser {
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("failed sending the transaction");
-                    thread::sleep(Duration::from_secs(2));
+                    tokio::time::sleep(Duration::from_secs(2)).await;
                     return Err("Failed creating matching".into());
                 }
             };

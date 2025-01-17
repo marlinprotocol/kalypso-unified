@@ -14,7 +14,6 @@ use std::sync::MutexGuard;
 use std::{
     str::FromStr,
     sync::{Arc, Mutex},
-    thread,
     time::Duration,
 };
 use uuid::Uuid;
@@ -621,22 +620,10 @@ impl JobCreator {
         let invalid_inputs_semaphore = Arc::new(Semaphore::new(5));
         let transaction_semaphore = Arc::new(Semaphore::new(1)); // ensures 1 transaction is published at a time
 
-        let mut should_slow_down = false;
-        let mut when_to_pause = std::time::Instant::now();
         loop {
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
-            }
-
-            if should_slow_down {
-                let time_elapsed = when_to_pause.elapsed();
-                if time_elapsed.lt(&self.polling_interval) {
-                    thread::sleep(Duration::from_millis(10));
-                    continue;
-                }
-                should_slow_down = false;
-                when_to_pause = std::time::Instant::now() + self.polling_interval;
             }
 
             let latest_block = match provider_http.get_block_number().await {
@@ -644,7 +631,7 @@ impl JobCreator {
                 Err(err) => {
                     log::error!("Error fetching latest block number, pausing the listener");
                     log::error!("{}", err);
-                    thread::sleep(Duration::from_secs(4));
+                    tokio::time::sleep(Duration::from_secs(4)).await;
                     continue;
                 }
             };
@@ -653,10 +640,9 @@ impl JobCreator {
                 .note_block_parsed_to(start_block));
 
             let end = if start_block + blocks_at_once > latest_block {
-                should_slow_down = true;
+                tokio::time::sleep(self.polling_interval).await;
                 latest_block - 1
             } else {
-                should_slow_down = false;
                 start_block + blocks_at_once - 1
             };
 
@@ -682,7 +668,7 @@ impl JobCreator {
                 Err(err) => {
                     log::error!("Error fetching logs for proof generation");
                     log::error!("{}", err);
-                    thread::sleep(Duration::from_secs(4));
+                    tokio::time::sleep(Duration::from_secs(4)).await;
                     continue;
                 }
             };

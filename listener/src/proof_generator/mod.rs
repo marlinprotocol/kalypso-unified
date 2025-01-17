@@ -12,8 +12,8 @@ use prover::{Proof, Prover};
 use std::collections::HashMap;
 use std::io::Read;
 use std::sync::Arc;
+use std::time::Duration;
 use std::time::Instant;
-use std::{thread, time::Duration};
 use tokio::sync::Semaphore;
 
 mod confidential_provers;
@@ -179,7 +179,7 @@ async fn fetch_decoded_secret(
             } else {
                 log::warn!("Retrying fetching inputs in 2000ms");
                 retry_times += 1;
-                thread::sleep(Duration::from_millis(2000));
+                tokio::time::sleep(Duration::from_millis(2000)).await;
                 continue;
             }
         }

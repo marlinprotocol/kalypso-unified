@@ -526,17 +526,16 @@ impl MatchingEngine {
 
         let matching_engine_port = self.matching_engine_port;
 
-        let server_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> =
-            tokio::spawn(async move {
-                match server.start_server(matching_engine_port, false).await {
-                    Ok(_) => Ok(()), // If successful, return Ok(()).
-                    Err(e) => {
-                        log::error!("Server failed to start: {}", e); // Log the error.
-                        stop_handle_clone1.store(true, Ordering::Release); // Signal shutdown.
-                        Err(e.into()) // Propagate the error.
-                    }
+        let server_handle: JoinHandle<Result<(), anyhow::Error>> = tokio::spawn(async move {
+            match server.start_server(matching_engine_port, false).await {
+                Ok(_) => Ok(()), // If successful, return Ok(()).
+                Err(e) => {
+                    log::error!("Server failed to start: {}", e); // Log the error.
+                    stop_handle_clone1.store(true, Ordering::Release); // Signal shutdown.
+                    Err(e.into()) // Propagate the error.
                 }
-            });
+            }
+        });
         handles.push(server_handle);
 
         let confirmations = 5; // ideally this should be more
@@ -573,17 +572,16 @@ impl MatchingEngine {
 
         let parser = Arc::new(log_parser);
 
-        let parser_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> =
-            tokio::spawn(async move {
-                match parser.parse().await {
-                    Ok(_) => Ok(()),
-                    Err(e) => {
-                        log::error!("Parser failed: {}", e); // Log the error.
-                        stop_handle_clone2.store(true, Ordering::Release); // Signal shutdown.
-                        Err(e.into()) // Propagate the error.
-                    }
+        let parser_handle: JoinHandle<Result<(), anyhow::Error>> = tokio::spawn(async move {
+            match parser.parse().await {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    log::error!("Parser failed: {}", e); // Log the error.
+                    stop_handle_clone2.store(true, Ordering::Release); // Signal shutdown.
+                    Err(e.into()) // Propagate the error.
                 }
-            });
+            }
+        });
 
         handles.push(parser_handle);
 
