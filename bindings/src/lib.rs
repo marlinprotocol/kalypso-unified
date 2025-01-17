@@ -74,3 +74,15 @@ abigen!(
     "./src/OperatorRegistry.json", // Path to the ABI file
     event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
 );
+
+abigen!(
+    NetworkRestakeDelegator, // The Rust struct name you want for your contract
+    "./src/NetworkRestakeDelegator.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);
+
+abigen!(
+    Vault,              // The Rust struct name you want for your contract
+    "./src/Vault.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);

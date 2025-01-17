@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use ethers::prelude::*;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use crate::common_deps::CommonDeps;
 use kalypso_helper::send_with_optional_gas;
@@ -88,6 +88,40 @@ impl Operation for SymbioticOptinInfo {
                 symbiotic_optin_info.network_address
             );
         }
+
+        let vault = bindings::Vault::new(symbiotic_optin_info.vault_address, client_arc.clone());
+
+        let network_restake_delegator_address = vault.delegator().call().await.map_err(|e| {
+            format!(
+                "Failed Calling Vault :{:?}: {}",
+                symbiotic_optin_info.vault_address, e
+            )
+        })?;
+
+        let network_restake_delegator = bindings::NetworkRestakeDelegator::new(
+            network_restake_delegator_address,
+            client_arc.clone(),
+        );
+        let sub_network_id =
+            H256::from_str("a2024540267e3366b1d3381285dd11a1b45928df000000000000000000000000")
+                .map_err(|e| format!("Failed decoding subnetwork id: {}", e))?;
+
+        let stake_data = network_restake_delegator
+            .stake(sub_network_id.into(), symbiotic_optin_info.signer.address())
+            .call()
+            .await
+            .map_err(|e| {
+                format!(
+                    "Failed fetching stake data from network stake delegator: {}",
+                    e
+                )
+            })?;
+
+        println!(
+            "Received {} stake from vault: {:?}",
+            stake_data, symbiotic_optin_info.vault_address
+        );
+        println!("Connect with vault operator, if you need more stake");
 
         Ok(())
     }
