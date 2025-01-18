@@ -133,6 +133,11 @@
   },
   {
     "inputs": [],
+    "name": "ExceedsMaximumMatchtime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ExpectedPause",
     "type": "error"
   },
@@ -881,6 +886,19 @@
   },
   {
     "inputs": [],
+    "name": "MAX_MATCHING_TIME",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "MAX_PROVING_TIME",
     "outputs": [
       {
@@ -1043,7 +1061,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "feeReceipient",
+        "type": "address"
+      }
+    ],
     "name": "claimProverFeeReward",
     "outputs": [],
     "stateMutability": "nonpayable",

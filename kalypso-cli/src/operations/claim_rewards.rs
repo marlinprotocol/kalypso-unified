@@ -60,7 +60,7 @@ impl Operation for ClaimRewardsInfo {
 
         let claim_reward_transaction = send_with_optional_gas!(claim_rewards_info
             .proof_marketplace
-            .claim_prover_fee_reward())
+            .claim_prover_fee_reward(claim_rewards_info.reward_address))
         .map_err(|e| format!("Claim Reward Transaction failed: {}", e))?;
 
         println!("Claim Reward Transaction: {}", claim_reward_transaction);
