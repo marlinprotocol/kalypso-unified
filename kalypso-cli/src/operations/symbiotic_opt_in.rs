@@ -47,6 +47,7 @@ impl Operation for SymbioticOptinInfo {
                 )
             })?;
 
+        println!("\n");
         if is_opted_in_vault {
             println!(
                 "Operator: {:?} is already opted in vault: {:?}",
@@ -117,11 +118,18 @@ impl Operation for SymbioticOptinInfo {
                 )
             })?;
 
+        let collateral = vault
+            .collateral()
+            .call()
+            .await
+            .map_err(|e| format!("Failed reading collateral from vault: {}", e))?;
+
         println!(
-            "Received {} stake from vault: {:?}",
-            stake_data, symbiotic_optin_info.vault_address
+            "Received Token({:?}): {:?} from Vault: {:?}",
+            collateral, stake_data, symbiotic_optin_info.vault_address
         );
         println!("Connect with vault operator, if you need more stake");
+        println!("\n");
 
         Ok(())
     }
