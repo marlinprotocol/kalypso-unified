@@ -58,6 +58,9 @@ impl Operation for ClaimRewardsInfo {
             return Err("No Rewards available to claim".to_string());
         }
 
+        println!();
+        println!("Trying to claim {} reward tokens", available_rewards);
+
         let claim_reward_transaction = send_with_optional_gas!(claim_rewards_info
             .proof_marketplace
             .claim_prover_fee_reward(claim_rewards_info.reward_address))
