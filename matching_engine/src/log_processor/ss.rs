@@ -347,7 +347,7 @@ pub async fn process_symbiotic_staking_logs(
         let transmitter = symbiotic_complete_snapshot_log.transmitter;
         let confirmed_timestamp = symbiotic_complete_snapshot_log.confirmed_timestamp;
 
-        log::debug!("Transmitter: {}", transmitter);
+        log::debug!("Transmitter: {:?}", transmitter);
         let vault_snapshots = symbiotic_stake_store.get_all_vault_snapshots(confirmed_timestamp);
         let slash_results = symbiotic_stake_store.get_all_slash_results(confirmed_timestamp);
 
