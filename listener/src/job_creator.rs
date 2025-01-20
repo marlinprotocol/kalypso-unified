@@ -785,21 +785,37 @@ impl JobCreator {
                                     tx = tx.gas(10_000_000);
                                 }
 
-                                match tx.clone().send().await.map_err(|e: ContractError<_>| {
-                                    log::error!("========================\n");
-                                    try_read_contract_error_log!(
-                                        e,
-                                        bindings::proof_marketplace::ProofMarketplaceErrors,
-                                        "ProofMarketplace"
-                                    );
+                                let mut attempts = 0;
+                                let submit_response = loop {
+                                    match tx.clone().send().await {
+                                        Ok(response) => break Ok(response),
+                                        Err(e) => {
+                                            attempts += 1;
+                                            log::error!("========================\n");
+                                            try_read_contract_error_log!(
+                                                e,
+                                                bindings::proof_marketplace::ProofMarketplaceErrors,
+                                                "ProofMarketplace"
+                                            );
+                                            try_read_contract_error_log!(
+                                                e,
+                                                bindings::error::ErrorErrors,
+                                                "OtherErrors"
+                                            );
+                                            log::error!(
+                                                "Error sending transaction (attempt {}): {:?}",
+                                                attempts,
+                                                e
+                                            );
+                                            if attempts >= 2 {
+                                                break Err(format!("Failed to send transaction after {} attempts: {}", attempts, e));
+                                            }
+                                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                                        }
+                                    }
+                                };
 
-                                    try_read_contract_error_log!(
-                                        e,
-                                        bindings::error::ErrorErrors,
-                                        "OtherErrors"
-                                    );
-                                    format!("Failed to send transaction: {}", e)
-                                }) {
+                                match submit_response {
                                     Ok(submit_response) => match submit_response
                                         .confirmations(10)
                                         .await
@@ -841,21 +857,35 @@ impl JobCreator {
                                     tx = tx.gas(10_000_000);
                                 }
 
-                                match tx.clone().send().await.map_err(|e: ContractError<_>| {
-                                    log::error!("========================\n");
-                                    try_read_contract_error_log!(
-                                        e,
-                                        bindings::proof_marketplace::ProofMarketplaceErrors,
-                                        "ProofMarketplace"
-                                    );
-
-                                    try_read_contract_error_log!(
-                                        e,
-                                        bindings::error::ErrorErrors,
-                                        "OtherErrors"
-                                    );
-                                    format!("Failed to send transaction: {}", e)
-                                }) {
+                                let submit_response = loop {
+                                    match tx.clone().send().await {
+                                        Ok(response) => break Ok(response),
+                                        Err(e) => {
+                                            attempts += 1;
+                                            log::error!("========================\n");
+                                            try_read_contract_error_log!(
+                                                e,
+                                                bindings::proof_marketplace::ProofMarketplaceErrors,
+                                                "ProofMarketplace"
+                                            );
+                                            try_read_contract_error_log!(
+                                                e,
+                                                bindings::error::ErrorErrors,
+                                                "OtherErrors"
+                                            );
+                                            log::error!(
+                                                "Error sending transaction (attempt {}): {:?}",
+                                                attempts,
+                                                e
+                                            );
+                                            if attempts >= 2 {
+                                                break Err(format!("Failed to send transaction after {} attempts: {}", attempts, e));
+                                            }
+                                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                                        }
+                                    }
+                                };
+                                match submit_response {
                                     Ok(submit_response) => match submit_response
                                         .confirmations(10)
                                         .await
