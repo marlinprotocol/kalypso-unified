@@ -368,7 +368,7 @@ async fn recompute_single_market_response<'a>(
                             token: address_to_string(&USDC_TOKEN),
                             amount: a.reward.to_string(),
                         },
-                        time: (a.deadline.saturating_sub(a.created_on)).to_string(),
+                        time: a.time_requested_for_proof_generation.to_string(),
                         inputs: a.prover_data.to_string(),
                         generator: None,
                         status: AskState::Create,
