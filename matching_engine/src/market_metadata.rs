@@ -3,10 +3,11 @@ use ethers::types::U256;
 use im::HashMap;
 use im::HashSet;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::counters::median_counter::MedianCounter;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MarketSetupData {
     /// The display name of the zkApp.
@@ -73,7 +74,7 @@ pub struct MarketSetupData {
     pub min_hardware: MinHardware,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, ToSchema)]
 pub struct MinHardware {
     pub instance_type: Option<String>,
     pub vcpus: Option<usize>,

@@ -8,6 +8,14 @@ use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 
+#[utoipa::path(
+    get,
+    path = "/stats/symbiotic_snapshot",
+    responses(
+        (status = 200, description = "Return symbiotic snapshot"),
+    ),
+    tag = "Manage"
+)]
 pub async fn get_snapshot(
     _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
 ) -> actix_web::Result<HttpResponse> {

@@ -15,8 +15,9 @@ use ethers::types::{Address, U256};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct GeneratorResponse {
     result: Vec<Operator>,
     registered_generators: usize,
@@ -30,7 +31,7 @@ use once_cell::sync::Lazy;
 static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
     Lazy::new(|| RwLock::new(CachedGeneratorResponse::new()));
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Operator {
     details: GeneratorMeta,
     address: String,
@@ -45,13 +46,22 @@ struct Operator {
     compute_break_down: ComputeBreakDown,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
     id: String,
     name: String,
     token: Vec<String>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/ui/generators",
+    responses(
+        (status = 200, description = "Generator Response Response", body = GeneratorResponse),
+        (status = 423, description = "Resource Locked", body = WelcomeResponse),
+    ),
+    tag = "UI"
+)]
 pub async fn get_generators_all(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,

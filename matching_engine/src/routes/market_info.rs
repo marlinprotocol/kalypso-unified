@@ -13,6 +13,17 @@ use ethers::core::types::U256;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+#[utoipa::path(
+    get,
+    path = "/stats/marketStats/{marketId}",
+    responses(
+        (status = 200, description = "Return market stats", body = MarketStatsResponse),
+    ),
+    params(
+        ("market_id" = u64, Path, description = "Market ID"),
+    ),
+    tag = "Manage"
+)]
 pub async fn market_stats(
     market_id: web::Path<String>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
@@ -106,6 +117,15 @@ pub async fn market_stats(
     }));
 }
 
+#[utoipa::path(
+    get,
+    path = "/stats/marketInfo",
+    request_body = MarketInfo,
+    responses(
+        (status = 200, description = "Return market stats"),
+    ),
+    tag = "Manage"
+)]
 pub async fn market_info(
     _payload: web::Json<MarketInfo>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,

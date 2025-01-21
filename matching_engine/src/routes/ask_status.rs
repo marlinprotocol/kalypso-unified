@@ -15,6 +15,15 @@ use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+#[utoipa::path(
+    get,
+    path = "/stats/getStatus",
+    responses(
+        (status = 200, description = "Return high level status of Bids", body = GetStatusResponse),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    tag = "Manage"
+)]
 pub async fn get_status(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
 ) -> actix_web::Result<HttpResponse> {
@@ -34,6 +43,16 @@ pub async fn get_status(
     }));
 }
 
+#[utoipa::path(
+    post,
+    path = "/stats/getProof",
+    request_body = GetAskStatus,
+    responses(
+        (status = 200, description = "Return proof for Bid", body = GetProofResponse),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    tag = "Manage"
+)]
 pub async fn get_ask_proof_by_ask_id(
     _payload: web::Json<GetAskStatus>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
@@ -83,6 +102,16 @@ pub async fn get_ask_proof_by_ask_id(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/stats/getAskStatus",
+    request_body = GetAskStatus,
+    responses(
+        (status = 200, description = "Return status of bid", body = GetAskStatusResponse),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    tag = "Manage"
+)]
 pub async fn get_ask_status_askid(
     _payload: web::Json<GetAskStatus>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
@@ -134,6 +163,18 @@ pub async fn get_ask_status_askid(
     }));
 }
 
+#[utoipa::path(
+    get,
+    path = "/stats/getAsk/{id}",
+    responses(
+        (status = 200, description = "Return bid details"),
+        (status = 404, description = "Parsing in progress", body = GetAskStatusResponse )
+    ),
+    params(
+        ("id" = u64, Path, description = "Bid ID"),
+    ),
+    tag = "Manage"
+)]
 pub async fn get_ask(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     path: web::Path<(String,)>,

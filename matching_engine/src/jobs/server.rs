@@ -18,7 +18,7 @@ use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::stake_manager_store::StakeManagerStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::MarketMetadataStore;
-use crate::routes::{get_core_scope, get_stats_scope, ui_scope};
+use crate::routes::{get_core_scope, get_stats_scope, get_swagger, ui_scope};
 use crate::{ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore};
 
 type EntityRegistryInstance = Arc<
@@ -125,6 +125,7 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_key_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
                 .app_data(Data::new(self.shared_unhandled_logs.clone()))
+                .service(get_swagger())
                 .service(
                     ui_scope()
                         .wrap(ui_request_concurrency)

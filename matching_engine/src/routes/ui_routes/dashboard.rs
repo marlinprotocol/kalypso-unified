@@ -17,8 +17,9 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct DashboardResponse {
     markets_created: usize,
     registered_generators: usize,
@@ -28,13 +29,13 @@ struct DashboardResponse {
     task_assignment_requirements: TaskRequirements,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct TaskRequirements {
     native: Vec<TokenAmount>,
     symbiotic: Vec<TokenAmount>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
     id: String,
     name: Option<String>,
@@ -43,7 +44,7 @@ struct Market {
     median_cost: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct RecentProof {
     market: Market,
     requestor: String,
@@ -58,7 +59,7 @@ struct RecentProof {
     proof_created_on_timestamp: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Generator {
     name: Option<String>,
     address: String,
@@ -72,6 +73,15 @@ use once_cell::sync::Lazy;
 static DASHBOARD_RESPONSE: Lazy<RwLock<CachedDashboardResponse>> =
     Lazy::new(|| RwLock::new(CachedDashboardResponse::new()));
 
+#[utoipa::path(
+    get,
+    path = "/ui/dashboard",
+    responses(
+        (status = 200, description = "Dashboard Response", body = DashboardResponse),
+        (status = 423, description = "Resource Locked", body = WelcomeResponse),
+    ),
+    tag = "UI"
+)]
 pub async fn get_dashboard(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,

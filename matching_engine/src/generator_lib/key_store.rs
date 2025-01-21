@@ -5,12 +5,37 @@ use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
+use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
 pub struct Key {
     pub address: Address,
     key_index: u64,
     ecies_pub_key: Option<Bytes>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct KeyInfo {
+    pub address: String,
+    key_index: String,
+    ecies_pub_key: Option<String>,
+}
+
+impl Key {
+    pub fn to_key_info(&self) -> KeyInfo {
+        let ecies_pub_key = {
+            if self.ecies_pub_key.is_none() {
+                None
+            } else {
+                Some(hex::encode(&self.ecies_pub_key().unwrap().to_vec()))
+            }
+        };
+        KeyInfo {
+            address: format!("{:?}", self.address),
+            key_index: self.key_index.to_string(),
+            ecies_pub_key,
+        }
+    }
 }
 
 impl Key {

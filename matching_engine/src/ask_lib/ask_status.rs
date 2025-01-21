@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Default, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash)]
+#[derive(
+    Default, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash, ToSchema,
+)]
 pub enum AskState {
     #[default]
     Null,
@@ -51,7 +54,7 @@ pub fn get_ask_state(state: u8) -> AskState {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct LocalAskStatus {
     pub created: usize,
     pub unassigned: usize,

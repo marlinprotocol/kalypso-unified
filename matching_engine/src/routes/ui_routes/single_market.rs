@@ -21,10 +21,11 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
+use utoipa::ToSchema;
 
 const DEFAULT_COUNT: &usize = &100;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Jobs {
     proofs_generated: usize,
     inputs_challenged: usize,
@@ -33,7 +34,7 @@ struct Jobs {
     requests_made: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct RegisteredGenerator {
     details: GeneratorMeta,
     address: String,
@@ -42,7 +43,7 @@ struct RegisteredGenerator {
     cost: TokenAmount,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct SingleMarketResponse {
     registered_generators: usize,
     slashing_penalty: Vec<TokenAmount>,
@@ -59,7 +60,7 @@ struct SingleMarketResponse {
     completed_jobs: Vec<Job>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Job {
     requestor: String,
     time: String,
@@ -120,6 +121,23 @@ impl CachedMarketResponse {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+struct JobRespone {
+    jobs: Jobs,
+}
+
+#[utoipa::path(
+    get,
+    path = "/market_jobs/{id}",
+    responses(
+        (status = 200, description = "Returns Jobs of a given market", body = JobRespone),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    params(
+        ("id" = u64, Path, description = "Market ID"),
+    ),
+    tag = "UI"
+)]
 pub async fn jobs(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     path: web::Path<(String,)>,
@@ -165,16 +183,23 @@ pub async fn jobs(
         inputs_challenged: { local_ask_store.get_failed_request_count_by_market_id(&market_id) },
     };
 
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    struct JobRespone {
-        jobs: Jobs,
-    }
-
     let response = JobRespone { jobs };
 
     return Ok(HttpResponse::Ok().json(response));
 }
 
+#[utoipa::path(
+    get,
+    path = "/ui/market/{id}",
+    responses(
+        (status = 200, description = "Returns Market Info", body = SingleMarketResponse),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    params(
+        ("id" = u64, Path, description = "Market ID"),
+    ),
+    tag = "UI"
+)]
 pub async fn single_market(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,

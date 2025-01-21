@@ -3,7 +3,7 @@ use crate::ask_lib::ask_store::LocalAskStore;
 use crate::generator_lib::delegation::Operation;
 use crate::generator_lib::delegation::Source;
 use crate::generator_lib::generator_store::GeneratorMeta;
-use crate::generator_lib::key_store::Key;
+use crate::generator_lib::key_store::KeyInfo;
 use crate::generator_lib::key_store::KeyStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
@@ -30,6 +30,7 @@ use serde::Serialize;
 use tokio::sync::RwLock;
 use tokio::sync::RwLockReadGuard;
 use tokio::time::Duration;
+use utoipa::ToSchema;
 
 use crate::ask_lib::ask_status::AskState;
 use crate::generator_lib::generator_store::GeneratorStore;
@@ -86,7 +87,7 @@ pub struct QueryParams {
     slashing_history: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct GeneratorResponse {
     operator: Operator,
     details: GeneratorMeta,
@@ -110,7 +111,7 @@ pub struct GeneratorResponse {
     compute_break_down: ComputeBreakDown,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct StakeBreakDown {
     pub total_native_stake: Vec<TokenAmount>,
     pub total_native_stake_locked: Vec<TokenAmount>,
@@ -120,14 +121,14 @@ pub struct StakeBreakDown {
     pub available_symbiotic_stake: Vec<TokenAmount>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct ComputeBreakDown {
     pub total_compute: String,
     pub compute_locked: String,
     pub compute_available: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct WithdrawRequest {
     account: String,
     token: String,
@@ -136,7 +137,7 @@ pub struct WithdrawRequest {
     withdrawal_timestamp: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct DelegateOperation {
     delegation: TokenAmount,
     source: String,
@@ -147,7 +148,7 @@ struct DelegateOperation {
     tx: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Slash {
     ask_id: Option<String>,
     timestamp: String,
@@ -159,7 +160,7 @@ struct Slash {
     source: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Job {
     ask_id: String,
     market: MarketInfo,
@@ -173,14 +174,14 @@ struct Job {
     proof_transaction: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct MarketInfo {
     name: Option<String>,
     id: String,
     token: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
     name: Option<String>,
     id: String,
@@ -190,18 +191,20 @@ struct Market {
     pending_proofs: String,
     slashing_penalties_incured: String,
     min_hardware_requirement: Option<MinHardware>,
-    enclave_key: Option<Key>,
+
+    enclave_key: Option<KeyInfo>,
+
     kalypso_points: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct MinHardware {
     instance_type: Option<String>,
     vcpus: Option<usize>,
     vgpus: Option<usize>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Operator {
     name: Option<String>,
     address: String,
@@ -213,6 +216,23 @@ struct GeneratorQuery {
     query: QueryParams,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+struct WithdrawalResponse {
+    withdrawal_requests: Vec<WithdrawRequest>,
+}
+
+#[utoipa::path(
+    get,
+    path = "/ui/withdrawals/{id}",
+    responses(
+        (status = 200, description = "Returns Withdrawal Info of the operator", body = WithdrawalResponse),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    params(
+        ("id" = u64, Path, description = "Operator/Generator Address"),
+    ),
+    tag = "UI"
+)]
 pub async fn withdrawal_request(
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
     path: web::Path<(String,)>,
@@ -227,11 +247,6 @@ pub async fn withdrawal_request(
     };
 
     try_read_or_lock!(_local_generator_store, local_generator_store);
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    struct WithdrawalResponse {
-        withdrawal_requests: Vec<WithdrawRequest>,
-    }
 
     let withdrawal_requests = local_generator_store
         .get_withdrawl_requests(&generator_id)
@@ -252,6 +267,18 @@ pub async fn withdrawal_request(
     return Ok(HttpResponse::Ok().json(response));
 }
 
+#[utoipa::path(
+    get,
+    path = "/ui/generator/{id}",
+    responses(
+        (status = 200, description = "Return Operator Details", body = GeneratorResponse),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    params(
+        ("id" = u64, Path, description = "Operator/Generator Address"),
+    ),
+    tag = "UI"
+)]
 pub async fn single_generator(
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
     _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
@@ -454,7 +481,15 @@ async fn recompute_single_generator_response<'a>(
                     .get_kalypso_points_per_market(&generator_id, &info.market_id)
                     .unwrap_or_default()
                     .to_string(),
-                enclave_key: local_key_store.get_by_address(&info.address, info.market_id.as_u64()),
+                enclave_key: {
+                    let result =
+                        local_key_store.get_by_address(&info.address, info.market_id.as_u64());
+                    if result.is_some() {
+                        Some(result.unwrap().to_key_info())
+                    } else {
+                        None
+                    }
+                },
             })
             .collect(),
         active_jobs_list: local_ask_store

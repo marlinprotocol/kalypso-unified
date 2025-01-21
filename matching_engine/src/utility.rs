@@ -21,6 +21,7 @@ use im::HashMap;
 use rand::Rng;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
+use utoipa::ToSchema;
 
 pub fn address_to_string(address: &Address) -> String {
     format!("0x{}", hex::encode(address.as_bytes()))
@@ -128,7 +129,7 @@ pub fn random_usize() -> usize {
     rng.gen_range(1..=256)
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct TokenAmount {
     pub token: String,
     pub amount: String,

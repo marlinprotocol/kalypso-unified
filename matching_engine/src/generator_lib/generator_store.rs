@@ -5,6 +5,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use tokio::sync::RwLockReadGuard;
+use utoipa::ToSchema;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -364,7 +365,7 @@ pub struct Generator {
     pub active: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorMeta {
     /// The display name of the generator or application.

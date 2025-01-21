@@ -8,6 +8,8 @@ use ethers::signers::Wallet;
 use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 mod ask_status;
 mod chain_status;
@@ -109,6 +111,52 @@ pub fn get_stats_scope() -> actix_web::Scope {
             "/symbiotic_snapshot",
             web::get().to(symbiotic_snapshot::get_snapshot),
         )
+}
+
+use crate::routes::ask_status::*;
+use crate::routes::chain_status::*;
+use crate::routes::market_info::*;
+use crate::routes::symbiotic_snapshot::*;
+use crate::routes::unhandled_logs::*;
+
+use crate::routes::ui_routes::dashboard::*;
+use crate::routes::ui_routes::generators::*;
+use crate::routes::ui_routes::markets::*;
+use crate::routes::ui_routes::single_generator::*;
+use crate::routes::ui_routes::single_market::*;
+
+#[derive(OpenApi)]
+#[openapi(info(
+    title = "Kalyso Indexer APIs",
+    description = "APIs to interact with kalypo indexer",
+    version = "beta",
+    license(
+        name = "MIT License",
+        url = "https://opensource.org/licenses/MIT"
+    )
+))]
+#[openapi(paths(
+    welcome,
+    gas_key_balance,
+    get_latest_block_number,
+    get_ask,
+    get_ask_status_askid,
+    get_ask_proof_by_ask_id,
+    get_unhandled_logs,
+    get_snapshot,
+    market_stats,
+    market_info,
+    get_dashboard,
+    get_generators_all,
+    total_market_info,
+    single_generator,
+    withdrawal_request,
+    single_market
+))]
+pub struct ApiDoc;
+
+pub fn get_swagger() -> SwaggerUi {
+    SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi())
 }
 
 pub fn get_core_scope() -> actix_web::Scope {

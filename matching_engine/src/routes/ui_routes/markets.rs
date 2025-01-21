@@ -15,15 +15,16 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct MarketResponse {
     result: Vec<Market>,
     registered_generators: usize,
     total_stake: Vec<TokenAmount>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct Market {
     market_id: String,
     name: Option<String>,
@@ -47,6 +48,15 @@ use once_cell::sync::Lazy;
 static MARKET_RESPONSE: Lazy<RwLock<CachedMarketResponse>> =
     Lazy::new(|| RwLock::new(CachedMarketResponse::new()));
 
+#[utoipa::path(
+    get,
+    path = "/ui/markets",
+    responses(
+        (status = 200, description = "Market Response", body = MarketResponse),
+        (status = 423, description = "Resource Locked", body = WelcomeResponse),
+    ),
+    tag = "UI"
+)]
 pub async fn total_market_info(
     _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
     _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,

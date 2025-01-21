@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     ask_lib::ask_status::{AskState, LocalAskStatus},
@@ -20,38 +21,38 @@ pub struct GetRequestResponse {
     pub encrypted_data: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct WelcomeResponse {
     pub status: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct GetLatestBlockNumberResponse {
     pub block_number: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct GetStatusResponse {
     pub local_ask_status: LocalAskStatus,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct GetAskStatus {
     pub ask_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct GetAskStatusResponse {
     pub state: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct GetProofResponse {
     pub status: String,
     pub proof: Vec<u8>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct MarketInfo {
     pub market_id: String,
 }
@@ -105,7 +106,7 @@ pub struct BalanceResponse {
     pub status: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct MarketStatsResponse {
     pub market_info: String,
     pub generator_count: Option<usize>,

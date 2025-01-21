@@ -12,6 +12,14 @@ struct Result {
     result: Vec<String>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/stats/unhandled_logs",
+    responses(
+        (status = 200, description = "Return vector of unhandled of logs"),
+    ),
+    tag = "Manage"
+)]
 pub async fn get_unhandled_logs(
     _shared_unhandled_logs: Data<Arc<RwLock<Vec<Log>>>>,
 ) -> actix_web::Result<HttpResponse> {
