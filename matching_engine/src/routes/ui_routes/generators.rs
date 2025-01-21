@@ -19,7 +19,7 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct AllGeneratorResponse {
-    result: Vec<Operator>,
+    result: Vec<OperatorInfo>,
     registered_generators: usize,
     total_staked: Vec<TokenAmount>,
 }
@@ -32,7 +32,7 @@ static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
     Lazy::new(|| RwLock::new(CachedGeneratorResponse::new()));
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-struct Operator {
+struct OperatorInfo {
     details: GeneratorMeta,
     address: String,
     delegations: Vec<TokenAmount>,
@@ -57,7 +57,7 @@ struct Market {
     get,
     path = "/ui/generators",
     responses(
-        (status = 200, description = "Generator Response Response", body = AllGeneratorResponse),
+        (status = 200, description = "All Operators", body = AllGeneratorResponse),
         (status = 423, description = "Resource Locked", body = WelcomeResponse),
     ),
     tag = "UI"
@@ -210,7 +210,7 @@ async fn recompute_generator_response<'a>(
         .to_owned();
         let current_stake = delegations.clone();
         // Construct the Operator struct
-        let operator = Operator {
+        let operator = OperatorInfo {
             details: operator_data.deserialize_generator_bytes(),
             address: address_to_string(&operator_data.address),
             delegations,
