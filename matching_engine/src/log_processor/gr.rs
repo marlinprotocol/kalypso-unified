@@ -85,21 +85,19 @@ pub async fn process_generator_registry_logs(
 
         return Ok(());
     }
+    // ::<bindings::prover_manager::ProverDeregisteredFilter> typing not working here
+    if let Ok(parsed_deregistered_generator_log) = genertor_registry.decode_event_raw(
+        "ProverDeregistered",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        let generator_address = {
+            let generator_address_token = parsed_deregistered_generator_log.first().unwrap();
+            let generator_address = generator_address_token.clone().into_address().unwrap();
+            generator_address
+        };
 
-    if let Ok(parsed_deregistered_generator_log) =
-        genertor_registry.decode_event::<bindings::prover_manager::ProverDeregisteredFilter>(
-            "ProverDeregistered",
-            log.topics.clone(),
-            log.data.clone(),
-        )
-    {
-        // let generator_address = {
-        //     let generator_address_token = parsed_deregistered_generator_log.first().unwrap();
-        //     let generator_address = generator_address_token.clone().into_address().unwrap();
-        //     generator_address
-        // };
-
-        let generator_address = parsed_deregistered_generator_log.prover;
+        // let generator_address = parsed_deregistered_generator_log.prover;
 
         log::debug!("Deregistering Generator: {:?}", generator_address);
         let address = generator_address.into();
