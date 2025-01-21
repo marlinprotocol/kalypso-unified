@@ -1609,6 +1609,7 @@ fn update_generator_meta_instance(
 pub struct ReadStakeDataInfo {
     pub operator_address: Address,
     pub indexer_url: String,
+    pub native_staking: bindings::native_staking::NativeStaking<Provider<Http>>,
 }
 
 impl CommonDeps {
@@ -1618,13 +1619,20 @@ impl CommonDeps {
         get_config_ref!(config, "indexer_url", indexer_url);
         get_config_ref!(config, "operator_address", operator_address);
 
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "native_staking", native_staking_address);
+
         let operator_address = operator_address
             .parse::<Address>()
             .map_err(|e| format!("Invalid Operator Address: {}", e))?;
 
+        let (native_staking, _) =
+            get_native_staking_instance_without_signer(native_staking_address, rpc_url)?;
+
         Ok(ReadStakeDataInfo {
             operator_address,
             indexer_url: indexer_url.to_string(),
+            native_staking,
         })
     }
 }
@@ -2189,4 +2197,31 @@ fn get_symbiotic_staking_reward(
     );
 
     Ok((symbiotic_staking_reward, private_key_signer))
+}
+
+fn get_native_staking_instance_without_signer(
+    native_staking_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::native_staking::NativeStaking<Provider<Http>>,
+        Provider<Http>,
+    ),
+    String,
+> {
+    let native_staking_address = native_staking_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Native Staking address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the Generator Registry contract instance with the signer-enabled client
+    let native_staking = bindings::native_staking::NativeStaking::new(
+        native_staking_address,
+        provider_http.clone().into(),
+    );
+
+    Ok((native_staking, provider_http))
 }

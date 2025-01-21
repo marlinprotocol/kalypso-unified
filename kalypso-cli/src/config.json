@@ -700,7 +700,12 @@
     {
       "name": "Read Native Staking Pending Withdrawals",
       "description": "Reads Native Staking pending withdrawals",
-      "required_prompts": ["indexer_url", "operator_address"]
+      "required_prompts": [
+        "indexer_url", 
+        "operator_address",
+        "rpc_url",
+        "native_staking"
+    ]
     },
     {
       "name": "Request Native Stake Withdrawal",

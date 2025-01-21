@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Once};
+use std::{
+    collections::HashMap,
+    sync::Once,
+    time::{Duration, UNIX_EPOCH},
+};
 
 use async_trait::async_trait;
 use ethers::{
@@ -18,7 +22,19 @@ pub struct RequestNativeStakeWithdrawal;
 impl Operation for RequestNativeStakeWithdrawal {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let request_staking_withdrawal_info = CommonDeps::request_stake_withdrawal_info(&config)?;
+        let withdraw_duration = request_staking_withdrawal_info
+            .native_staking
+            .withdrawal_duration()
+            .call()
+            .await
+            .map_err(|e| {
+                format!(
+                    "Failed Reading unstaking duration from Native Staking Contract {}",
+                    e
+                )
+            })?;
 
+        println!("Withdraw Duration = {:?}", withdraw_duration);
         let native_unstaking_request_tx = send_with_optional_gas!(request_staking_withdrawal_info
             .native_staking
             .request_stake_withdrawal(
@@ -43,12 +59,47 @@ pub struct ReadWithdrawalRequestIds;
 impl Operation for ReadWithdrawalRequestIds {
     async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
         let read_stake_data_info = CommonDeps::read_stake_data_info(&config)?;
+
+        let withdraw_duration = read_stake_data_info
+            .native_staking
+            .withdrawal_duration()
+            .call()
+            .await
+            .map_err(|e| {
+                format!(
+                    "Failed Reading unstaking duration from Native Staking Contract {}",
+                    e
+                )
+            })?;
+
+        println!("Withdraw Duration Per Request= {:?} sec", withdraw_duration);
+
         let withdrawal_requests = read_staking_data(
             &read_stake_data_info.operator_address,
             read_stake_data_info.indexer_url,
         )
         .await
         .map_err(|e| format!("Unable to read stake data from indexer: {}", e))?;
+
+        let withdrawal_request_info = {
+            let mut info = vec![];
+            for request in withdrawal_requests.iter() {
+                let data = read_stake_data_info
+                    .native_staking
+                    .withdrawal_requests(
+                        read_stake_data_info.operator_address,
+                        read_stake_data_info.operator_address,
+                        request.index.parse().unwrap(),
+                    )
+                    .call()
+                    .await
+                    .map_err(|e| format!("Unable to read native staking contract: {}", e))?;
+
+                info.push(data.2 as U256);
+            }
+
+            info
+        };
 
         static INIT: Once = Once::new();
         INIT.call_once(|| {
@@ -57,20 +108,40 @@ impl Operation for ReadWithdrawalRequestIds {
                 read_stake_data_info.operator_address
             );
             println!(
-                "{:<42} | {:<42} | {:>42} | {:<5}",
-                "Account", "Amount", "Token", "Index"
+                "{:<42} | {:<24} | {:>42} | {:<5} | {:<20}",
+                "Account", "Amount", "Token", "Index", "Unlocks In"
             );
-            println!("{:-<42}-+-{:-<42}-+-{:-<42}-+-{:-<5}", "", "", "", "");
+            println!(
+                "{:-<42}-+-{:-<24}-+-{:-<42}-+-{:-<5}-+-{:-<20}",
+                "", "", "", "", ""
+            );
         });
 
-        for withdrawal in withdrawal_requests {
+        for (withdrawal, unlock_time) in withdrawal_requests
+            .iter()
+            .zip(withdrawal_request_info.iter())
+        {
+            let unlock_system_time =
+                UNIX_EPOCH + std::time::Duration::from_secs(unlock_time.as_u64());
+            let now = std::time::SystemTime::now();
+
+            let unlocks_in = match unlock_system_time.duration_since(now) {
+                Ok(data) => data,
+                Err(_) => Duration::from_micros(0),
+            };
+
             println!(
-                "{:<42} | {:<42} | {:>42} | {:<5}",
-                withdrawal.account, withdrawal.amount, withdrawal.token, withdrawal.index
+                "{:<42} | {:<24} | {:>42} | {:<5} | {:<20}",
+                withdrawal.account,
+                withdrawal.amount,
+                withdrawal.token,
+                withdrawal.index,
+                format!("{} sec", unlocks_in.as_secs())
             );
         }
 
         println!();
+
         Ok(())
     }
 }
