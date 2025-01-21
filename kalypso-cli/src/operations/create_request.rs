@@ -238,7 +238,7 @@ async fn get_expiry_time() -> Result<U256, String> {
         .map_err(|e| format!("Current Timestamp Calculation failed: {}", e))?;
     let current_timestamp = now.as_millis();
 
-    let max_age_in_ms = 300000;
+    let max_age_in_ms = 1200_000 * 10;
     let expiry = current_timestamp + max_age_in_ms;
 
     Ok(U256::from_dec_str(&expiry.to_string()).unwrap() / 1000)
