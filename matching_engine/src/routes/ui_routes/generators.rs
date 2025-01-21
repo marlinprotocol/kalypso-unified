@@ -18,13 +18,13 @@ use tokio::time::Duration;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-struct GeneratorResponse {
+struct AllGeneratorResponse {
     result: Vec<Operator>,
     registered_generators: usize,
     total_staked: Vec<TokenAmount>,
 }
 
-type CachedGeneratorResponse = CachedResponse<GeneratorResponse>;
+type CachedGeneratorResponse = CachedResponse<AllGeneratorResponse>;
 
 use once_cell::sync::Lazy;
 
@@ -57,7 +57,7 @@ struct Market {
     get,
     path = "/ui/generators",
     responses(
-        (status = 200, description = "Generator Response Response", body = GeneratorResponse),
+        (status = 200, description = "Generator Response Response", body = AllGeneratorResponse),
         (status = 423, description = "Resource Locked", body = WelcomeResponse),
     ),
     tag = "UI"
@@ -110,7 +110,7 @@ async fn recompute_generator_response<'a>(
     local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
     local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
     local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
-) -> GeneratorResponse {
+) -> AllGeneratorResponse {
     // Step 1: Acquire the lock and extract all necessary data
     let generator_details = {
         let all_generators = { local_generator_store.all_generators_address().to_owned() };
@@ -252,7 +252,7 @@ async fn recompute_generator_response<'a>(
 
     let registered_generators = result.len();
 
-    GeneratorResponse {
+    AllGeneratorResponse {
         result,
         registered_generators,
         total_staked: total_stake.to_token_amount(),

@@ -88,7 +88,7 @@ pub struct QueryParams {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-pub struct GeneratorResponse {
+struct GeneratorResponse {
     operator: Operator,
     details: GeneratorMeta,
     reward_address: String,
