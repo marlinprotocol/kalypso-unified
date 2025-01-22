@@ -126,12 +126,18 @@ use crate::routes::ui_routes::single_generator::*;
 use crate::routes::ui_routes::single_market::*;
 
 #[derive(OpenApi)]
-#[openapi(info(
-    title = "Kalyso Indexer APIs",
-    description = "APIs to interact with kalypo indexer",
-    version = "beta",
-    license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
-))]
+#[openapi(
+    info(
+        title = "Kalyso Indexer APIs",
+        description = "APIs to interact with kalypo indexer",
+        version = "beta",
+        license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
+    ),
+    tags(
+        (name = "Manage", description = "Read the matching engine state"),
+        (name = "UI", description = "Data Modelled to suit UI view"),
+    )
+)]
 #[openapi(paths(
     welcome,
     gas_key_balance,

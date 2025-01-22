@@ -16,10 +16,11 @@ use actix_web::web::Data;
 use actix_web::{get, post, put, web, Responder};
 use helper::response::response;
 use helper::sch_request::{GenerateEncryptedResponse, SCHPayload, ToPayload};
+use helper::sch_response::EncryptedResponse;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use utoipa::ToSchema;
 use std::sync::{Arc, Mutex};
+use utoipa::ToSchema;
 use validator::Validate;
 
 #[derive(Deserialize, Serialize, ToSchema)]
@@ -73,7 +74,7 @@ async fn start_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> imp
     path = "/api/startMatchingEngineEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Start the matching Engine. Works only with kalypso-cli"),
+        (status = 200, description = "Start the matching Engine. Works only with kalypso-cli", body = EncryptedResponse),
     ),
     tag = "Secure"
 )]
@@ -147,13 +148,12 @@ async fn stop_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl
     }
 }
 
-
 #[utoipa::path(
     post,
     path = "/api/stopMatchingEngineEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Stops the matching Engine. Works only with kalypso-cli"),
+        (status = 200, description = "Stops the matching Engine. Works only with kalypso-cli", body = EncryptedResponse),
     ),
     tag = "Secure"
 )]
@@ -233,7 +233,7 @@ async fn restart_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> i
     path = "/api/restartMatchingEngineEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Restart the matching Engine. Works only with kalypso-cli"),
+        (status = 200, description = "Restart the matching Engine. Works only with kalypso-cli", body = EncryptedResponse),
     ),
     tag = "Secure"
 )]
@@ -365,7 +365,7 @@ async fn generate_config_setup(
     path = "/api/matchingEngineConfigSetupEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Load Matching Engine Config. Only Works with kalypso-cli"),
+        (status = 200, description = "Load Matching Engine Config. Only Works with kalypso-cli", body = EncryptedResponse),
     ),
     tag = "Secure"
 )]
@@ -449,7 +449,7 @@ async fn update_matching_engine_config(
     path = "/api/updateMatchingEngineConfigEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Updated the matching engine config. Only Works with kalypso-cli"),
+        (status = 200, description = "Updated the matching engine config. Only Works with kalypso-cli", body = EncryptedResponse),
     ),
     tag = "Secure"
 )]

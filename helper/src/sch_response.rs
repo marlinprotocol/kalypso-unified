@@ -3,10 +3,11 @@ use ethers::abi::Token;
 use ethers::core::utils::keccak256;
 use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::secret_inputs_helpers::decrypt_ecies;
 
-#[derive(Serialize, Debug, Clone, Deserialize)]
+#[derive(Serialize, Debug, Clone, Deserialize, ToSchema)]
 pub struct EncryptedResponse {
     pub response: Vec<u8>,
     pub salt: Vec<u8>,

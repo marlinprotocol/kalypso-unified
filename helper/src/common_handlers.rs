@@ -1,6 +1,7 @@
 use crate::prom_client::ListenerMetrics;
 use crate::response::response;
 use crate::sch_request::{GenerateEncryptedResponse, SCHPayload, ToPayload};
+use crate::sch_response::EncryptedResponse;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{post, web, Responder};
@@ -9,15 +10,16 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SignAddress {
     #[validate(required(message = "address was not provided in the JSON body"))]
     pub address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize, Clone)]
+#[derive(Serialize, Debug, Validate, Deserialize, Clone, ToSchema)]
 pub struct SignAttestation {
     #[validate(required(message = "attestation bytes were not provided in the JSON body"))]
     pub attestation: Option<String>,
@@ -36,6 +38,16 @@ impl SignAttestation {
 }
 
 // Sign Address
+#[utoipa::path(
+    post,
+    path = "/api/signAddress",
+    request_body = SignAddress,
+    description = "Signs the address and returns signature",
+    responses(
+        (status = 200),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/signAddress")]
 async fn sign_address(
     jsonbody: web::Json<SignAddress>,
@@ -69,6 +81,15 @@ async fn sign_address(
 }
 
 // Sign Address Encrypted
+#[utoipa::path(
+    post,
+    path = "/api/signAddressEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Sign Address Encrypted. Works only with kalypso-cli", body = EncryptedResponse),
+    ),
+    tag = "Secure"
+)]
 #[post("/signAddressEncrypted")]
 async fn sign_address_encrypted(
     jsonbody: web::Json<SCHPayload>,
@@ -132,6 +153,16 @@ async fn _sign_address(body: &SignAddress, ecies_priv_key: &Vec<u8>) -> Option<V
 }
 
 // Sign Attestaion
+#[utoipa::path(
+    post,
+    path = "/api/signAttestation",
+    request_body = SignAddress,
+    description = "Signs attestation and returns signature",
+    responses(
+        (status = 200),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/signAttestation")]
 async fn sign_attestation(
     jsonbody: web::Json<SignAttestation>,
@@ -165,6 +196,15 @@ async fn sign_attestation(
 }
 
 // Sign Attestaion Encrypted
+#[utoipa::path(
+    post,
+    path = "/api/signAttestationEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Sign Attestation Encrypted. Works only with kalypso-cli", body = EncryptedResponse),
+    ),
+    tag = "Secure"
+)]
 #[post("/signAttestationEncrypted")]
 async fn sign_attestation_encrypted(
     jsonbody: web::Json<SCHPayload>,
