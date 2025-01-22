@@ -59,7 +59,7 @@ impl ListenerHealthCheckServer {
         let server = HttpServer::new(move || {
             let rate_limiter = kalypso_helper::middlewares::ratelimiter::get_rate_limiter(
                 Duration::from_secs(1),
-                1 as u64,
+                100 as u64,
             );
             App::new()
                 .wrap(rate_limiter)
