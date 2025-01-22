@@ -251,6 +251,14 @@ async fn sign_attestation_encrypted(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/metrics",
+    responses(
+        (status = 200, description = "Prom Metrics for listener"),
+    ),
+    tag = "Manage"
+)]
 pub async fn metrics_handler(
     state: Data<Arc<Mutex<ListenerMetrics>>>,
 ) -> actix_web::Result<actix_web::HttpResponse> {

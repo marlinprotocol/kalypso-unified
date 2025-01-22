@@ -8,12 +8,35 @@ use ethers::types::U64;
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use utoipa::{OpenApi, ToSchema};
+use utoipa_swagger_ui::SwaggerUi;
 
 pub struct ListenerHealthCheckServer {
     shared_latest_block: Arc<Mutex<U64>>,
     service_name: Arc<Mutex<String>>,
     should_stop: Arc<AtomicBool>,
     shared_metrics: Arc<Mutex<kalypso_helper::prom_client::ListenerMetrics>>,
+}
+
+use kalypso_helper::common_handlers::__path_metrics_handler;
+
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        title = "Prover Listener",
+        description = "Prover Listener Runtime Info",
+        version = "beta",
+        license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
+    ),
+    tags(
+        (name = "Manage", description = "Check Listener State"),
+    )
+)]
+#[openapi(paths(get_latest_block_number, metrics_handler))]
+struct ApiDoc;
+
+fn get_swagger() -> SwaggerUi {
+    SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi())
 }
 
 impl ListenerHealthCheckServer {
@@ -43,6 +66,7 @@ impl ListenerHealthCheckServer {
                 .app_data(Data::new(self.shared_latest_block.clone()))
                 .app_data(Data::new(self.service_name.clone()))
                 .app_data(Data::new(self.shared_metrics.clone()))
+                .service(get_swagger())
                 .route("/getLatestBlock", web::get().to(get_latest_block_number))
                 .route(
                     "/metrics",
@@ -88,18 +112,26 @@ impl ListenerHealthCheckServer {
     }
 }
 
+#[derive(Serialize, Debug, Clone, ToSchema)]
+struct GetLatestBlockNumberResponse {
+    pub service_name: String,
+    pub block_number: String,
+}
+
+#[utoipa::path(
+    get,
+    path = "/getLatestBlock",
+    responses(
+        (status = 200, description = "Return the latest block till block parsed", body = GetLatestBlockNumberResponse),
+    ),
+    tag = "Manage"
+)]
 async fn get_latest_block_number(
     _shared_parsed_block: Data<Arc<Mutex<U64>>>,
     service_name: Data<Arc<Mutex<String>>>,
 ) -> actix_web::Result<HttpResponse> {
     let latest_parsed_block = _shared_parsed_block.lock().unwrap();
     let service_name = service_name.lock().unwrap();
-
-    #[derive(Serialize, Debug, Clone)]
-    struct GetLatestBlockNumberResponse {
-        pub service_name: String,
-        pub block_number: String,
-    }
 
     Ok(HttpResponse::Ok().json(GetLatestBlockNumberResponse {
         service_name: service_name.to_string(),

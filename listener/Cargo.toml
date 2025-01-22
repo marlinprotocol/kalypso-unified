@@ -24,6 +24,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json="1.0"
 tokio = { version = "1.16.1", features = ["full"] }
 toml = "0.8.2"
+utoipa = "5"
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 uuid= {version = "1.4.1", features = ["v4","fast-rng","macro-diagnostics"]}
 warp = "0.3"
 
