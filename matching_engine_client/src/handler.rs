@@ -18,13 +18,21 @@ use helper::response::response;
 use helper::sch_request::{GenerateEncryptedResponse, SCHPayload, ToPayload};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use utoipa::ToSchema;
 use std::sync::{Arc, Mutex};
 use validator::Validate;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 struct EmptyPayload {}
 
-// Start matching_engine
+#[utoipa::path(
+    get,
+    path = "/api/test",
+    responses(
+        (status = 200),
+    ),
+    tag = "Check Connection"
+)]
 #[get("/test")]
 async fn test_handler() -> impl Responder {
     return response(
@@ -35,6 +43,15 @@ async fn test_handler() -> impl Responder {
 }
 
 // Start matching_engine
+#[utoipa::path(
+    post,
+    path = "/api/startMatchingEngine",
+    request_body = EmptyPayload,
+    responses(
+        (status = 200, description = "Start the matching Engine if all properties are set"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/startMatchingEngine")]
 async fn start_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     let result = _start_matching_engine().await;
@@ -51,6 +68,15 @@ async fn start_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> imp
 }
 
 // Start matching_engine
+#[utoipa::path(
+    post,
+    path = "/api/startMatchingEngineEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Start the matching Engine. Works only with kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[post("/startMatchingEngineEncrypted")]
 async fn start_matching_engine_handler_encrypted(
     _payload: web::Json<SCHPayload>,
@@ -97,6 +123,15 @@ async fn start_matching_engine_handler_encrypted(
 }
 
 //Stop matching_engine
+#[utoipa::path(
+    post,
+    path = "/api/stopMatchingEngine",
+    request_body = EmptyPayload,
+    responses(
+        (status = 200, description = "Stops the matching Engine Engine"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/stopMatchingEngine")]
 async fn stop_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     let result = _stop_matching_engine();
@@ -112,6 +147,16 @@ async fn stop_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl
     }
 }
 
+
+#[utoipa::path(
+    post,
+    path = "/api/stopMatchingEngineEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Stops the matching Engine. Works only with kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[post("/stopMatchingEngineEncrypted")]
 async fn stop_matching_engine_handler_encrypted(
     _payload: web::Json<SCHPayload>,
@@ -158,6 +203,15 @@ async fn stop_matching_engine_handler_encrypted(
 }
 
 //Restart matching_engine
+#[utoipa::path(
+    post,
+    path = "/api/restartMatchingEngine",
+    request_body = EmptyPayload,
+    responses(
+        (status = 200, description = "Restarts the matching Engine Engine"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/restartMatchingEngine")]
 async fn restart_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> impl Responder {
     let result = _restart_matching_engine().await;
@@ -174,6 +228,15 @@ async fn restart_matching_engine_handler(_payload: web::Json<EmptyPayload>) -> i
 }
 
 //Restart matching_engine
+#[utoipa::path(
+    post,
+    path = "/api/restartMatchingEngineEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Restart the matching Engine. Works only with kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[post("/restartMatchingEngineEncrypted")]
 async fn restart_matching_engine_handler_encrypted(
     _payload: web::Json<SCHPayload>,
@@ -220,6 +283,14 @@ async fn restart_matching_engine_handler_encrypted(
 }
 
 // Get matching_engine status from the supervisord
+#[utoipa::path(
+    get,
+    path = "/api/getMatchingEngineStatus",
+    responses(
+        (status = 200, description = "Get Matching Engine Status"),
+    ),
+    tag = "Manage"
+)]
 #[get("/getMatchingEngineStatus")]
 async fn get_matching_engine_status_handler() -> impl Responder {
     let supervisord_response: SupervisordResponse = match get_matching_engine_status() {
@@ -248,6 +319,15 @@ async fn get_matching_engine_status_handler() -> impl Responder {
 }
 
 // Generate config setup
+#[utoipa::path(
+    post,
+    path = "/api/matchingEngineConfigSetup",
+    request_body = MatchingEngineConfigSetupRequestBody,
+    responses(
+        (status = 200, description = "Load Matching Engine Config"),
+    ),
+    tag = "Manage"
+)]
 #[post("/matchingEngineConfigSetup")]
 async fn generate_config_setup(
     jsonbody: web::Json<MatchingEngineConfigSetupRequestBody>,
@@ -280,6 +360,15 @@ async fn generate_config_setup(
 }
 
 // Generate config setup encrypted
+#[utoipa::path(
+    post,
+    path = "/api/matchingEngineConfigSetupEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Load Matching Engine Config. Only Works with kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[post("/matchingEngineConfigSetupEncrypted")]
 async fn generate_config_setup_encrypted(
     jsonbody: web::Json<SCHPayload>,
@@ -326,6 +415,15 @@ async fn generate_config_setup_encrypted(
 }
 
 // Update matching_engine config
+#[utoipa::path(
+    put,
+    path = "/api/updateMatchingEngineConfig",
+    request_body = UpdateMatchingEngineConfig,
+    responses(
+        (status = 200, description = "Updated the matching engine config"),
+    ),
+    tag = "Deprecated"
+)]
 #[put("/updateMatchingEngineConfig")]
 async fn update_matching_engine_config(
     jsonbody: web::Json<UpdateMatchingEngineConfig>,
@@ -346,6 +444,15 @@ async fn update_matching_engine_config(
 }
 
 // Update matching_engine config encrypted
+#[utoipa::path(
+    put,
+    path = "/api/updateMatchingEngineConfigEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Updated the matching engine config. Only Works with kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[put("/updateMatchingEngineConfigEncrypted")]
 async fn update_matching_engine_config_encrypted(
     jsonbody: web::Json<SCHPayload>,
@@ -392,6 +499,14 @@ async fn update_matching_engine_config_encrypted(
 }
 
 // Get matching_engine status from the supervisord
+#[utoipa::path(
+    get,
+    path = "/api/getMatchingEnginePublicKeys",
+    responses(
+        (status = 200, description = "Read Matching Engine Public Keys"),
+    ),
+    tag = "Manage"
+)]
 #[get("/getMatchingEnginePublicKeys")]
 async fn get_matching_engine_public_keys() -> impl Responder {
     let matching_engine_public_key = match get_matching_engine_public_key().await {
@@ -435,8 +550,7 @@ async fn get_matching_engine_public_keys() -> impl Responder {
 // Routes
 pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
-        .service(start_matching_engine_handler)
-        .service(start_matching_engine_handler_encrypted)
+        .service(test_handler)
         .service(stop_matching_engine_handler)
         .service(start_matching_engine_handler_encrypted)
         .service(restart_matching_engine_handler)

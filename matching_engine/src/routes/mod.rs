@@ -150,7 +150,7 @@ use crate::routes::ui_routes::single_market::*;
     withdrawal_request,
     single_market
 ))]
-pub struct ApiDoc;
+struct ApiDoc;
 
 pub fn get_swagger() -> SwaggerUi {
     SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi())

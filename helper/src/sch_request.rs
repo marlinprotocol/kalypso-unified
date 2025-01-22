@@ -10,8 +10,9 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Debug, Clone, Deserialize)]
+#[derive(Serialize, Debug, Clone, Deserialize, ToSchema)]
 pub struct SCHPayload {
     request: Vec<u8>,
     response_key: Vec<u8>,

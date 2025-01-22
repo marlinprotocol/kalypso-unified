@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use validator::Validate;
 
 pub struct SupervisordResponse {
@@ -36,7 +37,7 @@ pub struct MatchingEngineConfig {
     pub stake_manager: String,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct MatchingEngineConfigSetupRequestBody {
     #[validate(required(message = "rpc_url was not provided in the matching_engine_config"))]
     pub rpc_url: Option<String>,
@@ -86,7 +87,7 @@ pub struct MatchingEngineConfigSetupRequestBody {
     pub stake_manager: Option<String>,
 }
 
-#[derive(Serialize, Debug, Deserialize)]
+#[derive(Serialize, Debug, Deserialize, ToSchema)]
 pub struct UpdateMatchingEngineConfig {
     pub rpc_url: Option<String>,
     pub chain_id: Option<String>,
