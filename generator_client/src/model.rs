@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use utoipa::ToSchema;
 use validator::Validate;
 
 pub struct SupervisordResponse {
@@ -20,7 +21,7 @@ pub struct GeneratorConfig {
     pub supported_markets: Vec<String>,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct MarketDetails {
     pub port: String,
     pub ivs_url: String,
@@ -53,7 +54,7 @@ pub struct RuntimeConfigFile {
     pub runtime_config: RuntimeConfig,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SetupRequestBodyGeneratorConfig {
     #[validate(
         contains(pattern = "0x", message = "The address should start with 0x"),
@@ -68,7 +69,7 @@ pub struct SetupRequestBodyGeneratorConfig {
     pub supported_markets: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SetupRequestBodyRuntimeConfig {
     #[validate(
         required(message = "A valid wss rpc url (ws_url) was not provided in the runtime_config"),
@@ -108,7 +109,7 @@ pub struct SetupRequestBodyRuntimeConfig {
     pub markets: HashMap<String, MarketDetails>,
 }
 
-#[derive(Serialize, Validate, Deserialize)]
+#[derive(Serialize, Validate, Deserialize, ToSchema)]
 pub struct GeneratorConfigSetupRequestBody {
     #[validate(required(message = "generator_config was not provided in the JSON body"))]
     pub generator_config: Option<Vec<SetupRequestBodyGeneratorConfig>>,
@@ -125,7 +126,7 @@ pub struct GetRsaPublicKeyRequest {
     pub generator_address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize, Clone)]
+#[derive(Serialize, Debug, Validate, Deserialize, Clone, ToSchema)]
 pub struct UpdateRuntimeConfig {
     #[validate(contains(pattern = "wss", message = "wss url is required"))]
     pub ws_url: Option<String>,
@@ -143,7 +144,7 @@ pub struct UpdateRuntimeConfig {
     pub markets: Option<HashMap<String, MarketDetails>>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct AddNewGenerator {
     #[validate(
         contains(pattern = "0x", message = "The address should start with 0x"),
@@ -156,7 +157,7 @@ pub struct AddNewGenerator {
     pub supported_markets: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct RemoveGenerator {
     #[validate(
         contains(pattern = "0x", message = "The address should start with 0x"),
@@ -165,7 +166,7 @@ pub struct RemoveGenerator {
     pub address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize, Clone)]
+#[derive(Serialize, Debug, Validate, Deserialize, Clone, ToSchema)]
 pub struct UpdateGeneratorConfig {
     #[validate(
         contains(pattern = "0x", message = "The address should start with 0x"),
@@ -176,7 +177,7 @@ pub struct UpdateGeneratorConfig {
     pub supported_markets: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct GetGeneratorPublicKeys {
     #[validate(
         contains(pattern = "0x", message = "The address should start with 0x"),
@@ -185,30 +186,31 @@ pub struct GetGeneratorPublicKeys {
     pub generator_address: Option<String>,
 }
 
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct ValidationResponse {
     pub status: bool,
     pub message: String,
 }
 
-#[derive(Serialize, Debug, Deserialize)]
+#[derive(Serialize, Debug, Deserialize, ToSchema)]
 pub struct GeneratorPublicKeys {
     pub generator_public_key: String,
     pub generator_ecies_public_key: String,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SignAddress {
     #[validate(required(message = "address was not provided in the JSON body"))]
     pub address: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SupervisordInputBody {
     #[validate(required(message = "program_name was not provided in the JSON body"))]
     pub program_name: Option<String>,
 }
 
-#[derive(Serialize, Debug, Validate, Deserialize)]
+#[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SignAttestation {
     #[validate(required(message = "attestation bytes were not provided in the JSON body"))]
     pub attestation: Option<String>,

@@ -20,9 +20,10 @@ use helper::response::response;
 use helper::sch_request::{GenerateEncryptedResponse, SCHPayload, ToPayload};
 use serde::Deserialize;
 use serde_json::Value;
+use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 struct ProgramName {
     program_name: String,
 }
@@ -39,6 +40,15 @@ struct BenchmarkResponse {
 }
 
 // Start a program on supervisord
+#[utoipa::path(
+    post,
+    path = "/api/startProgram",
+    request_body = SupervisordInputBody,
+    responses(
+        (status = 200, description = "Start the Generator if all properties are set"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/startProgram")]
 async fn start_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
     //Validating the main JSON body
@@ -96,6 +106,15 @@ async fn start_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> imp
 }
 
 //Stop a program running on supervisord
+#[utoipa::path(
+    post,
+    path = "/api/stopProgram",
+    request_body = SupervisordInputBody,
+    responses(
+        (status = 200, description = "Stop the Generator"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/stopProgram")]
 async fn stop_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
     //Validating the main JSON body
@@ -131,6 +150,15 @@ async fn stop_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl
 }
 
 //Restart a program running on supervisord
+#[utoipa::path(
+    post,
+    path = "/api/restartProgram",
+    request_body = SupervisordInputBody,
+    responses(
+        (status = 200, description = "Restart the Generator"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/restartProgram")]
 async fn restart_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
     //Validating the main JSON body
@@ -209,6 +237,17 @@ async fn restart_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> i
 }
 
 // Get program status from the supervisord
+#[utoipa::path(
+    get,
+    path = "/api/getProgramStatus",
+    params(
+        ("program_name" = String, Path, description = "Program Name"),
+    ),
+    responses(
+        (status = 200, description = "Restart the Generator"),
+    ),
+    tag = "Read"
+)]
 #[get("/getProgramStatus")]
 async fn get_program_status_handler(program_name: web::Query<ProgramName>) -> impl Responder {
     //Validating the main JSON body
@@ -247,6 +286,15 @@ async fn get_program_status_handler(program_name: web::Query<ProgramName>) -> im
 }
 
 // Generate config setup
+#[utoipa::path(
+    post,
+    path = "/api/generatorConfigSetup",
+    request_body = GeneratorConfigSetupRequestBody,
+    responses(
+        (status = 200, description = "Loads Config into generator"),
+    ),
+    tag = "Deprecated"
+)]
 #[post("/generatorConfigSetup")]
 async fn generate_config_setup(
     jsonbody: web::Json<GeneratorConfigSetupRequestBody>,
@@ -277,6 +325,15 @@ async fn generate_config_setup(
 }
 
 // Generate config setup
+#[utoipa::path(
+    post,
+    path = "/api/generatorConfigSetupEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Loads Config into generator securely. Currently Only possible via kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[post("/generatorConfigSetupEncrypted")]
 async fn generate_config_setup_encrypted(
     jsonbody: web::Json<SCHPayload>,
@@ -324,6 +381,15 @@ async fn generate_config_setup_encrypted(
 }
 
 // Update runtime config
+#[utoipa::path(
+    put,
+    path = "/api/updateRuntimeConfig",
+    request_body = UpdateRuntimeConfig,
+    responses(
+        (status = 200, description = "Updates Runtime Config"),
+    ),
+    tag = "Deprecated"
+)]
 #[put("/updateRuntimeConfig")]
 async fn update_runtime_config(jsonbody: web::Json<UpdateRuntimeConfig>) -> impl Responder {
     let json_input = &jsonbody;
@@ -350,6 +416,15 @@ async fn update_runtime_config(jsonbody: web::Json<UpdateRuntimeConfig>) -> impl
 }
 
 // Update runtime config encrypted
+#[utoipa::path(
+    put,
+    path = "/api/updateRuntimeConfigEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Updates Runtime Config securely. Currently Only possible via kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[put("/updateRuntimeConfigEncrypted")]
 async fn update_runtime_config_encrypted(
     jsonbody: web::Json<SCHPayload>,
@@ -395,6 +470,15 @@ async fn update_runtime_config_encrypted(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/addNewGenerator",
+    request_body = AddNewGenerator,
+    responses(
+        (status = 200, description = "Add New operator to listen to"),
+    ),
+    tag = "Not Tested"
+)]
 #[post("/addNewGenerator")]
 async fn add_new_generator_config(
     jsonbody: web::Json<AddNewGenerator>,
@@ -478,6 +562,15 @@ async fn add_new_generator_config(
 }
 
 // Remove generator from the config file
+#[utoipa::path(
+    delete,
+    path = "/api/addNewGenerator",
+    request_body = RemoveGenerator,
+    responses(
+        (status = 200, description = "Remove Operator Address"),
+    ),
+    tag = "Not Tested"
+)]
 #[delete("/removeGenerator")]
 async fn remove_generator_from_config(jsonbody: web::Json<RemoveGenerator>) -> impl Responder {
     let json_input = jsonbody.0;
@@ -543,6 +636,15 @@ async fn remove_generator_from_config(jsonbody: web::Json<RemoveGenerator>) -> i
 }
 
 // Update generator config
+#[utoipa::path(
+    put,
+    path = "/api/updateGeneratorConfig",
+    request_body = UpdateGeneratorConfig,
+    responses(
+        (status = 200, description = "Update Generator Config"),
+    ),
+    tag = "Deprecated"
+)]
 #[put("/updateGeneratorConfig")]
 async fn update_generator_config(jsonbody: web::Json<UpdateGeneratorConfig>) -> impl Responder {
     //Validating inputs
@@ -570,6 +672,15 @@ async fn update_generator_config(jsonbody: web::Json<UpdateGeneratorConfig>) -> 
 }
 
 // Update generator config Encrypted
+#[utoipa::path(
+    put,
+    path = "/api/updateGeneratorConfigEncrypted",
+    request_body = SCHPayload,
+    responses(
+        (status = 200, description = "Update Generator Config securely. Currently only possible via kalypso-cli"),
+    ),
+    tag = "Secure"
+)]
 #[put("/updateGeneratorConfigEncrypted")]
 async fn update_generator_config_encrypted(
     jsonbody: web::Json<SCHPayload>,
@@ -600,6 +711,15 @@ async fn update_generator_config_encrypted(
 }
 
 // Update generator config
+#[utoipa::path(
+    post,
+    path = "/api/fetchGeneratorPublicKeys",
+    request_body = GetGeneratorPublicKeys,
+    responses(
+        (status = 200, description = "Read Generator Public Keys"),
+    ),
+    tag = "Read"
+)]
 #[post("/fetchGeneratorPublicKeys")]
 async fn fetch_generator_public_keys(
     jsonbody: web::Json<GetGeneratorPublicKeys>,
@@ -669,6 +789,17 @@ async fn fetch_generator_public_keys(
 }
 
 // Get program status from the supervisord
+#[utoipa::path(
+    get,
+    path = "/api/benchmark",
+    params(
+        ("market_id" = String, Path, description = "Market ID"),
+    ),
+    responses(
+        (status = 200, description = "Get benchmark proving result"),
+    ),
+    tag = "Read"
+)]
 #[get("/benchmark")]
 async fn benchmark_generator(benchmark_params: web::Query<BenchmarkParams>) -> impl Responder {
     let runtime_config_file = match read_runtime_config_file().await {

@@ -14,7 +14,11 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("PORT must be a valid number");
 
-    let enclave_key = fs::read("/app/secp.sec").await?;
+    let enclave_key = match fs::read("/app/secp.sec").await {
+        Ok(key) => key,
+        Err(_) => fs::read("./app/secp.sec").await?,
+    };
+    
     let server = client::GeneratorClient::new(hex::encode(enclave_key), port);
 
     server.start(false).await.unwrap();

@@ -3,10 +3,60 @@ use std::sync::{Arc, Mutex};
 use crate::handler;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 pub struct GeneratorClient {
     enclave_key: Arc<Mutex<Vec<u8>>>,
     port: u16,
+}
+
+use handler::{
+    __path_add_new_generator_config, __path_benchmark_generator,
+    __path_fetch_generator_public_keys, __path_generate_config_setup,
+    __path_generate_config_setup_encrypted, __path_get_program_status_handler,
+    __path_remove_generator_from_config, __path_restart_program_handler,
+    __path_start_program_handler, __path_stop_program_handler, __path_update_generator_config,
+    __path_update_generator_config_encrypted, __path_update_runtime_config,
+    __path_update_runtime_config_encrypted,
+};
+
+use helper::common_handlers::{
+    __path_sign_address, __path_sign_address_encrypted, __path_sign_attestation,
+    __path_sign_attestation_encrypted,
+};
+
+#[derive(OpenApi)]
+#[openapi(info(
+    title = "Kalypso Generator Client APIs",
+    description = "APIs to interact with generator via client",
+    version = "beta",
+    license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
+))]
+#[openapi(paths(
+    start_program_handler,
+    stop_program_handler,
+    restart_program_handler,
+    get_program_status_handler,
+    generate_config_setup,
+    generate_config_setup_encrypted,
+    update_runtime_config,
+    update_runtime_config_encrypted,
+    add_new_generator_config,
+    remove_generator_from_config,
+    update_generator_config,
+    update_generator_config_encrypted,
+    fetch_generator_public_keys,
+    benchmark_generator,
+    sign_address,
+    sign_address_encrypted,
+    sign_attestation,
+    sign_attestation_encrypted
+))]
+struct ApiDoc;
+
+fn get_swagger() -> SwaggerUi {
+    SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi())
 }
 
 impl GeneratorClient {
@@ -20,6 +70,7 @@ impl GeneratorClient {
         let server = HttpServer::new(move || {
             App::new()
                 .app_data(Data::new(self.enclave_key.clone()))
+                .service(get_swagger())
                 .configure(handler::routes)
         });
 
