@@ -2225,3 +2225,25 @@ fn get_native_staking_instance_without_signer(
 
     Ok((native_staking, provider_http))
 }
+
+pub struct AllOperatorsQueryInfo {
+    pub market_id: U256,
+    pub indexer_url: String,
+}
+
+impl CommonDeps {
+    pub fn read_all_operator_query_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<AllOperatorsQueryInfo, String> {
+        get_config_ref!(config, "market_id", market_id);
+        get_config_ref!(config, "indexer_url", indexer_url);
+
+        let market_id = U256::from_dec_str(&market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(AllOperatorsQueryInfo {
+            market_id,
+            indexer_url: indexer_url.to_string(),
+        })
+    }
+}

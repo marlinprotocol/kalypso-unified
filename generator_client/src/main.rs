@@ -18,7 +18,7 @@ async fn main() -> std::io::Result<()> {
         Ok(key) => key,
         Err(_) => fs::read("./app/secp.sec").await?,
     };
-    
+
     let server = client::GeneratorClient::new(hex::encode(enclave_key), port);
 
     server.start(false).await.unwrap();

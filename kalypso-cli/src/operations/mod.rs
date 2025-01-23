@@ -1,5 +1,6 @@
 // src/operations/mod.rs
 
+pub mod check_other_operator;
 pub mod claim_rewards;
 pub mod complete_registration;
 pub mod compute_pcrs;
@@ -116,6 +117,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         }
         "Verify Remote Attestation" => Some(Box::new(compute_pcrs::VerifyAttestion)),
         "Check Role Management" => Some(Box::new(role_mgmt::RoleCheck)),
+        "Check Other Operators" => Some(Box::new(check_other_operator::CheckOtherOperators)),
         _ => unimplemented!(),
     }
 }

@@ -805,6 +805,14 @@
         "staking_manager",
         "symbiotic_staking_reward"
       ]
+    },
+    {
+      "name": "Check Other Operators",
+      "description": "Check stats of other operator of market are offering",
+      "required_prompts": [
+        "indexer_url", 
+        "market_id"
+      ]
     }
   ]
 }
