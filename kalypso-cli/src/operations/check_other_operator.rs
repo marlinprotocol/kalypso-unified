@@ -45,28 +45,47 @@ impl Operation for CheckOtherOperators {
                 );
             });
 
-            // Print operator data with delegations as sub-columns
-            for delegation in &operator.delegations {
+            if operator.delegations.is_empty() {
                 println!(
                     "{:<42} | {:<30} | {:<42} | {:<30} | {:>20}",
-                    if delegation.token == operator.delegations[0].token {
-                        operator.address.clone()
-                    } else {
-                        "".to_string()
-                    },
-                    if delegation.token == operator.delegations[0].token {
-                        operator.cost.amount.to_string()
-                    } else {
-                        "".to_string()
-                    },
-                    delegation.token,
-                    delegation.amount,
-                    if delegation.token == operator.delegations[0].token {
-                        operator.time.clone()
-                    } else {
-                        "".to_string()
-                    }
+                    operator
+                        .details
+                        .display_name
+                        .clone()
+                        .unwrap_or(operator.address.clone()),
+                    operator.cost.amount.to_string(),
+                    "-",
+                    "-",
+                    operator.time.clone()
                 );
+            } else {
+                // Print operator data with delegations as sub-columns
+                for delegation in &operator.delegations {
+                    println!(
+                        "{:<42} | {:<30} | {:<42} | {:<30} | {:>20}",
+                        if delegation.token == operator.delegations[0].token {
+                            operator
+                                .details
+                                .display_name
+                                .clone()
+                                .unwrap_or(operator.address.clone())
+                        } else {
+                            "".to_string()
+                        },
+                        if delegation.token == operator.delegations[0].token {
+                            operator.cost.amount.to_string()
+                        } else {
+                            "".to_string()
+                        },
+                        delegation.token,
+                        delegation.amount,
+                        if delegation.token == operator.delegations[0].token {
+                            operator.time.clone()
+                        } else {
+                            "".to_string()
+                        }
+                    );
+                }
             }
             println!(
                 "{:-<42}-+-{:-<30}-+-{:-<42}-+-{:-<30}-+-{:-<20}",
