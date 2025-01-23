@@ -786,11 +786,11 @@ impl JobCreator {
                                 }
 
                                 let mut attempts = 0;
-                                let max_attempts = 3;  
-                                
+                                let max_attempts = 3;
+
                                 let response = loop {
-                                    let tx_clone = tx.clone();  
-                                
+                                    let tx_clone = tx.clone();
+
                                     // Attempt to send the transaction
                                     match tx_clone.send().await.map_err(|e: ContractError<_>| {
                                         log::error!("========================\n");
@@ -799,7 +799,7 @@ impl JobCreator {
                                             bindings::proof_marketplace::ProofMarketplaceErrors,
                                             "ProofMarketplace"
                                         );
-                                
+
                                         try_read_contract_error_log!(
                                             e,
                                             bindings::error::ErrorErrors,
@@ -814,14 +814,18 @@ impl JobCreator {
                                                     // Log success and return the confirmation
                                                     with_metrics_lock!(
                                                         metrics_arc,
-                                                        |data: &mut TaskMetrics| data.increase_job_submitted_on_chain()
+                                                        |data: &mut TaskMetrics| data
+                                                            .increase_job_submitted_on_chain()
                                                     );
-                                                    break confirmation  // Successfully confirmed, break the loop
+                                                    break confirmation; // Successfully confirmed, break the loop
                                                 }
                                                 Err(e) => {
                                                     // Log error and retry on confirmation failure
-                                                    log::error!("Error awaiting confirmations: {:?}", e);
-                                                    break None
+                                                    log::error!(
+                                                        "Error awaiting confirmations: {:?}",
+                                                        e
+                                                    );
+                                                    break None;
                                                 }
                                             }
                                         }
@@ -829,15 +833,16 @@ impl JobCreator {
                                             // Log error and retry on failure to send
                                             log::error!("Error submitting proof: {:?}", e);
                                             attempts += 1;
-                                
+
                                             // Check if we've reached the maximum retry attempts
                                             if attempts >= max_attempts {
                                                 log::error!("Failed to send transaction after {} attempts: {}", attempts, e);
-                                                break None
+                                                break None;
                                             }
-                                
+
                                             // Wait before retrying
-                                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                                            tokio::time::sleep(std::time::Duration::from_secs(5))
+                                                .await;
                                         }
                                     };
                                 };
@@ -862,11 +867,11 @@ impl JobCreator {
                                 }
 
                                 let mut attempts = 0;
-                                let max_attempts = 3;  
+                                let max_attempts = 3;
 
                                 let reponse = loop {
-                                    let tx_clone = tx.clone();  // Clone tx for each attempt
-                                
+                                    let tx_clone = tx.clone(); // Clone tx for each attempt
+
                                     // Attempt to send the transaction
                                     match tx_clone.send().await.map_err(|e: ContractError<_>| {
                                         log::error!("========================\n");
@@ -875,7 +880,7 @@ impl JobCreator {
                                             bindings::proof_marketplace::ProofMarketplaceErrors,
                                             "ProofMarketplace"
                                         );
-                                
+
                                         try_read_contract_error_log!(
                                             e,
                                             bindings::error::ErrorErrors,
@@ -890,14 +895,18 @@ impl JobCreator {
                                                     // Log success and return the confirmation
                                                     with_metrics_lock!(
                                                         metrics_arc,
-                                                        |data: &mut TaskMetrics| data.increase_job_submitted_on_chain()
+                                                        |data: &mut TaskMetrics| data
+                                                            .increase_job_submitted_on_chain()
                                                     );
-                                                    break confirmation  // Successfully confirmed, break the loop
+                                                    break confirmation; // Successfully confirmed, break the loop
                                                 }
                                                 Err(e) => {
                                                     // Log error and retry on confirmation failure
-                                                    log::error!("Error awaiting confirmations: {:?}", e);
-                                                    break None
+                                                    log::error!(
+                                                        "Error awaiting confirmations: {:?}",
+                                                        e
+                                                    );
+                                                    break None;
                                                 }
                                             }
                                         }
@@ -905,15 +914,16 @@ impl JobCreator {
                                             // Log error and retry on failure to send
                                             log::error!("Error submitting proof: {:?}", e);
                                             attempts += 1;
-                                
+
                                             // Check if we've reached the maximum retry attempts
                                             if attempts >= max_attempts {
                                                 log::error!("Failed to send transaction after {} attempts: {}", attempts, e);
-                                                break None
+                                                break None;
                                             }
-                                
+
                                             // Wait before retrying
-                                            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                                            tokio::time::sleep(std::time::Duration::from_secs(5))
+                                                .await;
                                         }
                                     };
                                 };
