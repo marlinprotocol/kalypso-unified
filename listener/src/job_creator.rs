@@ -786,7 +786,7 @@ impl JobCreator {
                                 }
 
                                 let mut attempts = 0;
-                                let max_attempts = 3;
+                                let max_attempts = 5;
 
                                 let response = loop {
                                     let tx_clone = tx.clone();

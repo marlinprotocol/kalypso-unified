@@ -34,14 +34,15 @@ utoipa = "5"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 
 [features]
-# Default mode
+# inside enclaves
 default = ["beta"]
-
 beta = []
-# Mode Features
-external_indexer = ["stagenet", "disable_match_creation"]
 stagenet = ["complete"]
 
+# outside enclave
+external_indexer = ["complete", "disable_match_creation"]
+
+# Mode Features
 complete = [
     "matching_engine_enable_cors",
     "skip_unknown_events",
