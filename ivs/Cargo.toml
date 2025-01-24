@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+actix-web = {version = "4.5.1", features = ["rustls"] }
+async-trait = "0.1.81"
 bindings = { path = "../bindings", package = "foundry-contracts" }
 ethers ={version = "2", features = ["abigen", "ws", "rustls"] }
 generator_models = { path = "../generator", package = "generator" }

@@ -1,4 +1,6 @@
+pub mod generator;
 pub mod models;
+
 use std::time::Instant;
 
 use async_trait::async_trait;
