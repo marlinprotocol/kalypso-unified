@@ -297,3 +297,43 @@ impl Operation for SetMiddlewareAddress {
         Ok(())
     }
 }
+
+pub struct CheckVaults;
+
+#[async_trait]
+impl Operation for CheckVaults {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let check_vault_info = CommonDeps::check_supported_vaults_info(&config)?;
+
+        let provider_http = Provider::<Http>::try_from(check_vault_info.symbiotic_rpc_url)
+            .map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+        let middleware = bindings::middleware::Middleware::new(
+            check_vault_info.middleware_address,
+            provider_http.clone().into(),
+        );
+
+        let vault_count = middleware
+            .get_no_of_vaults()
+            .call()
+            .await
+            .map_err(|e| format!("Failed fetching number of vaults from middleware: {}", e))?;
+
+        println!();
+        println!("Number of vaults: {}", vault_count);
+        println!();
+        for i in 0..vault_count.as_usize() {
+            let vault_address = middleware
+                .vaults(U256::from(i))
+                .call()
+                .await
+                .map_err(|e| format!("Failed fetching vault address from middleware: {}", e))?;
+
+            println!("{}). Vault Address: {:?}", i + 1, vault_address);
+        }
+
+        println!();
+
+        Ok(())
+    }
+}

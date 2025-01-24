@@ -118,6 +118,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Verify Remote Attestation" => Some(Box::new(compute_pcrs::VerifyAttestion)),
         "Check Role Management" => Some(Box::new(role_mgmt::RoleCheck)),
         "Check Other Operators" => Some(Box::new(check_other_operator::CheckOtherOperators)),
+        "Check Supported Vaults" => Some(Box::new(symbiotic_opt_in::CheckVaults)),
         _ => unimplemented!(),
     }
 }

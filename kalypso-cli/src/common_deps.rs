@@ -2247,3 +2247,26 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct CheckSuppportedVaults {
+    pub symbiotic_rpc_url: String,
+    pub middleware_address: Address,
+}
+
+impl CommonDeps {
+    pub fn check_supported_vaults_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<CheckSuppportedVaults, String> {
+        get_config_ref!(config, "symbiotic_rpc_url", symbiotic_rpc_url);
+        get_config_ref!(config, "middleware_service", middleware_address);
+
+        let middleware_address = middleware_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Middleware Address: {}", e))?;
+
+        Ok(CheckSuppportedVaults {
+            symbiotic_rpc_url: symbiotic_rpc_url.into(),
+            middleware_address,
+        })
+    }
+}

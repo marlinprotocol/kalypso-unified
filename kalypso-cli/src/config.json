@@ -813,6 +813,14 @@
         "indexer_url", 
         "market_id"
       ]
+    },
+    {
+      "name": "Check Supported Vaults",
+      "description": "List of the supported vaults in the network",
+      "required_prompts": [
+        "symbiotic_rpc_url",
+        "middleware_service"
+      ]
     }
   ]
 }
