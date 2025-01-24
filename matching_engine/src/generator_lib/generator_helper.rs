@@ -26,34 +26,60 @@ pub fn weighted_random_selection(
 
     let max_proof_generation_cost = vec
         .iter()
-        .map(|gen| gen.proof_generation_cost.as_u64())
+        .map(|gen| gen.proof_generation_cost)
         .max()
-        .unwrap();
+        .unwrap_or(U256::one());
     let max_proposed_time = vec
         .iter()
-        .map(|gen| gen.proposed_time.as_u64())
+        .map(|gen| gen.proposed_time)
         .max()
-        .unwrap();
+        .unwrap_or(U256::one());
     let max_active_requests = vec
         .iter()
-        .map(|gen| gen.active_requests.as_u64())
+        .map(|gen| gen.active_requests)
         .max()
-        .unwrap();
+        .unwrap_or(U256::one());
     let max_proofs_submitted = vec
         .iter()
-        .map(|gen| gen.proofs_submitted.as_u64())
+        .map(|gen| gen.proofs_submitted)
         .max()
-        .unwrap();
+        .unwrap_or(U256::one());
     let max_proofs_slashed = vec
         .iter()
-        .map(|gen| gen.proofs_slashed.as_u64())
+        .map(|gen| gen.proofs_slashed)
         .max()
-        .unwrap();
+        .unwrap_or(U256::one());
+
+    let max_proof_generation_cost = if max_proof_generation_cost.is_zero() {
+        U256::one()
+    } else {
+        max_proof_generation_cost
+    };
+    let max_proposed_time = if max_proposed_time.is_zero() {
+        U256::one()
+    } else {
+        max_proposed_time
+    };
+    let max_active_requests = if max_active_requests.is_zero() {
+        U256::one()
+    } else {
+        max_active_requests
+    };
+    let max_proofs_submitted = if max_proofs_submitted.is_zero() {
+        U256::one()
+    } else {
+        max_proofs_submitted
+    };
+    let max_proofs_slashed = if max_proofs_slashed.is_zero() {
+        U256::one()
+    } else {
+        max_proofs_slashed
+    };
 
     let weights: Vec<f64> = vec
         .iter()
         .map(|gen| {
-            let base = U256::from_dec_str("1000000000000000000").unwrap();
+            let base = U256::from_dec_str("1000000000000000000").unwrap_or(U256::one());
             let proof_generation_cost_weight = U256::one() * 3;
             let proposed_time_weight = U256::one() * 3;
             let active_requests_weight = U256::one() * 2;
