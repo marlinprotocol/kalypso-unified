@@ -514,7 +514,9 @@ async fn recompute_single_generator_response<'a>(
                     .map(|a| Job {
                         ask_id: a.ask_id.to_string(),
                         market: MarketInfo {
-                            name: None,
+                            name: local_market_store
+                                .get_market_by_market_id(&a.market_id)
+                                .and_then(|a| a.deserialize_market_bytes().zk_app_name),
                             id: a.market_id.to_string(),
                             token: all_tokens_supported
                                 .iter()
@@ -543,7 +545,9 @@ async fn recompute_single_generator_response<'a>(
             .map(|ask| Job {
                 ask_id: ask.ask_id.to_string(),
                 market: MarketInfo {
-                    name: None,
+                    name: local_market_store
+                        .get_market_by_market_id(&ask.market_id)
+                        .and_then(|a| a.deserialize_market_bytes().zk_app_name),
                     id: ask.market_id.to_string(),
                     token: all_tokens_supported
                         .iter()
@@ -578,7 +582,9 @@ async fn recompute_single_generator_response<'a>(
                 slasing_epoch_timestamp: convert_to_option_string(Some(record.slashing_timestamp)),
                 timestamp: record.slashing_block_number.to_string(),
                 market: MarketInfo {
-                    name: None,
+                    name: local_market_store
+                        .get_market_by_market_id(&record.market_id)
+                        .and_then(|a| a.deserialize_market_bytes().zk_app_name),
                     id: record.market_id.to_string(),
                     token: all_tokens_supported
                         .iter()
