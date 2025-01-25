@@ -8,8 +8,13 @@ actix-web = {version = "4.5.1", features = ["rustls"] }
 async-trait = "0.1.81"
 bindings = { path = "../bindings", package = "foundry-contracts" }
 ethers ={version = "2", features = ["abigen", "ws", "rustls"] }
+matching_engine_models = { path = "../matching_engine", package = "matching_engine" }
 generator_models = { path = "../generator", package = "generator" }
+hex = "0.4"
 kalypso_helper = { path = "../helper", package = "helper" } 
 rand = "0.8"
 reqwest = { version = "0.12.4", features = ["json"] }
+secp256k1 = "0.28.0"
 serde = { version = "1.0", features = ["derive"] }
+utoipa = "5"
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }

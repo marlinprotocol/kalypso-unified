@@ -1,5 +1,6 @@
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct InvalidInputPayload {
@@ -86,12 +87,12 @@ struct EncryptedSecret {
     acl: Vec<u8>,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct CheckInputResponse {
     pub valid: bool,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct EncryptedInputPayload {
     pub acl: Vec<u8>,
     pub public_inputs: Option<Vec<u8>>,
@@ -100,19 +101,19 @@ pub struct EncryptedInputPayload {
     pub market_id: String,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct VerifyInputsAndProof {
     pub public_input: Option<Vec<u8>>,
     pub private_input: Option<Vec<u8>>,
     pub proof: Vec<u8>,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct VerifyInputAndProofResponse {
     pub is_input_and_proof_valid: bool,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct SignInputsAndProofForNonConfidentialInput {
     pub public_input: Vec<u8>,
     pub proof: Vec<u8>,

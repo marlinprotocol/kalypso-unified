@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct InputPayload {
     public: Vec<u8>,
     secrets: Option<Secrets>,
@@ -60,29 +61,29 @@ impl InputPayload {
     }
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 enum Secrets {
     PlainSecrets(Vec<u8>),
     EncryptedSecrets(EncryptedSecret),
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 struct EncryptedSecret {
     encrypted_data: Vec<u8>,
     acl: Vec<u8>,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct GenerateProofResponse {
     pub proof: Vec<u8>,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct TestResponse {
     pub data: String,
 }
 
-#[derive(Serialize, Debug, Deserialize, Clone)]
+#[derive(Serialize, Debug, Deserialize, Clone, ToSchema)]
 pub struct BenchmarkResponse {
     pub data: String,
     pub time_in_ms: u128,
