@@ -396,72 +396,72 @@ pub struct GeneratorMeta {
 
     /// A brief description of the generator or application.
     #[serde(alias = "display_description")]
-    display_description: Option<String>,
+    pub display_description: Option<String>,
 
     /// The official website URL.
-    website: Option<String>,
+    pub website: Option<String>,
 
     /// Twitter handle or URL.
-    twitter: Option<String>,
+    pub twitter: Option<String>,
 
     /// Discord invite link or server URL.
-    discord: Option<String>,
+    pub discord: Option<String>,
 
     /// URL to the logo image, enhancing brand recognition.
     #[serde(alias = "logo_url")]
-    logo_url: Option<String>,
+    pub logo_url: Option<String>,
 
     /// URL to a banner image for promotional purposes.
     #[serde(alias = "banner_url")]
-    banner_url: Option<String>,
+    pub banner_url: Option<String>,
 
     /// Contact email for support or inquiries.
     #[serde(alias = "contact_email")]
-    contact_email: Option<String>,
+    pub contact_email: Option<String>,
 
     /// GitHub repository URL for open-source projects.
-    github: Option<String>,
+    pub github: Option<String>,
 
     /// LinkedIn profile or company page URL.
-    linkedin: Option<String>,
+    pub linkedin: Option<String>,
 
     /// Medium blog URL for updates and articles.
-    medium: Option<String>,
+    pub medium: Option<String>,
 
     /// Reddit community URL.
-    reddit: Option<String>,
+    pub reddit: Option<String>,
 
     /// YouTube channel URL for tutorials and updates.
-    youtube: Option<String>,
+    pub youtube: Option<String>,
 
     /// Instagram profile URL for visual content.
-    instagram: Option<String>,
+    pub instagram: Option<String>,
 
     /// Repository URL, useful if different from GitHub.
     #[serde(alias = "repo_url")]
-    repo_url: Option<String>,
+    pub repo_url: Option<String>,
 
     /// Current version of the generator or application.
     #[serde(default)]
-    version: Option<String>,
+    pub version: Option<String>,
 
     /// Categories that classify the generator or application.
     #[serde(default)]
-    categories: Vec<String>,
+    pub categories: Vec<String>,
 
     /// Tags for better searchability and organization.
-    tags: Vec<String>,
+    pub tags: Vec<String>,
 
     /// License information, e.g., MIT, GPL.
-    license: Option<String>,
+    pub license: Option<String>,
 
     /// URL to the Terms of Service.
     #[serde(alias = "terms_of_service_url")]
-    terms_of_service_url: Option<String>,
+    pub terms_of_service_url: Option<String>,
 
     /// URL to the Privacy Policy.
     #[serde(alias = "privacy_policy_url")]
-    privacy_policy_url: Option<String>,
+    pub privacy_policy_url: Option<String>,
 }
 
 impl Generator {

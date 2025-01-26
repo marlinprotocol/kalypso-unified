@@ -6,7 +6,6 @@ use async_trait::async_trait;
 use ethers::signers::Signer;
 use ethers::types::Address;
 use kalypso_helper::send_with_optional_gas;
-use serde::Serialize;
 use std::collections::HashMap;
 
 /// Struct representing the "Complete Registration" operation
@@ -19,25 +18,35 @@ impl Operation for CompleteRegistration {
         // Initialize common dependencies
         let generator_info = CommonDeps::generator_registration_instance(&config)?;
 
-        #[derive(Serialize)]
-        struct Generator {
-            display_name: String,
-            display_description: String,
-            website: String,
-            twitter: String,
-        }
+        let generator_meta: matching_engine_helpers::generator_lib::generator_store::GeneratorMeta =
+            matching_engine_helpers::generator_lib::generator_store::GeneratorMeta {
+                display_name: Some(generator_info.display_name),
+                display_description: Some(generator_info.display_description),
+                website: Some(generator_info.website),
+                twitter: Some(generator_info.twitter),
+                discord: None,
+                logo_url: None,
+                banner_url: None,
+                contact_email: None,
+                github: None,
+                linkedin: None,
+                medium: None,
+                reddit: None,
+                youtube: None,
+                instagram: None,
+                repo_url: None,
+                version: None,
+                categories: vec![],
+                tags: vec![],
+                license: None,
+                terms_of_service_url: None,
+                privacy_policy_url: None,
+            };
 
-        let generator = Generator {
-            display_name: generator_info.display_name,
-            display_description: generator_info.display_description,
-            website: generator_info.website,
-            twitter: generator_info.twitter,
-        };
+        let json_string = serde_json::to_string(&generator_meta)
+            .map_err(|e| format!("Failed converting GeneratorMeta to string{}", e))?;
 
-        let generator_json = serde_json::to_string(&generator)
-            .map_err(|e| format!("Failed composing generator metadata. {}", e))?;
-
-        let generator_metadata = generator_json.as_bytes();
+        let generator_metadata: Vec<u8> = json_string.into_bytes();
 
         match generator_info
             .generator_registry
