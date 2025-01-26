@@ -54,6 +54,16 @@
   },
   {
     "inputs": [],
+    "name": "EnforcedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpectedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "FailedCall",
     "type": "error"
   },
@@ -64,7 +74,7 @@
   },
   {
     "inputs": [],
-    "name": "InvalidFeeToken",
+    "name": "InvalidAdmin",
     "type": "error"
   },
   {
@@ -166,6 +176,11 @@
   },
   {
     "inputs": [],
+    "name": "ZeroAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ZeroToAddress",
     "type": "error"
   },
@@ -217,6 +232,19 @@
       }
     ],
     "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
     "type": "event"
   },
   {
@@ -560,6 +588,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -674,19 +715,6 @@
     "name": "emergencyWithdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "feeRewardToken",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -898,11 +926,6 @@
         "internalType": "uint256",
         "name": "_withdrawalDuration",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_feeToken",
-        "type": "address"
       }
     ],
     "name": "initialize",
@@ -992,6 +1015,19 @@
     "name": "onTaskCompletion",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1146,19 +1182,6 @@
         "internalType": "address",
         "name": "_token",
         "type": "address"
-      }
-    ],
-    "name": "setFeeRewardToken",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
       },
       {
         "internalType": "uint256",
@@ -1185,19 +1208,6 @@
       }
     ],
     "name": "setStakeTokenSelectionWeight",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakingManager",
-        "type": "address"
-      }
-    ],
-    "name": "setStakingManager",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1324,19 +1334,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "stakingManager",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

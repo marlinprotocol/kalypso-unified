@@ -59,6 +59,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidAdmin",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidFeeToken",
     "type": "error"
   },
@@ -69,22 +74,17 @@
   },
   {
     "inputs": [],
-    "name": "InvalidLength",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "InvalidPool",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "InvalidShares",
+    "name": "InvalidProofMarketplace",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "InvalidStakingManager",
+    "name": "InvalidProverManager",
     "type": "error"
   },
   {
@@ -99,7 +99,22 @@
   },
   {
     "inputs": [],
+    "name": "PoolAlreadyDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PoolAlreadyEnabled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "PoolAlreadyExists",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PoolDoesNotExist",
     "type": "error"
   },
   {
@@ -404,8 +419,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_stakingPool",
+        "name": "_pool",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_share",
+        "type": "uint256"
       }
     ],
     "name": "addStakingPool",
@@ -458,7 +478,7 @@
         "components": [
           {
             "internalType": "uint256",
-            "name": "share",
+            "name": "rewardShare",
             "type": "uint256"
           },
           {
@@ -546,6 +566,11 @@
       {
         "internalType": "address",
         "name": "_proofMarketplace",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_proverManager",
         "type": "address"
       },
       {
@@ -656,6 +681,19 @@
   },
   {
     "inputs": [],
+    "name": "poolRewardShareSum",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "proofMarketplace",
     "outputs": [
       {
@@ -684,7 +722,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_stakingPool",
+        "name": "_pool",
         "type": "address"
       }
     ],
@@ -733,24 +771,6 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_pool",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "_enabled",
-        "type": "bool"
-      }
-    ],
-    "name": "setEnabledPool",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
         "name": "_feeToken",
         "type": "address"
       }
@@ -763,14 +783,32 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_pools",
-        "type": "address[]"
+        "internalType": "address",
+        "name": "_pool",
+        "type": "address"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_shares",
-        "type": "uint256[]"
+        "internalType": "bool",
+        "name": "_enabled",
+        "type": "bool"
+      }
+    ],
+    "name": "setPoolEnabled",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_pool",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_rewardShare",
+        "type": "uint256"
       }
     ],
     "name": "setPoolRewardShare",
@@ -794,19 +832,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_symbioticStaking",
-        "type": "address"
-      }
-    ],
-    "name": "setSymbioticStaking",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "bytes4",
         "name": "_interfaceId",
         "type": "bytes4"
@@ -818,19 +843,6 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "symbioticStaking",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
       }
     ],
     "stateMutability": "view",

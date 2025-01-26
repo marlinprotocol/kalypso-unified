@@ -96,6 +96,16 @@
   },
   {
     "inputs": [],
+    "name": "EnforcedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpectedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "FailedCall",
     "type": "error"
   },
@@ -111,7 +121,12 @@
   },
   {
     "inputs": [],
-    "name": "InsufficientStakeAmount",
+    "name": "InvalidAdmin",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAttestationVerifier",
     "type": "error"
   },
   {
@@ -146,6 +161,11 @@
   },
   {
     "inputs": [],
+    "name": "InvalidNumOfTxs",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidPCR0Length",
     "type": "error"
   },
@@ -161,12 +181,32 @@
   },
   {
     "inputs": [],
+    "name": "InvalidProofMarketplace",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidPublicKeyLength",
     "type": "error"
   },
   {
     "inputs": [],
+    "name": "InvalidRewardDistributor",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidSignatureLength",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidStakingManager",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoConfirmedTimestamp",
     "type": "error"
   },
   {
@@ -379,6 +419,19 @@
       }
     ],
     "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
     "type": "event"
   },
   {
@@ -724,6 +777,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -784,7 +850,7 @@
   },
   {
     "inputs": [],
-    "name": "BRIDGE_ENCLAVE_UPDATES_ROLE",
+    "name": "BRIDGE_ENCLAVE_UPDATER_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -1158,19 +1224,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "feeRewardToken",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "bytes",
@@ -1447,11 +1500,6 @@
         "internalType": "address",
         "name": "_rewardDistributor",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_feeRewardToken",
-        "type": "address"
       }
     ],
     "name": "initialize",
@@ -1473,19 +1521,6 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "lastSlashResultBlock",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1628,6 +1663,19 @@
     "name": "onTaskCompletion",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -1795,19 +1843,6 @@
       }
     ],
     "name": "setBaseTransmitterComissionRate",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_feeRewardToken",
-        "type": "address"
-      }
-    ],
-    "name": "setFeeRewardToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

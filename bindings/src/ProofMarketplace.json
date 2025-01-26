@@ -1064,7 +1064,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "feeReceipient",
+        "name": "proverRewardAddress",
         "type": "address"
       }
     ],
@@ -1635,7 +1635,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "proverRewardAddress",
         "type": "address"
       }
     ],
@@ -1643,7 +1643,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "amount",
         "type": "uint256"
       }
     ],
@@ -1949,7 +1949,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "transmitter",
         "type": "address"
       }
     ],
@@ -1957,7 +1957,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "amount",
         "type": "uint256"
       }
     ],

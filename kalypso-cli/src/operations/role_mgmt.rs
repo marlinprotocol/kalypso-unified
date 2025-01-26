@@ -109,8 +109,8 @@ impl Operation for RoleCheck {
             "SYMBIOTIC_STAKING",
             *address_to_check,
             "CUSTOM_ADDRESS",
-            bridge_enclave_updates_role,
-            "BRIDGE_ENCLAVE_UPDATES_ROLE"
+            bridge_enclave_updater_role,
+            "BRIDGE_ENCLAVE_UPDATER_ROLE"
         );
 
         println!("\n");

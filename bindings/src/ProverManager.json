@@ -53,11 +53,6 @@
   },
   {
     "inputs": [],
-    "name": "CannotBeSlashed",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "CannotBeZero",
     "type": "error"
   },
@@ -168,6 +163,11 @@
   {
     "inputs": [],
     "name": "InvalidProverCommission",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProverProposedTime",
     "type": "error"
   },
   {
@@ -641,6 +641,32 @@
   },
   {
     "inputs": [],
+    "name": "MAX_PROVING_TIME",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MIN_PROVING_TIME",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "PARALLEL_REQUESTS_UPPER_LIMIT",
     "outputs": [
       {
@@ -1096,12 +1122,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "prover",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "marketId",
         "type": "uint256"
       }
     ],
@@ -1207,7 +1233,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "prover",
         "type": "address"
       }
     ],
@@ -1215,7 +1241,7 @@
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "",
+        "name": "timestamp",
         "type": "uint256"
       }
     ],
