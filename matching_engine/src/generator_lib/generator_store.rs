@@ -319,18 +319,40 @@ pub struct SlashingRecord {
     pub source: super::delegation::Source,
 }
 
-use derivative::Derivative; // way to exclude timestamp from calculations
-#[derive(Debug, Clone, Serialize, Deserialize, PartialOrd, Derivative)]
-#[derivative(Hash, PartialEq, Eq)]
+use std::hash::{Hash, Hasher};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialOrd)]
 pub struct WithdrawlRequest {
     pub account: Address,
     pub token: Address,
     pub amount: U256,
     pub index: U256,
+    pub timestamp: U256, // We'll ignore this in Hash and PartialEq/Eq
+}
 
-    // Exclude `timestamp` from `Hash` and `PartialEq`
-    #[derivative(Hash = "ignore", PartialEq = "ignore")]
-    pub timestamp: U256,
+// Manually implement PartialEq (ignore `timestamp`)
+impl PartialEq for WithdrawlRequest {
+    fn eq(&self, other: &Self) -> bool {
+        self.account == other.account
+            && self.token == other.token
+            && self.amount == other.amount
+            && self.index == other.index
+        // `timestamp` is intentionally not compared
+    }
+}
+
+// With PartialEq implemented, we can do Eq trivially
+impl Eq for WithdrawlRequest {}
+
+// Manually implement Hash (ignore `timestamp`)
+impl Hash for WithdrawlRequest {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.account.hash(state);
+        self.token.hash(state);
+        self.amount.hash(state);
+        self.index.hash(state);
+        // `timestamp` is intentionally not hashed
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
