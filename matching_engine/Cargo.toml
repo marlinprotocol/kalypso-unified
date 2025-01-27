@@ -34,7 +34,10 @@ utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 
 [features]
 # inside enclaves
-default = ["beta"]
+default = ["mainnet"]
+
+# Network specific features will be added latter
+mainnet = []
 beta = []
 stagenet = ["complete"]
 

@@ -49,7 +49,7 @@ struct OperatorInfo {
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
     id: String,
-    name: String,
+    name: Option<String>,
     token: Vec<String>,
 }
 
@@ -169,20 +169,9 @@ async fn recompute_generator_response<'a>(
         for info_per_market in &all_markets_of_generator {
             let market = Market {
                 name: {
-                    let name =
-                        local_market_store.get_market_by_market_id(&info_per_market.market_id);
-
-                    match name {
-                        Some(data) => {
-                            let name = data.deserialize_market_bytes().zk_app_name;
-
-                            match name {
-                                Some(data) => data,
-                                None => "unknown".into(),
-                            }
-                        }
-                        None => "unknown".into(),
-                    }
+                    local_market_store
+                        .get_market_by_market_id(&info_per_market.market_id)
+                        .and_then(|a| a.deserialize_market_bytes().zk_app_name)
                 },
                 token: all_tokens_supported
                     .iter()
