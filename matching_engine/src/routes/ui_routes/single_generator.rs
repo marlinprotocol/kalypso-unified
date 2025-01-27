@@ -275,7 +275,7 @@ pub async fn withdrawal_request(
         (status = 423, description = "Parsing in progress" )
     ),
     params(
-        ("id" = u64, Path, description = "Operator/Generator Address"),
+        ("id" = String, Path, description = "Operator/Generator Address"),
     ),
     tag = "UI"
 )]
