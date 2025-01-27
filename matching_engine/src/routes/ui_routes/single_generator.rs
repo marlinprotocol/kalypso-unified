@@ -454,7 +454,9 @@ async fn recompute_single_generator_response<'a>(
             .clone()
             .into_iter()
             .map(|info| Market {
-                name: None,
+                name: local_market_store
+                    .get_market_by_market_id(&info.market_id)
+                    .and_then(|a| a.deserialize_market_bytes().zk_app_name),
                 id: info.market_id.to_string(),
                 earnings_to_date: local_generator_store
                     .get_earning_per_market(&generator_id, &info.market_id)
