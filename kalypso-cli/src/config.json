@@ -569,7 +569,7 @@
     {
       "name": "Read Stake Data",
       "description": "Read Stake Data across Native and Symbiotic Staking modules",
-      "required_prompts": ["indexer_url", "operator_address"]
+      "required_prompts": ["indexer_url", "operator_address", "rpc_url", "native_staking"]
     },
     {
       "name": "Request Symbiotic Stake",
