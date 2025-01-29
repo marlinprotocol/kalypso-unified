@@ -219,9 +219,13 @@ async fn recompute_dashboard_response<'a>(
         let (time, cost, proof_link) = {
             (
                 local_ask_store
-                    .get_proving_time(&ask_request.ask_id)
-                    .unwrap_or(U256::zero())
-                    .to_string(),
+                    .get_job_completed_on_timestamp(&ask_request.ask_id)
+                    .and_then(|completed| {
+                        local_ask_store
+                            .get_job_matched_on_timestamp(&ask_request.ask_id)
+                            .map(|matched| completed - matched)
+                    })
+                    .unwrap_or(0.into()),
                 local_ask_store
                     .get_proving_cost(&ask_request.ask_id)
                     .unwrap_or(U256::zero())
@@ -250,7 +254,7 @@ async fn recompute_dashboard_response<'a>(
                 }),
                 address: generator_address,
             },
-            time,
+            time: time.to_string(),
             cost,
             inputs_transaction: tx_to_string(&ask_request.create_transaction),
             proof_link,
