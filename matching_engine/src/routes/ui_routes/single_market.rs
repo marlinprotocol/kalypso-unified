@@ -65,6 +65,8 @@ struct Job {
     requestor: String,
     time: String,
     cost: TokenAmount,
+    quote: TokenAmount,
+    solved_in: Option<TokenAmount>,
     ask_id: String,
     inputs: String,
     inputs_transaction: String,
@@ -394,6 +396,11 @@ async fn recompute_single_market_response<'a>(
                             token: address_to_string(&USDC_TOKEN),
                             amount: a.reward.to_string(),
                         },
+                        quote: TokenAmount {
+                            token: address_to_string(&USDC_TOKEN),
+                            amount: a.reward.to_string(),
+                        },
+                        solved_in: None,
                         time: a
                             .time_requested_for_proof_generation
                             .saturating_mul(U256::from_dec_str("1000").unwrap())
@@ -427,6 +434,17 @@ async fn recompute_single_market_response<'a>(
                     token: address_to_string(&USDC_TOKEN),
                     amount: a.reward.to_string(),
                 },
+                quote: TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: a.reward.to_string(),
+                },
+                solved_in: Some(TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: local_ask_store
+                        .get_proving_time(&a.ask_id)
+                        .unwrap_or_default()
+                        .to_string(),
+                }),
                 time: local_ask_store
                     .get_proving_time(&a.ask_id)
                     .unwrap_or_default()
