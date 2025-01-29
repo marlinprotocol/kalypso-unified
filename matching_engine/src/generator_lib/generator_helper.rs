@@ -4,7 +4,6 @@ use ethers::types::U256;
 use rand::distributions::{Distribution, WeightedIndex};
 use rand::Rng;
 
-#[deprecated(note = "Use weighted_random_selection instead")]
 pub fn random_generator_selection(
     vec: Vec<GeneratorInfoPerMarket>,
 ) -> Option<GeneratorInfoPerMarket> {

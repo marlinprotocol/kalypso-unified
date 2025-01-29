@@ -603,7 +603,7 @@ impl LogParser {
 
             let key_store = { self.shared_key_store.read().await };
             let idle_generator =
-                generator_helper::weighted_random_selection(idle_generators).unwrap();
+                generator_helper::random_generator_selection(idle_generators).unwrap();
 
             if let Some(&cached_compute_value) = cached_compute.get(&idle_generator.address) {
                 log::debug!(
