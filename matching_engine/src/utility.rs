@@ -283,7 +283,10 @@ impl Sub for TokenTracker {
 
         // Iterate over the other TokenTracker's tokens
         for (address, amount) in other.tokens.iter() {
-            result.sub_token(address, amount).unwrap();
+            if result.tokens.contains_key(address) {
+                // unwrapping to find the error if any
+                result.sub_token(address, amount).unwrap();
+            }
         }
 
         result
