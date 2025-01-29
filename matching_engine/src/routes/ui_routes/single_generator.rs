@@ -17,6 +17,7 @@ use crate::utility::convert_to_option_string;
 use crate::utility::tx_to_string;
 use crate::utility::TokenAmount;
 use crate::utility::TokenTracker;
+use crate::utility::USDC_TOKEN;
 use actix_web::web;
 use actix_web::HttpResponse;
 use ethers::types::Address;
@@ -172,6 +173,8 @@ struct Job {
     time_taken_for_proof_generation: Option<String>,
     proof: Option<String>,
     proof_transaction: Option<String>,
+    quote: TokenAmount,
+    solved_in: Option<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -533,6 +536,11 @@ async fn recompute_single_generator_response<'a>(
                         proof: None,
                         proof_transaction: None,
                         inputs_transaction: tx_to_string(&a.create_transaction),
+                        quote: TokenAmount {
+                            token: address_to_string(&USDC_TOKEN),
+                            amount: a.reward.to_string(),
+                        },
+                        solved_in: None,
                     })
                     .collect()
             })
@@ -574,6 +582,17 @@ async fn recompute_single_generator_response<'a>(
                 ),
                 proof_transaction: local_ask_store.get_proof_transaction(&ask.ask_id),
                 inputs_transaction: tx_to_string(&ask.create_transaction),
+                quote: TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: ask.reward.to_string(),
+                },
+                solved_in: Some(TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: local_ask_store
+                        .get_proving_cost(&ask.ask_id)
+                        .unwrap_or_default()
+                        .to_string(),
+                }),
             })
             .collect::<Vec<Job>>(),
         slashing_history: local_generator_store

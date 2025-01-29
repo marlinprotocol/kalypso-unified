@@ -4,6 +4,7 @@ use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
 use crate::utility::{
     address_to_string, bytes_to_string, convert_to_option_string, tx_to_string, TokenAmount,
+    USDC_TOKEN,
 };
 use crate::{
     ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
@@ -57,6 +58,8 @@ struct RecentProof {
     created_on_timestamp: Option<String>,
     matched_on_timestamp: Option<String>,
     proof_created_on_timestamp: Option<String>,
+    quote: TokenAmount,
+    solved_in: Option<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -267,6 +270,17 @@ async fn recompute_dashboard_response<'a>(
             proof_created_on_timestamp: convert_to_option_string(
                 local_ask_store.get_job_completed_on_timestamp(&ask_request.ask_id),
             ),
+            quote: TokenAmount {
+                token: address_to_string(&USDC_TOKEN),
+                amount: ask_request.reward.to_string(),
+            },
+            solved_in: Some(TokenAmount {
+                token: address_to_string(&USDC_TOKEN),
+                amount: local_ask_store
+                    .get_proving_cost(&ask_request.ask_id)
+                    .unwrap_or_default()
+                    .to_string(),
+            }),
         };
 
         recent_proofs.push(proof);
