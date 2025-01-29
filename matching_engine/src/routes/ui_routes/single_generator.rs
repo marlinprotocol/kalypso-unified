@@ -24,6 +24,7 @@ use ethers::types::Address;
 use ethers::types::U256;
 use im::HashMap;
 use once_cell::sync::Lazy;
+use rayon::iter::IndexedParallelIterator;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use serde::Deserialize;
@@ -31,6 +32,8 @@ use serde::Serialize;
 use tokio::sync::RwLock;
 use tokio::sync::RwLockReadGuard;
 use tokio::time::Duration;
+
+use utoipa::IntoParams;
 use utoipa::ToSchema;
 
 use crate::ask_lib::ask_status::AskState;
@@ -42,7 +45,7 @@ use super::cache::CachedResponse;
 
 type CachedSingleGeneratorResponse = CachedResponse<GeneratorResponse>;
 
-const DEFAULT_COUNT: &usize = &100;
+const DEFAULT_COUNT: usize = 100;
 
 struct CachedGeneratorResponse {
     data: HashMap<GeneratorQuery, CachedSingleGeneratorResponse>,
@@ -78,14 +81,28 @@ impl CachedGeneratorResponse {
     }
 }
 
-#[derive(Deserialize, Clone, Copy, Serialize, Debug, Hash, Eq, PartialEq)]
+#[derive(Deserialize, Clone, Copy, Serialize, Debug, Hash, Eq, PartialEq, IntoParams)]
+#[into_params(style = Form, parameter_in = Query)]
 pub struct QueryParams {
     active_jobs_skip: Option<usize>,
+
     active_jobs: Option<usize>,
+
     completed_jobs_skip: Option<usize>,
+
     completed_jobs: Option<usize>,
+
     slashing_history_skip: Option<usize>,
+
     slashing_history: Option<usize>,
+
+    delegation_skip: Option<usize>,
+
+    delegation_count: Option<usize>,
+
+    withdrawal_skip: Option<usize>,
+
+    withdrawal_count: Option<usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -254,6 +271,8 @@ pub async fn withdrawal_request(
     let withdrawal_requests = local_generator_store
         .get_withdrawl_requests(&generator_id)
         .iter()
+        .skip(0)
+        .take(DEFAULT_COUNT)
         .map(|a| WithdrawRequest {
             account: address_to_string(&a.account),
             index: a.index.to_string(),
@@ -279,6 +298,7 @@ pub async fn withdrawal_request(
     ),
     params(
         ("id" = String, Path, description = "Operator/Generator Address"),
+        QueryParams
     ),
     tag = "UI"
 )]
@@ -311,6 +331,10 @@ pub async fn single_generator(
             completed_jobs: query.completed_jobs,
             slashing_history_skip: query.slashing_history_skip,
             slashing_history: query.slashing_history,
+            delegation_skip: query.delegation_skip,
+            delegation_count: query.delegation_count,
+            withdrawal_skip: query.withdrawal_skip,
+            withdrawal_count: query.withdrawal_count,
         },
     };
 
@@ -511,7 +535,7 @@ async fn recompute_single_generator_response<'a>(
                     .collect::<Vec<LocalAsk>>()
                     .into_iter()
                     .skip(query.query.active_jobs_skip.unwrap_or_default())
-                    .take(query.query.active_jobs.unwrap_or_else(|| *DEFAULT_COUNT))
+                    .take(query.query.active_jobs.unwrap_or_else(|| DEFAULT_COUNT))
                     .collect::<Vec<LocalAsk>>();
 
                 local_asks
@@ -549,9 +573,10 @@ async fn recompute_single_generator_response<'a>(
             .get_completed_proof_of_generator(
                 &generator_id,
                 query.query.completed_jobs_skip.unwrap_or_default(),
-                query.query.completed_jobs.unwrap_or_else(|| *DEFAULT_COUNT),
+                query.query.completed_jobs.unwrap_or_else(|| DEFAULT_COUNT),
             )
             .into_par_iter()
+            .take(DEFAULT_COUNT)
             .map(|ask| Job {
                 ask_id: ask.ask_id.to_string(),
                 market: MarketInfo {
@@ -598,6 +623,13 @@ async fn recompute_single_generator_response<'a>(
         slashing_history: local_generator_store
             .get_slashing_records(&generator_id)
             .into_par_iter()
+            .skip(query.query.slashing_history_skip.unwrap_or_default())
+            .take(
+                query
+                    .query
+                    .slashing_history
+                    .unwrap_or_else(|| DEFAULT_COUNT),
+            )
             .map(|record| Slash {
                 ask_id: Some(record.ask_id.to_string()),
                 slasing_epoch_timestamp: convert_to_option_string(Some(record.slashing_timestamp)),
@@ -626,6 +658,13 @@ async fn recompute_single_generator_response<'a>(
                 None,
             )
             .iter()
+            .skip(query.query.delegation_skip.unwrap_or_default())
+            .take(
+                query
+                    .query
+                    .delegation_count
+                    .unwrap_or_else(|| DEFAULT_COUNT),
+            )
             .map(|element| DelegateOperation {
                 delegation: address_token_pair_to_token_amount(element.delegation),
                 source: element.source.to_string(),
@@ -657,6 +696,13 @@ async fn recompute_single_generator_response<'a>(
         withdrawal_requests: local_generator_store
             .get_withdrawl_requests(&generator_id)
             .iter()
+            .skip(query.query.withdrawal_skip.unwrap_or_default())
+            .take(
+                query
+                    .query
+                    .withdrawal_count
+                    .unwrap_or_else(|| DEFAULT_COUNT),
+            )
             .map(|a| WithdrawRequest {
                 account: address_to_string(&a.account),
                 index: a.index.to_string(),

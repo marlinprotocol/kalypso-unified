@@ -20,11 +20,14 @@ use tokio::sync::{RwLock, RwLockReadGuard};
 use tokio::time::Duration;
 use utoipa::ToSchema;
 
+const DEFAULT_COUNT: &usize = &100;
+
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct DashboardResponse {
     markets_created: usize,
     registered_generators: usize,
     proofs_generated: usize,
+    unique_requestors: usize,
     markets: Vec<Market>,
     recent_proofs: Vec<RecentProof>,
     task_assignment_requirements: TaskRequirements,
@@ -187,7 +190,9 @@ async fn recompute_dashboard_response<'a>(
 
     // Step 3: Retrieve recent completed proofs and total proof count
     let (recent_completed_proofs, total_proof_count) = {
-        let recent_completed_proofs = local_ask_store.get_recent_completed_proofs(20).clone(); // Clone to release the lock
+        let recent_completed_proofs = local_ask_store
+            .get_recent_completed_proofs(*DEFAULT_COUNT)
+            .clone(); // Clone to release the lock
         let total_proof_count = local_ask_store.get_total_proof_count();
         (recent_completed_proofs, total_proof_count)
     };
@@ -294,6 +299,7 @@ async fn recompute_dashboard_response<'a>(
         markets_created: count_markets,
         registered_generators,
         proofs_generated: total_proof_count,
+        unique_requestors: local_ask_store.total_requestor_count(),
         markets,
         recent_proofs,
         task_assignment_requirements: TaskRequirements {
