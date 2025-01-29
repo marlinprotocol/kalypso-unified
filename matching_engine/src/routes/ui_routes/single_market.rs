@@ -441,7 +441,7 @@ async fn recompute_single_market_response<'a>(
                 solved_in: Some(TokenAmount {
                     token: address_to_string(&USDC_TOKEN),
                     amount: local_ask_store
-                        .get_proving_time(&a.ask_id)
+                        .get_proving_cost(&a.ask_id)
                         .unwrap_or_default()
                         .to_string(),
                 }),
