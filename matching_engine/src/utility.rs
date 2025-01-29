@@ -380,7 +380,11 @@ impl AddAssign for TokenTracker {
     }
 }
 
+#[cfg(any(feature = "stagenet", feature = "beta"))]
 pub const USDC_TOKEN_STRING: &str = "0x8230d71d809718132C2054704F5E3aF1b86B669C";
+
+#[cfg(feature = "mainnet")]
+pub const USDC_TOKEN_STRING: &str = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
 #[cfg(not(feature = "add_timestamp_to_asks"))]
 pub async fn get_timestamp_from_l2block_number(_: &str, _: &U256) -> Option<U256> {
