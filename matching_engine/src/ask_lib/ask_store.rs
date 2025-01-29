@@ -349,6 +349,12 @@ impl LocalAskStore {
         }
     }
 
+    pub fn update_deadline(&mut self, ask_id: &U256, deadline: U256) {
+        if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
+            ask.deadline = deadline;
+        }
+    }
+
     pub fn store_valid_proof(
         &mut self,
         ask_id: &U256,

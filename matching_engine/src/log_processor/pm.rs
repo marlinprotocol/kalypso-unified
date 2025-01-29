@@ -266,10 +266,24 @@ pub async fn process_proof_market_place_logs(
 
         let market_id = { local_ask_store.get_by_ask_id(&bid_id).unwrap().market_id };
 
-        generator_store
-            .write()
+        let mut generator_store = generator_store.write().await;
+
+        let generator_info =
+            generator_store.get_by_address_and_market(&generator.into(), &market_id);
+        if generator_info.is_some() {
+            let info = generator_info.unwrap();
+            let proving_time = info.proposed_time;
+            let now = get_timestamp_from_l2block_number(
+                rpc_url,
+                &log.block_number.unwrap().as_u64().into(),
+            )
             .await
-            .update_on_assigned_task(&generator.into(), &market_id);
+            .unwrap_or_default();
+
+            local_ask_store.update_deadline(&bid_id, now + proving_time);
+        }
+
+        generator_store.update_on_assigned_task(&generator.into(), &market_id);
 
         return Ok(());
     }

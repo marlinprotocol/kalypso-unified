@@ -401,9 +401,7 @@ async fn recompute_single_market_response<'a>(
                             amount: a.reward.to_string(),
                         },
                         solved_in: None,
-                        time: a
-                            .time_requested_for_proof_generation
-                            .to_string(),
+                        time: a.time_requested_for_proof_generation.to_string(),
                         inputs: a.prover_data.to_string(),
                         generator: None,
                         status: AskState::Create,

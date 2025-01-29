@@ -128,7 +128,7 @@ use crate::routes::ui_routes::single_market::*;
 #[derive(OpenApi)]
 #[openapi(
     info(
-        title = "Kalyso Indexer APIs",
+        title = "Kalypso Indexer APIs",
         description = "APIs to interact with kalypo indexer",
         version = "beta",
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
