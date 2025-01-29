@@ -295,12 +295,12 @@ pub async fn process_proof_market_place_logs(
         local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&bid_id, AskState::Complete);
 
-        local_ask_store.update_job_completed_on_timestamp(
-            &bid_id,
+        let completed_on_timestamp =
             get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
                 .await
-                .unwrap_or_default(),
-        );
+                .unwrap_or_default();
+
+        local_ask_store.update_job_completed_on_timestamp(&bid_id, completed_on_timestamp);
 
         let (generator_address, market_id) = {
             let data = local_ask_store.get_by_ask_id(&bid_id).unwrap();
@@ -318,7 +318,11 @@ pub async fn process_proof_market_place_logs(
             });
 
         let created_on = { local_ask_store.get_by_ask_id(&bid_id).unwrap().created_on };
-        let proof_time = proof_cycle_completed_on_l1.saturating_sub(created_on);
+        let created_on_timestamp = get_timestamp_from_l2block_number(rpc_url, &created_on)
+            .await
+            .unwrap_or_default();
+
+        let proof_time = completed_on_timestamp.saturating_sub(created_on_timestamp);
 
         local_ask_store.store_valid_proof(
             &bid_id,
