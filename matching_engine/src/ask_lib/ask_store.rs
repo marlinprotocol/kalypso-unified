@@ -370,13 +370,19 @@ impl LocalAskStore {
         }
     }
 
-    pub fn note_invalid_inputs(&mut self, ask_id: &U256, proof_transaction: String) {
+    pub fn note_invalid_inputs(
+        &mut self,
+        ask_id: &U256,
+        proof_cost: U256,
+        proof_transaction: String,
+    ) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
                 self.proofs.insert(*ask_id, Proof::InvalidInputAttestation);
                 self.failed_request_counter_by_market
                     .insert(ask_data.market_id, ask_data.ask_id);
                 self.proof_transaction.insert(*ask_id, proof_transaction);
+                self.proving_cost_taken.insert(*ask_id, proof_cost);
             }
             _ => {}
         }

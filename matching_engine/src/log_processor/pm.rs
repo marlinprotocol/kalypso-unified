@@ -629,9 +629,30 @@ pub async fn process_proof_market_place_logs(
             get_l1_block_from_l2_block(rpc_url, proof_cycle_completed_on)
                 .await
                 .unwrap_or_default();
+
+        let (generator_address, market_id) = {
+            let data = local_ask_store.get_by_ask_id(&bid_id).unwrap();
+            let generator_address: Address = data.generator.unwrap().into();
+            let market_id = data.market_id;
+            (generator_address, market_id)
+        };
+
+        let proof_generator_cost = generator_store
+            .read()
+            .await
+            .get_by_address_and_market(&generator_address, &market_id)
+            .map_or(U256::from(0), |generator_info| {
+                generator_info.proof_generation_cost.clone()
+            });
+
         local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&bid_id, AskState::Complete);
-        local_ask_store.note_invalid_inputs(&bid_id, tx_to_string(&log.transaction_hash.unwrap()));
+
+        local_ask_store.note_invalid_inputs(
+            &bid_id,
+            proof_generator_cost,
+            tx_to_string(&log.transaction_hash.unwrap()),
+        );
 
         local_ask_store.update_job_completed_on_timestamp(
             &bid_id,
