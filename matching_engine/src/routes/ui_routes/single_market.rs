@@ -403,7 +403,6 @@ async fn recompute_single_market_response<'a>(
                         solved_in: None,
                         time: a
                             .time_requested_for_proof_generation
-                            .saturating_mul(U256::from_dec_str("1000").unwrap())
                             .to_string(),
                         inputs: a.prover_data.to_string(),
                         generator: None,

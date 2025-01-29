@@ -396,6 +396,10 @@ impl Operation for SetMatchingEngineImage {
             ));
         }
 
+        println!(
+            "Image: {}",
+            hex::encode(&set_image_info.matching_engine_pcrs)
+        );
         let set_image_transaction = send_with_optional_gas!(set_image_info
             .proof_marketplace
             .set_matching_engine_image(set_image_info.matching_engine_pcrs.into()))
@@ -493,6 +497,11 @@ impl Operation for VerifyMatchingEngineKeys {
             )
         })?;
 
+        println!("Attestation: {}", hex::encode(&attestation));
+        println!(
+            "Attestation Signature: {}",
+            hex::encode(&attestation_signature)
+        );
         let verify_matching_engine_keys = send_with_optional_gas!(verify_matching_engine_config
             .proof_marketplace
             .verify_matching_engine(attestation.into(), attestation_signature.into()))
