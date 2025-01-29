@@ -225,7 +225,7 @@ async fn recompute_market_response<'a>(
         // Construct the Market struct
         let market = Market {
             market_id: market_id.clone().to_string(),
-            name: None, // Adjust as needed
+            name: meta.deserialize_market_bytes().zk_app_name,
             hardware_requirement: meta.deserialize_market_bytes().min_hardware,
             total_proofs_generated,
             requests_in_progress: requests_in_progress.to_string(),

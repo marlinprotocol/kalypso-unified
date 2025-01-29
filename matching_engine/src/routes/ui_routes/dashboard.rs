@@ -243,7 +243,11 @@ async fn recompute_dashboard_response<'a>(
             requestor: address_to_string(&ask_request.prover_refund_address),
             inputs: bytes_to_string(&ask_request.prover_data),
             generator: Generator {
-                name: None, // Assuming no name is available
+                name: ask_request.generator.and_then(|addr| {
+                    local_generator_store
+                        .get_by_address(&addr)
+                        .and_then(|g| g.deserialize_generator_bytes().display_name)
+                }),
                 address: generator_address,
             },
             time,

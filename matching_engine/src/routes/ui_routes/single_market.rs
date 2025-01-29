@@ -69,6 +69,7 @@ struct Job {
     inputs: String,
     inputs_transaction: String,
     generator: Option<String>,
+    generator_details: Option<GeneratorMeta>,
     status: AskState,
     created_on_timestamp: Option<String>,
     matched_on_timestamp: Option<String>,
@@ -410,6 +411,7 @@ async fn recompute_single_market_response<'a>(
                             local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
                         ),
                         inputs_transaction: tx_to_string(&a.create_transaction),
+                        generator_details: None,
                     })
                     .collect()
             })
@@ -433,6 +435,17 @@ async fn recompute_single_market_response<'a>(
                 generator: {
                     if a.generator.is_some() {
                         Some(address_to_string(&a.generator.unwrap()))
+                    } else {
+                        None
+                    }
+                },
+                generator_details: {
+                    if a.generator.is_some() {
+                        let proof_generated_by = a.generator.unwrap().clone();
+                        let proof_generated_by =
+                            local_generator_store.get_by_address(&proof_generated_by);
+                        proof_generated_by
+                            .map(|generator_info| generator_info.deserialize_generator_bytes())
                     } else {
                         None
                     }
