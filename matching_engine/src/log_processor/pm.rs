@@ -173,7 +173,8 @@ pub async fn process_proof_market_place_logs(
             state: Some(AskState::Create),
             generator: None,
             invalid_secret_flag: false,
-            created_on: created_on_l1,
+            created_on,
+            created_on_l1,
             time_requested_for_proof_generation: ask_data.0.time_for_proof_generation,
             create_transaction: log.transaction_hash.unwrap().clone(),
         };

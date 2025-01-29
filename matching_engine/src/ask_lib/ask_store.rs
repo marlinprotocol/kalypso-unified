@@ -555,6 +555,7 @@ impl LocalAskStore {
 }
 
 impl LocalAskStore {
+    #[deprecated(note = "Preferably don't read it anywhere")]
     pub fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256> {
         self.proof_cycle_completed_on.get(ask_id).cloned()
     }

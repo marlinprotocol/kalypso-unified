@@ -22,10 +22,9 @@ pub struct LocalAsk {
     pub generator: Option<Address>,
     pub invalid_secret_flag: bool,
     pub created_on: U256,
+    pub created_on_l1: U256,
     pub create_transaction: H256,
 }
-
-impl LocalAsk {}
 
 use std::{
     cmp::Ordering,
