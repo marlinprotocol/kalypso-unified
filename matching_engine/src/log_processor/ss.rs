@@ -362,7 +362,7 @@ pub async fn process_symbiotic_staking_logs(
         for vault_snapshot in vault_snapshots.iter() {
             log::debug!("{:?}", vault_snapshot.clone().decode_vault_snapshot());
             for decoded_vault_snapshot in vault_snapshot.clone().decode_vault_snapshot().iter() {
-                symbiotic_stake_store.upsert_stake(
+                symbiotic_stake_store.note_down_stake(
                     &decoded_vault_snapshot.operator,
                     &decoded_vault_snapshot.stake_token,
                     &decoded_vault_snapshot.amount,

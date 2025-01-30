@@ -228,7 +228,7 @@ impl SymbioticStakeStore {
 }
 
 impl SymbioticStakeStore {
-    pub fn upsert_stake(
+    pub fn note_down_stake(
         &mut self,
         operator: &Address,
         token_address: &Address,
