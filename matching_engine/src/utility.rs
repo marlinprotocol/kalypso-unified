@@ -221,6 +221,7 @@ impl TokenTracker {
         *entry += *amount; // Increment the token amount
     }
 
+    #[deprecated(note = "Use `add_token` instead")]
     pub fn replace_token(&mut self, token: &Address, amount: &U256) {
         log::debug!("Replace token value is being called in TokenTracker, avoid using this function and modify the app's code");
         let entry = self.tokens.entry(*token).or_insert(U256::zero());

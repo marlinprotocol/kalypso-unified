@@ -236,8 +236,8 @@ impl SymbioticStakeStore {
     ) {
         // Check if the operator exists in the HashMap
         if let Some(token_tracker) = self.operators.get_mut(operator) {
-            // If it exists, replaces the token and amount to the existing TokenTracker
-            token_tracker.replace_token(token_address, absolute_stake);
+            // If it exists, add to the existing token stake instead of replacing
+            token_tracker.add_token(token_address, absolute_stake);
         } else {
             // If it does not exist, create a new TokenTracker and add the token and amount
             let mut new_tracker = TokenTracker::new();
@@ -245,6 +245,7 @@ impl SymbioticStakeStore {
             self.operators.insert(*operator, new_tracker);
         }
     }
+    
 
     pub fn get_complete_token_info(&self, operator: &Address) -> Option<&TokenTracker> {
         self.operators.get(operator)
