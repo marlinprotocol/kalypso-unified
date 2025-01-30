@@ -19,6 +19,14 @@ pub enum Proof {
     FailedProofGeneration,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub enum RemoveReason {
+    ProofCreated,
+    BidCancelled,
+    ProofNotGenerated,
+    InvalidInputsDetected,
+}
+
 impl Display for Proof {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {
@@ -297,7 +305,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn remove_ask_only_if_completed(&mut self, ask_id: &U256) {
+    pub fn remove_ask_only_if_completed(&mut self, ask_id: &U256, reason: RemoveReason) {
         if let Some(ask) = self.asks_by_id.remove(ask_id) {
             // Check if the ask's state is Some and Complete, else return early
             if ask.state != Some(AskState::Complete) {
@@ -317,7 +325,7 @@ impl LocalAskStore {
             }
 
             // Insert the completed ask into the HashSet
-            self.completed_proofs.insert(ask);
+            self.completed_proofs.insert(ask, reason);
         }
     }
 

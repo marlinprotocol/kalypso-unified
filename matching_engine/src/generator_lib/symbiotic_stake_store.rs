@@ -245,7 +245,6 @@ impl SymbioticStakeStore {
             self.operators.insert(*operator, new_tracker);
         }
     }
-    
 
     pub fn get_complete_token_info(&self, operator: &Address) -> Option<&TokenTracker> {
         self.operators.get(operator)

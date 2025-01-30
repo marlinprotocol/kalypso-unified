@@ -1,4 +1,5 @@
 use super::ask_status::AskState;
+use super::ask_store::RemoveReason;
 use ethers::core::types::U256;
 use ethers::prelude::*;
 use im::HashMap;
@@ -73,7 +74,15 @@ impl CompletedProofs {
     }
 
     // Insert a new proof
-    pub fn insert(&mut self, ask: LocalAsk) {
+    pub fn insert(&mut self, ask: LocalAsk, reason: RemoveReason) {
+        // store only relevant ones
+        if reason == RemoveReason::ProofNotGenerated
+            || reason == RemoveReason::InvalidInputsDetected
+            || reason == RemoveReason::BidCancelled
+        {
+            return;
+        }
+
         if let Some(generator) = ask.generator {
             // Insert into the generator index
             let generator_set = self
