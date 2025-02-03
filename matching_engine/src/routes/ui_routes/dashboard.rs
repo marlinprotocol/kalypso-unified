@@ -62,6 +62,7 @@ struct RecentProof {
     matched_on_timestamp: Option<String>,
     proof_created_on_timestamp: Option<String>,
     quote: TokenAmount,
+    settlement: Option<TokenAmount>,
     solved_in: Option<TokenAmount>,
 }
 
@@ -280,6 +281,13 @@ async fn recompute_dashboard_response<'a>(
                 amount: ask_request.reward.to_string(),
             },
             solved_in: Some(TokenAmount {
+                token: address_to_string(&USDC_TOKEN),
+                amount: local_ask_store
+                    .get_proving_cost(&ask_request.ask_id)
+                    .unwrap_or_default()
+                    .to_string(),
+            }),
+            settlement: Some(TokenAmount {
                 token: address_to_string(&USDC_TOKEN),
                 amount: local_ask_store
                     .get_proving_cost(&ask_request.ask_id)
