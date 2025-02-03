@@ -76,6 +76,7 @@ struct Job {
     created_on_timestamp: Option<String>,
     matched_on_timestamp: Option<String>,
     proof_created_on_timestamp: Option<String>,
+    proof_transaction: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -416,6 +417,7 @@ async fn recompute_single_market_response<'a>(
                         ),
                         inputs_transaction: tx_to_string(&a.create_transaction),
                         generator_details: None,
+                        proof_transaction: None,
                     })
                     .collect()
             })
@@ -476,6 +478,7 @@ async fn recompute_single_market_response<'a>(
                     local_ask_store.get_job_completed_on_timestamp(&a.ask_id),
                 ),
                 inputs_transaction: tx_to_string(&a.create_transaction),
+                proof_transaction: local_ask_store.get_proof_transaction(&a.ask_id),
             })
             .collect(),
     })
