@@ -563,6 +563,7 @@ impl LocalAskStore {
             // Skip the specified number of results and take 'count' results
             market_proofs
                 .iter()
+                .rev()
                 .skip(skip) // Skip the first 'skip' elements
                 .take(count) // Take the next 'count' elements
                 .cloned() // Clone the elements since we're returning Vec<LocalAsk>
