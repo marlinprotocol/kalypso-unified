@@ -131,7 +131,9 @@ pub fn random_usize() -> usize {
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct TokenAmount {
+    /// Address of the token
     pub token: String,
+    /// Amount of tokens
     pub amount: String,
 }
 

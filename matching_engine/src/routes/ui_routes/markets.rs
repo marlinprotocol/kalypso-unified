@@ -217,7 +217,7 @@ async fn recompute_market_response<'a>(
             .get(&market_id)
             .cloned()
             .unwrap_or_default();
-        let slashing_penalty = slashing_penalty_map
+        let _slashing_penalty = slashing_penalty_map
             .get(&market_id)
             .cloned()
             .unwrap_or_default();
@@ -233,7 +233,8 @@ async fn recompute_market_response<'a>(
             median_cost_per_proof,
             failed_requests,
             total_earnings,
-            slashing_penalty: slashing_penalty.to_token_amount(),
+            // slashing_penalty: slashing_penalty.to_token_amount(), // actual amount supressing till slashing in enabled
+            slashing_penalty: vec![],
             status: true, // Adjust as needed
             market_setup_data: meta.deserialize_market_bytes(),
             registered_generators: local_generator_store.get_all_by_market_id(&market_id).len(),

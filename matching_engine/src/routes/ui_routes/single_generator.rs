@@ -13,7 +13,6 @@ use crate::try_read_or_lock;
 use crate::utility::address_to_string;
 use crate::utility::address_token_pair_to_token_amount;
 use crate::utility::bytes_to_string;
-use crate::utility::convert_to_option_string;
 use crate::utility::tx_to_string;
 use crate::utility::TokenAmount;
 use crate::utility::TokenTracker;
@@ -441,10 +440,12 @@ async fn recompute_single_generator_response<'a>(
             .get_total_earning(&generator_id)
             .unwrap_or_default()
             .to_string(),
-        total_slashed: local_generator_store
-            .get_total_slashing(&generator_id)
-            .unwrap_or_default()
-            .to_token_amount(),
+        // actual value. TODO: enable it after slashing is introduced again
+        // total_slashed: local_generator_store
+        //     .get_total_slashing(&generator_id)
+        //     .unwrap_or_default()
+        //     .to_token_amount(),
+        total_slashed: vec![],
         total_delegations: (generator_data.clone().total_native_stake
             + generator_data.clone().total_symbiotic_stake)
             .to_token_amount(),
@@ -491,7 +492,9 @@ async fn recompute_single_generator_response<'a>(
                     .to_string(),
                 proofs_missed: info.proofs_slashed.to_string(),
                 proofs_generated: info.proofs_submitted.to_string(),
-                slashing_penalties_incured: info.proofs_slashed.to_string(),
+                // TODO: actual value. Enable this after slashing is added back
+                // slashing_penalties_incured: info.proofs_slashed.to_string(),
+                slashing_penalties_incured: "0".to_owned(),
                 pending_proofs: info.active_requests.to_string(),
                 min_hardware_requirement: {
                     let info = local_market_store.get_market_by_market_id(&info.market_id);
@@ -620,36 +623,38 @@ async fn recompute_single_generator_response<'a>(
                 }),
             })
             .collect::<Vec<Job>>(),
-        slashing_history: local_generator_store
-            .get_slashing_records(&generator_id)
-            .into_par_iter()
-            .skip(query.query.slashing_history_skip.unwrap_or_default())
-            .take(
-                query
-                    .query
-                    .slashing_history
-                    .unwrap_or_else(|| DEFAULT_COUNT),
-            )
-            .map(|record| Slash {
-                ask_id: Some(record.ask_id.to_string()),
-                slasing_epoch_timestamp: convert_to_option_string(Some(record.slashing_timestamp)),
-                timestamp: record.slashing_block_number.to_string(),
-                market: MarketInfo {
-                    name: local_market_store
-                        .get_market_by_market_id(&record.market_id)
-                        .and_then(|a| a.deserialize_market_bytes().zk_app_name),
-                    id: record.market_id.to_string(),
-                    token: all_tokens_supported
-                        .iter()
-                        .map(|a| address_to_string(a))
-                        .collect::<Vec<String>>(),
-                },
-                request: record.slashing_tx,
-                price_offered: record.price_offered.to_string(),
-                slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
-                source: record.source.to_string(),
-            })
-            .collect(),
+            // TODO: enable this after slashing is enabled
+        // slashing_history: local_generator_store
+        //     .get_slashing_records(&generator_id)
+        //     .into_par_iter()
+        //     .skip(query.query.slashing_history_skip.unwrap_or_default())
+        //     .take(
+        //         query
+        //             .query
+        //             .slashing_history
+        //             .unwrap_or_else(|| DEFAULT_COUNT),
+        //     )
+        //     .map(|record| Slash {
+        //         ask_id: Some(record.ask_id.to_string()),
+        //         slasing_epoch_timestamp: convert_to_option_string(Some(record.slashing_timestamp)),
+        //         timestamp: record.slashing_block_number.to_string(),
+        //         market: MarketInfo {
+        //             name: local_market_store
+        //                 .get_market_by_market_id(&record.market_id)
+        //                 .and_then(|a| a.deserialize_market_bytes().zk_app_name),
+        //             id: record.market_id.to_string(),
+        //             token: all_tokens_supported
+        //                 .iter()
+        //                 .map(|a| address_to_string(a))
+        //                 .collect::<Vec<String>>(),
+        //         },
+        //         request: record.slashing_tx,
+        //         price_offered: record.price_offered.to_string(),
+        //         slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
+        //         source: record.source.to_string(),
+        //     })
+        //     .collect(),
+        slashing_history: vec![],
         delegations: local_generator_store
             .get_delegations(
                 &generator_id,

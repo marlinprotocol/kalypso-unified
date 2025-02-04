@@ -16,7 +16,6 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use im::HashMap;
 use once_cell::sync::Lazy;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
@@ -300,33 +299,36 @@ async fn recompute_single_market_response<'a>(
         .to_string();
     let registered_generators = local_generator_store.get_all_by_market_id(&market_id);
 
-    let local_generator_store_arc = Arc::new(local_generator_store.clone());
+    let _local_generator_store_arc = Arc::new(local_generator_store.clone());
 
-    let slashing_penalty =
+    let total_min_stake =
         local_native_store.tokens_to_lock.clone() + local_symbiotic_store.tokens_to_lock.clone();
 
     Some(SingleMarketResponse {
         median_cost,
         median_proof_time,
         registered_generators: registered_generators.len(),
-        slashing_penalty: slashing_penalty.to_token_amount(),
+        // slashing_penalty: slashing_penalty.to_token_amount(),// TODO enable this after slashing is enabled
+        slashing_penalty: TokenTracker::default().to_token_amount(),
         total_earnings: local_market_store
             .get_earnings(&market_id)
             .unwrap_or_default()
             .to_string(),
-        total_slashed: registered_generators
-            .into_par_iter()
-            .map(|elem| {
-                let store = Arc::clone(&local_generator_store_arc);
-                match store.get_slashing_per_generator_per_market(&elem.address, &market_id) {
-                    Some(slashed) => slashed,
-                    None => TokenTracker::new(),
-                }
-            })
-            .reduce(|| TokenTracker::new(), |acc, elem| acc + elem)
-            .to_token_amount(),
+            // TODO: enable this after slashing is enabled
+        // total_slashed: registered_generators
+        //     .into_par_iter()
+        //     .map(|elem| {
+        //         let store = Arc::clone(&local_generator_store_arc);
+        //         match store.get_slashing_per_generator_per_market(&elem.address, &market_id) {
+        //             Some(slashed) => slashed,
+        //             None => TokenTracker::new(),
+        //         }
+        //     })
+        //     .reduce(|| TokenTracker::new(), |acc, elem| acc + elem)
+        //     .to_token_amount(),
+        total_slashed: vec![],
         hardware_requirement: marketmetadata.deserialize_market_bytes().min_hardware,
-        min_stake: slashing_penalty.to_token_amount(),
+        min_stake: total_min_stake.to_token_amount(),
         jobs: Jobs {
             proofs_generated: local_ask_store.get_proof_count(&market_id),
             proofs_pending: {

@@ -23,52 +23,92 @@ use utoipa::ToSchema;
 const DEFAULT_COUNT: &usize = &100;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-struct DashboardResponse {
+pub struct DashboardResponse {
+    /// The total number of markets created.
     markets_created: usize,
+
+    /// The total number of registered generators.
     registered_generators: usize,
+
+    /// The total number of proofs generated.
     proofs_generated: usize,
+
+    /// The total number of unique requestors.
     unique_requestors: usize,
+
+    /// A list of markets.
     markets: Vec<Market>,
+
+    /// A list of recent proofs.
     recent_proofs: Vec<RecentProof>,
+
+    /// The task assignment requirements.
     task_assignment_requirements: TaskRequirements,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct TaskRequirements {
+    /// Minimum Native Stake Required for generator to receive a job. (Any one of the element in the vector)
     native: Vec<TokenAmount>,
+    /// Minimum Symbiotic Stake Required for generator to receive a job. (Any one of the element in the vector)
     symbiotic: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
+    /// Market Id
     id: String,
+    /// Name of the market. It is null if market maker has not provided
     name: Option<String>,
+    /// deprecated. not use this field
     token: String,
+    /// median time take to generate proof in the market
     median_time: String,
+    /// median settlement price in this market
     median_cost: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct RecentProof {
+    /// ID of the job
+    id: String,
+    /// Market which the proof belongs to
     market: Market,
+    /// Requestor
     requestor: String,
+    /// Public inputs of the proof-job
     inputs: String,
+    /// Information of the proof generator
     generator: Generator,
+    /// Deprecated: Time taken in seconds to generate the proof
     time: String,
+    /// Deprecated: Cost Incurred in generating the proof
     cost: String,
+    /// Input Transaction Hash
     inputs_transaction: String,
+    /// Proof Transaction Hash
+    proof_transaction: String,
+    /// decprecated: Proof Transaction Hash (use proof_transaction instead)
     proof_link: String,
+    /// Timestamp on which job was created
     created_on_timestamp: Option<String>,
+    /// Timestamp on which job was matched with generator
     matched_on_timestamp: Option<String>,
+    /// Timestamp on which job's proof was submitted by geneator
     proof_created_on_timestamp: Option<String>,
+    /// Price Quoted by Proof Requestor
     quote: TokenAmount,
+    /// Price for which the job was settled
     settlement: Option<TokenAmount>,
+    /// deprecated: Price for which the job was settled (use settlement)
     solved_in: Option<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Generator {
+    /// Name of the generator
     name: Option<String>,
+    /// Address of the generator
     address: String,
 }
 
@@ -252,6 +292,7 @@ async fn recompute_dashboard_response<'a>(
         };
 
         let proof = RecentProof {
+            id: ask_request.ask_id.to_string(),
             market,
             requestor: address_to_string(&ask_request.prover_refund_address),
             inputs: bytes_to_string(&ask_request.prover_data),
@@ -266,7 +307,8 @@ async fn recompute_dashboard_response<'a>(
             time: time.to_string(),
             cost,
             inputs_transaction: tx_to_string(&ask_request.create_transaction),
-            proof_link,
+            proof_link: proof_link.clone(),
+            proof_transaction: proof_link,
             created_on_timestamp: convert_to_option_string(
                 local_ask_store.get_job_created_on_timestamp(&ask_request.ask_id),
             ),
