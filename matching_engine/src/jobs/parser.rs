@@ -602,6 +602,20 @@ impl LogParser {
             log::debug!("idle generators: {}", &idle_generators.len());
 
             let key_store = { self.shared_key_store.read().await };
+
+            #[cfg(feature = "use_time_and_price_weighted_matching")]
+            let idle_generator = {
+                let generator_store = { self.shared_generator_store.read().await };
+                let mut missed_jobs = HashMap::new();
+                for idle_generator in idle_generators.iter() {
+                    let missed = generator_store.get_job_missed_count(&idle_generator.address);
+                    missed_jobs.insert(idle_generator.address, missed);
+                }
+                generator_helper::weighted_time_cost_random_selection(idle_generators, missed_jobs)
+                    .unwrap()
+            };
+
+            #[cfg(not(feature = "use_time_and_price_weighted_matching"))]
             let idle_generator =
                 generator_helper::random_generator_selection(idle_generators).unwrap();
 

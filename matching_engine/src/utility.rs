@@ -551,3 +551,10 @@ where
 
     Ok(map)
 }
+
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+pub fn u256_to_system_time(timestamp: U256) -> SystemTime {
+    // Convert U256 to u64. Ensure that your timestamp really fits in u64!
+    let timestamp_secs = timestamp.as_u64();
+    UNIX_EPOCH + Duration::from_secs(timestamp_secs)
+}

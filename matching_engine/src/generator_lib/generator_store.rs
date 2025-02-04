@@ -4,6 +4,7 @@ use im::HashSet;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use std::time::Duration;
 use tokio::sync::RwLockReadGuard;
 use utoipa::ToSchema;
 
@@ -12,6 +13,7 @@ use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::sync::Arc;
 
+use crate::counters::time_counter::EntryCounter;
 use crate::utility::{AddressTokenPair, TokenTracker};
 
 use super::delegation::{Delegation, DelegationStore, Operation};
@@ -304,6 +306,8 @@ pub struct GeneratorStore {
     kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
 
     withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
+
+    jobs_missed_counter: EntryCounter<Address>, // Generator -> Jobs Missed Counter
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
@@ -497,6 +501,7 @@ impl GeneratorStore {
             kalypso_points: HashMap::new(),
             kalypso_points_per_market: HashMap::new(),
             withdrawl_requests: HashMap::new(),
+            jobs_missed_counter: EntryCounter::new(Duration::from_secs(60 * 60 * 48)), // 48 hours
         }
     }
 
@@ -1462,6 +1467,20 @@ impl GeneratorStore {
         if let Some(generator) = self.generators.get_mut(&generator_address) {
             generator.generator_data = generator_meta_data;
         }
+    }
+}
+
+impl GeneratorStore {
+    pub fn count_job_missed_by_generator(
+        &mut self,
+        generator_address: Address,
+        timestamp: std::time::SystemTime,
+    ) {
+        self.jobs_missed_counter.add(generator_address, timestamp);
+    }
+
+    pub fn get_job_missed_count(&self, generator_address: &Address) -> usize {
+        self.jobs_missed_counter.count(generator_address)
     }
 }
 

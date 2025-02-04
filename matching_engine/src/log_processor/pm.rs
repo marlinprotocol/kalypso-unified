@@ -5,6 +5,7 @@ use crate::costs::CostStore;
 use crate::utility::get_l1_block_from_l2_block;
 use crate::utility::get_timestamp_from_l2block_number;
 use crate::utility::tx_to_string;
+use crate::utility::u256_to_system_time;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use im::HashSet;
 
@@ -581,6 +582,15 @@ pub async fn process_proof_market_place_logs(
         let mut generator_store = generator_store.write().await;
 
         generator_store.reduce_active_requests(&generator_address, &ask.market_id);
+
+        let closed_time_stamp =
+            get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
+                .await
+                .unwrap_or_default();
+        generator_store.count_job_missed_by_generator(
+            generator_address.clone(),
+            u256_to_system_time(closed_time_stamp),
+        );
 
         // No need to generate this if there are dummy logs enabled
         #[cfg(feature = "generate_dummy_slash_logs")]

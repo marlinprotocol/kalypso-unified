@@ -1,6 +1,10 @@
+use std::collections::HashMap;
+
 use super::generator_store::GeneratorInfoPerMarket;
+use ethers::abi::Address;
 use ethers::core::rand;
 use ethers::types::U256;
+
 use rand::distributions::{Distribution, WeightedIndex};
 use rand::Rng;
 
@@ -14,6 +18,76 @@ pub fn random_generator_selection(
         let element = &vec[rng.gen_range(0..vec.len())];
         Some(element.clone())
     }
+}
+
+pub fn weighted_time_cost_random_selection(
+    vec: Vec<GeneratorInfoPerMarket>,
+    missed_jobs: HashMap<Address, usize>,
+) -> Option<GeneratorInfoPerMarket> {
+    if vec.is_empty() {
+        return None;
+    }
+
+    // Find the maximum values (if they are zero, replace with one to avoid division by zero)
+    let max_proof_generation_cost = vec
+        .iter()
+        .map(|gen| gen.proof_generation_cost)
+        .max()
+        .unwrap_or(U256::one());
+    let max_proposed_time = vec
+        .iter()
+        .map(|gen| gen.proposed_time)
+        .max()
+        .unwrap_or(U256::one());
+    let max_proof_generation_cost = if max_proof_generation_cost.is_zero() {
+        U256::one()
+    } else {
+        max_proof_generation_cost
+    };
+    let max_proposed_time = if max_proposed_time.is_zero() {
+        U256::one()
+    } else {
+        max_proposed_time
+    };
+
+    // Compute a positive weight for each candidate.
+    // Convert U256 values to f64 (assuming they fit into u64) and normalize.
+    let weights: Vec<f64> = vec
+        .iter()
+        .map(|gen| {
+            let cost = gen.proof_generation_cost.as_u64() as f64;
+            let time = gen.proposed_time.as_u64() as f64;
+            let max_cost = max_proof_generation_cost.as_u64() as f64;
+            let max_time = max_proposed_time.as_u64() as f64;
+
+            // Normalize (0 is best, 1 is worst)
+            let norm_cost = cost / max_cost;
+            let norm_time = time / max_time;
+
+            // Higher weight is better (prefer lower cost and time).
+            // We add 1.0 so that even the worst candidate gets a strictly positive weight.
+            let mut weight = 1.0 + (1.0 - norm_cost) + (1.0 - norm_time);
+
+            // Exponentially decrease weight with the number of missed jobs.
+            // For each missed job, multiply weight by 0.5.
+            if let Some(&missed) = missed_jobs.get(&gen.address) {
+                weight *= 2_f64.powi(-(missed as i32));
+            }
+
+            // Ensure weight is strictly positive.
+            if weight <= 0.0 {
+                weight = 0.000001;
+            }
+            weight
+        })
+        .collect();
+
+    // Create a weighted distribution and sample an index.
+    let dist = WeightedIndex::new(&weights).ok()?;
+    let mut rng = rand::thread_rng();
+    let index = dist.sample(&mut rng);
+
+    Some(vec[index].clone())
 }
 
 pub fn weighted_random_selection(
@@ -211,5 +285,76 @@ mod tests {
         }
 
         assert!(generator1_count > generator2_count);
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_empty() {
+        let generators = vec![];
+        let missed_jobs = HashMap::new();
+        let result = weighted_time_cost_random_selection(generators, missed_jobs);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_single() {
+        let generator = create_generator_info(1, 1, 1, 1, 1);
+        let generators = vec![generator.clone()];
+        let missed_jobs = HashMap::new();
+        let result = weighted_time_cost_random_selection(generators, missed_jobs);
+        assert_eq!(result, Some(generator));
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_multiple() {
+        let generator1 = create_generator_info(1, 1, 1, 1, 1);
+        let generator2 = create_generator_info(2, 2, 2, 2, 2);
+        let generators = vec![generator1.clone(), generator2.clone()];
+        let missed_jobs = HashMap::new();
+        let result = weighted_time_cost_random_selection(generators, missed_jobs);
+        assert!(result == Some(generator1) || result == Some(generator2));
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_large() {
+        let mut generators = vec![];
+        for i in 0..100 {
+            generators.push(create_generator_info(i, i, i, i, i));
+        }
+        let missed_jobs = HashMap::new();
+        let result = weighted_time_cost_random_selection(generators.clone(), missed_jobs);
+        assert!(result.is_some());
+        assert!(generators.contains(&result.unwrap()));
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_with_missed_jobs() {
+        let generator1 = create_generator_info(1, 1, 1, 1, 1);
+        let generator2 = create_generator_info(1, 1, 1, 1, 1);
+        let generators = vec![generator1.clone(), generator2.clone()];
+        let mut missed_jobs = HashMap::new();
+        missed_jobs.insert(generator1.address, 5);
+        missed_jobs.insert(generator2.address, 0);
+
+        let mut generator1_count = 0;
+        let mut generator2_count = 0;
+
+        for _ in 0..100000 {
+            let result =
+                weighted_time_cost_random_selection(generators.clone(), missed_jobs.clone());
+            if result == Some(generator1.clone()) {
+                generator1_count += 1;
+            } else if result == Some(generator2.clone()) {
+                generator2_count += 1;
+            }
+        }
+
+        let expected_ratio = 2_f64.powi(5);
+        let actual_ratio = generator2_count as f64 / generator1_count as f64;
+        assert!(
+            (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
+            "Expected ratio: {}, Actual ratio: {}",
+            expected_ratio,
+            actual_ratio
+        );
     }
 }

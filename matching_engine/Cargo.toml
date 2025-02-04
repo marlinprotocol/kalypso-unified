@@ -41,6 +41,9 @@ mainnet = []
 beta = []
 stagenet = ["complete"]
 
+# matching specific
+use_time_and_price_weighted_matching = []
+
 # outside enclave
 external_indexer = ["complete", "disable_match_creation"]
 

@@ -305,6 +305,7 @@ impl LocalAskStore {
         }
     }
 
+    #[allow(unused)]
     pub fn remove_ask_only_if_completed(&mut self, ask_id: &U256, reason: RemoveReason) {
         if let Some(ask) = self.asks_by_id.remove(ask_id) {
             // Check if the ask's state is Some and Complete, else return early
@@ -324,8 +325,12 @@ impl LocalAskStore {
                 }
             }
 
-            // Insert the completed ask into the HashSet
-            self.completed_proofs.insert(ask, reason);
+            // Insert the completed ask into the HashSet only in external indexer mode. otherwise enclave size will shoot up in runtime
+            #[cfg(feature = "external_indexer")]
+            {
+                // Store the completed proof
+                self.completed_proofs.insert(ask, reason);
+            }
         }
     }
 

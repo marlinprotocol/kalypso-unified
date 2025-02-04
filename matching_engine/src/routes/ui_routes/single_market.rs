@@ -314,7 +314,7 @@ async fn recompute_single_market_response<'a>(
             .get_earnings(&market_id)
             .unwrap_or_default()
             .to_string(),
-            // TODO: enable this after slashing is enabled
+        // TODO: enable this after slashing is enabled
         // total_slashed: registered_generators
         //     .into_par_iter()
         //     .map(|elem| {

@@ -623,7 +623,7 @@ async fn recompute_single_generator_response<'a>(
                 }),
             })
             .collect::<Vec<Job>>(),
-            // TODO: enable this after slashing is enabled
+        // TODO: enable this after slashing is enabled
         // slashing_history: local_generator_store
         //     .get_slashing_records(&generator_id)
         //     .into_par_iter()
