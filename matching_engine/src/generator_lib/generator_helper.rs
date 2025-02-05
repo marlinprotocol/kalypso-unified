@@ -66,7 +66,8 @@ pub fn weighted_time_cost_random_selection(
 
             // Higher weight is better (prefer lower cost and time).
             // We add 1.0 so that even the worst candidate gets a strictly positive weight.
-            let mut weight = 1.0 + (1.0 - norm_cost) + (1.0 - norm_time);
+            let mut weight =
+                (1.0 * (1.0 / norm_cost) * (1.0 / norm_time)).clamp(f64::MIN, f64::MAX);
 
             // Exponentially decrease weight with the number of missed jobs.
             // For each missed job, multiply weight by 0.5.
@@ -76,7 +77,7 @@ pub fn weighted_time_cost_random_selection(
 
             // Ensure weight is strictly positive.
             if weight <= 0.0 {
-                weight = 0.000001;
+                weight = f64::MIN;
             }
             weight
         })
@@ -350,6 +351,105 @@ mod tests {
 
         let expected_ratio = 2_f64.powi(5);
         let actual_ratio = generator2_count as f64 / generator1_count as f64;
+        assert!(
+            (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
+            "Expected ratio: {}, Actual ratio: {}",
+            expected_ratio,
+            actual_ratio
+        );
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_proposed_time_variation() {
+        let generator1 = create_generator_info(1, 1, 1, 1, 1);
+        let generator2 = create_generator_info(1, 12, 1, 1, 1);
+        let generators = vec![generator1.clone(), generator2.clone()];
+        let mut missed_jobs = HashMap::new();
+        missed_jobs.insert(generator1.address, 0);
+        missed_jobs.insert(generator2.address, 0);
+
+        let mut generator1_count = 0;
+        let mut generator2_count = 0;
+
+        for _ in 0..100000 {
+            let result =
+                weighted_time_cost_random_selection(generators.clone(), missed_jobs.clone());
+            if result == Some(generator1.clone()) {
+                generator1_count += 1;
+            } else if result == Some(generator2.clone()) {
+                generator2_count += 1;
+            }
+        }
+
+        let expected_ratio = 12.0;
+        let actual_ratio = generator1_count as f64 / generator2_count as f64;
+
+        assert!(
+            (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
+            "Expected ratio: {}, Actual ratio: {}",
+            expected_ratio,
+            actual_ratio
+        );
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_cost_variation() {
+        let generator1 = create_generator_info(1, 1, 1, 1, 1);
+        let generator2 = create_generator_info(98, 1, 1, 1, 1);
+        let generators = vec![generator1.clone(), generator2.clone()];
+        let mut missed_jobs = HashMap::new();
+        missed_jobs.insert(generator1.address, 0);
+        missed_jobs.insert(generator2.address, 0);
+
+        let mut generator1_count = 0;
+        let mut generator2_count = 0;
+
+        for _ in 0..100000 {
+            let result =
+                weighted_time_cost_random_selection(generators.clone(), missed_jobs.clone());
+            if result == Some(generator1.clone()) {
+                generator1_count += 1;
+            } else if result == Some(generator2.clone()) {
+                generator2_count += 1;
+            }
+        }
+
+        let expected_ratio = 98.0;
+        let actual_ratio = generator1_count as f64 / generator2_count as f64;
+
+        assert!(
+            (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
+            "Expected ratio: {}, Actual ratio: {}",
+            expected_ratio,
+            actual_ratio
+        );
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_time_and_cost_variation() {
+        let generator1 = create_generator_info(2, 1, 1, 1, 1);
+        let generator2 = create_generator_info(1, 2, 1, 1, 1);
+        let generators = vec![generator1.clone(), generator2.clone()];
+        let mut missed_jobs = HashMap::new();
+        missed_jobs.insert(generator1.address, 0);
+        missed_jobs.insert(generator2.address, 0);
+
+        let mut generator1_count = 0;
+        let mut generator2_count = 0;
+
+        for _ in 0..100000 {
+            let result =
+                weighted_time_cost_random_selection(generators.clone(), missed_jobs.clone());
+            if result == Some(generator1.clone()) {
+                generator1_count += 1;
+            } else if result == Some(generator2.clone()) {
+                generator2_count += 1;
+            }
+        }
+
+        let expected_ratio = 1.0;
+        let actual_ratio = generator1_count as f64 / generator2_count as f64;
+
         assert!(
             (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
             "Expected ratio: {}, Actual ratio: {}",
