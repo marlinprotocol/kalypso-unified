@@ -22,6 +22,7 @@ struct AllGeneratorResponse {
     result: Vec<OperatorInfo>,
     registered_generators: usize,
     total_staked: Vec<TokenAmount>,
+    total_delegation: Vec<TokenAmount>,
 }
 
 type CachedGeneratorResponse = CachedResponse<AllGeneratorResponse>;
@@ -153,10 +154,11 @@ async fn recompute_generator_response<'a>(
     // Step 2: Process the data outside the locked scope using explicit loops
     let mut result = Vec::with_capacity(generator_details.len());
     let mut total_stake = TokenTracker::new();
+    let mut total_delegation = TokenTracker::new();
 
     for (_, operator_data, all_markets_of_generator, total_earning) in generator_details {
-        total_stake +=
-            operator_data.clone().total_native_stake + operator_data.clone().total_symbiotic_stake;
+        total_stake += operator_data.clone().total_native_stake;
+        total_delegation += operator_data.clone().total_symbiotic_stake;
 
         // Construct the markets
         let mut markets = Vec::with_capacity(all_markets_of_generator.len());
@@ -245,5 +247,6 @@ async fn recompute_generator_response<'a>(
         result,
         registered_generators,
         total_staked: total_stake.to_token_amount(),
+        total_delegation: total_delegation.to_token_amount(),
     }
 }
