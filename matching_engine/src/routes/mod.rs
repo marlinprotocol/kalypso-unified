@@ -130,7 +130,13 @@ use crate::routes::ui_routes::single_market::*;
     info(
         title = "Kalypso Indexer APIs",
         description = "APIs to interact with kalypo indexer",
-        version = "beta",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else if cfg!(feature = "stagenet") {
+            "stagenet"
+        } else {
+            "beta"
+        },
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
     ),
     tags(
