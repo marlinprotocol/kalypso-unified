@@ -16,6 +16,7 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use im::HashMap;
 use once_cell::sync::Lazy;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
@@ -40,6 +41,7 @@ struct RegisteredGenerator {
     delegations: Vec<TokenAmount>,
     time: String,
     cost: TokenAmount,
+    stake_break_down: StakeBreakDown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -84,6 +86,7 @@ struct MarketQuery {
 }
 
 use super::cache::CachedResponse;
+use super::single_generator::StakeBreakDown;
 
 type CachedSingleMarketResponse = CachedResponse<SingleMarketResponse>;
 
@@ -314,19 +317,17 @@ async fn recompute_single_market_response<'a>(
             .get_earnings(&market_id)
             .unwrap_or_default()
             .to_string(),
-        // TODO: enable this after slashing is enabled
-        // total_slashed: registered_generators
-        //     .into_par_iter()
-        //     .map(|elem| {
-        //         let store = Arc::clone(&local_generator_store_arc);
-        //         match store.get_slashing_per_generator_per_market(&elem.address, &market_id) {
-        //             Some(slashed) => slashed,
-        //             None => TokenTracker::new(),
-        //         }
-        //     })
-        //     .reduce(|| TokenTracker::new(), |acc, elem| acc + elem)
-        //     .to_token_amount(),
-        total_slashed: vec![],
+        total_slashed: registered_generators
+            .into_par_iter()
+            .map(|elem| {
+                let store = Arc::clone(&_local_generator_store_arc);
+                match store.get_slashing_per_generator_per_market(&elem.address, &market_id) {
+                    Some(slashed) => slashed,
+                    None => TokenTracker::new(),
+                }
+            })
+            .reduce(|| TokenTracker::new(), |acc, elem| acc + elem)
+            .to_token_amount(),
         hardware_requirement: marketmetadata.deserialize_market_bytes().min_hardware,
         min_stake: total_min_stake.to_token_amount(),
         jobs: Jobs {
@@ -371,13 +372,35 @@ async fn recompute_single_market_response<'a>(
                     .map(|generator_info| RegisteredGenerator {
                         details: generator_info.deserialize_generator_bytes(),
                         address: address_to_string(&element.address),
-                        delegations: (generator_info.total_native_stake
-                            + generator_info.total_symbiotic_stake)
+                        delegations: (generator_info.clone().total_native_stake
+                            + generator_info.clone().total_symbiotic_stake)
                             .to_token_amount(),
                         time: element.proposed_time.to_string(),
                         cost: TokenAmount {
                             token: address_to_string(&USDC_TOKEN),
                             amount: element.proof_generation_cost.to_string(),
+                        },
+                        stake_break_down: StakeBreakDown {
+                            total_native_stake: generator_info
+                                .clone()
+                                .total_native_stake
+                                .to_token_amount(),
+                            total_native_stake_locked: generator_info
+                                .native_stake_locked
+                                .to_token_amount(),
+                            total_symbiotic_stake: generator_info
+                                .clone()
+                                .total_symbiotic_stake
+                                .to_token_amount(),
+                            total_symbiotic_stake_locked: generator_info
+                                .symbiotic_stake_locked
+                                .to_token_amount(),
+                            available_native_stake: (generator_info.total_native_stake
+                                - generator_info.native_stake_locked)
+                                .to_token_amount(),
+                            available_symbiotic_stake: (generator_info.total_symbiotic_stake
+                                - generator_info.symbiotic_stake_locked)
+                                .to_token_amount(),
                         },
                     })
             })

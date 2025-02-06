@@ -5,7 +5,7 @@ use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::market_metadata::{MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
-use crate::utility::TokenAmount;
+use crate::utility::{TokenAmount, TokenTracker};
 use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
@@ -233,8 +233,7 @@ async fn recompute_market_response<'a>(
             median_cost_per_proof,
             failed_requests,
             total_earnings,
-            // slashing_penalty: slashing_penalty.to_token_amount(), // actual amount supressing till slashing in enabled
-            slashing_penalty: vec![],
+            slashing_penalty: TokenTracker::default().to_token_amount(),
             status: true, // Adjust as needed
             market_setup_data: meta.deserialize_market_bytes(),
             registered_generators: local_generator_store.get_all_by_market_id(&market_id).len(),

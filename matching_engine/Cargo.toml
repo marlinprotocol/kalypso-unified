@@ -39,7 +39,8 @@ default = ["mainnet"]
 # Network specific features will be added latter
 mainnet = []
 beta = []
-stagenet = ["complete"]
+# "generate_dummy_slash_logs", only in stagenet for now
+stagenet = ["complete", "generate_dummy_slash_logs"]
 
 # matching specific
 use_time_and_price_weighted_matching = []
@@ -53,7 +54,6 @@ complete = [
     "skip_unknown_events",
     "override_symbiotic_slashing_to_zero",
     "override_native_slashing_to_zero",
-    "generate_dummy_slash_logs",
     "l1_info",
 ]
 

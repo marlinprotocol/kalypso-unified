@@ -1,4 +1,5 @@
 use super::cache::CachedResponse;
+use super::single_generator::StakeBreakDown;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::models::WelcomeResponse;
@@ -110,6 +111,9 @@ struct Generator {
     name: Option<String>,
     /// Address of the generator
     address: String,
+
+    /// stake break down
+    stake_break_down: Option<StakeBreakDown>,
 }
 
 type CachedDashboardResponse = CachedResponse<DashboardResponse>;
@@ -303,6 +307,34 @@ async fn recompute_dashboard_response<'a>(
                         .and_then(|g| g.deserialize_generator_bytes().display_name)
                 }),
                 address: generator_address,
+                stake_break_down: {
+                    ask_request.generator.and_then(|addr| {
+                        local_generator_store
+                            .get_by_address(&addr)
+                            .map(|generator_data| StakeBreakDown {
+                                total_native_stake: generator_data
+                                    .clone()
+                                    .total_native_stake
+                                    .to_token_amount(),
+                                total_native_stake_locked: generator_data
+                                    .native_stake_locked
+                                    .to_token_amount(),
+                                total_symbiotic_stake: generator_data
+                                    .clone()
+                                    .total_symbiotic_stake
+                                    .to_token_amount(),
+                                total_symbiotic_stake_locked: generator_data
+                                    .symbiotic_stake_locked
+                                    .to_token_amount(),
+                                available_native_stake: (generator_data.total_native_stake
+                                    - generator_data.native_stake_locked)
+                                    .to_token_amount(),
+                                available_symbiotic_stake: (generator_data.total_symbiotic_stake
+                                    - generator_data.symbiotic_stake_locked)
+                                    .to_token_amount(),
+                            })
+                    })
+                },
             },
             time: time.to_string(),
             cost,
