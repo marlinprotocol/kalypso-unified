@@ -37,7 +37,7 @@ utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 default = ["mainnet"]
 
 # Network specific features will be added latter
-mainnet = []
+mainnet = ["use_time_and_price_weighted_matching"]
 beta = ["complete", "use_time_and_price_weighted_matching"]
 stagenet = ["complete", "generate_dummy_slash_logs"] # "generate_dummy_slash_logs", only in stagenet for now
 external_indexer = ["complete", "disable_match_creation"] # outside enclave
