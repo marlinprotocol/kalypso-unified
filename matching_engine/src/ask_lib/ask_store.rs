@@ -4,6 +4,7 @@ use im::HashMap;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, fmt::Formatter, fmt::Result};
+use utoipa::ToSchema;
 
 use crate::counters::counters::GenericCounters;
 

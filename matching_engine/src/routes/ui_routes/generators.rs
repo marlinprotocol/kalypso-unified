@@ -19,9 +19,13 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct AllGeneratorResponse {
+    /// list of all operators
     result: Vec<OperatorInfo>,
+    /// total number of registered operators
     registered_generators: usize,
+    /// deprecated: total staked amount (this is amount in native staking module)
     total_staked: Vec<TokenAmount>,
+    /// total delegation amount (this is amount in symbiotic staking module)
     total_delegation: Vec<TokenAmount>,
 }
 
@@ -34,23 +38,37 @@ static GENERATOR_RESPONSE: Lazy<RwLock<CachedGeneratorResponse>> =
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct OperatorInfo {
+    /// details of the Generator
     details: GeneratorMeta,
+    /// address of the Generator
     address: String,
+    /// deprecated: delegations of the Generator
     delegations: Vec<TokenAmount>,
+    /// markets in which the generator is participating
     markets: Vec<Market>,
+    /// earnings to date
     earnings_to_date: String,
+    /// proofs generated till date. Resets if the generator has exists and joined back the market
     proofs_generated: String,
+    /// proofs missed till date. Resets if the generator has exists and joined back the market
     proofs_missed: String,
+    /// pending proofs
     pending_proofs: String,
+    /// deprecated: current stake of the Generator
     current_stake: Vec<TokenAmount>,
+    /// stake breakdown of the Generator
     stake_break_down: StakeBreakDown,
+    /// compute breakdown of the Generator
     compute_break_down: ComputeBreakDown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
+    /// ID of the market
     id: String,
+    /// name of the market (optional field)
     name: Option<String>,
+    /// deprecated: (all markets have common token requirements defined by task_assignment_requirements)
     token: Vec<String>,
 }
 

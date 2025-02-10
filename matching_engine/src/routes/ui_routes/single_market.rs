@@ -27,56 +27,112 @@ const DEFAULT_COUNT: &usize = &100;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Jobs {
+    /// Number of proofs generated
     proofs_generated: usize,
+    /// Number of proofs pending
     inputs_challenged: usize,
+    /// Number of proofs in progress
     proofs_pending: usize,
+    /// Number of requests made
     proofs_in_progress: usize,
+    /// Number of requests made
     requests_made: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct RegisteredGenerator {
+    /// Generator details
     details: GeneratorMeta,
+    /// Generator address
     address: String,
+    /// deprecated (use .stake_break_down instead)
     delegations: Vec<TokenAmount>,
+    /// deprecated: Time of registration
     time: String,
+    /// price quoted by generator to generate the proof
     cost: TokenAmount,
+    /// Stake Break Down
     stake_break_down: StakeBreakDown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct SingleMarketResponse {
+    /// Number of registered generators
     registered_generators: usize,
+    /// deprecated: Slashing penalty (no slashing yet)
     slashing_penalty: Vec<TokenAmount>,
+    /// Median cost of proof generation
     median_cost: String,
+    /// Median time of proof generation
     median_proof_time: String,
+    /// Total earnings of the market
     total_earnings: String,
+    /// deprecated: Total slashed amount (no slashing yet)
     total_slashed: Vec<TokenAmount>,
+    /// deprecated: Hardware requirement (use .market_setup_data.min_hardware instead)
     hardware_requirement: MinHardware,
+    /// Minimum stake required
     min_stake: Vec<TokenAmount>,
+    /// Jobs
     jobs: Jobs,
+    /// Market setup data
     market_setup_data: MarketSetupData,
+    /// List of registered generators
     registered_generator_list: Vec<RegisteredGenerator>,
+    /// List of unmatched jobs
     unmatched_jobs: Vec<Job>,
+    /// List of completed jobs
     completed_jobs: Vec<Job>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Job {
+    /// Requestor address
     requestor: String,
+
+    /// deprecated: Time of request (use .proof_created_on_timestamp instead - .matched_on_timestamp)
     time: String,
+
+    /// deprecated: Price quoted by generator (use .quote instead)
     cost: TokenAmount,
+
+    /// Price quoted by requestor
     quote: TokenAmount,
+
+    /// deprecated: (use .settlement instead)
     solved_in: Option<TokenAmount>,
+
+    /// Price Settled by Generator
+    settlement: Option<TokenAmount>,
+
+    /// Ask ID
     ask_id: String,
+
+    /// Inputs
     inputs: String,
+
+    /// Transaction Via which job was created
     inputs_transaction: String,
+
+    /// Generator Address (if the job is matched)
     generator: Option<String>,
+
+    /// Generator Details (if the job is matched)
     generator_details: Option<GeneratorMeta>,
+
+    /// Status of the job
     status: AskState,
+
+    /// timestamp of which the job was created
     created_on_timestamp: Option<String>,
+
+    /// timestamp of which the job was matched
     matched_on_timestamp: Option<String>,
+
+    /// timestamp of which the proof was created
     proof_created_on_timestamp: Option<String>,
+
+    /// Transaction Via which proof was created
     proof_transaction: Option<String>,
 }
 
@@ -427,6 +483,7 @@ async fn recompute_single_market_response<'a>(
                             amount: a.reward.to_string(),
                         },
                         solved_in: None,
+                        settlement: None,
                         time: a.time_requested_for_proof_generation.to_string(),
                         inputs: a.prover_data.to_string(),
                         generator: None,
@@ -463,6 +520,13 @@ async fn recompute_single_market_response<'a>(
                     amount: a.reward.to_string(),
                 },
                 solved_in: Some(TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: local_ask_store
+                        .get_proving_cost(&a.ask_id)
+                        .unwrap_or_default()
+                        .to_string(),
+                }),
+                settlement: Some(TokenAmount {
                     token: address_to_string(&USDC_TOKEN),
                     amount: local_ask_store
                         .get_proving_cost(&a.ask_id)

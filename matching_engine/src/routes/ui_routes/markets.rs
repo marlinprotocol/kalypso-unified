@@ -19,25 +19,41 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct MarketResponse {
+    /// List of markets
     result: Vec<Market>,
+    /// Total number of generators registered across all markets
     registered_generators: usize,
+    /// deprecated: Total stake across all generators (need native+sybmbiotic combined)
     total_stake: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct Market {
+    /// id of the market
     market_id: String,
+    /// name of the market (optional)
     name: Option<String>,
+    /// hardware requirement for generators to participate in the market
     hardware_requirement: MinHardware,
+    /// total proofs generated in the market
     total_proofs_generated: String,
+    /// requests in progress in the market
     requests_in_progress: String,
+    /// median time per proof in the market
     median_time_per_proof: String,
+    /// median cost per proof in the market
     median_cost_per_proof: String,
+    /// failed requests in the market
     failed_requests: String,
+    /// total earnings in the market
     total_earnings: String,
+    /// deprecated: slashing penalty in the market (no penaltly for now)
     slashing_penalty: Vec<TokenAmount>,
+    /// deprecated: status of the market
     status: bool,
+    /// setup data of the market
     market_setup_data: MarketSetupData,
+    /// number of generators registered in the market
     registered_generators: usize,
 }
 

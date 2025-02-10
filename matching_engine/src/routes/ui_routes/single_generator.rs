@@ -84,149 +84,306 @@ impl CachedGeneratorResponse {
 #[derive(Deserialize, Clone, Copy, Serialize, Debug, Hash, Eq, PartialEq, IntoParams)]
 #[into_params(style = Form, parameter_in = Query)]
 pub struct QueryParams {
+    /// Number of active jobs to skip
     active_jobs_skip: Option<usize>,
 
+    /// Number of active jobs to return
     active_jobs: Option<usize>,
 
+    /// Number of completed jobs to skip
     completed_jobs_skip: Option<usize>,
 
+    /// Number of completed jobs to return
     completed_jobs: Option<usize>,
 
+    /// Number of slashing history to skip
     slashing_history_skip: Option<usize>,
 
+    /// Number of slashing history to return
     slashing_history: Option<usize>,
 
+    /// Number of delegation to skip
     delegation_skip: Option<usize>,
 
+    /// Number of delegation to return
     delegation_count: Option<usize>,
 
+    /// Number of withdrawal to skip
     withdrawal_skip: Option<usize>,
 
+    /// Number of withdrawal to return
     withdrawal_count: Option<usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct GeneratorResponse {
+    /// deprecated: Operator Details (use .details instead)
     operator: Operator,
+
+    /// Generator Details
     details: GeneratorMeta,
+
+    /// Reward Address of the generator
     reward_address: String,
+
+    /// deprecated: Kalypso Points (instead fetch from points subgraph directly)
     kalypso_points: String,
+
+    /// Active jobs of the generator
     active_jobs: String,
+
+    /// Number of markets Generator has participated in
     no_of_markets: String,
+
+    /// Total earnings of the generator
     total_earnings: String,
+
+    /// deprecated: Total Slashed (no slashing exists as of now)
     total_slashed: Vec<TokenAmount>,
+
+    /// deprecated: Total Delegations (use .stake_break_down)
     total_delegations: Vec<TokenAmount>,
+
+    /// Details of the market generator is participating in
     markets: Vec<Market>,
+
+    /// Active Jobs List
     active_jobs_list: Vec<Job>,
+
+    /// Completed Jobs List
     completed_jobs_list: Vec<Job>,
+
+    /// deprecated: Slashing History (no slashing exists as of now)
     slashing_history: Vec<Slash>,
+
+    /// deprecated: Available Stake (use .stake_break_down)
     available_stake: Vec<TokenAmount>,
+
+    /// deprecated: Stake Locked (use .stake_break_down)
     stake_locked: Vec<TokenAmount>,
+
+    /// Transaction via which the generator has received delegations (including stake and delegatation)
     delegations: Vec<DelegateOperation>,
+
+    /// deprecated: My Delegations (use .stake_break_down)
     my_delegations: Vec<TokenAmount>,
+
+    /// deprecated: Withdrawal Requests (use .withdrawal_requests)
     withdrawal_requests: Vec<WithdrawRequest>,
+
+    /// Stake Break Down
     stake_break_down: StakeBreakDown,
+
+    /// Compute Break Down
     compute_break_down: ComputeBreakDown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct StakeBreakDown {
+    /// Total Native Stake
     pub total_native_stake: Vec<TokenAmount>,
+
+    /// Total Native Stake Locked
     pub total_native_stake_locked: Vec<TokenAmount>,
+
+    /// Total Symbiotic Stake
     pub total_symbiotic_stake: Vec<TokenAmount>,
+
+    /// Total Symbiotic Stake Locked
     pub total_symbiotic_stake_locked: Vec<TokenAmount>,
+
+    /// Available Native Stake (i.e total_native_stake - total_native_stake_locked)
     pub available_native_stake: Vec<TokenAmount>,
+
+    /// Available Symbiotic Stake (i.e total_symbiotic_stake - total_symbiotic_stake_locked)
     pub available_symbiotic_stake: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct ComputeBreakDown {
+    /// Total Compute declared by the generator
     pub total_compute: String,
+
+    /// Compute Locked for the generator
     pub compute_locked: String,
+
+    /// Compute Available for the generator (i.e total_compute - compute_locked)
     pub compute_available: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct WithdrawRequest {
+    /// Account Address
     account: String,
+
+    /// Token Address for withdrawal
     token: String,
+
+    /// Amount to withdraw
     amount: String,
+
+    /// Withdrawal Timestamp
     index: String,
+
+    /// Timestamp at which withdrawal will be processed
     withdrawal_timestamp: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct DelegateOperation {
+    /// Delegation Amount
     delegation: TokenAmount,
+
+    /// Source of the delegation (Native or Symbiotic)
     source: String,
+
+    /// Operation (Delegate or UnDelegate)
     operation: String,
+
+    /// Block Number
     block_number: String,
+
+    /// Transaction Index
     transaction_index: String,
+
+    /// Log Index
     log_index: String,
+
+    /// Transaction Hash
     tx: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Slash {
+    /// Bid ID
     ask_id: Option<String>,
+
+    /// deprecated: Slashing Epoch Timestamp
     timestamp: String,
+
+    /// Market Info
     market: MarketInfo,
-    request: String, // Transaction Hash
+
+    /// Slashing Request Transaction Hash
+    request: String,
+
+    /// Price Offered
     price_offered: String,
+
+    /// Slashing Penalty (no penalty exists as of now)
     slashing_penalty: TokenAmount,
+
+    /// deprecated: Slashing Epoch Timestamp
     slasing_epoch_timestamp: Option<String>,
+
+    /// Source of the slashing (Native or Symbiotic) (no slashing exists as of now)
     source: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Job {
+    /// Bid ID
     ask_id: String,
+
+    /// Market Info
     market: MarketInfo,
+
+    /// Requestor Address
     requestor: String,
+
+    /// Inputs
     inputs: String,
+
+    /// Transaction Hash
     inputs_transaction: String,
+
+    ///  Deadline by which the job should be completed by the generator
     deadline: String,
+
+    /// deprecated: Don't use it (use .quote instead)
     cost: String,
+
+    /// Time taken for proof generation (will be null if proof is not generated yet)
     time_taken_for_proof_generation: Option<String>,
+
+    /// Proof (will be null if proof is not generated yet)
     proof: Option<String>,
+
+    /// Proof Transaction (will be null if proof is not generated yet)
     proof_transaction: Option<String>,
+
+    /// Quote (by requestor)
     quote: TokenAmount,
+
+    /// deprecated: Solved In (use .settlement instead)
     solved_in: Option<TokenAmount>,
+
+    /// deprecated: Settlement Price (use .settlement instead)
+    settlement: Option<TokenAmount>,
+
+    /// timestamp of which the job was created
+    created_on_timestamp: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct MarketInfo {
+    /// Market Name
     name: Option<String>,
+
+    /// Market ID
     id: String,
+    /// deprecated: (use task_assignement_requirement which is global)
     token: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Market {
+    /// Market Name
     name: Option<String>,
+
+    /// Market ID
     id: String,
+
+    /// Earnings to date
     earnings_to_date: String,
+
+    /// Proofs Missed
     proofs_missed: String,
+
+    /// Proofs Generated
     proofs_generated: String,
+
+    /// Pending Proofs
     pending_proofs: String,
+
+    /// deprecated: Slashing Penalties Incured (no slashing exists as of now)
     slashing_penalties_incured: String,
+
+    /// Min Hardware Requirement (if null means not provided by market maker)
     min_hardware_requirement: Option<MinHardware>,
 
+    /// Enclave key. A null value indicates that the operator hasn't set an enclave key for this market or that the market does not require one.
     enclave_key: Option<KeyInfo>,
 
+    /// deprecated: Kalypso Points (instead fetch from points subgraph directly)
     kalypso_points: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct MinHardware {
+    /// Instance Type (if null means not provided by market maker)
     instance_type: Option<String>,
+    /// Number of vCPUs (if null means not provided by market maker)
     vcpus: Option<usize>,
+    /// Number of vGPUs (if null means not provided by market maker)
     vgpus: Option<usize>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct Operator {
+    /// Operator Name
     name: Option<String>,
+    /// Operator Address
     address: String,
 }
 
@@ -238,6 +395,7 @@ struct GeneratorQuery {
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 struct WithdrawalResponse {
+    /// Withdrawal Requests
     withdrawal_requests: Vec<WithdrawRequest>,
 }
 
@@ -567,6 +725,10 @@ async fn recompute_single_generator_response<'a>(
                             amount: a.reward.to_string(),
                         },
                         solved_in: None,
+                        settlement: None,
+                        created_on_timestamp: convert_to_option_string(
+                            local_ask_store.get_job_created_on_timestamp(&a.ask_id),
+                        ),
                     })
                     .collect()
             })
@@ -620,6 +782,16 @@ async fn recompute_single_generator_response<'a>(
                         .unwrap_or_default()
                         .to_string(),
                 }),
+                settlement: Some(TokenAmount {
+                    token: address_to_string(&USDC_TOKEN),
+                    amount: local_ask_store
+                        .get_proving_cost(&ask.ask_id)
+                        .unwrap_or_default()
+                        .to_string(),
+                }),
+                created_on_timestamp: convert_to_option_string(
+                    local_ask_store.get_job_created_on_timestamp(&ask.ask_id),
+                ),
             })
             .collect::<Vec<Job>>(),
         slashing_history: local_generator_store
