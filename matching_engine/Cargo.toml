@@ -39,15 +39,12 @@ default = ["beta"]
 # Network specific features will be added latter
 mainnet = []
 beta = ["complete", "use_time_and_price_weighted_matching"]
+stagenet = ["complete", "generate_dummy_slash_logs"] # "generate_dummy_slash_logs", only in stagenet for now
+external_indexer = ["complete", "disable_match_creation"] # outside enclave
 
-# "generate_dummy_slash_logs", only in stagenet for now
-stagenet = ["complete", "generate_dummy_slash_logs"]
 
 # matching specific
 use_time_and_price_weighted_matching = []
-
-# outside enclave
-external_indexer = ["complete", "disable_match_creation"]
 
 # Mode Features
 complete = [
@@ -55,14 +52,10 @@ complete = [
     "skip_unknown_events",
     "override_symbiotic_slashing_to_zero",
     "override_native_slashing_to_zero",
-    "l1_info",
+    "add_timestamp_to_asks",
 ]
 
 # Sub-Features
-l1_info = [
-    "use_l1_block_numbers",
-    "add_timestamp_to_asks",
-]
 matching_engine_enable_cors = ["kalypso_helper/enable_cors"]
 
 # Independent Features
@@ -72,5 +65,5 @@ override_native_slashing_to_zero = [] # Overrides the slashing amount to 0, in i
 override_symbiotic_slashing_to_zero = [] # Overrides the slashing amount to 0, in internal records
 force_transactions = [] # Forces transaction made on chain by avoid revert checks and manually overriding gas limit
 skip_unknown_events = [] # Skips if any known event occurs, userful when contract updates happen
-use_l1_block_numbers = [] # Uses L1 block number in internal indexer. Doesn't not effect matching
+use_l1_block_numbers = [] # Uses L1 block number in internal indexer. Doesn't not effect matching, (if not used l2 block number is used)
 generate_dummy_slash_logs = [] # Populates internal record with slashing records as if instant slashing was enabled done by stake manager. Doesn't effect matching
