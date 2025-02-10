@@ -38,7 +38,8 @@ default = ["beta"]
 
 # Network specific features will be added latter
 mainnet = []
-beta = []
+beta = ["complete", "use_time_and_price_weighted_matching"]
+
 # "generate_dummy_slash_logs", only in stagenet for now
 stagenet = ["complete", "generate_dummy_slash_logs"]
 

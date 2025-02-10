@@ -80,13 +80,13 @@ struct SingleMarketResponse {
     /// List of registered generators
     registered_generator_list: Vec<RegisteredGenerator>,
     /// List of unmatched jobs
-    unmatched_jobs: Vec<Job>,
+    unmatched_jobs: Vec<JobInfo>,
     /// List of completed jobs
-    completed_jobs: Vec<Job>,
+    completed_jobs: Vec<JobInfo>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-struct Job {
+struct JobInfo {
     /// Requestor address
     requestor: String,
 
@@ -471,7 +471,7 @@ async fn recompute_single_market_response<'a>(
 
                 local_asks
                     .into_iter()
-                    .map(|a| Job {
+                    .map(|a| JobInfo{
                         ask_id: a.ask_id.to_string(),
                         requestor: address_to_string(&a.prover_refund_address),
                         cost: TokenAmount {
@@ -508,7 +508,7 @@ async fn recompute_single_market_response<'a>(
         completed_jobs: local_ask_store
             .get_completed_proofs_of_market(&market_id, 0, DEFAULT_COUNT.clone())
             .into_iter()
-            .map(|a| Job {
+            .map(|a| JobInfo {
                 ask_id: a.ask_id.to_string(),
                 requestor: address_to_string(&a.prover_refund_address),
                 cost: TokenAmount {
