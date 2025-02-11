@@ -6,7 +6,7 @@ use ivs::models::*;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let null_conf_prover = NullConfProver::default();
-    start_confidential_proving_server("0.0.0.0:3000", null_conf_prover)
+    start_confidential_proving_server("0.0.0.0:3000", null_conf_prover, vec![])
         .await
         .unwrap();
 

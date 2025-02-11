@@ -471,7 +471,7 @@ async fn recompute_single_market_response<'a>(
 
                 local_asks
                     .into_iter()
-                    .map(|a| JobInfo{
+                    .map(|a| JobInfo {
                         ask_id: a.ask_id.to_string(),
                         requestor: address_to_string(&a.prover_refund_address),
                         cost: TokenAmount {

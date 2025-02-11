@@ -270,13 +270,16 @@ fn get_ivs_swagger() -> SwaggerUi {
 pub async fn start_ivs_server<T: IVSTrait + 'static>(
     addr: &str,
     ivs_impl: T,
+    ecies_priv_key: Vec<u8>,
 ) -> std::io::Result<()> {
     let service_data = web::Data::new(ivs_impl);
+    let ecies_priv_key = web::Data::new(Arc::new(Mutex::new(ecies_priv_key)));
 
     HttpServer::new(move || {
         App::new()
             .service(get_ivs_swagger())
             .app_data(service_data.clone())
+            .app_data(ecies_priv_key.clone())
             .route("/api/test", web::get().to(test_handler))
             .route("/api/checkInput", web::post().to(input_handler::<T>))
             .route(
@@ -335,13 +338,16 @@ fn get_conf_prover_swagger() -> SwaggerUi {
 pub async fn start_confidential_proving_server<ConfProver: GeneratorTrait + IVSTrait + 'static>(
     addr: &str,
     generator: ConfProver,
+    ecies_priv_key: Vec<u8>,
 ) -> std::io::Result<()> {
     let data = web::Data::new(generator);
+    let ecies_priv_key = web::Data::new(Arc::new(Mutex::new(ecies_priv_key)));
 
     HttpServer::new(move || {
         App::new()
             .service(get_conf_prover_swagger())
             .app_data(data.clone())
+            .app_data(ecies_priv_key.clone())
             .route(
                 "/api/benchmark",
                 web::get().to(benchmark_handler::<ConfProver>),
