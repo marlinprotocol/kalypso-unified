@@ -325,8 +325,8 @@ impl LocalAskStore {
                 }
             }
 
-            // Insert the completed ask into the HashSet only in external indexer mode. otherwise enclave size will shoot up in runtime
-            #[cfg(feature = "external_indexer")]
+            // Insert the completed ask into the HashSet only in complete mode. otherwise enclave size will shoot up in runtime
+            #[cfg(feature = "complete")]
             {
                 // Store the completed proof
                 self.completed_proofs.insert(ask, reason);
