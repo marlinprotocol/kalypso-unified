@@ -15,7 +15,7 @@ use tokio::sync::RwLock;
 
 #[utoipa::path(
     get,
-    path = "/stats/marketStats/{marketId}",
+    path = "/stats/marketStats/{market_id}",
     responses(
         (status = 200, description = "Return market stats", body = MarketStatsResponse),
     ),
