@@ -62,21 +62,15 @@ where
                 "ProofMarketplace"
             );
 
-            try_read_contract_error_log!(
-                e,
-                bindings::error::ErrorErrors,
-                "OtherErrors"
-            );
+            try_read_contract_error_log!(e, bindings::error::ErrorErrors, "OtherErrors");
             format!("Failed to send transaction: {}", e)
         }) {
             Ok(submit_response) => {
                 // Successfully sent, now wait for confirmations
                 match submit_response.confirmations(10).await {
                     Ok(Some(confirmation)) => {
-                        with_metrics_lock!(
-                            metrics_arc,
-                            |data: &mut TaskMetrics| data.increase_job_submitted_on_chain()
-                        );
+                        with_metrics_lock!(metrics_arc, |data: &mut TaskMetrics| data
+                            .increase_job_submitted_on_chain());
                         break Some(confirmation);
                     }
                     Ok(None) => {
@@ -84,7 +78,10 @@ where
                         // Decide if you want to retry or break out
                         attempts += 1;
                         if attempts >= max_attempts {
-                            log::error!("Failed to confirm transaction after {} attempts", attempts);
+                            log::error!(
+                                "Failed to confirm transaction after {} attempts",
+                                attempts
+                            );
                             break None;
                         }
                         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -93,13 +90,16 @@ where
                         log::error!("Error awaiting confirmations: {:?}", e);
                         attempts += 1;
                         if attempts >= max_attempts {
-                            log::error!("Failed to confirm transaction after {} attempts: {}", attempts, e);
+                            log::error!(
+                                "Failed to confirm transaction after {} attempts: {}",
+                                attempts,
+                                e
+                            );
                             break None;
                         }
                         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                     }
                 }
-                
             }
             Err(e) => {
                 // Log error and retry on failure to send
@@ -108,19 +108,21 @@ where
 
                 // Check if we've reached the maximum retry attempts
                 if attempts >= max_attempts {
-                    log::error!("Failed to send transaction after {} attempts: {}", attempts, e);
+                    log::error!(
+                        "Failed to send transaction after {} attempts: {}",
+                        attempts,
+                        e
+                    );
                     break None;
                 }
 
                 // Wait before retrying
-                tokio::time::sleep(std::time::Duration::from_secs(5))
-                    .await;
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             }
         };
     };
     response
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfigModel {
@@ -868,7 +870,6 @@ impl JobCreator {
                                     tx = tx.gas(10_000_000);
                                 }
                                 send_tx_with_retries(tx, 5, metrics_arc.clone()).await
-                                
                             }
                             crate::proof_generator::prover::Proof::InvalidProof(
                                 invalid_proof_signature,
