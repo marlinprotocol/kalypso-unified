@@ -39,6 +39,91 @@ macro_rules! with_metrics_lock {
     };
 }
 
+// Helper function to send a transaction and wait for confirmations with retry logic.
+async fn send_tx_with_retries<M>(
+    tx: ContractCall<M, ()>,
+    max_attempts: usize,
+    metrics_arc: Data<Arc<Mutex<TaskMetrics>>>,
+) -> Option<TransactionReceipt>
+where
+    M: Middleware,
+{
+    let mut attempts = 0;
+
+    let response = loop {
+        let tx_clone = tx.clone();
+
+        // Attempt to send the transaction
+        match tx_clone.send().await.map_err(|e: ContractError<_>| {
+            log::error!("========================\n");
+            try_read_contract_error_log!(
+                e,
+                bindings::proof_marketplace::ProofMarketplaceErrors,
+                "ProofMarketplace"
+            );
+
+            try_read_contract_error_log!(e, bindings::error::ErrorErrors, "OtherErrors");
+            format!("Failed to send transaction: {}", e)
+        }) {
+            Ok(submit_response) => {
+                // Successfully sent, now wait for confirmations
+                match submit_response.confirmations(10).await {
+                    Ok(Some(confirmation)) => {
+                        with_metrics_lock!(metrics_arc, |data: &mut TaskMetrics| data
+                            .increase_job_submitted_on_chain());
+                        break Some(confirmation);
+                    }
+                    Ok(None) => {
+                        log::error!("Transaction sent but did not receive confirmations (returned OK(None)).");
+                        // Decide if you want to retry or break out
+                        attempts += 1;
+                        if attempts >= max_attempts {
+                            log::error!(
+                                "Failed to confirm transaction after {} attempts",
+                                attempts
+                            );
+                            break None;
+                        }
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    }
+                    Err(e) => {
+                        log::error!("Error awaiting confirmations: {:?}", e);
+                        attempts += 1;
+                        if attempts >= max_attempts {
+                            log::error!(
+                                "Failed to confirm transaction after {} attempts: {}",
+                                attempts,
+                                e
+                            );
+                            break None;
+                        }
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    }
+                }
+            }
+            Err(e) => {
+                // Log error and retry on failure to send
+                log::error!("Error submitting proof: {:?}", e);
+                attempts += 1;
+
+                // Check if we've reached the maximum retry attempts
+                if attempts >= max_attempts {
+                    log::error!(
+                        "Failed to send transaction after {} attempts: {}",
+                        attempts,
+                        e
+                    );
+                    break None;
+                }
+
+                // Wait before retrying
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
+        };
+    };
+    response
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorConfigModel {
     address: String,
@@ -784,69 +869,7 @@ impl JobCreator {
                                 if cfg!(feature = "force_transactions") {
                                     tx = tx.gas(10_000_000);
                                 }
-
-                                let mut attempts = 0;
-                                let max_attempts = 5;
-
-                                let response = loop {
-                                    let tx_clone = tx.clone();
-
-                                    // Attempt to send the transaction
-                                    match tx_clone.send().await.map_err(|e: ContractError<_>| {
-                                        log::error!("========================\n");
-                                        try_read_contract_error_log!(
-                                            e,
-                                            bindings::proof_marketplace::ProofMarketplaceErrors,
-                                            "ProofMarketplace"
-                                        );
-
-                                        try_read_contract_error_log!(
-                                            e,
-                                            bindings::error::ErrorErrors,
-                                            "OtherErrors"
-                                        );
-                                        format!("Failed to send transaction: {}", e)
-                                    }) {
-                                        Ok(submit_response) => {
-                                            // Successfully sent, now wait for confirmations
-                                            match submit_response.confirmations(10).await {
-                                                Ok(confirmation) => {
-                                                    // Log success and return the confirmation
-                                                    with_metrics_lock!(
-                                                        metrics_arc,
-                                                        |data: &mut TaskMetrics| data
-                                                            .increase_job_submitted_on_chain()
-                                                    );
-                                                    break confirmation; // Successfully confirmed, break the loop
-                                                }
-                                                Err(e) => {
-                                                    // Log error and retry on confirmation failure
-                                                    log::error!(
-                                                        "Error awaiting confirmations: {:?}",
-                                                        e
-                                                    );
-                                                    break None;
-                                                }
-                                            }
-                                        }
-                                        Err(e) => {
-                                            // Log error and retry on failure to send
-                                            log::error!("Error submitting proof: {:?}", e);
-                                            attempts += 1;
-
-                                            // Check if we've reached the maximum retry attempts
-                                            if attempts >= max_attempts {
-                                                log::error!("Failed to send transaction after {} attempts: {}", attempts, e);
-                                                break None;
-                                            }
-
-                                            // Wait before retrying
-                                            tokio::time::sleep(std::time::Duration::from_secs(5))
-                                                .await;
-                                        }
-                                    };
-                                };
-                                response
+                                send_tx_with_retries(tx, 5, metrics_arc.clone()).await
                             }
                             crate::proof_generator::prover::Proof::InvalidProof(
                                 invalid_proof_signature,
@@ -865,69 +888,7 @@ impl JobCreator {
                                 if cfg!(feature = "force_transactions") {
                                     tx = tx.gas(10_000_000);
                                 }
-
-                                let mut attempts = 0;
-                                let max_attempts = 3;
-
-                                let reponse = loop {
-                                    let tx_clone = tx.clone(); // Clone tx for each attempt
-
-                                    // Attempt to send the transaction
-                                    match tx_clone.send().await.map_err(|e: ContractError<_>| {
-                                        log::error!("========================\n");
-                                        try_read_contract_error_log!(
-                                            e,
-                                            bindings::proof_marketplace::ProofMarketplaceErrors,
-                                            "ProofMarketplace"
-                                        );
-
-                                        try_read_contract_error_log!(
-                                            e,
-                                            bindings::error::ErrorErrors,
-                                            "OtherErrors"
-                                        );
-                                        format!("Failed to send transaction: {}", e)
-                                    }) {
-                                        Ok(submit_response) => {
-                                            // Successfully sent, now wait for confirmations
-                                            match submit_response.confirmations(10).await {
-                                                Ok(confirmation) => {
-                                                    // Log success and return the confirmation
-                                                    with_metrics_lock!(
-                                                        metrics_arc,
-                                                        |data: &mut TaskMetrics| data
-                                                            .increase_job_submitted_on_chain()
-                                                    );
-                                                    break confirmation; // Successfully confirmed, break the loop
-                                                }
-                                                Err(e) => {
-                                                    // Log error and retry on confirmation failure
-                                                    log::error!(
-                                                        "Error awaiting confirmations: {:?}",
-                                                        e
-                                                    );
-                                                    break None;
-                                                }
-                                            }
-                                        }
-                                        Err(e) => {
-                                            // Log error and retry on failure to send
-                                            log::error!("Error submitting proof: {:?}", e);
-                                            attempts += 1;
-
-                                            // Check if we've reached the maximum retry attempts
-                                            if attempts >= max_attempts {
-                                                log::error!("Failed to send transaction after {} attempts: {}", attempts, e);
-                                                break None;
-                                            }
-
-                                            // Wait before retrying
-                                            tokio::time::sleep(std::time::Duration::from_secs(5))
-                                                .await;
-                                        }
-                                    };
-                                };
-                                reponse
+                                send_tx_with_retries(tx, 5, metrics_arc.clone()).await
                             }
                         };
 
