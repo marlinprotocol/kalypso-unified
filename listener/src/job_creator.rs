@@ -810,24 +810,34 @@ impl JobCreator {
                                         Ok(submit_response) => {
                                             // Successfully sent, now wait for confirmations
                                             match submit_response.confirmations(10).await {
-                                                Ok(confirmation) => {
-                                                    // Log success and return the confirmation
+                                                Ok(Some(confirmation)) => {
                                                     with_metrics_lock!(
                                                         metrics_arc,
-                                                        |data: &mut TaskMetrics| data
-                                                            .increase_job_submitted_on_chain()
+                                                        |data: &mut TaskMetrics| data.increase_job_submitted_on_chain()
                                                     );
-                                                    break confirmation; // Successfully confirmed, break the loop
+                                                    break Some(confirmation);
+                                                }
+                                                Ok(None) => {
+                                                    log::error!("Transaction sent but did not receive confirmations (returned OK(None)).");
+                                                    // Decide if you want to retry or break out
+                                                    attempts += 1;
+                                                    if attempts >= max_attempts {
+                                                        log::error!("Failed to confirm transaction after {} attempts", attempts);
+                                                        break None;
+                                                    }
+                                                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                                                 }
                                                 Err(e) => {
-                                                    // Log error and retry on confirmation failure
-                                                    log::error!(
-                                                        "Error awaiting confirmations: {:?}",
-                                                        e
-                                                    );
-                                                    break None;
+                                                    log::error!("Error awaiting confirmations: {:?}", e);
+                                                    attempts += 1;
+                                                    if attempts >= max_attempts {
+                                                        log::error!("Failed to confirm transaction after {} attempts: {}", attempts, e);
+                                                        break None;
+                                                    }
+                                                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                                                 }
                                             }
+                                            
                                         }
                                         Err(e) => {
                                             // Log error and retry on failure to send
@@ -891,22 +901,31 @@ impl JobCreator {
                                         Ok(submit_response) => {
                                             // Successfully sent, now wait for confirmations
                                             match submit_response.confirmations(10).await {
-                                                Ok(confirmation) => {
-                                                    // Log success and return the confirmation
+                                                Ok(Some(confirmation)) => {
                                                     with_metrics_lock!(
                                                         metrics_arc,
-                                                        |data: &mut TaskMetrics| data
-                                                            .increase_job_submitted_on_chain()
+                                                        |data: &mut TaskMetrics| data.increase_job_submitted_on_chain()
                                                     );
-                                                    break confirmation; // Successfully confirmed, break the loop
+                                                    break Some(confirmation);
+                                                }
+                                                Ok(None) => {
+                                                    log::error!("Transaction sent but did not receive confirmations (returned OK(None)).");
+                                                    // Decide if you want to retry or break out
+                                                    attempts += 1;
+                                                    if attempts >= max_attempts {
+                                                        log::error!("Failed to confirm transaction after {} attempts", attempts);
+                                                        break None;
+                                                    }
+                                                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                                                 }
                                                 Err(e) => {
-                                                    // Log error and retry on confirmation failure
-                                                    log::error!(
-                                                        "Error awaiting confirmations: {:?}",
-                                                        e
-                                                    );
-                                                    break None;
+                                                    log::error!("Error awaiting confirmations: {:?}", e);
+                                                    attempts += 1;
+                                                    if attempts >= max_attempts {
+                                                        log::error!("Failed to confirm transaction after {} attempts: {}", attempts, e);
+                                                        break None;
+                                                    }
+                                                    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
                                                 }
                                             }
                                         }
