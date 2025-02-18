@@ -96,6 +96,7 @@ pub struct LogParser {
     max_tasks_size: usize,
     rpc_url: String,
     unhandled_logs: Arc<RwLock<Vec<Log>>>,
+    matching_errors: Arc<RwLock<Vec<String>>>,
     path_to_snapshot: String,
 }
 
@@ -126,6 +127,7 @@ impl LogParser {
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         chain_id: String,
         unhandled_logs: Arc<RwLock<Vec<Log>>>,
+        matching_errors: Arc<RwLock<Vec<String>>>,
         path_to_snapshot: String,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
@@ -162,6 +164,7 @@ impl LogParser {
             max_tasks_size: 10, // TODO: dynamically adjust latter
             rpc_url,
             unhandled_logs,
+            matching_errors,
             path_to_snapshot,
         }
     }
@@ -894,6 +897,14 @@ impl LogParser {
                 Err(err) => {
                     log::error!("{}", err);
                     log::error!("failed sending the transaction");
+                    if let Ok(mut errors) = self.matching_errors.try_write() {
+                        errors.push(err.to_string());
+                    } else {
+                        log::warn!(
+                            "Could not acquire lock on matching_errors to record the error."
+                        );
+                    }
+
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     return Err("Failed creating matching".into());
                 }

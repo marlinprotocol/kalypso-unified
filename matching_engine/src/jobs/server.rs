@@ -44,6 +44,7 @@ pub struct MatchingEngineServer {
     relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
     should_stop: Arc<AtomicBool>,
     shared_unhandled_logs: Arc<RwLock<Vec<Log>>>,
+    shared_matching_errors: Arc<RwLock<Vec<String>>>,
 }
 
 impl MatchingEngineServer {
@@ -63,6 +64,7 @@ impl MatchingEngineServer {
         relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
         should_stop: Arc<AtomicBool>,
         shared_unhandled_logs: Arc<RwLock<Vec<Log>>>,
+        shared_matching_errors: Arc<RwLock<Vec<String>>>,
     ) -> Self {
         MatchingEngineServer {
             shared_market_data,
@@ -79,6 +81,7 @@ impl MatchingEngineServer {
             relayer_key_balance,
             should_stop,
             shared_unhandled_logs,
+            shared_matching_errors,
         }
     }
 
@@ -125,6 +128,7 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_key_data.clone()))
                 .app_data(Data::new(self.relayer_key_balance.clone()))
                 .app_data(Data::new(self.shared_unhandled_logs.clone()))
+                .app_data(Data::new(self.shared_matching_errors.clone()))
                 .service(get_swagger())
                 .service(
                     ui_scope()

@@ -36,8 +36,35 @@ pub async fn get_unhandled_logs(
 
     let mut to_return = vec![];
     for log in unhandled_logs.iter() {
-        to_return.push(hex::encode(log.transaction_hash.unwrap()));
+        to_return.push(format!("0x{}", hex::encode(log.transaction_hash.unwrap())));
     }
 
     return Ok(HttpResponse::Ok().json(Result { result: to_return }));
+}
+
+#[utoipa::path(
+    get,
+    path = "/stats/matching_errors",
+    responses(
+        (status = 200, description = "Return vector errors encountered during matching"),
+    ),
+    tag = "Manage"
+)]
+pub async fn get_matching_errors(
+    _shared_matching_errors: Data<Arc<RwLock<Vec<String>>>>,
+) -> actix_web::Result<HttpResponse> {
+    let matching_errors = {
+        match _shared_matching_errors.try_read() {
+            Ok(data) => data,
+            _ => {
+                return Ok(HttpResponse::Locked().json(WelcomeResponse {
+                    status: "Resource Busy".into(),
+                }))
+            }
+        }
+    };
+
+    return Ok(HttpResponse::Ok().json(Result {
+        result: matching_errors.clone(),
+    }));
 }

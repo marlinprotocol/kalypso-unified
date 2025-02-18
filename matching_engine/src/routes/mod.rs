@@ -108,6 +108,10 @@ pub fn get_stats_scope() -> actix_web::Scope {
             web::get().to(unhandled_logs::get_unhandled_logs),
         )
         .route(
+            "/matching_errors",
+            web::get().to(unhandled_logs::get_matching_errors),
+        )
+        .route(
             "/symbiotic_snapshot",
             web::get().to(symbiotic_snapshot::get_snapshot),
         )
@@ -152,6 +156,7 @@ use crate::routes::ui_routes::single_market::*;
     get_ask_status_askid,
     get_ask_proof_by_ask_id,
     get_unhandled_logs,
+    get_matching_errors,
     get_snapshot,
     market_stats,
     market_info,
