@@ -103,19 +103,19 @@ impl CommonDeps {
             try_read_contract_error!(
                 e,
                 bindings::middleware::MiddlewareErrors,
-                "MiddlewareErrors:Holesky"
+                "MiddlewareErrors:Symbiotic"
             );
 
             try_read_contract_error!(
                 e,
                 bindings::operator_registry::OperatorRegistryErrors,
-                "OperatorRegistryErrors:Holesky"
+                "OperatorRegistryErrors:Symbiotic"
             );
 
             try_read_contract_error!(
                 e,
                 bindings::opt_in_service::OptInServiceErrors,
-                "OptInService:Holesky"
+                "OptInService:Symbiotic"
             );
 
             try_read_contract_error!(e, bindings::error::ErrorErrors, "OtherErrors");
