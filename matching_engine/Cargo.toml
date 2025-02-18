@@ -34,7 +34,7 @@ utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 
 [features]
 # inside enclaves
-default = ["mainnet"]
+default = ["beta"]
 
 # Network specific features will be added latter
 mainnet = ["use_time_and_price_weighted_matching", "skip_unknown_events"]
