@@ -134,6 +134,16 @@ pub async fn process_symbiotic_staking_logs(
         return Ok(());
     }
 
+    if let Ok(event_log) = symbiotic_staking
+        .decode_event::<bindings::symbiotic_staking::StakeTokenSelectionWeightSetFilter>(
+        "StakeTokenSelectionWeightSet",
+        log.topics.clone(),
+        log.data.clone(),
+    ) {
+        log::debug!("StakeTokenSelectionWeightSet Logs: {:?}", event_log);
+        return Ok(());
+    }
+
     //typed event not working here
     // <bindings::symbiotic_staking::BaseTransmitterComissionRateSetFilter>
     if let Ok(event_log) = symbiotic_staking.decode_event_raw(

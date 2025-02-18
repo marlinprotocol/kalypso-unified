@@ -1,311 +1,97 @@
 [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [],
-    "name": "AccessControlBadConfirmation",
-    "type": "error"
-  },
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "neededRole",
-        "type": "bytes32"
-      }
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
     ],
     "name": "AccessControlUnauthorizedAccount",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "target",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "target", "type": "address" }
     ],
     "name": "AddressEmptyCode",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "CannotBeZero",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "CooldownPeriodNotPassed",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ECDSAInvalidSignature",
-    "type": "error"
-  },
+  { "inputs": [], "name": "CannotBeZero", "type": "error" },
+  { "inputs": [], "name": "CooldownPeriodNotPassed", "type": "error" },
+  { "inputs": [], "name": "ECDSAInvalidSignature", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "length",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "length", "type": "uint256" }
     ],
     "name": "ECDSAInvalidSignatureLength",
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "s",
-        "type": "bytes32"
-      }
-    ],
+    "inputs": [{ "internalType": "bytes32", "name": "s", "type": "bytes32" }],
     "name": "ECDSAInvalidSignatureS",
     "type": "error"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "implementation",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "implementation", "type": "address" }
     ],
     "name": "ERC1967InvalidImplementation",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ERC1967NonPayable",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "EnclaveKeyMismatch",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "EnforcedPause",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ExpectedPause",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FailedCall",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ImageAlreadyExists",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ImageNotFound",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidAdmin",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidAttestationVerifier",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidCaptureTimestamp",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidComissionRate",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidImage",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidIndex",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidInitialization",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidLastBlockNumber",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidNumOfTxs",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPCR0Length",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPCR1Length",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPCR2Length",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidProofMarketplace",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidPublicKeyLength",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidRewardDistributor",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidSignatureLength",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "InvalidStakingManager",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoConfirmedTimestamp",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoStakeTokenAvailableToLock",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoStakeTokensAvailable",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotIdxToSubmit",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotInitializing",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotRegisteredBlockNumber",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotRegisteredTransmitter",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ReentrancyGuardReentrantCall",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ERC1967NonPayable", "type": "error" },
+  { "inputs": [], "name": "EnclaveKeyMismatch", "type": "error" },
+  { "inputs": [], "name": "EnforcedPause", "type": "error" },
+  { "inputs": [], "name": "ExpectedPause", "type": "error" },
+  { "inputs": [], "name": "FailedCall", "type": "error" },
+  { "inputs": [], "name": "ImageAlreadyExists", "type": "error" },
+  { "inputs": [], "name": "ImageNotFound", "type": "error" },
+  { "inputs": [], "name": "InvalidAdmin", "type": "error" },
+  { "inputs": [], "name": "InvalidAttestationVerifier", "type": "error" },
+  { "inputs": [], "name": "InvalidCaptureTimestamp", "type": "error" },
+  { "inputs": [], "name": "InvalidComissionRate", "type": "error" },
+  { "inputs": [], "name": "InvalidImage", "type": "error" },
+  { "inputs": [], "name": "InvalidIndex", "type": "error" },
+  { "inputs": [], "name": "InvalidInitialization", "type": "error" },
+  { "inputs": [], "name": "InvalidLastBlockNumber", "type": "error" },
+  { "inputs": [], "name": "InvalidNumOfTxs", "type": "error" },
+  { "inputs": [], "name": "InvalidPCR0Length", "type": "error" },
+  { "inputs": [], "name": "InvalidPCR1Length", "type": "error" },
+  { "inputs": [], "name": "InvalidPCR2Length", "type": "error" },
+  { "inputs": [], "name": "InvalidProofMarketplace", "type": "error" },
+  { "inputs": [], "name": "InvalidPublicKeyLength", "type": "error" },
+  { "inputs": [], "name": "InvalidRewardDistributor", "type": "error" },
+  { "inputs": [], "name": "InvalidSignatureLength", "type": "error" },
+  { "inputs": [], "name": "InvalidStakingManager", "type": "error" },
+  { "inputs": [], "name": "NoConfirmedTimestamp", "type": "error" },
+  { "inputs": [], "name": "NoStakeTokenAvailableToLock", "type": "error" },
+  { "inputs": [], "name": "NoStakeTokensAvailable", "type": "error" },
+  { "inputs": [], "name": "NotIdxToSubmit", "type": "error" },
+  { "inputs": [], "name": "NotInitializing", "type": "error" },
+  { "inputs": [], "name": "NotRegisteredBlockNumber", "type": "error" },
+  { "inputs": [], "name": "NotRegisteredTransmitter", "type": "error" },
+  { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "token", "type": "address" }
     ],
     "name": "SafeERC20FailedOperation",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "SubmissionAlreadyCompleted",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "TokenAlreadyExists",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "TokenDoesNotExist",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "UUPSUnauthorizedCallContext",
-    "type": "error"
-  },
+  { "inputs": [], "name": "SubmissionAlreadyCompleted", "type": "error" },
+  { "inputs": [], "name": "TokenAlreadyExists", "type": "error" },
+  { "inputs": [], "name": "TokenDoesNotExist", "type": "error" },
+  { "inputs": [], "name": "UUPSUnauthorizedCallContext", "type": "error" },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "slot",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "slot", "type": "bytes32" }
     ],
     "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
   },
-  {
-    "inputs": [],
-    "name": "ZeroNumOfTxs",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroStakeTokenSelectionWeightSum",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroToAddress",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "ZeroTokenAddress",
-    "type": "error"
-  },
+  { "inputs": [], "name": "ZeroNumOfTxs", "type": "error" },
+  { "inputs": [], "name": "ZeroStakeTokenSelectionWeightSum", "type": "error" },
+  { "inputs": [], "name": "ZeroToAddress", "type": "error" },
+  { "inputs": [], "name": "ZeroTokenAddress", "type": "error" },
   {
     "anonymous": false,
     "inputs": [
@@ -851,140 +637,85 @@
   {
     "inputs": [],
     "name": "BRIDGE_ENCLAVE_UPDATER_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SIGNATURE_LENGTH",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SLASH_RESULT_DONE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SLASH_RESULT_TYPE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "STAKE_SNAPSHOT_DONE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "STAKE_SNAPSHOT_TYPE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "STAKING_MANAGER_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "SUBMISSION_COMPLETE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "UPGRADE_INTERFACE_VERSION",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
+    "inputs": [{ "internalType": "bytes", "name": "PCRs", "type": "bytes" }],
+    "name": "addEnclaveImage",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "PCRs",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "PCR0", "type": "bytes" },
+      { "internalType": "bytes", "name": "PCR1", "type": "bytes" },
+      { "internalType": "bytes", "name": "PCR2", "type": "bytes" }
     ],
     "name": "addEnclaveImage",
     "outputs": [],
@@ -993,39 +724,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "PCR0",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "PCR1",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "PCR2",
-        "type": "bytes"
-      }
-    ],
-    "name": "addEnclaveImage",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_weight",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "uint256", "name": "_weight", "type": "uint256" }
     ],
     "name": "addStakeToken",
     "outputs": [],
@@ -1034,19 +734,11 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "stakeToken",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "stakeToken", "type": "address" }
     ],
     "name": "amountToLock",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1054,26 +746,14 @@
   {
     "inputs": [],
     "name": "attestationVerifier",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "baseTransmitterComissionRate",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1087,27 +767,15 @@
     ],
     "name": "captureTimestampInfo",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "blockNumber",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "transmitter",
-        "type": "address"
-      }
+      { "internalType": "uint256", "name": "blockNumber", "type": "uint256" },
+      { "internalType": "address", "name": "transmitter", "type": "address" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_idx",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "_idx", "type": "uint256" }
     ],
     "name": "confirmedTimestampInfo",
     "outputs": [
@@ -1143,13 +811,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "name": "confirmedTimestamps",
     "outputs": [
       {
@@ -1157,16 +819,8 @@
         "name": "captureTimestamp",
         "type": "uint256"
       },
-      {
-        "internalType": "uint256",
-        "name": "blockNumber",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "transmitter",
-        "type": "address"
-      },
+      { "internalType": "uint256", "name": "blockNumber", "type": "uint256" },
+      { "internalType": "address", "name": "transmitter", "type": "address" },
       {
         "internalType": "uint256",
         "name": "transmitterComissionRate",
@@ -1178,16 +832,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_token",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_to",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_token", "type": "address" },
+      { "internalType": "address", "name": "_to", "type": "address" }
     ],
     "name": "emergencyWithdraw",
     "outputs": [],
@@ -1196,107 +842,45 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "imageId", "type": "bytes32" }
     ],
     "name": "enclaveImages",
     "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "PCR0",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "PCR1",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "PCR2",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "PCR0", "type": "bytes" },
+      { "internalType": "bytes", "name": "PCR1", "type": "bytes" },
+      { "internalType": "bytes", "name": "PCR2", "type": "bytes" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes",
-        "name": "PCR0",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "PCR1",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "PCR2",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "PCR0", "type": "bytes" },
+      { "internalType": "bytes", "name": "PCR1", "type": "bytes" },
+      { "internalType": "bytes", "name": "PCR2", "type": "bytes" }
     ],
     "name": "getImageId",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "pure",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "address", "name": "prover", "type": "address" }
     ],
     "name": "getProverActiveStakeAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "address", "name": "prover", "type": "address" }
     ],
     "name": "getProverStakeAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1307,73 +891,31 @@
         "name": "_captureTimestamp",
         "type": "uint256"
       },
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "address", "name": "prover", "type": "address" }
     ],
     "name": "getProverStakeAmountAt",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
     ],
     "name": "getRoleAdmin",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_vault",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "address", "name": "_vault", "type": "address" },
+      { "internalType": "address", "name": "prover", "type": "address" }
     ],
     "name": "getStakeAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1381,11 +923,7 @@
     "inputs": [],
     "name": "getStakeTokenList",
     "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      }
+      { "internalType": "address[]", "name": "", "type": "address[]" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1394,16 +932,8 @@
     "inputs": [],
     "name": "getStakeTokenWeights",
     "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "",
-        "type": "uint256[]"
-      }
+      { "internalType": "address[]", "name": "", "type": "address[]" },
+      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1415,35 +945,17 @@
         "name": "_captureTimestamp",
         "type": "uint256"
       },
-      {
-        "internalType": "address",
-        "name": "_transmitter",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_transmitter", "type": "address" }
     ],
     "name": "getSubmissionStatus",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "grantRole",
     "outputs": [],
@@ -1452,35 +964,17 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "hasRole",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_admin",
-        "type": "address"
-      },
+      { "internalType": "address", "name": "_admin", "type": "address" },
       {
         "internalType": "address",
         "name": "_attestationVerifier",
@@ -1509,59 +1003,31 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" }
     ],
     "name": "isSupportedStakeToken",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "latestConfirmedTimestamp",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "latestConfirmedTimestampBlockNumber",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "latestConfirmedTimestampIdx",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -1602,40 +1068,20 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "bidId",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "bidId", "type": "uint256" }
     ],
     "name": "lockInfo",
     "outputs": [
-      {
-        "internalType": "address",
-        "name": "stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "stakeToken", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_bidId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_prover",
-        "type": "address"
-      }
+      { "internalType": "uint256", "name": "_bidId", "type": "uint256" },
+      { "internalType": "address", "name": "_prover", "type": "address" }
     ],
     "name": "lockStake",
     "outputs": [],
@@ -1644,16 +1090,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_bidId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_prover",
-        "type": "address"
-      },
+      { "internalType": "uint256", "name": "_bidId", "type": "uint256" },
+      { "internalType": "address", "name": "_prover", "type": "address" },
       {
         "internalType": "uint256",
         "name": "_feeRewardAmount",
@@ -1668,49 +1106,25 @@
   {
     "inputs": [],
     "name": "paused",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "proofMarketplace",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "prover",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "stakeToken", "type": "address" },
+      { "internalType": "address", "name": "prover", "type": "address" }
     ],
     "name": "proverLockedAmounts",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "locked",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "locked", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1718,23 +1132,13 @@
   {
     "inputs": [],
     "name": "proxiableUUID",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "_imageId",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "_imageId", "type": "bytes32" }
     ],
     "name": "removeEnclaveImage",
     "outputs": [],
@@ -1743,11 +1147,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" }
     ],
     "name": "removeStakeToken",
     "outputs": [],
@@ -1756,11 +1156,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
       {
         "internalType": "address",
         "name": "callerConfirmation",
@@ -1774,16 +1170,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
     "name": "revokeRole",
     "outputs": [],
@@ -1793,28 +1181,14 @@
   {
     "inputs": [],
     "name": "rewardDistributor",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
     ],
     "name": "setAmountToLock",
     "outputs": [],
@@ -1875,16 +1249,8 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_stakeToken",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_weight",
-        "type": "uint256"
-      }
+      { "internalType": "address", "name": "_stakeToken", "type": "address" },
+      { "internalType": "uint256", "name": "_weight", "type": "uint256" }
     ],
     "name": "setStakeTokenSelectionWeight",
     "outputs": [],
@@ -1921,16 +1287,8 @@
     "inputs": [
       {
         "components": [
-          {
-            "internalType": "uint256",
-            "name": "bidId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "prover",
-            "type": "address"
-          },
+          { "internalType": "uint256", "name": "bidId", "type": "uint256" },
+          { "internalType": "address", "name": "prover", "type": "address" },
           {
             "internalType": "address",
             "name": "rewardAddress",
@@ -1949,19 +1307,11 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "stakeToken",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "stakeToken", "type": "address" }
     ],
     "name": "stakeTokenSelectionWeight",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "weight",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "weight", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -1969,39 +1319,21 @@
   {
     "inputs": [],
     "name": "stakeTokenSelectionWeightSum",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "stakingManager",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "submissionCooldown",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -2012,35 +1344,19 @@
         "name": "captureTimestamp",
         "type": "uint256"
       },
-      {
-        "internalType": "address",
-        "name": "transmitter",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "transmitter", "type": "address" }
     ],
     "name": "submissionStatus",
     "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "status",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "status", "type": "bytes32" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_numOfTxs",
-        "type": "uint256"
-      },
+      { "internalType": "uint256", "name": "_index", "type": "uint256" },
+      { "internalType": "uint256", "name": "_numOfTxs", "type": "uint256" },
       {
         "internalType": "uint256",
         "name": "_captureTimestamp",
@@ -2051,21 +1367,9 @@
         "name": "_lastBlockNumber",
         "type": "uint256"
       },
-      {
-        "internalType": "bytes32",
-        "name": "_imageId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_slashResultData",
-        "type": "bytes"
-      },
-      {
-        "internalType": "bytes",
-        "name": "_proof",
-        "type": "bytes"
-      }
+      { "internalType": "bytes32", "name": "_imageId", "type": "bytes32" },
+      { "internalType": "bytes", "name": "_slashResultData", "type": "bytes" },
+      { "internalType": "bytes", "name": "_proof", "type": "bytes" }
     ],
     "name": "submitSlashResult",
     "outputs": [],
@@ -2074,36 +1378,20 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_numOfTxs",
-        "type": "uint256"
-      },
+      { "internalType": "uint256", "name": "_index", "type": "uint256" },
+      { "internalType": "uint256", "name": "_numOfTxs", "type": "uint256" },
       {
         "internalType": "uint256",
         "name": "_captureTimestamp",
         "type": "uint256"
       },
-      {
-        "internalType": "bytes32",
-        "name": "_imageId",
-        "type": "bytes32"
-      },
+      { "internalType": "bytes32", "name": "_imageId", "type": "bytes32" },
       {
         "internalType": "bytes",
         "name": "_vaultSnapshotData",
         "type": "bytes"
       },
-      {
-        "internalType": "bytes",
-        "name": "_proof",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "_proof", "type": "bytes" }
     ],
     "name": "submitVaultSnapshot",
     "outputs": [],
@@ -2112,20 +1400,10 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "bytes4",
-        "name": "_interfaceId",
-        "type": "bytes4"
-      }
+      { "internalType": "bytes4", "name": "_interfaceId", "type": "bytes4" }
     ],
     "name": "supportsInterface",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -2136,24 +1414,12 @@
         "name": "captureTimestamp",
         "type": "uint256"
       },
-      {
-        "internalType": "bytes32",
-        "name": "submissionType",
-        "type": "bytes32"
-      }
+      { "internalType": "bytes32", "name": "submissionType", "type": "bytes32" }
     ],
     "name": "txCountInfo",
     "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "idxToSubmit",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "numOfTxs",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "idxToSubmit", "type": "uint256" },
+      { "internalType": "uint256", "name": "numOfTxs", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -2165,11 +1431,7 @@
         "name": "newImplementation",
         "type": "address"
       },
-      {
-        "internalType": "bytes",
-        "name": "data",
-        "type": "bytes"
-      }
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
     ],
     "name": "upgradeToAndCall",
     "outputs": [],
