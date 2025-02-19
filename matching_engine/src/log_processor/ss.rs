@@ -94,7 +94,6 @@ pub async fn process_symbiotic_staking_logs(
         // let weight = event_log.weight;
 
         log::debug!("Added token: {} with weight: {}", token, weight);
-        symbiotic_stake_store.set_lock_token(token, U256::zero());
         return Ok(());
     }
 
@@ -121,7 +120,6 @@ pub async fn process_symbiotic_staking_logs(
             log.data.clone(),
         )
     {
-        log::debug!("AmountToLockSet Logs: {:?}", event_log);
         log::debug!("AmountToLockSet Logs: {:?}", event_log);
         // let token = event_log.get(0).unwrap().clone().into_address().unwrap();
         // let amount = event_log.get(1).unwrap().clone().into_uint().unwrap();
