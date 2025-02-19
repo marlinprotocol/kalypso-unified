@@ -148,7 +148,7 @@ impl MarketMetadataStore {
 }
 
 impl MarketMetadataStore {
-    pub fn note_proof_submission_stats(
+    pub fn note_proof_submission_stats_for_valid_proof(
         &mut self,
         market_id: &U256,
         proof_time: U256,
@@ -160,6 +160,22 @@ impl MarketMetadataStore {
 
         self.median_proof_time_tracker
             .insert(market_id.clone(), proof_time);
+
+        if let Some(existing_earning) = self.earnings.get_mut(market_id) {
+            *existing_earning = existing_earning.saturating_add(proof_cost);
+        } else {
+            self.earnings.insert(*market_id, proof_cost);
+        }
+    }
+
+    pub fn note_proof_submission_stats_for_invalid_inputs(
+        &mut self,
+        market_id: &U256,
+        proof_cost: U256,
+    ) {
+        // Minimize lock time by splitting into smaller steps
+        self.median_proof_cost_tracker
+            .insert(market_id.clone(), proof_cost);
 
         if let Some(existing_earning) = self.earnings.get_mut(market_id) {
             *existing_earning = existing_earning.saturating_add(proof_cost);

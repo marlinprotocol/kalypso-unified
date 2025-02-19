@@ -362,11 +362,14 @@ pub async fn process_proof_market_place_logs(
         }
 
         {
-            market_store.write().await.note_proof_submission_stats(
-                &market_id,
-                proof_time,
-                proof_generator_cost,
-            );
+            market_store
+                .write()
+                .await
+                .note_proof_submission_stats_for_valid_proof(
+                    &market_id,
+                    proof_time,
+                    proof_generator_cost,
+                );
         }
         return Ok(());
     }
@@ -721,6 +724,14 @@ pub async fn process_proof_market_place_logs(
                 &proof_generator_cost,
                 &proof_cycle_completed_on_l1.as_u64().into(),
             );
+        }
+
+        {
+            // not noting time here
+            market_store
+                .write()
+                .await
+                .note_proof_submission_stats_for_invalid_inputs(&market_id, proof_generator_cost);
         }
         log::debug!("Complete: invalid input attestation event operation");
         return Ok(());
