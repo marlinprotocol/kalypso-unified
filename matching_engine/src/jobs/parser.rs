@@ -96,6 +96,7 @@ pub struct LogParser {
     max_tasks_size: usize,
     rpc_url: String,
     unhandled_logs: Arc<RwLock<Vec<Log>>>,
+    #[allow(unused)]
     matching_errors: Arc<RwLock<Vec<String>>>,
     path_to_snapshot: String,
 }
