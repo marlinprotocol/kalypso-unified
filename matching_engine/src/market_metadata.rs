@@ -59,6 +59,10 @@ pub struct MarketSetupData {
     #[serde(default)]
     tags: Vec<String>,
 
+    /// Public hosted IVS if any. Useful especially for non-confidential market
+    #[serde(default)]
+    public_ivs: Vec<String>,
+
     /// Contact email for support or inquiries.
     contact_email: Option<String>,
 

@@ -1,3 +1,6 @@
+use tokio::fs;
+use tokio::io::AsyncWriteExt;
+
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
@@ -234,9 +237,6 @@ impl LogParser {
                         continue;
                     }
                 };
-
-                use tokio::fs;
-                use tokio::io::AsyncWriteExt;
 
                 let path_to_snapshot = Path::new(&self.path_to_snapshot);
                 match serde_json::to_string(&dump) {

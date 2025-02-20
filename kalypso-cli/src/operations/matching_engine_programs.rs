@@ -29,8 +29,6 @@ impl Operation for LoadMatchingEngineConfig {
                 .await
                 .map_err(|e| format!("{}", e))?;
 
-        // let public_key_after_verification = std::fs::read("./app/secp.pub").unwrap();
-
         load_matching_engine_config(
             start_program_info.matching_engine_client_url,
             &public_key_after_verification,
