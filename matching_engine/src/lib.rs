@@ -165,17 +165,7 @@ impl Dump {
         let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
 
         let rpc_url = config.clone().rpc_url;
-        let chain_id = config.clone().chain_id;
-
-        let relayer_key = config.clone().relayer_private_key;
-        let relayer_signer = relayer_key
-            .parse::<LocalWallet>()?
-            .with_chain_id(U64::from_dec_str(&chain_id)?.as_u64());
-
-        let provider_http = Provider::<Http>::try_from(&rpc_url)?
-            // .with_signer(matching_engine_signer.clone());
-            .with_signer(relayer_signer.clone());
-
+        let provider_http = Provider::<Http>::try_from(&rpc_url)?;
         let client = Arc::new(provider_http.clone());
 
         let proof_market_place_var = config.clone().proof_market_place;

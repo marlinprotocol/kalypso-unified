@@ -104,18 +104,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_encryption_and_decrytion() {
-        // // fetch sample dump
-        // let dump_path = "../matching_engine_config/dump.json".to_string();
-        // let alt_dump_path = "./matching_engine_config/dump.json".to_string();
-        // let file_content =
-        //     fs::read_to_string(dump_path).or_else(|_| fs::read_to_string(alt_dump_path)).unwrap();
-        // let dump: Dump = serde_json::from_str(&file_content).unwrap();
-
         // create default dump
         let dump = Dump::default();
 
         let encrypted_dump = dump.create_encrypted_dump().await.unwrap();
-
         let decrypted_dump = encrypted_dump.get_dump().unwrap();
         let decrypted_dump_str = serde_json::to_string(&decrypted_dump).unwrap();
         dbg!(decrypted_dump_str);
