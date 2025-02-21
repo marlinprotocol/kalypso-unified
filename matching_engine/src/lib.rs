@@ -1,6 +1,8 @@
 pub mod ask_lib;
 pub mod costs;
 pub mod counters;
+pub mod dump;
+pub mod encrypted_dump;
 pub mod generator_lib;
 pub mod market_metadata;
 pub mod models;
@@ -15,6 +17,8 @@ mod routes;
 mod macros;
 
 use ask_lib::ask_store::LocalAskStore;
+use dump::Dump;
+use encrypted_dump::EncryptedDump;
 use generator_lib::native_stake_store::NativeStakingStore;
 use generator_lib::stake_manager_store::StakeManagerStore;
 use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
@@ -33,10 +37,7 @@ use std::{str::FromStr, sync::Arc};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
-use ecies::{PublicKey, SecretKey};
-use ethers::types::{U256, U64};
-use kalypso_helper::secret_inputs_helpers;
-use std::fs;
+use ethers::types::U64;
 
 pub fn get_welcome_request<R>() -> Request<(), R> {
     Request {
@@ -130,133 +131,6 @@ pub struct MatchingEngineConfig {
 pub struct MatchingEngine {
     config: MatchingEngineConfig,
     matching_engine_port: u16,
-}
-
-pub enum DumpType {
-    Encrypted(EncryptedDump),
-    Regular(Dump),
-}
-
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct Dump {
-    pub market_metadata_store: MarketMetadataStore,
-    pub local_ask_store: LocalAskStore,
-    pub generator_store: GeneratorStore,
-    pub native_staking_store: NativeStakingStore,
-    pub symbiotic_stake_store: SymbioticStakeStore,
-    pub cost_store: CostStore,
-    pub key_store: KeyStore,
-    pub stake_manager_store: StakeManagerStore,
-    pub parsed_block: U64,
-}
-
-#[derive(Serialize, Clone, Deserialize, Debug)]
-pub struct EncryptedDump {
-    encrypted: Vec<u8>,
-    acls: Vec<Vec<u8>>,
-}
-
-impl Dump {
-    pub async fn create_encrypted_dump(&self) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
-        // Load matching engine configuration
-        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
-        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
-        let file_content =
-            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path))?;
-        let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
-
-        let rpc_url = config.clone().rpc_url;
-        let provider_http = Provider::<Http>::try_from(&rpc_url)?;
-        let client = Arc::new(provider_http.clone());
-
-        let proof_market_place_var = config.clone().proof_market_place;
-        let proof_market_place_addr = Address::from_str(&proof_market_place_var).unwrap();
-
-        let entity_key_registry_var = config.clone().entity_registry;
-        let entity_key_registry_address = Address::from_str(&entity_key_registry_var).unwrap();
-
-        let entity_key_registry = bindings::entity_key_registry::EntityKeyRegistry::new(
-            entity_key_registry_address,
-            client.clone(),
-        );
-
-        // Get the matching engine keys from contract
-        let mut ecies_public_keys = vec![];
-        let matching_engine_key = entity_key_registry
-            .pub_key(proof_market_place_addr, U256::from(0))
-            .call()
-            .await?;
-
-        let mut extended_pub_key = vec![0x04];
-        extended_pub_key.extend_from_slice(&matching_engine_key);
-
-        // Now, `extended_pub_key` is a 65-byte vector with `04` prepended.
-        let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into()?;
-        let me_public_key = ecies::PublicKey::parse(pub_key_array)?;
-        let me_public_key = me_public_key.serialize_compressed();
-        ecies_public_keys.push(me_public_key.to_vec());
-
-        // Ensure this matching engine can decrypt
-        let private_key = hex::decode(config.matching_engine_key)?;
-        let private_key: &[u8; 32] = private_key.as_slice().try_into()?;
-        let sk = SecretKey::parse(private_key)?;
-
-        let public_key = PublicKey::from_secret_key(&sk);
-        let public_key = public_key.serialize_compressed();
-
-        ecies_public_keys.push(public_key.to_vec());
-
-        // Check matching engine key in the ecies key list
-        let dump_value = serde_json::to_value(self)?;
-        let dump = serde_json::to_vec(&dump_value)?;
-        let encrypted_data =
-            secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump)?;
-        let encrypted_dump = EncryptedDump {
-            encrypted: encrypted_data.encrypted_data,
-            acls: encrypted_data.acls,
-        };
-        Ok(encrypted_dump)
-    }
-}
-
-impl EncryptedDump {
-    pub fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>> {
-        // Load matching engine configuration
-        let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
-        let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
-        let file_content =
-            fs::read_to_string(config_path).or_else(|_| fs::read_to_string(alt_config_path))?;
-        let config: MatchingEngineConfig = serde_json::from_str(&file_content)?;
-        let me_private_key_vec = hex::decode(config.matching_engine_key)?;
-
-        let encrypted_dump = self.clone().encrypted;
-        let mut decrypted_dump: Dump = Dump::default();
-
-        // let mut counter = 0;
-        for acl in self.clone().acls {
-            // counter = counter + 1;
-            // println!("Loop {:?}, ACL {:?}", counter, acl);
-            let decrypted = secret_inputs_helpers::decrypt_data_with_ecies_and_aes(
-                &encrypted_dump,
-                &acl,
-                &me_private_key_vec,
-                Some(U256::from(1)),
-            );
-            match decrypted {
-                Ok(data) => {
-                    // println!("OK, Loop {:?}", counter);
-                    decrypted_dump = serde_json::from_slice(&data)?;
-                    break;
-                }
-                Err(e) => {
-                    // println!("Err, Loop {:?}", counter);
-                    log::warn!("Error: ecies key mismatch {:?}", e);
-                    continue;
-                }
-            }
-        }
-        Ok(decrypted_dump)
-    }
 }
 
 impl MatchingEngine {

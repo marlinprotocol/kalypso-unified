@@ -2,8 +2,8 @@ use std::fs;
 use std::io;
 
 use dotenv::dotenv;
-use matching_engine::Dump;
-use matching_engine::EncryptedDump;
+use matching_engine::dump::Dump;
+use matching_engine::encrypted_dump::EncryptedDump;
 use matching_engine::{MatchingEngine, MatchingEngineConfig};
 
 #[tokio::main]
