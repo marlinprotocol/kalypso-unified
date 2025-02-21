@@ -17,7 +17,7 @@ use ask_lib::ask_store::{AskManagementWrite, LocalAskStore};
 use generator_lib::native_stake_store::NativeStakingStore;
 use generator_lib::stake_manager_store::StakeManagerStore;
 use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use market_metadata::MarketMetadataStore;
+use market_metadata::{MarketMetadataStore, MarketMetadataStoreWrite};
 
 use costs::CostStore;
 use ethers::prelude::*;

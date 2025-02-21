@@ -6,7 +6,7 @@ use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::generator_lib::traits::{
     GeneratorAdditionalQuery, GeneratorEarningsAndSlashing, GeneratorRegistration,
 };
-use crate::market_metadata::MarketMetadataStore;
+use crate::market_metadata::{MarketMetadataStore, MarketMetadataStoreRead};
 use crate::models::WelcomeResponse;
 use crate::utility::{address_to_string, TokenAmount, TokenTracker};
 use crate::{try_read_and_get_if_valid, try_read_or_lock};

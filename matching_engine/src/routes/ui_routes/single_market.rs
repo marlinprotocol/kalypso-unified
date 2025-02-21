@@ -10,7 +10,9 @@ use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::generator_lib::traits::{
     GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorRegistration,
 };
-use crate::market_metadata::{MarketMetadataStore, MarketSetupData, MinHardware};
+use crate::market_metadata::{
+    MarketMetadataStore, MarketMetadataStoreRead, MarketSetupData, MinHardware,
+};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::{

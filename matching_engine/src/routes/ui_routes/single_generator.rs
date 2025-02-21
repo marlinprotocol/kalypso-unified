@@ -16,6 +16,7 @@ use crate::generator_lib::traits::GeneratorEarningsAndSlashing;
 use crate::generator_lib::traits::GeneratorRegistration;
 use crate::generator_lib::traits::WithdrawalManagement;
 use crate::market_metadata::MarketMetadataStore;
+use crate::market_metadata::MarketMetadataStoreRead;
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::address_to_string;
