@@ -135,24 +135,88 @@ pub struct MarketMetadataStore {
     earnings: HashMap<U256, U256>, // market to usdc earning
 }
 
+impl MarketMetadataStore {
+    fn new() -> Self {
+        MarketMetadataStore {
+            market_by_id: HashMap::new(),
+            median_proof_cost_tracker: MedianCounter::new(),
+            median_proof_time_tracker: MedianCounter::new(),
+            earnings: HashMap::new(),
+        }
+    }
+}
+
 impl Default for MarketMetadataStore {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MarketMetadataStore {
-    pub fn count_markets(&self) -> usize {
-        self.market_by_id.len()
-    }
-
-    pub fn get_all_markets(&self) -> Vec<MarketMetadata> {
-        self.market_by_id.values().cloned().collect()
+impl MarketMetadata {
+    pub fn is_non_confidential_market(&self) -> bool {
+        self.prover_images.contains(
+            &kalypso_helper::image_id_helpers::hashed_image_id_for_non_confidential_market(),
+        )
     }
 }
 
-impl MarketMetadataStore {
-    pub fn note_proof_submission_stats_for_valid_proof(
+impl MarketMetadataStoreRead for MarketMetadataStore {
+    fn count_markets(&self) -> usize {
+        self.market_by_id.len()
+    }
+
+    fn get_all_markets(&self) -> Vec<MarketMetadata> {
+        self.market_by_id.values().cloned().collect()
+    }
+
+    fn get_median_proof_time(&self) -> U256 {
+        self.median_proof_time_tracker
+            .median_all()
+            .unwrap_or_else(U256::zero)
+    }
+
+    fn get_median_proof_time_market_wise(&self, market_id: &U256) -> U256 {
+        self.median_proof_time_tracker
+            .median_by_key(market_id)
+            .unwrap_or_else(U256::zero)
+    }
+
+    fn get_median_proof_cost(&self) -> U256 {
+        self.median_proof_cost_tracker
+            .median_all()
+            .unwrap_or_else(U256::zero)
+    }
+
+    fn get_median_proof_cost_market_wise(&self, market_id: &U256) -> U256 {
+        self.median_proof_cost_tracker
+            .median_by_key(market_id)
+            .unwrap_or_else(U256::zero)
+    }
+
+    fn get_market_by_market_id(&self, market_id: &U256) -> Option<MarketMetadata> {
+        // Retrieve market metadata without holding a lock for too long
+        self.market_by_id.get(market_id).cloned()
+    }
+
+    fn get_earnings(&self, market_id: &U256) -> Option<U256> {
+        // Safely access the earnings map
+        self.earnings.get(market_id).cloned()
+    }
+}
+
+impl MarketMetadataStoreWrite for MarketMetadataStore {
+    fn insert(&mut self, market: MarketMetadata) {
+        // Insert market metadata, minimizing lock time
+        self.market_by_id.insert(market.market_id, market);
+    }
+
+    #[allow(unused)]
+    fn remove_by_market_id(&mut self, market_id: &U256) {
+        // Remove market metadata
+        self.market_by_id.remove(market_id);
+    }
+
+    fn note_proof_submission_stats_for_valid_proof(
         &mut self,
         market_id: &U256,
         proof_time: U256,
@@ -172,7 +236,7 @@ impl MarketMetadataStore {
         }
     }
 
-    pub fn note_proof_submission_stats_for_invalid_inputs(
+    fn note_proof_submission_stats_for_invalid_inputs(
         &mut self,
         market_id: &U256,
         proof_cost: U256,
@@ -188,107 +252,103 @@ impl MarketMetadataStore {
         }
     }
 
-    pub fn get_median_proof_time(&self) -> U256 {
-        self.median_proof_time_tracker
-            .median_all()
-            .unwrap_or_else(U256::zero)
-    }
-
-    pub fn get_median_proof_time_market_wise(&self, market_id: &U256) -> U256 {
-        self.median_proof_time_tracker
-            .median_by_key(market_id)
-            .unwrap_or_else(U256::zero)
-    }
-
-    pub fn get_median_proof_cost(&self) -> U256 {
-        self.median_proof_cost_tracker
-            .median_all()
-            .unwrap_or_else(U256::zero)
-    }
-
-    pub fn get_median_proof_cost_market_wise(&self, market_id: &U256) -> U256 {
-        self.median_proof_cost_tracker
-            .median_by_key(market_id)
-            .unwrap_or_else(U256::zero)
-    }
-}
-
-impl MarketMetadataStore {
-    pub fn new() -> Self {
-        MarketMetadataStore {
-            market_by_id: HashMap::new(),
-            median_proof_cost_tracker: MedianCounter::new(),
-            median_proof_time_tracker: MedianCounter::new(),
-            earnings: HashMap::new(),
-        }
-    }
-
-    pub fn insert(&mut self, market: MarketMetadata) {
-        // Insert market metadata, minimizing lock time
-        self.market_by_id.insert(market.market_id, market);
-    }
-
-    #[allow(unused)]
-    pub fn remove_by_market_id(&mut self, market_id: &U256) {
-        // Remove market metadata
-        self.market_by_id.remove(market_id);
-    }
-
-    pub fn get_market_by_market_id(&self, market_id: &U256) -> Option<MarketMetadata> {
-        // Retrieve market metadata without holding a lock for too long
-        self.market_by_id.get(market_id).cloned()
-    }
-}
-
-impl MarketMetadataStore {
-    pub fn get_earnings(&self, market_id: &U256) -> Option<U256> {
-        // Safely access the earnings map
-        self.earnings.get(market_id).cloned()
-    }
-}
-
-impl MarketMetadata {
-    pub fn is_non_confidential_market(&self) -> bool {
-        self.prover_images.contains(
-            &kalypso_helper::image_id_helpers::hashed_image_id_for_non_confidential_market(),
-        )
-    }
-}
-
-impl MarketMetadataStore {
-    // Add a prover image by market_id
-    pub fn add_prover_image(&mut self, market_id: U256, image: H256) {
+    fn add_prover_image(&mut self, market_id: U256, image: H256) {
         if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
             metadata.prover_images.insert(image);
         }
     }
 
     // Remove a prover image by market_id
-    pub fn remove_prover_image(&mut self, market_id: U256, image: H256) {
+    fn remove_prover_image(&mut self, market_id: U256, image: H256) {
         if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
             metadata.prover_images.remove(&image);
         }
     }
 
     // Add an IVS image by market_id
-    pub fn add_ivs_image(&mut self, market_id: U256, image: H256) {
+    fn add_ivs_image(&mut self, market_id: U256, image: H256) {
         if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
             metadata.ivs_images.insert(image);
         }
     }
 
     // Remove an IVS image by market_id
-    pub fn remove_ivs_image(&mut self, market_id: U256, image: H256) {
+    fn remove_ivs_image(&mut self, market_id: U256, image: H256) {
         if let Some(metadata) = self.market_by_id.get_mut(&market_id) {
             metadata.ivs_images.remove(&image);
         }
     }
-}
 
-impl MarketMetadataStore {
-    pub fn update_marketmeta_bytes(&mut self, market_id: U256, metadata: Bytes) {
+    fn update_marketmeta_bytes(&mut self, market_id: U256, metadata: Bytes) {
         if let Some(marketmetadata) = self.market_by_id.get_mut(&market_id) {
             marketmetadata.metadata = metadata
         }
     }
+}
+
+pub trait MarketMetadataStoreRead {
+    /// Returns the total number of markets.
+    fn count_markets(&self) -> usize;
+
+    /// Returns a vector of all stored MarketMetadata.
+    fn get_all_markets(&self) -> Vec<MarketMetadata>;
+
+    /// Returns the median proof time across all markets.
+    fn get_median_proof_time(&self) -> U256;
+
+    /// Returns the median proof time for a specific market.
+    fn get_median_proof_time_market_wise(&self, market_id: &U256) -> U256;
+
+    /// Returns the median proof cost across all markets.
+    fn get_median_proof_cost(&self) -> U256;
+
+    /// Returns the median proof cost for a specific market.
+    fn get_median_proof_cost_market_wise(&self, market_id: &U256) -> U256;
+
+    /// Retrieves market metadata for a given market id.
+    fn get_market_by_market_id(&self, market_id: &U256) -> Option<MarketMetadata>;
+
+    /// Retrieves earnings for a given market id.
+    fn get_earnings(&self, market_id: &U256) -> Option<U256>;
+}
+
+/// =============================
+/// Write (Mutating) Operations Trait
+/// =============================
+pub trait MarketMetadataStoreWrite {
+    /// Inserts new market metadata.
+    fn insert(&mut self, market: MarketMetadata);
+
+    /// Removes market metadata by market id.
+    fn remove_by_market_id(&mut self, market_id: &U256);
+
+    /// Records proof submission statistics for a valid proof.
+    fn note_proof_submission_stats_for_valid_proof(
+        &mut self,
+        market_id: &U256,
+        proof_time: U256,
+        proof_cost: U256,
+    );
+
+    /// Records proof submission statistics for invalid inputs.
+    fn note_proof_submission_stats_for_invalid_inputs(
+        &mut self,
+        market_id: &U256,
+        proof_cost: U256,
+    );
+
+    /// Adds a prover image to the market metadata.
+    fn add_prover_image(&mut self, market_id: U256, image: H256);
+
+    /// Removes a prover image from the market metadata.
+    fn remove_prover_image(&mut self, market_id: U256, image: H256);
+
+    /// Adds an IVS image to the market metadata.
+    fn add_ivs_image(&mut self, market_id: U256, image: H256);
+
+    /// Removes an IVS image from the market metadata.
+    fn remove_ivs_image(&mut self, market_id: U256, image: H256);
+
+    /// Updates the metadata bytes for a given market id.
+    fn update_marketmeta_bytes(&mut self, market_id: U256, metadata: Bytes);
 }

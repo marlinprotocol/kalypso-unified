@@ -1,16 +1,16 @@
-use crate::generator_lib::*;
+use crate::generator_lib::{key_store, key_store::KeyStoreOperations};
 use crate::log_processor::constants;
 use ecies;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-pub async fn process_entity_key_registry_logs(
+pub async fn process_entity_key_registry_logs<T: KeyStoreOperations>(
     log: &Log,
     entity_key_registry: &bindings::entity_key_registry::EntityKeyRegistry<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    key_store: &Arc<RwLock<key_store::KeyStore>>,
+    key_store: &Arc<RwLock<T>>,
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if constants::ENTITY_KEY_REGISTRY_TOPICS_SKIP

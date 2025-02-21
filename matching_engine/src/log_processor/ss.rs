@@ -4,29 +4,47 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
-    ask_lib::ask_store,
+    ask_lib::ask_store::AskManagementRead,
     generator_lib::{
-        delegation, generator_store,
-        symbiotic_stake_store::{self, SlashResult, VaultSnapshot},
+        delegation,
+        symbiotic_stake_store::{
+            OperatorStakeManagement, SlashResult, SlashResultManagement, TokenLockManagement,
+            VaultSnapshot, VaultSnapshotManagement,
+        },
+        traits::{
+            GeneratorAdditionalQuery, GeneratorLockManagement, GeneratorRegistration,
+            GeneratorSlashingManagement, GeneratorStakeComputeManagement,
+        },
     },
     log_processor::constants,
     utility::{get_l1_block_from_l2_block, tx_to_string},
 };
 
-pub async fn process_symbiotic_staking_logs(
+pub async fn process_symbiotic_staking_logs<G, S, A>(
     log: &Log,
     symbiotic_staking: &bindings::symbiotic_staking::SymbioticStaking<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
-    symbiotic_stake_store: &Arc<RwLock<symbiotic_stake_store::SymbioticStakeStore>>,
-    #[allow(unused)] ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
+    generator_store: &Arc<RwLock<G>>,
+    symbiotic_stake_store: &Arc<RwLock<S>>,
+    ask_store: &Arc<RwLock<A>>,
     rpc_url: &str,
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    // let provider_http = Provider::<Http>::try_from(rpc_url).unwrap();
-    // let client = Arc::new(provider_http.clone());
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    G: GeneratorAdditionalQuery
+        + GeneratorLockManagement
+        + GeneratorRegistration
+        + GeneratorSlashingManagement
+        + GeneratorStakeComputeManagement,
 
+    S: OperatorStakeManagement
+        + SlashResultManagement
+        + TokenLockManagement
+        + VaultSnapshotManagement,
+
+    A: AskManagementRead,
+{
     if constants::SYMBIOTIC_STAKING_TOPICS_SKIP
         .get(&log.topics[0])
         .is_some()
@@ -386,7 +404,7 @@ pub async fn process_symbiotic_staking_logs(
 
         let (known_tokens, _): (Vec<Address>, Vec<U256>) = {
             symbiotic_stake_store
-                .tokens_to_lock
+                .tokens_to_lock()
                 .clone()
                 .to_address_token_pair()
                 .into_iter()
@@ -557,7 +575,7 @@ pub async fn process_symbiotic_staking_logs(
             delegation::Source::Symbiotic,
         );
 
-        #[cfg(not(feature = "generate_dummy_slash_logs"))]
+        // TODO: revisit this once slashing is enabled
         {
             use crate::utility::get_timestamp_from_l2block_number;
 

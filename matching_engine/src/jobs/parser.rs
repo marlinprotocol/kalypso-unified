@@ -357,8 +357,6 @@ impl LogParser {
                                     &self.shared_generator_store,
                                     &self.shared_market_store,
                                     &self.shared_cost_store,
-                                    &self.shared_native_stake_store,
-                                    &self.shared_symbiotic_stake_store,
                                     &self.matching_engine_key,
                                     &self.matching_engine_slave_keys,
                                     &self.rpc_url,
@@ -503,7 +501,15 @@ impl LogParser {
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         use kalypso_helper::try_read_contract_error_log;
 
-        use crate::utility::TokenTracker;
+        use crate::{
+            ask_lib::ask_store::{AskManagementRead, AskManagementWrite},
+            generator_lib::{
+                key_store::KeyStoreOperations,
+                stake_manager_store::StakeManagerOperations,
+                traits::{GeneratorAdditionalQuery, GeneratorAvailability, JobMissedCounter},
+            },
+            utility::TokenTracker,
+        };
 
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
@@ -938,6 +944,8 @@ impl LogParser {
         symbiotic_staking_store: &Arc<RwLock<SymbioticStakeStore>>,
     ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
+
+        use crate::generator_lib::traits::{GeneratorFilter, GeneratorQuery};
         let generator_store = generator_store.read().await;
         let key_store = key_store.read().await;
         let native_staking_store = native_staking_store.read().await;

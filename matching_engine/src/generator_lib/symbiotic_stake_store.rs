@@ -7,16 +7,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::utility::TokenTracker;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct SymbioticStakeStore {
-    pub operators: HashMap<Address, TokenTracker>,
-    pub vault_snapshots: HashMap<U256, HashMap<U256, VaultSnapshot>>, // vault snapshot indexed with captures timestamps, then index
-    pub slash_results: HashMap<U256, HashMap<U256, SlashResult>>, // slash result indexed with captures timestamps, then index
-    pub vault_snapshot_indexes: Vec<U256>,
-    pub slash_result_indexes: Vec<U256>,
-    pub tokens_to_lock: TokenTracker,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SlashResult {
     pub transmitter: Address,
@@ -214,8 +204,18 @@ impl SlashResult {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SymbioticStakeStore {
+    pub operators: HashMap<Address, TokenTracker>,
+    pub vault_snapshots: HashMap<U256, HashMap<U256, VaultSnapshot>>, // vault snapshot indexed with captures timestamps, then index
+    pub slash_results: HashMap<U256, HashMap<U256, SlashResult>>, // slash result indexed with captures timestamps, then index
+    pub vault_snapshot_indexes: Vec<U256>,
+    pub slash_result_indexes: Vec<U256>,
+    pub tokens_to_lock: TokenTracker,
+}
+
 impl SymbioticStakeStore {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             operators: HashMap::new(),
             tokens_to_lock: TokenTracker::new(),
@@ -227,8 +227,14 @@ impl SymbioticStakeStore {
     }
 }
 
-impl SymbioticStakeStore {
-    pub fn note_down_stake(
+impl Default for SymbioticStakeStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl OperatorStakeManagement for SymbioticStakeStore {
+    fn note_down_stake(
         &mut self,
         operator: &Address,
         token_address: &Address,
@@ -246,11 +252,11 @@ impl SymbioticStakeStore {
         }
     }
 
-    pub fn get_complete_token_info(&self, operator: &Address) -> Option<&TokenTracker> {
+    fn get_complete_token_info(&self, operator: &Address) -> Option<&TokenTracker> {
         self.operators.get(operator)
     }
 
-    pub fn get_latest_stake_info(&self, operator: &Address, token_address: &Address) -> U256 {
+    fn get_latest_stake_info(&self, operator: &Address, token_address: &Address) -> U256 {
         let token_tracker = self.get_complete_token_info(operator);
 
         if token_tracker.is_none() {
@@ -262,23 +268,27 @@ impl SymbioticStakeStore {
         token_tracker.get_balance(token_address)
     }
 
-    pub fn clean_operators(&mut self) {
+    fn clean_operators(&mut self) {
         self.operators = HashMap::new();
     }
 }
 
-impl SymbioticStakeStore {
-    pub fn set_lock_token(&mut self, token: Address, amount: U256) {
+impl TokenLockManagement for SymbioticStakeStore {
+    fn set_lock_token(&mut self, token: Address, amount: U256) {
         self.tokens_to_lock.force_set(token, amount);
     }
 
-    pub fn remove_lock_token(&mut self, token: Address) {
+    fn remove_lock_token(&mut self, token: Address) {
         self.tokens_to_lock.force_remove(token);
+    }
+
+    fn tokens_to_lock(&self) -> TokenTracker {
+        self.tokens_to_lock.clone()
     }
 }
 
-impl SymbioticStakeStore {
-    pub fn store_vault_snapshot(
+impl VaultSnapshotManagement for SymbioticStakeStore {
+    fn store_vault_snapshot(
         &mut self,
         captured_timestamp: U256,
         index: U256,
@@ -293,29 +303,21 @@ impl SymbioticStakeStore {
         }
     }
 
-    pub fn get_vault_snapshot(
-        &self,
-        captured_timestamp: U256,
-        index: U256,
-    ) -> Option<&VaultSnapshot> {
+    fn get_vault_snapshot(&self, captured_timestamp: U256, index: U256) -> Option<&VaultSnapshot> {
         self.vault_snapshots
             .get(&captured_timestamp)
             .and_then(|snapshots| snapshots.get(&index))
     }
 
-    pub fn get_all_vault_snapshots(&self, captured_timestamp: U256) -> Vec<VaultSnapshot> {
+    fn get_all_vault_snapshots(&self, captured_timestamp: U256) -> Vec<VaultSnapshot> {
         self.vault_snapshots
             .get(&captured_timestamp)
             .map(|snapshots| snapshots.values().cloned().collect())
             .unwrap_or_default()
     }
-
-    pub fn store_slash_result(
-        &mut self,
-        captured_timestamp: U256,
-        index: U256,
-        result: SlashResult,
-    ) {
+}
+impl SlashResultManagement for SymbioticStakeStore {
+    fn store_slash_result(&mut self, captured_timestamp: U256, index: U256, result: SlashResult) {
         self.slash_results
             .entry(captured_timestamp)
             .or_insert_with(HashMap::new)
@@ -325,16 +327,75 @@ impl SymbioticStakeStore {
         }
     }
 
-    pub fn get_slash_result(&self, captured_timestamp: U256, index: U256) -> Option<&SlashResult> {
+    fn get_slash_result(&self, captured_timestamp: U256, index: U256) -> Option<&SlashResult> {
         self.slash_results
             .get(&captured_timestamp)
             .and_then(|results| results.get(&index))
     }
 
-    pub fn get_all_slash_results(&self, captured_timestamp: U256) -> Vec<SlashResult> {
+    fn get_all_slash_results(&self, captured_timestamp: U256) -> Vec<SlashResult> {
         self.slash_results
             .get(&captured_timestamp)
             .map(|results| results.values().cloned().collect())
             .unwrap_or_default()
     }
+}
+
+pub trait OperatorStakeManagement {
+    /// Record the stake for a given operator.
+    fn note_down_stake(
+        &mut self,
+        operator: &Address,
+        token_address: &Address,
+        absolute_stake: &U256,
+    );
+
+    /// Get the complete token tracking info for an operator.
+    fn get_complete_token_info(&self, operator: &Address) -> Option<&TokenTracker>;
+
+    /// Retrieve the latest stake balance for an operator for a specific token.
+    fn get_latest_stake_info(&self, operator: &Address, token_address: &Address) -> U256;
+
+    /// Clear all operator stake data.
+    fn clean_operators(&mut self);
+}
+
+/// Trait for managing lock tokens.
+pub trait TokenLockManagement {
+    /// Set (or update) the amount of tokens to lock.
+    fn set_lock_token(&mut self, token: Address, amount: U256);
+
+    /// Remove the lock for a given token.
+    fn remove_lock_token(&mut self, token: Address);
+
+    fn tokens_to_lock(&self) -> TokenTracker;
+}
+
+/// Trait for managing vault snapshots.
+pub trait VaultSnapshotManagement {
+    /// Store a vault snapshot at the given capture timestamp and index.
+    fn store_vault_snapshot(
+        &mut self,
+        captured_timestamp: U256,
+        index: U256,
+        snapshot: VaultSnapshot,
+    );
+
+    /// Retrieve a vault snapshot by capture timestamp and index.
+    fn get_vault_snapshot(&self, captured_timestamp: U256, index: U256) -> Option<&VaultSnapshot>;
+
+    /// Retrieve all vault snapshots for a given capture timestamp.
+    fn get_all_vault_snapshots(&self, captured_timestamp: U256) -> Vec<VaultSnapshot>;
+}
+
+/// Trait for managing slash results.
+pub trait SlashResultManagement {
+    /// Store a slash result at the given capture timestamp and index.
+    fn store_slash_result(&mut self, captured_timestamp: U256, index: U256, result: SlashResult);
+
+    /// Retrieve a slash result by capture timestamp and index.
+    fn get_slash_result(&self, captured_timestamp: U256, index: U256) -> Option<&SlashResult>;
+
+    /// Retrieve all slash results for a given capture timestamp.
+    fn get_all_slash_results(&self, captured_timestamp: U256) -> Vec<SlashResult>;
 }

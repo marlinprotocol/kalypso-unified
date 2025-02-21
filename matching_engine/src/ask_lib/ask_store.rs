@@ -1,53 +1,17 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
 use im::HashMap;
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, fmt::Formatter, fmt::Result};
 
 use crate::counters::counters::GenericCounters;
 
 use super::{
-    ask::{CompletedProofs, LocalAsk},
-    ask_status::{AskState, Comparison, LocalAskStatus},
+    ask::LocalAsk,
+    ask_query::AskQueryResult,
+    ask_status::{AskState, LocalAskStatus},
+    completed_proofs::{CompletedProofs, CompletedProofsTrait},
+    Proof, RemoveReason,
 };
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum Proof {
-    ValidProof(Bytes),
-    InvalidInputAttestation,
-    FailedProofGeneration,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum RemoveReason {
-    ProofCreated,
-    BidCancelled,
-    ProofNotGenerated,
-    InvalidInputsDetected,
-}
-
-impl Display for Proof {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        match self {
-            Proof::ValidProof(bytes) => {
-                write!(f, "valid: {}", hex::encode(bytes))
-            }
-            Proof::InvalidInputAttestation => {
-                write!(f, "invalid inputs detected")
-            }
-            Proof::FailedProofGeneration => {
-                write!(f, "failed proof generation")
-            }
-        }
-    }
-}
-
-impl Default for Proof {
-    fn default() -> Self {
-        Proof::FailedProofGeneration
-    }
-}
 
 use crate::utility::deserialize_u256_map;
 use crate::utility::serialize_u256_map;
@@ -129,144 +93,8 @@ pub struct LocalAskStore {
     job_completed_on_timestamp: HashMap<U256, U256>,
 }
 
-pub struct AskQueryResult {
-    asks: Option<Vec<LocalAsk>>,
-}
-
-impl AskQueryResult {
-    #[allow(unused)]
-    pub fn sort_by_expiry(mut self) -> Self {
-        if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.expiry.cmp(&b.expiry));
-        }
-        self
-    }
-
-    pub fn result(self) -> Option<Vec<LocalAsk>> {
-        self.asks
-    }
-
-    pub fn sort_by_ask_id(mut self, asc: bool) -> Self {
-        if let Some(ref mut asks) = self.asks {
-            if asc {
-                // Sort in ascending order
-                asks.par_sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
-            } else {
-                // Sort in descending order
-                asks.par_sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
-            }
-        }
-        self
-    }
-
-    pub fn filter_by_market_id(self, market_id: U256) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter() // Parallel iterator over asks
-                .filter(|ask| ask.market_id == market_id) // Filter by market_id
-                .collect::<Vec<_>>() // Collect filtered results
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
-    pub fn sort_by_reward(mut self) -> Self {
-        if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.reward.cmp(&b.reward));
-        }
-        self
-    }
-
-    #[allow(unused)]
-    pub fn sort_by_deadline(mut self) -> Self {
-        if let Some(ref mut asks) = self.asks {
-            asks.par_sort_by(|a, b| a.deadline.cmp(&b.deadline));
-        }
-        self
-    }
-
-    #[allow(unused)]
-    pub fn filter_by_has_private_inputs(self, value: bool) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| ask.has_private_inputs == value)
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    pub fn filter_by_flag(self, value: bool) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| ask.invalid_secret_flag == value)
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
-    fn compare(value: U256, other: U256, comparison: &Comparison) -> bool {
-        match comparison {
-            Comparison::Equal => value == other,
-            Comparison::LessThan => value < other,
-            Comparison::GreaterThan => value > other,
-            Comparison::LessThanOrEqual => value <= other,
-            Comparison::GreaterThanOrEqual => value >= other,
-        }
-    }
-
-    #[allow(unused)]
-    pub fn filter_by_expiry(self, value: U256, comparison: Comparison) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| Self::compare(ask.expiry, value, &comparison))
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
-    pub fn filter_by_reward(self, value: U256, comparison: Comparison) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| Self::compare(ask.reward, value, &comparison))
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
-    pub fn filter_by_deadline(self, value: U256, comparison: Comparison) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| Self::compare(ask.deadline, value, &comparison))
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    #[allow(unused)]
-    pub fn filter_by_prover_refund_address(self, address: Address) -> Self {
-        let filtered = self.asks.map(|asks| {
-            asks.into_par_iter()
-                .filter(|ask| ask.prover_refund_address == address)
-                .collect::<Vec<_>>()
-        });
-        AskQueryResult { asks: filtered }
-    }
-
-    pub fn get_count(self) -> usize {
-        self.asks.map(|v| v.len()).unwrap_or(0)
-    }
-}
-
-impl Default for LocalAskStore {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl LocalAskStore {
-    pub fn new() -> Self {
+    fn new() -> Self {
         LocalAskStore {
             asks_by_id: HashMap::new(),
             market_id_index: HashMap::new(),
@@ -286,8 +114,16 @@ impl LocalAskStore {
             job_completed_on_timestamp: HashMap::new(),
         }
     }
+}
 
-    pub fn insert(&mut self, ask: LocalAsk) {
+impl Default for LocalAskStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AskManagementWrite for LocalAskStore {
+    fn insert(&mut self, ask: LocalAsk) {
         self.asks_by_id.insert(ask.ask_id, ask.clone());
         self.request_counter_by_requestors
             .insert(ask.market_id, ask.prover_refund_address);
@@ -306,7 +142,7 @@ impl LocalAskStore {
     }
 
     #[allow(unused)]
-    pub fn remove_ask_only_if_completed(&mut self, ask_id: &U256, reason: RemoveReason) {
+    fn remove_ask_only_if_completed(&mut self, ask_id: &U256, reason: RemoveReason) {
         if let Some(ask) = self.asks_by_id.remove(ask_id) {
             // Check if the ask's state is Some and Complete, else return early
             if ask.state != Some(AskState::Complete) {
@@ -334,7 +170,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn modify_state(&mut self, ask_id: &U256, new_state: AskState) {
+    fn modify_state(&mut self, ask_id: &U256, new_state: AskState) {
         if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
             if let Some(old_state) = ask.state.take() {
                 if let Some(vec) = self.state_index.get_mut(&old_state) {
@@ -350,25 +186,25 @@ impl LocalAskStore {
         }
     }
 
-    pub fn update_ask_generator(&mut self, ask_id: &U256, new_generator: Option<Address>) {
+    fn update_ask_generator(&mut self, ask_id: &U256, new_generator: Option<Address>) {
         if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
             ask.generator = new_generator;
         }
     }
 
-    pub fn update_ask_acl(&mut self, ask_id: &U256, new_acl: Option<Bytes>) {
+    fn update_ask_acl(&mut self, ask_id: &U256, new_acl: Option<Bytes>) {
         if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
             ask.secret_acl = new_acl;
         }
     }
 
-    pub fn update_deadline(&mut self, ask_id: &U256, deadline: U256) {
+    fn update_deadline(&mut self, ask_id: &U256, deadline: U256) {
         if let Some(ask) = self.asks_by_id.get_mut(ask_id) {
             ask.deadline = deadline;
         }
     }
 
-    pub fn store_valid_proof(
+    fn store_valid_proof(
         &mut self,
         ask_id: &U256,
         proof: Bytes,
@@ -389,12 +225,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn note_invalid_inputs(
-        &mut self,
-        ask_id: &U256,
-        proof_cost: U256,
-        proof_transaction: String,
-    ) {
+    fn note_invalid_inputs(&mut self, ask_id: &U256, proof_cost: U256, proof_transaction: String) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
                 self.proofs.insert(*ask_id, Proof::InvalidInputAttestation);
@@ -407,7 +238,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn note_proof_denied(&mut self, ask_id: &U256, proof_transaction: String) {
+    fn note_proof_denied(&mut self, ask_id: &U256, proof_transaction: String) {
         match self.asks_by_id.get_mut(ask_id) {
             Some(ask_data) => {
                 self.proofs.insert(*ask_id, Proof::FailedProofGeneration);
@@ -418,29 +249,31 @@ impl LocalAskStore {
             _ => {}
         }
     }
+}
 
-    pub fn get_proving_time(&self, ask_id: &U256) -> Option<U256> {
+impl AskManagementRead for LocalAskStore {
+    fn get_proving_time(&self, ask_id: &U256) -> Option<U256> {
         self.proving_time_taken.get(ask_id).cloned()
     }
-    pub fn get_proving_cost(&self, ask_id: &U256) -> Option<U256> {
+    fn get_proving_cost(&self, ask_id: &U256) -> Option<U256> {
         self.proving_cost_taken.get(ask_id).cloned()
     }
 
-    pub fn get_proof_transaction(&self, ask_id: &U256) -> Option<String> {
+    fn get_proof_transaction(&self, ask_id: &U256) -> Option<String> {
         self.proof_transaction.get(ask_id).cloned()
     }
 
-    pub fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof> {
+    fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof> {
         self.proofs.get(ask_id).cloned()
     }
 
-    pub fn get_by_market_id(&self, market_id: &U256) -> AskQueryResult {
+    fn get_by_market_id(&self, market_id: &U256) -> AskQueryResult {
         AskQueryResult {
             asks: self.market_id_index.get(market_id).cloned(),
         }
     }
 
-    pub fn get_by_ask_state_except_complete(&self, state: AskState) -> AskQueryResult {
+    fn get_by_ask_state_except_complete(&self, state: AskState) -> AskQueryResult {
         if state == AskState::Complete {
             return AskQueryResult { asks: None };
         }
@@ -449,17 +282,17 @@ impl LocalAskStore {
         }
     }
 
-    pub fn get_cleanup_asks(&self) -> AskQueryResult {
+    fn get_cleanup_asks(&self) -> AskQueryResult {
         AskQueryResult {
             asks: self.state_index.get(&AskState::Complete).cloned(),
         }
     }
 
-    pub fn get_by_ask_id(&self, ask_id: &U256) -> Option<LocalAsk> {
+    fn get_by_ask_id(&self, ask_id: &U256) -> Option<LocalAsk> {
         self.asks_by_id.get(ask_id).cloned()
     }
 
-    pub fn get_ask_status(&self) -> LocalAskStatus {
+    fn get_ask_status(&self) -> LocalAskStatus {
         let created = self
             .get_by_ask_state_except_complete(AskState::Create)
             .get_count();
@@ -488,54 +321,52 @@ impl LocalAskStore {
     }
 }
 
-impl LocalAskStore {
+impl RequestorCounters for LocalAskStore {
     // Get the total number of unique requestors across all markets
-    pub fn total_requestor_count(&self) -> usize {
+    fn total_requestor_count(&self) -> usize {
         self.request_counter_by_requestors.total_count()
     }
 
     // Get the number of requestors for a specific market
-    pub fn total_requestors_by_market_count(&self, market_id: &U256) -> usize {
+    fn total_requestors_by_market_count(&self, market_id: &U256) -> usize {
         self.request_counter_by_requestors.key_count(market_id)
     }
 }
 
-impl LocalAskStore {
-    pub fn get_proof_count(&self, market_id: &U256) -> usize {
+impl ProofCounters for LocalAskStore {
+    fn get_proof_count(&self, market_id: &U256) -> usize {
         self.proof_counter_by_market.key_count(market_id)
     }
 
-    pub fn get_total_proof_count(&self) -> usize {
+    fn get_total_proof_count(&self) -> usize {
         self.proof_counter_by_market.total_count()
     }
 }
 
-impl LocalAskStore {
-    pub fn get_request_count_by_market_id(&self, market_id: &U256) -> usize {
+impl MarketRequestCounters for LocalAskStore {
+    fn get_request_count_by_market_id(&self, market_id: &U256) -> usize {
         self.request_counter_by_market_id.key_count(market_id)
     }
 
-    pub fn get_total_request_count(&self) -> usize {
+    fn get_total_request_count(&self) -> usize {
         self.request_counter_by_market_id.total_count()
     }
 }
 
-impl LocalAskStore {
-    pub fn get_failed_request_count_by_market_id(&self, market_id: &U256) -> usize {
+impl CompletedProofsManagement for LocalAskStore {
+    fn get_failed_request_count_by_market_id(&self, market_id: &U256) -> usize {
         self.failed_request_counter_by_market.key_count(market_id)
     }
 
-    pub fn get_failed_request_count(&self) -> usize {
+    fn get_failed_request_count(&self) -> usize {
         self.failed_request_counter_by_market.total_count()
     }
-}
 
-impl LocalAskStore {
-    pub fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk> {
+    fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk> {
         self.completed_proofs.get_recent_completed_proofs(n)
     }
 
-    pub fn get_completed_proof_of_generator(
+    fn get_completed_proof_of_generator(
         &self,
         generator: &Address,
         skip: usize,
@@ -558,7 +389,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn get_completed_proofs_of_market(
+    fn get_completed_proofs_of_market(
         &self,
         market_id: &U256,
         skip: usize,
@@ -580,53 +411,138 @@ impl LocalAskStore {
     }
 }
 
-impl LocalAskStore {
-    #[deprecated(note = "Preferably don't read it anywhere")]
-    pub fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256> {
+impl TimingOperations for LocalAskStore {
+    fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256> {
         self.proof_cycle_completed_on.get(ask_id).cloned()
     }
 
-    pub fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256) {
+    fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256) {
         self.proof_cycle_completed_on
             .insert(ask_id.clone(), submitted_on);
     }
-}
 
-impl LocalAskStore {
-    pub fn get_job_completed_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+    fn get_job_completed_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
         self.job_completed_on_timestamp.get(ask_id).cloned()
     }
 
-    pub fn update_job_completed_on_timestamp(
-        &mut self,
-        ask_id: &U256,
-        completed_on_timestamp: U256,
-    ) {
+    fn update_job_completed_on_timestamp(&mut self, ask_id: &U256, completed_on_timestamp: U256) {
         self.job_completed_on_timestamp
             .insert(ask_id.clone(), completed_on_timestamp);
     }
 
-    pub fn get_job_matched_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+    fn get_job_matched_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
         self.job_matched_on_timestamp.get(ask_id).cloned()
     }
 
-    pub fn update_job_matched_on_timestamp(&mut self, ask_id: &U256, matched_on_timestamp: U256) {
+    fn update_job_matched_on_timestamp(&mut self, ask_id: &U256, matched_on_timestamp: U256) {
         self.job_matched_on_timestamp
             .insert(ask_id.clone(), matched_on_timestamp);
     }
 
-    pub fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+    fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
         self.job_created_on_timestamp.get(ask_id).cloned()
     }
 
-    pub fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256) {
+    fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256) {
         self.job_created_on_timestamp
             .insert(ask_id.clone(), created_on_timestamp);
     }
 
-    pub fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256> {
+    fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256> {
         let created_on = self.get_job_created_on_timestamp(ask_id)?;
         let completed_on = self.get_job_completed_on_timestamp(ask_id)?;
         Some(completed_on.saturating_sub(created_on))
     }
+}
+
+/// Trait 1a – AskManagementWrite:
+/// Contains functions for creating, updating, removing.
+pub trait AskManagementWrite {
+    fn insert(&mut self, ask: LocalAsk);
+    fn remove_ask_only_if_completed(&mut self, ask_id: &U256, reason: RemoveReason);
+    fn modify_state(&mut self, ask_id: &U256, new_state: AskState);
+    fn update_ask_generator(&mut self, ask_id: &U256, new_generator: Option<Address>);
+    fn update_ask_acl(&mut self, ask_id: &U256, new_acl: Option<Bytes>);
+    fn update_deadline(&mut self, ask_id: &U256, deadline: U256);
+    fn store_valid_proof(
+        &mut self,
+        ask_id: &U256,
+        proof: Bytes,
+        proof_time: U256,
+        proof_cost: U256,
+        proof_transaction: String,
+    );
+    fn note_invalid_inputs(&mut self, ask_id: &U256, proof_cost: U256, proof_transaction: String);
+    fn note_proof_denied(&mut self, ask_id: &U256, proof_transaction: String);
+}
+
+/// Trait 1b – AskManagementRead:
+/// Contains functions for querying asks.
+pub trait AskManagementRead {
+    fn get_proving_time(&self, ask_id: &U256) -> Option<U256>;
+    fn get_proving_cost(&self, ask_id: &U256) -> Option<U256>;
+    fn get_proof_transaction(&self, ask_id: &U256) -> Option<String>;
+    fn get_proof_by_ask_id(&self, ask_id: &U256) -> Option<Proof>;
+    fn get_by_market_id(&self, market_id: &U256) -> AskQueryResult;
+    fn get_by_ask_state_except_complete(&self, state: AskState) -> AskQueryResult;
+    fn get_cleanup_asks(&self) -> AskQueryResult;
+    fn get_by_ask_id(&self, ask_id: &U256) -> Option<LocalAsk>;
+    fn get_ask_status(&self) -> LocalAskStatus;
+}
+
+/// Trait 2 – RequestorCounters:
+/// Provides functions to query requestor-related counters.
+pub trait RequestorCounters {
+    fn total_requestor_count(&self) -> usize;
+    fn total_requestors_by_market_count(&self, market_id: &U256) -> usize;
+}
+
+/// Trait 3 – ProofCounters:
+/// Functions to query the proof counters.
+pub trait ProofCounters {
+    fn get_proof_count(&self, market_id: &U256) -> usize;
+    fn get_total_proof_count(&self) -> usize;
+}
+
+/// Trait 4 – MarketRequestCounters:
+/// Functions for market-based request counts.
+pub trait MarketRequestCounters {
+    fn get_request_count_by_market_id(&self, market_id: &U256) -> usize;
+    fn get_total_request_count(&self) -> usize;
+}
+
+/// Trait 5 – CompletedProofsManagement:
+/// Combines failed request counters and completed proofs queries.
+pub trait CompletedProofsManagement {
+    fn get_failed_request_count_by_market_id(&self, market_id: &U256) -> usize;
+    fn get_failed_request_count(&self) -> usize;
+    fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk>;
+    fn get_completed_proof_of_generator(
+        &self,
+        generator: &Address,
+        skip: usize,
+        count: usize,
+    ) -> Vec<LocalAsk>;
+    fn get_completed_proofs_of_market(
+        &self,
+        market_id: &U256,
+        skip: usize,
+        count: usize,
+    ) -> Vec<LocalAsk>;
+}
+
+/// Trait 6 – TimingOperations:
+/// Includes the functions for handling proof cycle and job timestamp updates and queries.
+pub trait TimingOperations {
+    #[deprecated(note = "Preferably don't read it anywhere")]
+    fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256>;
+    fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256);
+
+    fn get_job_completed_on_timestamp(&self, ask_id: &U256) -> Option<U256>;
+    fn update_job_completed_on_timestamp(&mut self, ask_id: &U256, completed_on_timestamp: U256);
+    fn get_job_matched_on_timestamp(&self, ask_id: &U256) -> Option<U256>;
+    fn update_job_matched_on_timestamp(&mut self, ask_id: &U256, matched_on_timestamp: U256);
+    fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256>;
+    fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256);
+    fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256>;
 }

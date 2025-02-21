@@ -19,7 +19,7 @@ use generator_lib::stake_manager_store::StakeManagerStore;
 use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use market_metadata::MarketMetadataStore;
 
-use costs::CostStore;
+use costs::{CostStore, CostStoreOperations};
 use ethers::prelude::*;
 use generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
 use jobs::{parser::LogParser, server::MatchingEngineServer};
@@ -339,14 +339,14 @@ impl MatchingEngine {
     }
 
     pub async fn run(&self, path_to_snapshot: String) -> anyhow::Result<()> {
-        let local_ask_store = LocalAskStore::new();
-        let generator_list_store = GeneratorStore::new();
-        let key_list_store = KeyStore::new();
+        let local_ask_store = LocalAskStore::default();
+        let generator_list_store = GeneratorStore::default();
+        let key_list_store = KeyStore::default();
         let cost_store = CostStore::new();
-        let market_list_store = MarketMetadataStore::new();
-        let symbiotic_staking_store = SymbioticStakeStore::new();
-        let native_staking_store = NativeStakingStore::new();
-        let stake_manager_store = StakeManagerStore::new();
+        let market_list_store = MarketMetadataStore::default();
+        let symbiotic_staking_store = SymbioticStakeStore::default();
+        let native_staking_store = NativeStakingStore::default();
+        let stake_manager_store = StakeManagerStore::default();
         let start_block_string = self.config.clone().start_block;
 
         // wrapping around is case to shared across threads
