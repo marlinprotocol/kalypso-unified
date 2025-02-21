@@ -4,7 +4,7 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
-    ask_lib::ask_store,
+    ask_lib::ask_store::{self, AskManagementRead},
     generator_lib::{
         delegation,
         generator_store::{self, WithdrawlRequest},

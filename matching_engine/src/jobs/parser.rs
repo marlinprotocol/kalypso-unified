@@ -503,7 +503,10 @@ impl LogParser {
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         use kalypso_helper::try_read_contract_error_log;
 
-        use crate::utility::TokenTracker;
+        use crate::{
+            ask_lib::ask_store::{AskManagementRead, AskManagementWrite},
+            utility::TokenTracker,
+        };
 
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };

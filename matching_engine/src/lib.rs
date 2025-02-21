@@ -13,7 +13,7 @@ mod routes;
 #[macro_use]
 mod macros;
 
-use ask_lib::ask_store::LocalAskStore;
+use ask_lib::ask_store::{AskManagementWrite, LocalAskStore};
 use generator_lib::native_stake_store::NativeStakingStore;
 use generator_lib::stake_manager_store::StakeManagerStore;
 use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
