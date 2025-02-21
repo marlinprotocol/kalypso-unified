@@ -10,8 +10,8 @@ pub struct EncryptedDump {
     pub acls: Vec<Vec<u8>>,
 }
 
-impl EncryptedDump {
-    pub fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>> {
+impl ToPlainDump for EncryptedDump {
+    fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>> {
         // Load matching engine configuration
         let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
         let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
@@ -48,4 +48,8 @@ impl EncryptedDump {
         }
         Ok(decrypted_dump)
     }
+}
+
+pub trait ToPlainDump {
+    fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>>;
 }

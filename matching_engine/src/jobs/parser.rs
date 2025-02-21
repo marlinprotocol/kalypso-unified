@@ -5,6 +5,7 @@ use tokio::io::AsyncWriteExt;
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
 use crate::costs::CostStore;
+use crate::dump::ToEncryptedDump;
 use crate::{ask_lib::ask_store::LocalAskStore, Dump};
 
 #[cfg(not(feature = "disable_match_creation"))]

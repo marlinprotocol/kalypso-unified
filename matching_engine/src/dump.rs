@@ -10,6 +10,7 @@ use crate::{
     market_metadata::MarketMetadataStore,
     MatchingEngineConfig,
 };
+use async_trait::async_trait;
 use ecies::{PublicKey, SecretKey};
 use ethers::prelude::*;
 use kalypso_helper::secret_inputs_helpers;
@@ -30,8 +31,11 @@ pub struct Dump {
     pub parsed_block: U64,
 }
 
-impl Dump {
-    pub async fn create_encrypted_dump(&self) -> Result<EncryptedDump, Box<dyn std::error::Error>> {
+#[async_trait]
+impl ToEncryptedDump for Dump {
+    async fn create_encrypted_dump(
+        &self,
+    ) -> Result<EncryptedDump, Box<dyn std::error::Error + Send + Sync>> {
         // Load matching engine configuration
         let config_path = "../matching_engine_config/matching_engine_config.json".to_string();
         let alt_config_path = "./matching_engine_config/matching_engine_config.json".to_string();
@@ -84,11 +88,25 @@ impl Dump {
         let dump_value = serde_json::to_value(self)?;
         let dump = serde_json::to_vec(&dump_value)?;
         let encrypted_data =
-            secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump)?;
+            secret_inputs_helpers::encrypt_data_with_aes_and_multi_ecies(ecies_public_keys, &dump)
+                .map_err(|e| {
+                    Box::<dyn std::error::Error + Send + Sync>::from(format!(
+                        "Encryption error: {}",
+                        e
+                    ))
+                })?;
+
         let encrypted_dump = EncryptedDump {
             encrypted: encrypted_data.encrypted_data,
             acls: encrypted_data.acls,
         };
         Ok(encrypted_dump)
     }
+}
+
+#[async_trait]
+pub trait ToEncryptedDump {
+    async fn create_encrypted_dump(
+        &self,
+    ) -> Result<EncryptedDump, Box<dyn std::error::Error + Send + Sync>>;
 }
