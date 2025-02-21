@@ -3,21 +3,21 @@ use std::sync::Arc;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
-use crate::{
-    generator_lib::stake_manager_store::{self, StakeManagerOperations},
-    log_processor::constants,
-};
+use crate::{generator_lib::stake_manager_store::StakeManagerOperations, log_processor::constants};
 
-pub async fn process_staking_manager_log(
+pub async fn process_staking_manager_log<S>(
     log: &Log,
     staking_manager: &bindings::staking_manager::StakingManager<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    stake_manager_store: &Arc<RwLock<stake_manager_store::StakeManagerStore>>,
+    stake_manager_store: &Arc<RwLock<S>>,
     supported_native_staking_pool: Address,
     supported_symbiotic_staking_pool: Address,
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    S: StakeManagerOperations,
+{
     if constants::STAKING_MANAGER_TOPICS_SKIP
         .get(&log.topics[0])
         .is_some()

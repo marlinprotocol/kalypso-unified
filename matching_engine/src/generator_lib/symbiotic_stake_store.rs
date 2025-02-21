@@ -281,6 +281,10 @@ impl TokenLockManagement for SymbioticStakeStore {
     fn remove_lock_token(&mut self, token: Address) {
         self.tokens_to_lock.force_remove(token);
     }
+
+    fn tokens_to_lock(&self) -> TokenTracker {
+        self.tokens_to_lock.clone()
+    }
 }
 
 impl VaultSnapshotManagement for SymbioticStakeStore {
@@ -363,6 +367,8 @@ pub trait TokenLockManagement {
 
     /// Remove the lock for a given token.
     fn remove_lock_token(&mut self, token: Address);
+
+    fn tokens_to_lock(&self) -> TokenTracker;
 }
 
 /// Trait for managing vault snapshots.

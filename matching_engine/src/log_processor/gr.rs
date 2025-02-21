@@ -10,15 +10,22 @@ use crate::generator_lib::*;
 use crate::log_processor::constants;
 use crate::utility::TokenTracker;
 
-pub async fn process_generator_registry_logs(
+pub async fn process_generator_registry_logs<G>(
     log: &Log,
     genertor_registry: &bindings::prover_manager::ProverManager<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
+    generator_store: &Arc<RwLock<G>>,
     _rpc_url: &str,
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    G: GeneratorLockManagement
+        + GeneratorMarketManagement
+        + GeneratorMetadata
+        + GeneratorRegistration
+        + GeneratorStakeComputeManagement,
+{
     if constants::GENERATOR_REGISTRY_TOPICS_SKIP
         .get(&log.topics[0])
         .is_some()

@@ -4,10 +4,10 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
-    ask_lib::ask_store::{self, AskManagementRead},
+    ask_lib::ask_store::AskManagementRead,
     generator_lib::{
-        delegation, generator_store,
-        native_stake_store::{self, NativeStakingOperations},
+        delegation,
+        native_stake_store::NativeStakingOperations,
         traits::{
             GeneratorLockManagement, GeneratorMarketManagement, GeneratorSlashingManagement,
             GeneratorStakeComputeManagement, WithdrawalManagement,
@@ -18,17 +18,26 @@ use crate::{
     utility::{get_l1_block_from_l2_block, tx_to_string},
 };
 
-pub async fn process_native_staking_logs(
+pub async fn process_native_staking_logs<G, N, A>(
     log: &Log,
     native_staking: &bindings::native_staking::NativeStaking<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     >,
-    generator_store: &Arc<RwLock<generator_store::GeneratorStore>>,
-    native_store: &Arc<RwLock<native_stake_store::NativeStakingStore>>,
-    #[allow(unused)] ask_store: &Arc<RwLock<ask_store::LocalAskStore>>,
+    generator_store: &Arc<RwLock<G>>,
+    native_store: &Arc<RwLock<N>>,
+    ask_store: &Arc<RwLock<A>>,
     rpc_url: &str,
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    G: GeneratorLockManagement
+        + GeneratorMarketManagement
+        + GeneratorStakeComputeManagement
+        + GeneratorSlashingManagement
+        + WithdrawalManagement,
+    N: NativeStakingOperations,
+    A: AskManagementRead,
+{
     if constants::NATIVE_STAKING_TOPICS_SKIP
         .get(&log.topics[0])
         .is_some()
@@ -330,8 +339,7 @@ pub async fn process_native_staking_logs(
             delegation::Source::Native,
         );
 
-        // No need to generate this if there are dummy logs enabled
-        #[cfg(not(feature = "generate_dummy_slash_logs"))]
+        // TODO: revisit this once slashing is enabled
         {
             use crate::utility::get_timestamp_from_l2block_number;
 
