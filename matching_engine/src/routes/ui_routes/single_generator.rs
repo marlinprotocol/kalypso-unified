@@ -1,6 +1,8 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::AskManagementRead;
+use crate::ask_lib::ask_store::CompletedProofsManagement;
 use crate::ask_lib::ask_store::LocalAskStore;
+use crate::ask_lib::ask_store::TimingOperations;
 use crate::generator_lib::delegation::Operation;
 use crate::generator_lib::delegation::Source;
 use crate::generator_lib::generator_store::GeneratorMeta;

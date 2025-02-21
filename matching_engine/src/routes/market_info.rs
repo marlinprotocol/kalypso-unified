@@ -1,6 +1,8 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
-use crate::ask_lib::ask_store::{AskManagementRead, LocalAskStore};
+use crate::ask_lib::ask_store::{
+    AskManagementRead, LocalAskStore, ProofCounters, TimingOperations,
+};
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::models::{
     AskInfoToSend, GeneratorInfo, GeneratorsInfoForMarket, MarketInfo, MarketInfoResponse,

@@ -319,54 +319,52 @@ impl AskManagementRead for LocalAskStore {
     }
 }
 
-impl LocalAskStore {
+impl RequestorCounters for LocalAskStore {
     // Get the total number of unique requestors across all markets
-    pub fn total_requestor_count(&self) -> usize {
+    fn total_requestor_count(&self) -> usize {
         self.request_counter_by_requestors.total_count()
     }
 
     // Get the number of requestors for a specific market
-    pub fn total_requestors_by_market_count(&self, market_id: &U256) -> usize {
+    fn total_requestors_by_market_count(&self, market_id: &U256) -> usize {
         self.request_counter_by_requestors.key_count(market_id)
     }
 }
 
-impl LocalAskStore {
-    pub fn get_proof_count(&self, market_id: &U256) -> usize {
+impl ProofCounters for LocalAskStore {
+    fn get_proof_count(&self, market_id: &U256) -> usize {
         self.proof_counter_by_market.key_count(market_id)
     }
 
-    pub fn get_total_proof_count(&self) -> usize {
+    fn get_total_proof_count(&self) -> usize {
         self.proof_counter_by_market.total_count()
     }
 }
 
-impl LocalAskStore {
-    pub fn get_request_count_by_market_id(&self, market_id: &U256) -> usize {
+impl MarketRequestCounters for LocalAskStore {
+    fn get_request_count_by_market_id(&self, market_id: &U256) -> usize {
         self.request_counter_by_market_id.key_count(market_id)
     }
 
-    pub fn get_total_request_count(&self) -> usize {
+    fn get_total_request_count(&self) -> usize {
         self.request_counter_by_market_id.total_count()
     }
 }
 
-impl LocalAskStore {
-    pub fn get_failed_request_count_by_market_id(&self, market_id: &U256) -> usize {
+impl CompletedProofsManagement for LocalAskStore {
+    fn get_failed_request_count_by_market_id(&self, market_id: &U256) -> usize {
         self.failed_request_counter_by_market.key_count(market_id)
     }
 
-    pub fn get_failed_request_count(&self) -> usize {
+    fn get_failed_request_count(&self) -> usize {
         self.failed_request_counter_by_market.total_count()
     }
-}
 
-impl LocalAskStore {
-    pub fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk> {
+    fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk> {
         self.completed_proofs.get_recent_completed_proofs(n)
     }
 
-    pub fn get_completed_proof_of_generator(
+    fn get_completed_proof_of_generator(
         &self,
         generator: &Address,
         skip: usize,
@@ -389,7 +387,7 @@ impl LocalAskStore {
         }
     }
 
-    pub fn get_completed_proofs_of_market(
+    fn get_completed_proofs_of_market(
         &self,
         market_id: &U256,
         skip: usize,
@@ -411,51 +409,44 @@ impl LocalAskStore {
     }
 }
 
-impl LocalAskStore {
-    #[deprecated(note = "Preferably don't read it anywhere")]
-    pub fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256> {
+impl TimingOperations for LocalAskStore {
+    fn get_proof_proof_cycle_completed_on(&self, ask_id: &U256) -> Option<U256> {
         self.proof_cycle_completed_on.get(ask_id).cloned()
     }
 
-    pub fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256) {
+    fn update_proof_proof_cycle_completed_on(&mut self, ask_id: &U256, submitted_on: U256) {
         self.proof_cycle_completed_on
             .insert(ask_id.clone(), submitted_on);
     }
-}
 
-impl LocalAskStore {
-    pub fn get_job_completed_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+    fn get_job_completed_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
         self.job_completed_on_timestamp.get(ask_id).cloned()
     }
 
-    pub fn update_job_completed_on_timestamp(
-        &mut self,
-        ask_id: &U256,
-        completed_on_timestamp: U256,
-    ) {
+    fn update_job_completed_on_timestamp(&mut self, ask_id: &U256, completed_on_timestamp: U256) {
         self.job_completed_on_timestamp
             .insert(ask_id.clone(), completed_on_timestamp);
     }
 
-    pub fn get_job_matched_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+    fn get_job_matched_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
         self.job_matched_on_timestamp.get(ask_id).cloned()
     }
 
-    pub fn update_job_matched_on_timestamp(&mut self, ask_id: &U256, matched_on_timestamp: U256) {
+    fn update_job_matched_on_timestamp(&mut self, ask_id: &U256, matched_on_timestamp: U256) {
         self.job_matched_on_timestamp
             .insert(ask_id.clone(), matched_on_timestamp);
     }
 
-    pub fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
+    fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256> {
         self.job_created_on_timestamp.get(ask_id).cloned()
     }
 
-    pub fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256) {
+    fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256) {
         self.job_created_on_timestamp
             .insert(ask_id.clone(), created_on_timestamp);
     }
 
-    pub fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256> {
+    fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256> {
         let created_on = self.get_job_created_on_timestamp(ask_id)?;
         let completed_on = self.get_job_completed_on_timestamp(ask_id)?;
         Some(completed_on.saturating_sub(created_on))

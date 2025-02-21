@@ -1,6 +1,6 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
-use crate::ask_lib::ask_store::AskManagementRead;
+use crate::ask_lib::ask_store::{AskManagementRead, CompletedProofsManagement, ProofCounters};
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;

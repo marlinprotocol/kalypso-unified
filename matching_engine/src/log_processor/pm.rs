@@ -1,7 +1,7 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
-use crate::ask_lib::ask_store::LocalAskStore;
 use crate::ask_lib::ask_store::{AskManagementRead, AskManagementWrite};
+use crate::ask_lib::ask_store::{LocalAskStore, TimingOperations};
 use crate::costs::CostStore;
 use crate::utility::get_l1_block_from_l2_block;
 use crate::utility::get_timestamp_from_l2block_number;
