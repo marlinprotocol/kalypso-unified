@@ -3,6 +3,9 @@ use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::{AskManagementRead, AskManagementWrite};
 use crate::ask_lib::ask_store::{LocalAskStore, TimingOperations};
 use crate::costs::CostStore;
+use crate::generator_lib::traits::{
+    GeneratorAdditionalQuery, GeneratorMarketManagement, JobMissedCounter,
+};
 use crate::utility::get_l1_block_from_l2_block;
 use crate::utility::get_timestamp_from_l2block_number;
 use crate::utility::tx_to_string;

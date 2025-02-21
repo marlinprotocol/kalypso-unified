@@ -6,6 +6,7 @@ use crate::ask_lib::ask_store::{
 };
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::traits::{GeneratorAdditionalQuery, GeneratorRegistration};
 use crate::models::WelcomeResponse;
 use crate::utility::{
     address_to_string, bytes_to_string, convert_to_option_string, tx_to_string, TokenAmount,

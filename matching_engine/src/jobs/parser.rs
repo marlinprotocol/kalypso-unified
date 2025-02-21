@@ -505,6 +505,9 @@ impl LogParser {
 
         use crate::{
             ask_lib::ask_store::{AskManagementRead, AskManagementWrite},
+            generator_lib::traits::{
+                GeneratorAdditionalQuery, GeneratorAvailability, JobMissedCounter,
+            },
             utility::TokenTracker,
         };
 
@@ -941,6 +944,8 @@ impl LogParser {
         symbiotic_staking_store: &Arc<RwLock<SymbioticStakeStore>>,
     ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
+
+        use crate::generator_lib::traits::{GeneratorFilter, GeneratorQuery};
         let generator_store = generator_store.read().await;
         let key_store = key_store.read().await;
         let native_staking_store = native_staking_store.read().await;

@@ -4,6 +4,7 @@ use crate::ask_lib::ask_store::{AskManagementRead, CompletedProofsManagement, Pr
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::traits::{GeneratorAdditionalQuery, GeneratorAvailability};
 use crate::market_metadata::{MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
 use crate::utility::{TokenAmount, TokenTracker};

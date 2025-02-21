@@ -7,6 +7,9 @@ use crate::ask_lib::ask_store::{
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::traits::{
+    GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorRegistration,
+};
 use crate::market_metadata::{MarketMetadataStore, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;

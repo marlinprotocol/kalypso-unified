@@ -2,6 +2,10 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+use crate::generator_lib::traits::{
+    GeneratorLockManagement, GeneratorMarketManagement, GeneratorMetadata, GeneratorRegistration,
+    GeneratorStakeComputeManagement,
+};
 use crate::generator_lib::*;
 use crate::log_processor::constants;
 use crate::utility::TokenTracker;

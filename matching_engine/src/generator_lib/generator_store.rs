@@ -20,50 +20,15 @@ use super::delegation::{Delegation, DelegationStore, Operation};
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::key_store::KeyStore;
-
-/// Represents a range of blocks and the points associated with that range.
-struct KalypsoPointRange {
-    start_block: u64, // Inclusive start of the block range
-    end_block: u64,   // Inclusive end of the block range
-    points: U256,     // Points associated with this block range
-}
-
-static POINTS_RANGES: Lazy<Vec<KalypsoPointRange>> = Lazy::new(|| {
-    let block_ranges = vec![
-        KalypsoPointRange {
-            start_block: 0,
-            end_block: 7930000,
-            points: U256::from_dec_str("11").unwrap().pow(18.into()),
-        },
-        KalypsoPointRange {
-            start_block: 8930000,
-            end_block: 9930000,
-            points: U256::from_dec_str("12").unwrap().pow(18.into()),
-        },
-        KalypsoPointRange {
-            start_block: 9930000,
-            end_block: 10930000,
-            points: U256::from_dec_str("13").unwrap().pow(18.into()),
-        },
-        KalypsoPointRange {
-            start_block: 9930000,
-            end_block: u64::MAX,
-            points: U256::from_dec_str("14").unwrap().pow(18.into()),
-        }, // Add more KalypsoPointRange entries as needed
-    ];
-
-    block_ranges
-});
-
-fn get_points(block_number: u64) -> U256 {
-    for range in POINTS_RANGES.iter() {
-        if block_number >= range.start_block && block_number <= range.end_block {
-            return range.points;
-        }
-    }
-    // If block_number doesn't fall within any range, return zero points.
-    U256::zero()
-}
+use super::points::get_points;
+use super::traits::{
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorFilter,
+    GeneratorLockManagement, GeneratorMarketManagement, GeneratorMetadata, GeneratorQuery,
+    GeneratorRegistration, GeneratorSlashingManagement, GeneratorStakeComputeManagement,
+    JobMissedCounter, WithdrawalManagement,
+};
+use super::withdrawal_request::WithdrawlRequest;
+use super::SlashingRecord;
 
 mod generator_markets_serde {
     use super::*;
@@ -274,91 +239,6 @@ mod slashing_per_generator_per_market_serde {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GeneratorStore {
-    // Change key to tuple (Address, U256)
-    generators: HashMap<Address, Generator>, // Generator -> Details
-
-    #[serde(with = "generator_markets_serde")]
-    generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>, //[Generator, MarketId] -> MarketWiseInfo
-
-    state_index: HashMap<GeneratorState, Vec<(Address, U256)>>, // State -> [Generator, MarketId]
-
-    address_index: HashMap<Address, Vec<U256>>, // Generator -> [MarketId] participations
-
-    earnings: HashMap<Address, U256>, // Generator -> TotalEarnings
-
-    #[serde(with = "earnings_or_points_per_market_serde")]
-    earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
-
-    slashings: HashMap<Address, TokenTracker>, // Generator -> Total Slashings
-
-    #[serde(with = "slashing_per_generator_per_market_serde")]
-    slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
-
-    slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
-
-    delegation_store: DelegationStore,
-
-    kalypso_points: HashMap<Address, U256>,
-
-    #[serde(with = "earnings_or_points_per_market_serde")]
-    kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
-
-    withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
-
-    jobs_missed_counter: EntryCounter<Address>, // Generator -> Jobs Missed Counter
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
-pub struct SlashingRecord {
-    pub ask_id: U256,
-    pub slashing_block_number: U64,
-    pub market_id: U256,
-    pub slashing_tx: String,
-    pub price_offered: U256,
-    pub expected_time: U256,
-    pub slashing_penalty: AddressTokenPair,
-    pub slashing_timestamp: U256,
-    pub source: super::delegation::Source,
-}
-
-use std::hash::{Hash, Hasher};
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialOrd)]
-pub struct WithdrawlRequest {
-    pub account: Address,
-    pub token: Address,
-    pub amount: U256,
-    pub index: U256,
-    pub timestamp: U256, // We'll ignore this in Hash and PartialEq/Eq
-}
-
-// Manually implement PartialEq (ignore `timestamp`)
-impl PartialEq for WithdrawlRequest {
-    fn eq(&self, other: &Self) -> bool {
-        self.account == other.account
-            && self.token == other.token
-            && self.amount == other.amount
-            && self.index == other.index
-        // `timestamp` is intentionally not compared
-    }
-}
-
-// With PartialEq implemented, we can do Eq trivially
-impl Eq for WithdrawlRequest {}
-
-// Manually implement Hash (ignore `timestamp`)
-impl Hash for WithdrawlRequest {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.account.hash(state);
-        self.token.hash(state);
-        self.amount.hash(state);
-        self.index.hash(state);
-        // `timestamp` is intentionally not hashed
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Clone)]
 pub struct GeneratorInfoPerMarket {
     pub address: Address,
@@ -478,13 +358,42 @@ impl Generator {
     }
 }
 
-impl Default for GeneratorStore {
-    fn default() -> Self {
-        Self::new()
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeneratorStore {
+    // Change key to tuple (Address, U256)
+    generators: HashMap<Address, Generator>, // Generator -> Details
+
+    #[serde(with = "generator_markets_serde")]
+    generator_markets: HashMap<(Address, U256), GeneratorInfoPerMarket>, //[Generator, MarketId] -> MarketWiseInfo
+
+    state_index: HashMap<GeneratorState, Vec<(Address, U256)>>, // State -> [Generator, MarketId]
+
+    address_index: HashMap<Address, Vec<U256>>, // Generator -> [MarketId] participations
+
+    earnings: HashMap<Address, U256>, // Generator -> TotalEarnings
+
+    #[serde(with = "earnings_or_points_per_market_serde")]
+    earnings_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Earnings Per Market
+
+    slashings: HashMap<Address, TokenTracker>, // Generator -> Total Slashings
+
+    #[serde(with = "slashing_per_generator_per_market_serde")]
+    slashing_per_generator_per_market: HashMap<Address, HashMap<U256, TokenTracker>>, // Generator -> Markets -> slashings per market
+
+    slashing_records: HashMap<Address, Vec<SlashingRecord>>, // Generator -> Slashing Record
+
+    delegation_store: DelegationStore,
+
+    kalypso_points: HashMap<Address, U256>,
+
+    #[serde(with = "earnings_or_points_per_market_serde")]
+    kalypso_points_per_market: HashMap<Address, HashMap<U256, U256>>, // Generator -> Markets -> Kalypso Points Per Market
+
+    withdrawl_requests: HashMap<Address, HashSet<WithdrawlRequest>>,
+
+    jobs_missed_counter: EntryCounter<Address>, // Generator -> Jobs Missed Counter
 }
 
-// create, update the generator store
 impl GeneratorStore {
     pub fn new() -> Self {
         GeneratorStore {
@@ -504,50 +413,16 @@ impl GeneratorStore {
             jobs_missed_counter: EntryCounter::new(Duration::from_secs(60 * 60 * 48)), // 48 hours
         }
     }
+}
 
-    pub fn all_generators_address(&self) -> Vec<Address> {
-        self.generators
-            .par_iter()
-            .map(|(address, _)| address.clone())
-            .collect()
+impl Default for GeneratorStore {
+    fn default() -> Self {
+        Self::new()
     }
+}
 
-    pub fn get_delegations(
-        &self,
-        generator_address: &Address,
-        operations: Vec<Operation>,
-        skip: Option<usize>,
-        count: Option<usize>,
-    ) -> Vec<Delegation> {
-        self.delegation_store.get_delegations_by_operations(
-            generator_address,
-            operations,
-            skip.unwrap_or(0),
-            count.unwrap_or(100),
-        )
-    }
-
-    pub fn total_native_stake_accross_all_generators(&self) -> TokenTracker {
-        self.generators
-            .par_iter()
-            .map(|(_, data)| data.total_native_stake.clone()) // Clone if TokenTracker isn't Copy
-            .reduce(
-                || TokenTracker::new(),      // Identity element
-                |acc, stake| acc.add(stake), // Combine function
-            )
-    }
-
-    pub fn total_symbiotic_stake_across_all_generators(&self) -> TokenTracker {
-        self.generators
-            .par_iter()
-            .map(|(_, data)| data.total_symbiotic_stake.clone()) // Clone if TokenTracker isn't Copy
-            .reduce(
-                || TokenTracker::new(),      // Identity element
-                |acc, stake| acc.add(stake), // Combine function
-            )
-    }
-
-    pub fn register_generator(&mut self, generator: Generator) {
+impl GeneratorRegistration for GeneratorStore {
+    fn register_generator(&mut self, generator: Generator) {
         let address = generator.address;
         if !self.generators.contains_key(&generator.address) {
             self.generators.insert(address, generator);
@@ -574,7 +449,7 @@ impl GeneratorStore {
         }
     }
 
-    pub fn register_generator_in_market(&mut self, generator_market: GeneratorInfoPerMarket) {
+    fn register_generator_in_market(&mut self, generator_market: GeneratorInfoPerMarket) {
         let address = generator_market.address;
         let market_id = generator_market.market_id;
         let compute_allocation = generator_market.compute_required_per_request;
@@ -603,15 +478,7 @@ impl GeneratorStore {
             .or_insert(generator_market);
     }
 
-    pub fn get_by_address_and_market(
-        &self,
-        address: &Address,
-        market_id: &U256,
-    ) -> Option<GeneratorInfoPerMarket> {
-        self.generator_markets.get(&(*address, *market_id)).cloned()
-    }
-
-    pub fn remove_by_address_and_market(&mut self, address: &Address, market_id: &U256) {
+    fn remove_by_address_and_market(&mut self, address: &Address, market_id: &U256) {
         if let Some(generator_market) = self.generator_markets.remove(&(*address, *market_id)) {
             let compute_allocation = generator_market.compute_required_per_request;
             if let Some(state) = &generator_market.state {
@@ -636,21 +503,27 @@ impl GeneratorStore {
         }
     }
 
-    pub fn remove_by_address(&mut self, address: &Address) {
+    fn remove_by_address(&mut self, address: &Address) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.active = false;
         }
     }
 
-    pub fn is_active(&self, generator_address: &Address) -> bool {
+    fn get_by_address(&self, address: &Address) -> Option<Generator> {
+        self.generators.get(address).cloned()
+    }
+
+    fn is_active(&self, generator_address: &Address) -> bool {
         if let Some(generator) = self.generators.get(generator_address) {
             generator.active.clone()
         } else {
             false
         }
     }
+}
 
-    pub fn add_extra_stake(
+impl GeneratorStakeComputeManagement for GeneratorStore {
+    fn add_extra_stake(
         &mut self,
         generator_address: &Address,
         token_address: &Address,
@@ -686,13 +559,13 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_intended_stake_util(&mut self, address: &Address, new_stake_util: U256) {
+    fn update_intended_stake_util(&mut self, address: &Address, new_stake_util: U256) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.intended_stake_util = new_stake_util;
         }
     }
 
-    pub fn remove_stake(
+    fn remove_stake(
         &mut self,
         generator_address: &Address,
         token_address: &Address,
@@ -743,31 +616,33 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_reward_address(&mut self, address: &Address, new_reward_address: Address) {
+    fn update_reward_address(&mut self, address: &Address, new_reward_address: Address) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.reward_address = new_reward_address;
         }
     }
 
-    pub fn add_extra_compute(&mut self, address: &Address, compute: U256) {
+    fn add_extra_compute(&mut self, address: &Address, compute: U256) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.declared_compute = generator.declared_compute.add(compute);
         }
     }
 
-    pub fn update_intended_compute_util(&mut self, address: &Address, new_compute_util: U256) {
+    fn update_intended_compute_util(&mut self, address: &Address, new_compute_util: U256) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.intended_compute_util = new_compute_util;
         }
     }
 
-    pub fn remove_compute(&mut self, address: &Address, compute: U256) {
+    fn remove_compute(&mut self, address: &Address, compute: U256) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.declared_compute = generator.declared_compute.sub(compute);
         }
     }
+}
 
-    pub fn update_state(&mut self, address: &Address, market_id: &U256, new_state: GeneratorState) {
+impl GeneratorMarketManagement for GeneratorStore {
+    fn update_state(&mut self, address: &Address, market_id: &U256, new_state: GeneratorState) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             if let Some(old_state) = &generator_market.state {
                 if let Some(vec) = self.state_index.get_mut(old_state) {
@@ -783,13 +658,13 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_on_assigned_task(&mut self, address: &Address, market_id: &U256) {
+    fn update_on_assigned_task(&mut self, address: &Address, market_id: &U256) {
         if let Some(generator_market) = self.generator_markets.get_mut(&(*address, *market_id)) {
             generator_market.active_requests.add_assign(U256::one());
         }
     }
 
-    pub fn update_on_submit_proof(
+    fn update_on_submit_proof(
         &mut self,
         address: &Address,
         market_id: &U256,
@@ -829,7 +704,7 @@ impl GeneratorStore {
             .or_insert(kalypso_points_per_proof);
     }
 
-    pub fn reduce_active_requests(&mut self, generator_address: &Address, market_id: &U256) {
+    fn reduce_active_requests(&mut self, generator_address: &Address, market_id: &U256) {
         if let Some(generator_market) = self
             .generator_markets
             .get_mut(&(*generator_address, *market_id))
@@ -839,7 +714,37 @@ impl GeneratorStore {
         }
     }
 
-    pub fn note_entry_slashing(
+    fn pause_assignments_across_all_markets(&mut self, address: &Address) {
+        // Collect the market IDs to be updated first, avoiding an immutable borrow later
+        let all_market_ids: Vec<U256> = self
+            .get_all_markets_of_generator(address)
+            .par_iter()
+            .map(|single_market| single_market.market_id) // Collect U256 (market_id)
+            .collect();
+
+        // Now process them with mutable access
+        for market_id in all_market_ids {
+            self.update_state(address, &market_id, GeneratorState::PendingConfirmation);
+        }
+    }
+
+    fn resume_assignments_accross_all_markets(&mut self, address: &Address) {
+        // Collect the market IDs to be updated first, avoiding an immutable borrow later
+        let all_market_ids: Vec<U256> = self
+            .get_all_markets_of_generator(address)
+            .par_iter()
+            .map(|single_market| single_market.market_id) // Collect U256 (market_id)
+            .collect();
+
+        // Now process them with mutable access
+        for market_id in all_market_ids {
+            self.update_state(address, &market_id, GeneratorState::Joined);
+        }
+    }
+}
+
+impl GeneratorSlashingManagement for GeneratorStore {
+    fn note_entry_slashing(
         &mut self,
         generator_address: &Address,
         ask_id: &U256,
@@ -942,8 +847,10 @@ impl GeneratorStore {
                 });
         }
     }
+}
 
-    pub fn update_on_stake_locked(
+impl GeneratorLockManagement for GeneratorStore {
+    fn update_on_stake_locked(
         &mut self,
         generator_address: &Address,
         token_address: &Address,
@@ -962,7 +869,7 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_on_stake_released(
+    fn update_on_stake_released(
         &mut self,
         generator_address: &Address,
         token_address: &Address,
@@ -983,96 +890,51 @@ impl GeneratorStore {
         }
     }
 
-    pub fn update_on_compute_locked(&mut self, address: &Address, compute_locked: U256) {
+    fn update_on_compute_locked(&mut self, address: &Address, compute_locked: U256) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.compute_consumed.add_assign(compute_locked);
         }
     }
 
-    pub fn update_on_compute_released(&mut self, address: &Address, compute_released: U256) {
+    fn update_on_compute_released(&mut self, address: &Address, compute_released: U256) {
         if let Some(generator) = self.generators.get_mut(address) {
             generator.compute_consumed.sub_assign(compute_released);
         }
     }
-
-    pub fn get_all_markets_of_generator(&self, address: &Address) -> Vec<GeneratorInfoPerMarket> {
-        match self.address_index.get(address) {
-            Some(market_ids) => market_ids
-                .par_iter()
-                .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)).cloned())
-                .collect(),
-            None => Vec::new(),
-        }
-    }
-
-    pub fn pause_assignments_across_all_markets(&mut self, address: &Address) {
-        // Collect the market IDs to be updated first, avoiding an immutable borrow later
-        let all_market_ids: Vec<U256> = self
-            .get_all_markets_of_generator(address)
-            .par_iter()
-            .map(|single_market| single_market.market_id) // Collect U256 (market_id)
-            .collect();
-
-        // Now process them with mutable access
-        for market_id in all_market_ids {
-            self.update_state(address, &market_id, GeneratorState::PendingConfirmation);
-        }
-    }
-
-    pub fn resume_assignments_accross_all_markets(&mut self, address: &Address) {
-        // Collect the market IDs to be updated first, avoiding an immutable borrow later
-        let all_market_ids: Vec<U256> = self
-            .get_all_markets_of_generator(address)
-            .par_iter()
-            .map(|single_market| single_market.market_id) // Collect U256 (market_id)
-            .collect();
-
-        // Now process them with mutable access
-        for market_id in all_market_ids {
-            self.update_state(address, &market_id, GeneratorState::Joined);
-        }
-    }
-
-    pub fn get_by_address(&self, address: &Address) -> Option<Generator> {
-        self.generators.get(address).cloned()
-    }
 }
 
-impl GeneratorStore {
-    pub fn get_available_compute(&self, address: Address) -> Option<U256> {
+impl GeneratorAvailability for GeneratorStore {
+    fn get_available_compute(&self, address: Address) -> Option<U256> {
         self.generators
             .get(&address)
             .map(|generator| generator.declared_compute.sub(generator.compute_consumed))
     }
 
-    pub fn get_available_native_stake(&self, generator_address: &Address) -> Option<TokenTracker> {
+    fn get_available_native_stake(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.generators.get(&generator_address).map(|generator| {
             generator.total_native_stake.clone() - generator.native_stake_locked.clone()
         })
     }
 
-    pub fn get_available_symbiotic_stake(
-        &self,
-        generator_address: &Address,
-    ) -> Option<TokenTracker> {
+    fn get_available_symbiotic_stake(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.generators.get(&generator_address).map(|generator| {
             generator.total_symbiotic_stake.clone() - generator.symbiotic_stake_locked.clone()
         })
     }
 
-    pub fn get_native_stake_locked(&self, generator_address: &Address) -> Option<TokenTracker> {
+    fn get_native_stake_locked(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.generators
             .get(&generator_address)
             .map(|generator| generator.native_stake_locked.clone())
     }
 
-    pub fn get_symbiotic_stake_locked(&self, generator_address: &Address) -> Option<TokenTracker> {
+    fn get_symbiotic_stake_locked(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.generators
             .get(&generator_address)
             .map(|generator| generator.symbiotic_stake_locked.clone())
     }
 
-    pub fn get_all_by_market_id(&self, market_id: &U256) -> Vec<GeneratorInfoPerMarket> {
+    fn get_all_by_market_id(&self, market_id: &U256) -> Vec<GeneratorInfoPerMarket> {
         // Clone self and wrap it in an Arc for thread-safe sharing
         let self_arc = Arc::new(self.clone());
 
@@ -1094,14 +956,13 @@ impl GeneratorStore {
     }
 }
 
-// add methods to generate the query
-impl GeneratorStore {
+impl GeneratorQuery for GeneratorStore {
     #[allow(unused)]
-    pub fn query(&self) -> GeneratorQueryResult {
+    fn query(&self) -> GeneratorQueryResult {
         GeneratorQueryResult::new(self.generator_markets.values().collect())
     }
 
-    pub fn query_by_market_id_and_only_active(&self, market_id: &U256) -> GeneratorQueryResult {
+    fn query_by_market_id_and_only_active(&self, market_id: &U256) -> GeneratorQueryResult {
         log::debug!("Check query by market id");
 
         let generator_markets: Vec<&GeneratorInfoPerMarket> = self
@@ -1125,7 +986,7 @@ impl GeneratorStore {
     }
 
     #[allow(unused)]
-    pub fn query_by_states(&self, states: Vec<GeneratorState>) -> GeneratorQueryResult {
+    fn query_by_states(&self, states: Vec<GeneratorState>) -> GeneratorQueryResult {
         log::debug!("Check query by states");
 
         let generators_market: Vec<&GeneratorInfoPerMarket> = states
@@ -1146,7 +1007,7 @@ impl GeneratorStore {
     }
 
     #[allow(unused)]
-    pub fn query_by_address(&self, address: Address) -> GeneratorQueryResult {
+    fn query_by_address(&self, address: Address) -> GeneratorQueryResult {
         let generators = match self.address_index.get(&address) {
             Some(market_ids) => market_ids
                 .par_iter()
@@ -1158,9 +1019,8 @@ impl GeneratorStore {
     }
 }
 
-// more complex queries, but not a good way to do
-impl GeneratorStore {
-    pub fn filter_by_has_idle_compute(
+impl GeneratorFilter for GeneratorStore {
+    fn filter_by_has_idle_compute(
         &self,
         generator_query: GeneratorQueryResult,
     ) -> GeneratorQueryResult {
@@ -1191,7 +1051,7 @@ impl GeneratorStore {
         GeneratorQueryResult::new(generator_result)
     }
 
-    pub fn filter_by_available_native_stake(
+    fn filter_by_available_native_stake(
         &self,
         generator_query: GeneratorQueryResult,
         min_stake: Vec<AddressTokenPair>, // Now accepting a vector of AddressTokenPairs
@@ -1249,7 +1109,7 @@ impl GeneratorStore {
         GeneratorQueryResult::new(generator_result)
     }
 
-    pub fn filter_by_available_symbiotic_stake(
+    fn filter_by_available_symbiotic_stake(
         &self,
         generator_query: GeneratorQueryResult,
         min_stake: Vec<AddressTokenPair>, // Now accepting a vector of AddressTokenPairs
@@ -1307,7 +1167,7 @@ impl GeneratorStore {
         GeneratorQueryResult::new(generator_result)
     }
 
-    pub fn filter_by_has_private_inputs_support(
+    fn filter_by_has_private_inputs_support(
         &self,
         generator_query: GeneratorQueryResult,
         key_store: RwLockReadGuard<'_, KeyStore>,
@@ -1336,40 +1196,36 @@ impl GeneratorStore {
     }
 }
 
-impl GeneratorStore {
+impl GeneratorEarningsAndSlashing for GeneratorStore {
     // Get total earnings for a specific address
-    pub fn get_total_earning(&self, address: &Address) -> Option<U256> {
+    fn get_total_earning(&self, address: &Address) -> Option<U256> {
         self.earnings.get(address).cloned()
     }
 
     // Get earnings for a specific address and market
-    pub fn get_earning_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
+    fn get_earning_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
         self.earnings_per_market
             .get(address)
             .and_then(|market_earnings| market_earnings.get(market_id).cloned())
     }
 
     // Get total earnings for a specific address
-    pub fn get_kalypso_points(&self, address: &Address) -> Option<U256> {
+    fn get_kalypso_points(&self, address: &Address) -> Option<U256> {
         self.kalypso_points.get(address).cloned()
     }
 
     // Get earnings for a specific address and market
-    pub fn get_kalypso_points_per_market(
-        &self,
-        address: &Address,
-        market_id: &U256,
-    ) -> Option<U256> {
+    fn get_kalypso_points_per_market(&self, address: &Address, market_id: &U256) -> Option<U256> {
         self.kalypso_points_per_market
             .get(address)
             .and_then(|market_earnings| market_earnings.get(market_id).cloned())
     }
 
-    pub fn get_total_slashing(&self, generator_address: &Address) -> Option<TokenTracker> {
+    fn get_total_slashing(&self, generator_address: &Address) -> Option<TokenTracker> {
         self.slashings.get(generator_address).cloned()
     }
 
-    pub fn get_slashing_per_generator_per_market(
+    fn get_slashing_per_generator_per_market(
         &self,
         address: &Address,
         market_id: &U256,
@@ -1379,7 +1235,7 @@ impl GeneratorStore {
             .and_then(|elem| elem.get(market_id).cloned())
     }
 
-    pub fn get_slashing_records(&self, address: &Address) -> Vec<SlashingRecord> {
+    fn get_slashing_records(&self, address: &Address) -> Vec<SlashingRecord> {
         let data = self.slashing_records.get(address);
         if data.is_none() {
             return vec![];
@@ -1389,19 +1245,8 @@ impl GeneratorStore {
     }
 }
 
-impl GeneratorStore {
-    /// Inserts a withdrawal request for a given operator address.
-    ///
-    /// # Arguments
-    ///
-    /// * `operator_address` - A reference to the `Address` of the operator.
-    /// * `withdrawal_request` - The `WithdrawlRequest` to be inserted.
-    ///
-    /// # Behavior
-    ///
-    /// - If the `operator_address` does not exist in `withdrawl_requests`, it creates a new `HashSet`.
-    /// - Inserts the `withdrawal_request` into the `HashSet` for the given `operator_address`.
-    pub fn insert_withdrawal_request(
+impl WithdrawalManagement for GeneratorStore {
+    fn insert_withdrawal_request(
         &mut self,
         operator_address: &Address,
         withdrawal_request: WithdrawlRequest,
@@ -1412,35 +1257,14 @@ impl GeneratorStore {
             .insert(withdrawal_request);
     }
 
-    /// Retrieves all withdrawal requests for a given operator address.
-    ///
-    /// # Arguments
-    ///
-    /// * `operator_address` - A reference to the `Address` of the operator.
-    ///
-    /// # Returns
-    ///
-    /// A `Vec<WithdrawlRequest>` containing all withdrawal requests associated with the `operator_address`.
-    /// Returns an empty vector if no requests are found.
-    pub fn get_withdrawl_requests(&self, operator_address: &Address) -> Vec<WithdrawlRequest> {
+    fn get_withdrawl_requests(&self, operator_address: &Address) -> Vec<WithdrawlRequest> {
         match self.withdrawl_requests.get(operator_address) {
             Some(requests) => requests.iter().cloned().collect(),
             None => Vec::new(),
         }
     }
 
-    /// Removes a specific withdrawal request for a given operator address.
-    ///
-    /// # Arguments
-    ///
-    /// * `operator_address` - A reference to the `Address` of the operator.
-    /// * `withdrawal_request` - The `WithdrawlRequest` to be removed.
-    ///
-    /// # Returns
-    ///
-    /// `true` if the withdrawal request was successfully removed.
-    /// `false` if the `operator_address` does not exist or the `withdrawal_request` was not found.
-    pub fn remove_withdrawal_request(
+    fn remove_withdrawal_request(
         &mut self,
         operator_address: &Address,
         withdrawal_request: WithdrawlRequest,
@@ -1458,8 +1282,8 @@ impl GeneratorStore {
     }
 }
 
-impl GeneratorStore {
-    pub fn update_generator_metadata(
+impl GeneratorMetadata for GeneratorStore {
+    fn update_generator_metadata(
         &mut self,
         generator_address: Address,
         generator_meta_data: Bytes,
@@ -1470,8 +1294,8 @@ impl GeneratorStore {
     }
 }
 
-impl GeneratorStore {
-    pub fn count_job_missed_by_generator(
+impl JobMissedCounter for GeneratorStore {
+    fn count_job_missed_by_generator(
         &mut self,
         generator_address: Address,
         timestamp: std::time::SystemTime,
@@ -1479,14 +1303,87 @@ impl GeneratorStore {
         self.jobs_missed_counter.add(generator_address, timestamp);
     }
 
-    pub fn get_job_missed_count(&self, generator_address: &Address) -> usize {
+    fn get_job_missed_count(&self, generator_address: &Address) -> usize {
         self.jobs_missed_counter.count(generator_address)
+    }
+}
+
+// create, update the generator store
+impl GeneratorAdditionalQuery for GeneratorStore {
+    fn all_generators_address(&self) -> Vec<Address> {
+        self.generators
+            .par_iter()
+            .map(|(address, _)| address.clone())
+            .collect()
+    }
+
+    fn get_delegations(
+        &self,
+        generator_address: &Address,
+        operations: Vec<Operation>,
+        skip: Option<usize>,
+        count: Option<usize>,
+    ) -> Vec<Delegation> {
+        self.delegation_store.get_delegations_by_operations(
+            generator_address,
+            operations,
+            skip.unwrap_or(0),
+            count.unwrap_or(100),
+        )
+    }
+
+    fn total_native_stake_accross_all_generators(&self) -> TokenTracker {
+        self.generators
+            .par_iter()
+            .map(|(_, data)| data.total_native_stake.clone()) // Clone if TokenTracker isn't Copy
+            .reduce(
+                || TokenTracker::new(),      // Identity element
+                |acc, stake| acc.add(stake), // Combine function
+            )
+    }
+
+    fn total_symbiotic_stake_across_all_generators(&self) -> TokenTracker {
+        self.generators
+            .par_iter()
+            .map(|(_, data)| data.total_symbiotic_stake.clone()) // Clone if TokenTracker isn't Copy
+            .reduce(
+                || TokenTracker::new(),      // Identity element
+                |acc, stake| acc.add(stake), // Combine function
+            )
+    }
+
+    fn get_by_address_and_market(
+        &self,
+        address: &Address,
+        market_id: &U256,
+    ) -> Option<GeneratorInfoPerMarket> {
+        self.generator_markets.get(&(*address, *market_id)).cloned()
+    }
+
+    fn get_all_markets_of_generator(&self, address: &Address) -> Vec<GeneratorInfoPerMarket> {
+        match self.address_index.get(address) {
+            Some(market_ids) => market_ids
+                .par_iter()
+                .filter_map(|m_id| self.generator_markets.get(&(*address, *m_id)).cloned())
+                .collect(),
+            None => Vec::new(),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{generator_lib::generator_helper::select_idle_generators, utility::TokenTracker};
+    use crate::{
+        generator_lib::{
+            generator_helper::select_idle_generators,
+            traits::{
+                GeneratorAdditionalQuery, GeneratorAvailability, GeneratorFilter,
+                GeneratorLockManagement, GeneratorQuery, GeneratorRegistration,
+                GeneratorStakeComputeManagement,
+            },
+        },
+        utility::TokenTracker,
+    };
 
     use super::{Generator, GeneratorInfoPerMarket, GeneratorState, GeneratorStore};
     use ethers::{

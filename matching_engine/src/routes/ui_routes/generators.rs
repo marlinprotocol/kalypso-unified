@@ -3,6 +3,9 @@ use super::single_generator::{ComputeBreakDown, StakeBreakDown};
 use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::traits::{
+    GeneratorAdditionalQuery, GeneratorEarningsAndSlashing, GeneratorRegistration,
+};
 use crate::market_metadata::MarketMetadataStore;
 use crate::models::WelcomeResponse;
 use crate::utility::{address_to_string, TokenAmount, TokenTracker};

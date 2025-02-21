@@ -6,9 +6,12 @@ use tokio::sync::RwLock;
 use crate::{
     ask_lib::ask_store::{self, AskManagementRead},
     generator_lib::{
-        delegation,
-        generator_store::{self, WithdrawlRequest},
-        native_stake_store,
+        delegation, generator_store, native_stake_store,
+        traits::{
+            GeneratorLockManagement, GeneratorMarketManagement, GeneratorSlashingManagement,
+            GeneratorStakeComputeManagement, WithdrawalManagement,
+        },
+        withdrawal_request::WithdrawlRequest,
     },
     log_processor::constants,
     utility::{get_l1_block_from_l2_block, tx_to_string},

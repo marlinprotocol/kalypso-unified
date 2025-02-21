@@ -8,6 +8,10 @@ use crate::{
     generator_lib::{
         delegation, generator_store,
         symbiotic_stake_store::{self, SlashResult, VaultSnapshot},
+        traits::{
+            GeneratorAdditionalQuery, GeneratorLockManagement, GeneratorRegistration,
+            GeneratorSlashingManagement, GeneratorStakeComputeManagement,
+        },
     },
     log_processor::constants,
     utility::{get_l1_block_from_l2_block, tx_to_string},
