@@ -6,7 +6,8 @@ use tokio::sync::RwLock;
 use crate::{
     ask_lib::ask_store::{self, AskManagementRead},
     generator_lib::{
-        delegation, generator_store, native_stake_store,
+        delegation, generator_store,
+        native_stake_store::{self, NativeStakingOperations},
         traits::{
             GeneratorLockManagement, GeneratorMarketManagement, GeneratorSlashingManagement,
             GeneratorStakeComputeManagement, WithdrawalManagement,

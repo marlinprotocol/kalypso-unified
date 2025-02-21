@@ -1,4 +1,4 @@
-use crate::generator_lib::*;
+use crate::generator_lib::{key_store::KeyStoreOperations, *};
 use crate::log_processor::constants;
 use ecies;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};

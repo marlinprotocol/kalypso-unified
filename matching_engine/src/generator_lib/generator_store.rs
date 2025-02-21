@@ -19,7 +19,7 @@ use crate::utility::{AddressTokenPair, TokenTracker};
 use super::delegation::{Delegation, DelegationStore, Operation};
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
-use super::key_store::KeyStore;
+use super::key_store::{KeyStore, KeyStoreOperations};
 use super::points::get_points;
 use super::traits::{
     GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorFilter,
@@ -395,7 +395,7 @@ pub struct GeneratorStore {
 }
 
 impl GeneratorStore {
-    pub fn new() -> Self {
+    fn new() -> Self {
         GeneratorStore {
             generators: HashMap::new(),
             generator_markets: HashMap::new(),

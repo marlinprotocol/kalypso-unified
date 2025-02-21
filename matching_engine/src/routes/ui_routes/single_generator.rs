@@ -8,6 +8,7 @@ use crate::generator_lib::delegation::Source;
 use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::key_store::KeyInfo;
 use crate::generator_lib::key_store::KeyStore;
+use crate::generator_lib::key_store::KeyStoreOperations;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
 use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use crate::generator_lib::traits::GeneratorAdditionalQuery;

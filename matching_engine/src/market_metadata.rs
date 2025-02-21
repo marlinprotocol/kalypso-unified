@@ -135,6 +135,17 @@ pub struct MarketMetadataStore {
     earnings: HashMap<U256, U256>, // market to usdc earning
 }
 
+impl MarketMetadataStore {
+    fn new() -> Self {
+        MarketMetadataStore {
+            market_by_id: HashMap::new(),
+            median_proof_cost_tracker: MedianCounter::new(),
+            median_proof_time_tracker: MedianCounter::new(),
+            earnings: HashMap::new(),
+        }
+    }
+}
+
 impl Default for MarketMetadataStore {
     fn default() -> Self {
         Self::new()
@@ -194,15 +205,6 @@ impl MarketMetadataStoreRead for MarketMetadataStore {
 }
 
 impl MarketMetadataStoreWrite for MarketMetadataStore {
-    fn new() -> Self {
-        MarketMetadataStore {
-            market_by_id: HashMap::new(),
-            median_proof_cost_tracker: MedianCounter::new(),
-            median_proof_time_tracker: MedianCounter::new(),
-            earnings: HashMap::new(),
-        }
-    }
-
     fn insert(&mut self, market: MarketMetadata) {
         // Insert market metadata, minimizing lock time
         self.market_by_id.insert(market.market_id, market);
@@ -314,11 +316,6 @@ pub trait MarketMetadataStoreRead {
 /// Write (Mutating) Operations Trait
 /// =============================
 pub trait MarketMetadataStoreWrite {
-    /// Creates a new MarketMetadataStore instance.
-    fn new() -> Self
-    where
-        Self: Sized;
-
     /// Inserts new market metadata.
     fn insert(&mut self, market: MarketMetadata);
 

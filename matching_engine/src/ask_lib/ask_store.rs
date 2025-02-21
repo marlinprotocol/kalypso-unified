@@ -93,13 +93,7 @@ pub struct LocalAskStore {
     job_completed_on_timestamp: HashMap<U256, U256>,
 }
 
-impl Default for LocalAskStore {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl AskManagementWrite for LocalAskStore {
+impl LocalAskStore {
     fn new() -> Self {
         LocalAskStore {
             asks_by_id: HashMap::new(),
@@ -120,7 +114,15 @@ impl AskManagementWrite for LocalAskStore {
             job_completed_on_timestamp: HashMap::new(),
         }
     }
+}
 
+impl Default for LocalAskStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AskManagementWrite for LocalAskStore {
     fn insert(&mut self, ask: LocalAsk) {
         self.asks_by_id.insert(ask.ask_id, ask.clone());
         self.request_counter_by_requestors
@@ -456,9 +458,6 @@ impl TimingOperations for LocalAskStore {
 /// Trait 1a – AskManagementWrite:
 /// Contains functions for creating, updating, removing.
 pub trait AskManagementWrite {
-    fn new() -> Self
-    where
-        Self: Sized;
     fn insert(&mut self, ask: LocalAsk);
     fn remove_ask_only_if_completed(&mut self, ask_id: &U256, reason: RemoveReason);
     fn modify_state(&mut self, ask_id: &U256, new_state: AskState);

@@ -2,7 +2,7 @@ use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::{AskManagementRead, AskManagementWrite};
 use crate::ask_lib::ask_store::{LocalAskStore, TimingOperations};
-use crate::costs::CostStore;
+use crate::costs::{CostStore, CostStoreOperations};
 use crate::generator_lib::traits::{
     GeneratorAdditionalQuery, GeneratorMarketManagement, JobMissedCounter,
 };

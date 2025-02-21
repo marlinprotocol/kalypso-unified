@@ -505,8 +505,10 @@ impl LogParser {
 
         use crate::{
             ask_lib::ask_store::{AskManagementRead, AskManagementWrite},
-            generator_lib::traits::{
-                GeneratorAdditionalQuery, GeneratorAvailability, JobMissedCounter,
+            generator_lib::{
+                key_store::KeyStoreOperations,
+                stake_manager_store::StakeManagerOperations,
+                traits::{GeneratorAdditionalQuery, GeneratorAvailability, JobMissedCounter},
             },
             utility::TokenTracker,
         };

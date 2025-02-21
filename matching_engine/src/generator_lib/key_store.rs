@@ -52,31 +52,39 @@ impl Key {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct KeyStore {
     keys: HashMap<(Address, u64), Key>, // Using u64 as a stand-in for uint256.
 }
 
 impl KeyStore {
-    pub fn new() -> Self {
+    fn new() -> Self {
         KeyStore {
             keys: HashMap::new(),
         }
     }
+}
 
-    pub fn insert(&mut self, address: Address, value: u64, key: Key) {
+impl Default for KeyStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl KeyStoreOperations for KeyStore {
+    fn insert(&mut self, address: Address, value: u64, key: Key) {
         self.keys.insert((address, value), key);
     }
 
-    pub fn get_by_address(&self, address: &Address, value: u64) -> Option<Key> {
+    fn get_by_address(&self, address: &Address, value: u64) -> Option<Key> {
         self.keys.get(&(*address, value)).cloned()
     }
 
-    pub fn remove_by_address(&mut self, address: &Address, value: u64) {
+    fn remove_by_address(&mut self, address: &Address, value: u64) {
         self.keys.remove(&(*address, value));
     }
 
-    pub fn update_pub_key(&mut self, address: &Address, value: u64, new_pub_key: Option<Bytes>) {
+    fn update_pub_key(&mut self, address: &Address, value: u64, new_pub_key: Option<Bytes>) {
         if let Some(key) = self.keys.get_mut(&(*address, value)) {
             key.ecies_pub_key = new_pub_key;
         }
@@ -145,4 +153,19 @@ impl<'de> Deserialize<'de> for KeyStore {
         const FIELDS: &'static [&'static str] = &["keys"];
         deserializer.deserialize_struct("KeyStore", FIELDS, KeyStoreVisitor)
     }
+}
+
+/// A trait that defines all operations for a KeyStore.
+pub trait KeyStoreOperations {
+    /// Inserts a key for the given address and value.
+    fn insert(&mut self, address: Address, value: u64, key: Key);
+
+    /// Retrieves a key by address and value.
+    fn get_by_address(&self, address: &Address, value: u64) -> Option<Key>;
+
+    /// Removes a key by address and value.
+    fn remove_by_address(&mut self, address: &Address, value: u64);
+
+    /// Updates the public key for the key associated with the given address and value.
+    fn update_pub_key(&mut self, address: &Address, value: u64, new_pub_key: Option<Bytes>);
 }

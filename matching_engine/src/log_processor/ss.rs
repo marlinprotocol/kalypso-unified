@@ -7,7 +7,10 @@ use crate::{
     ask_lib::ask_store::{self, AskManagementRead},
     generator_lib::{
         delegation, generator_store,
-        symbiotic_stake_store::{self, SlashResult, VaultSnapshot},
+        symbiotic_stake_store::{
+            self, OperatorStakeManagement, SlashResult, SlashResultManagement, TokenLockManagement,
+            VaultSnapshot, VaultSnapshotManagement,
+        },
         traits::{
             GeneratorAdditionalQuery, GeneratorLockManagement, GeneratorRegistration,
             GeneratorSlashingManagement, GeneratorStakeComputeManagement,

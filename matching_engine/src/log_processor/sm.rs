@@ -3,7 +3,10 @@ use std::sync::Arc;
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
-use crate::{generator_lib::stake_manager_store, log_processor::constants};
+use crate::{
+    generator_lib::stake_manager_store::{self, StakeManagerOperations},
+    log_processor::constants,
+};
 
 pub async fn process_staking_manager_log(
     log: &Log,
