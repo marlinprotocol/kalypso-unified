@@ -29,6 +29,10 @@ impl NativeStakingOperations for NativeStakingStore {
     fn remove_lock_token(&mut self, token: Address) {
         self.tokens_to_lock.force_remove(token);
     }
+
+    fn tokens_to_lock(&self) -> TokenTracker {
+        self.tokens_to_lock.clone()
+    }
 }
 
 pub trait NativeStakingOperations {
@@ -37,4 +41,6 @@ pub trait NativeStakingOperations {
 
     /// Removes the lock for a given token.
     fn remove_lock_token(&mut self, token: Address);
+
+    fn tokens_to_lock(&self) -> TokenTracker;
 }

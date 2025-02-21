@@ -4,8 +4,8 @@ use crate::ask_lib::ask_store::{
     AskManagementRead, CompletedProofsManagement, ProofCounters, RequestorCounters,
     TimingOperations,
 };
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::native_stake_store::{NativeStakingOperations, NativeStakingStore};
+use crate::generator_lib::symbiotic_stake_store::{SymbioticStakeStore, TokenLockManagement};
 use crate::generator_lib::traits::{GeneratorAdditionalQuery, GeneratorRegistration};
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::models::WelcomeResponse;
@@ -391,8 +391,8 @@ async fn recompute_dashboard_response<'a>(
         markets,
         recent_proofs,
         task_assignment_requirements: TaskRequirements {
-            native: local_native_store.tokens_to_lock.to_token_amount(),
-            symbiotic: local_symbiotic_store.tokens_to_lock.to_token_amount(),
+            native: local_native_store.tokens_to_lock().to_token_amount(),
+            symbiotic: local_symbiotic_store.tokens_to_lock().to_token_amount(),
         },
     }
 }
