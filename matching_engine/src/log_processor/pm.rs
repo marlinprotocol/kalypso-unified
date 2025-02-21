@@ -347,10 +347,8 @@ pub async fn process_proof_market_place_logs(
             proof_generator_cost,
             tx_to_string(&log.transaction_hash.unwrap()),
         );
-        local_ask_store.remove_ask_only_if_completed(
-            &bid_id,
-            crate::ask_lib::ask_store::RemoveReason::ProofCreated,
-        );
+        local_ask_store
+            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::ProofCreated);
 
         {
             generator_store.write().await.update_on_submit_proof(
@@ -529,10 +527,8 @@ pub async fn process_proof_market_place_logs(
 
         local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&bid_id, AskState::Complete);
-        local_ask_store.remove_ask_only_if_completed(
-            &bid_id,
-            crate::ask_lib::ask_store::RemoveReason::BidCancelled,
-        );
+        local_ask_store
+            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::BidCancelled);
         return Ok(());
     }
 
@@ -577,10 +573,8 @@ pub async fn process_proof_market_place_logs(
         log::debug!("Proof not Generated: update on slashing penalty");
 
         let ask = local_ask_store.get_by_ask_id(&bid_id).unwrap();
-        local_ask_store.remove_ask_only_if_completed(
-            &bid_id,
-            crate::ask_lib::ask_store::RemoveReason::ProofNotGenerated,
-        );
+        local_ask_store
+            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::ProofNotGenerated);
 
         let mut generator_store = generator_store.write().await;
 
@@ -706,7 +700,7 @@ pub async fn process_proof_market_place_logs(
 
         local_ask_store.remove_ask_only_if_completed(
             &bid_id,
-            crate::ask_lib::ask_store::RemoveReason::InvalidInputsDetected,
+            crate::ask_lib::RemoveReason::InvalidInputsDetected,
         );
 
         {
