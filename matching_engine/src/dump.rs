@@ -17,6 +17,7 @@ use kalypso_helper::secret_inputs_helpers;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::{str::FromStr, sync::Arc};
+use tokio::sync::RwLockReadGuard;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Dump {
@@ -29,6 +30,87 @@ pub struct Dump {
     pub key_store: KeyStore,
     pub stake_manager_store: StakeManagerStore,
     pub parsed_block: U64,
+}
+
+use std::path::Path;
+use tokio::io::AsyncWriteExt;
+
+impl Dump {
+    pub async fn local_backup(
+        shared_market_store: RwLockReadGuard<'_, MarketMetadataStore>,
+        shared_ask_store: RwLockReadGuard<'_, LocalAskStore>,
+        shared_generator_store: RwLockReadGuard<'_, GeneratorStore>,
+        shared_native_store: RwLockReadGuard<'_, NativeStakingStore>,
+        shared_symbiotic_store: RwLockReadGuard<'_, SymbioticStakeStore>,
+        shared_cost_store: RwLockReadGuard<'_, CostStore>,
+        shared_key_store: RwLockReadGuard<'_, KeyStore>,
+        shared_stake_manager_store: RwLockReadGuard<'_, StakeManagerStore>,
+        shared_parsed_block: RwLockReadGuard<'_, U64>,
+        path_to_snapshot: &Path,
+    ) {
+        let market_store = shared_market_store.clone();
+        let ask_store = shared_ask_store.clone();
+        let generator_store = shared_generator_store.clone();
+        let native_store = shared_native_store.clone();
+        let symbiotic_store = shared_symbiotic_store.clone();
+        let cost_store = shared_cost_store.clone();
+        let key_store = shared_key_store.clone();
+        let stake_manager_store = shared_stake_manager_store.clone();
+        let parsed_block = shared_parsed_block.clone();
+
+        // Create a new Dump instance from these values.
+        let dump_instance = Dump {
+            market_metadata_store: market_store,
+            local_ask_store: ask_store,
+            generator_store: generator_store,
+            native_staking_store: native_store,
+            symbiotic_stake_store: symbiotic_store,
+            cost_store: cost_store,
+            key_store: key_store,
+            stake_manager_store: stake_manager_store,
+            parsed_block: parsed_block,
+        };
+
+        // Create the encrypted dump. If there's an error, log it and return early.
+        let encrypted_dump = match dump_instance.create_encrypted_dump().await {
+            Ok(data) => data,
+            Err(err) => {
+                log::error!("Error creating dump: {}", err);
+                return;
+            }
+        };
+
+        // Ensure the parent directory exists.
+        if let Some(parent) = path_to_snapshot.parent() {
+            if let Err(e) = tokio::fs::create_dir_all(parent).await {
+                log::error!("Failed to create directory {:?}: {}", parent, e);
+                // Decide if you want to return early here or continue.
+            }
+        }
+
+        // Serialize the encrypted dump to a JSON string.
+        let json_string = match serde_json::to_string(&encrypted_dump) {
+            Ok(s) => s,
+            Err(e) => {
+                log::error!("Failed to serialize encrypted dump: {}", e);
+                return;
+            }
+        };
+
+        // Write the JSON string to the file asynchronously.
+        match tokio::fs::File::create(path_to_snapshot).await {
+            Ok(mut file) => {
+                if let Err(e) = file.write_all(json_string.as_bytes()).await {
+                    log::error!("Failed to write to file {:?}: {}", path_to_snapshot, e);
+                } else {
+                    log::info!("Successfully backed up dump to {:?}", path_to_snapshot);
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to create file {:?}: {}", path_to_snapshot, e);
+            }
+        }
+    }
 }
 
 #[async_trait]

@@ -1,11 +1,7 @@
-use tokio::fs;
-use tokio::io::AsyncWriteExt;
-
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
 use crate::costs::CostStore;
-use crate::dump::ToEncryptedDump;
 use crate::{ask_lib::ask_store::LocalAskStore, Dump};
 
 #[cfg(not(feature = "disable_match_creation"))]
@@ -217,67 +213,21 @@ impl LogParser {
                 let key_store = self.shared_key_store.read().await;
                 let stake_manager_store = self.shared_stake_manager_store.read().await;
                 let parsed_block = self.start_block.read().await;
-
-                let dump = Dump {
-                    market_metadata_store: market_store.clone(),
-                    local_ask_store: ask_store.clone(),
-                    generator_store: generator_store.clone(),
-                    native_staking_store: native_store.clone(),
-                    symbiotic_stake_store: symbiotic_store.clone(),
-                    cost_store: cost_store.clone(),
-                    key_store: key_store.clone(),
-                    stake_manager_store: stake_manager_store.clone(),
-                    parsed_block: parsed_block.clone(),
-                };
-
-                let dump = match dump.create_encrypted_dump().await {
-                    Ok(data) => data,
-                    Err(err) => {
-                        log::error!("Error creating dump: {}", err);
-                        last_backup_tried_at = tokio::time::Instant::now();
-                        continue;
-                    }
-                };
-
                 let path_to_snapshot = Path::new(&self.path_to_snapshot);
-                match serde_json::to_string(&dump) {
-                    Ok(json_string) => {
-                        // Ensure the directory exists
-                        if let Some(parent) = path_to_snapshot.parent() {
-                            if let Err(e) = fs::create_dir_all(parent).await {
-                                log::error!("Failed to create directory {:?}: {}", parent, e);
-                                // Handle the error as needed, e.g., continue or return
-                            }
-                        }
 
-                        // Write the JSON string to the file asynchronously
-                        match fs::File::create(path_to_snapshot).await {
-                            Ok(mut file) => {
-                                if let Err(e) = file.write_all(json_string.as_bytes()).await {
-                                    log::error!(
-                                        "Failed to write to file {:?}: {}",
-                                        path_to_snapshot,
-                                        e
-                                    );
-                                    // Handle the error as needed
-                                } else {
-                                    log::info!(
-                                        "Successfully backed up dump to {:?}",
-                                        path_to_snapshot
-                                    );
-                                }
-                            }
-                            Err(e) => {
-                                log::error!("Failed to create file {:?}: {}", path_to_snapshot, e);
-                                // Handle the error as needed
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        log::error!("Failed to serialize Dump: {}", e);
-                        // Handle the serialization error as needed
-                    }
-                }
+                Dump::local_backup(
+                    market_store,
+                    ask_store,
+                    generator_store,
+                    native_store,
+                    symbiotic_store,
+                    cost_store,
+                    key_store,
+                    stake_manager_store,
+                    parsed_block,
+                    path_to_snapshot,
+                )
+                .await;
 
                 last_backup_tried_at = tokio::time::Instant::now();
                 continue;
