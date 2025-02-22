@@ -4,6 +4,7 @@ use tokio::sync::RwLock;
 
 use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
+use crate::dump::ToEncryptedDump;
 use crate::generator_lib::generator_store::GeneratorStore;
 use crate::generator_lib::key_store::KeyStore;
 use crate::generator_lib::native_stake_store::NativeStakingStore;
@@ -99,6 +100,8 @@ pub async fn get_encrypted_dump(
 
 #[cfg(test)]
 mod tests {
+    use crate::{dump::ToEncryptedDump, encrypted_dump::ToPlainDump};
+
     use super::Dump;
     use serde_json;
 

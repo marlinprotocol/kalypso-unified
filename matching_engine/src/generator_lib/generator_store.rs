@@ -19,13 +19,13 @@ use crate::utility::{AddressTokenPair, TokenTracker};
 use super::delegation::{Delegation, DelegationStore, Operation};
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
-use super::key_store::{KeyStore, KeyStoreOperations};
+use super::key_store::KeyStoreOperations;
 use super::points::get_points;
 use super::traits::{
     GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorFilter,
-    GeneratorLockManagement, GeneratorMarketManagement, GeneratorMetadata, GeneratorQuery,
-    GeneratorRegistration, GeneratorSlashingManagement, GeneratorStakeComputeManagement,
-    JobMissedCounter, WithdrawalManagement,
+    GeneratorKeyStoreFilterInterfaceTrait, GeneratorLockManagement, GeneratorMarketManagement,
+    GeneratorMetadata, GeneratorQuery, GeneratorRegistration, GeneratorSlashingManagement,
+    GeneratorStakeComputeManagement, JobMissedCounter, WithdrawalManagement,
 };
 use super::withdrawal_request::WithdrawlRequest;
 use super::SlashingRecord;
@@ -1166,17 +1166,19 @@ impl GeneratorFilter for GeneratorStore {
         );
         GeneratorQueryResult::new(generator_result)
     }
+}
 
+impl<KS: KeyStoreOperations> GeneratorKeyStoreFilterInterfaceTrait<KS> for GeneratorStore {
     fn filter_by_has_private_inputs_support(
         &self,
         generator_query: GeneratorQueryResult,
-        key_store: RwLockReadGuard<'_, KeyStore>,
+        key_store: RwLockReadGuard<'_, KS>,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
 
         // Use rayon's parallel iterator to process in parallel
         let generator_result: Vec<&GeneratorInfoPerMarket> = generator_array
-            .into_par_iter() // Convert to a parallel iterator
+            .into_iter() // Convert to a parallel iterator
             .filter_map(|elem| {
                 // Try to get the generator from the store
                 if let Some(generator) = self.generators.get(&elem.address) {

@@ -1,19 +1,27 @@
-use tokio::fs;
-use tokio::io::AsyncWriteExt;
-
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
-use crate::costs::CostStore;
-use crate::{ask_lib::ask_store::LocalAskStore, Dump};
+use crate::ask_lib::ask_store::{
+    AskManagementRead, AskManagementWrite, CompletedProofsManagement, MarketRequestCounters,
+    ProofCounters, RequestorCounters, TimingOperations,
+};
+use crate::costs::CostStoreOperations;
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::stake_manager_store::StakeManagerOperations;
+use crate::generator_lib::traits::{
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorFilter,
+    GeneratorKeyStoreFilterInterfaceTrait, GeneratorLockManagement, GeneratorMarketManagement,
+    GeneratorMetadata, GeneratorQuery, GeneratorRegistration, GeneratorSlashingManagement,
+    GeneratorStakeComputeManagement, JobMissedCounter, WithdrawalManagement,
+};
 
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::generator_lib::generator_store;
 
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::stake_manager_store::StakeManagerStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use crate::market_metadata::MarketMetadataStore;
+use crate::generator_lib::symbiotic_stake_store::{
+    OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
+};
+use crate::market_metadata::{MarketMetadataStoreRead, MarketMetadataStoreWrite};
 use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
@@ -46,7 +54,7 @@ use crate::{
     generator_lib::{generator_helper, generator_state::GeneratorState},
 };
 
-use crate::generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
+use crate::generator_lib::key_store::KeyStoreOperations;
 
 type EntityRegistryInstance = bindings::entity_key_registry::EntityKeyRegistry<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -69,9 +77,35 @@ type NativeStakingInstance =
 type StakingManagerInstance =
     bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
-use std::path::Path;
-
-pub struct LogParser {
+pub struct LogParser<
+    AS: AskManagementRead
+        + AskManagementWrite
+        + RequestorCounters
+        + ProofCounters
+        + MarketRequestCounters
+        + CompletedProofsManagement
+        + TimingOperations,
+    GS: GeneratorRegistration
+        + GeneratorStakeComputeManagement
+        + GeneratorMarketManagement
+        + GeneratorSlashingManagement
+        + GeneratorLockManagement
+        + GeneratorAvailability
+        + GeneratorMetadata
+        + GeneratorQuery
+        + GeneratorFilter
+        + GeneratorKeyStoreFilterInterfaceTrait<KS>
+        + GeneratorEarningsAndSlashing
+        + WithdrawalManagement
+        + JobMissedCounter
+        + GeneratorAdditionalQuery,
+    MS: MarketMetadataStoreRead + MarketMetadataStoreWrite,
+    KS: KeyStoreOperations,
+    CS: CostStoreOperations,
+    SS: OperatorStakeManagement + TokenLockManagement + VaultSnapshotManagement + SlashResultManagement,
+    NS: NativeStakingOperations,
+    SM: StakeManagerOperations,
+> {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
     block_range: U64,
@@ -85,14 +119,14 @@ pub struct LogParser {
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
     matching_engine_slave_keys: Vec<Vec<u8>>,
-    shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
-    shared_generator_store: Arc<RwLock<GeneratorStore>>,
-    shared_market_store: Arc<RwLock<MarketMetadataStore>>,
-    shared_key_store: Arc<RwLock<KeyStore>>,
-    shared_cost_store: Arc<RwLock<CostStore>>,
-    shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
-    shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
-    shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+    shared_local_ask_store: Arc<RwLock<AS>>,
+    shared_generator_store: Arc<RwLock<GS>>,
+    shared_market_store: Arc<RwLock<MS>>,
+    shared_key_store: Arc<RwLock<KS>>,
+    shared_cost_store: Arc<RwLock<CS>>,
+    shared_symbiotic_stake_store: Arc<RwLock<SS>>,
+    shared_native_stake_store: Arc<RwLock<NS>>,
+    shared_stake_manager_store: Arc<RwLock<SM>>,
     #[allow(unused)]
     chain_id: String,
     #[allow(unused)]
@@ -101,10 +135,42 @@ pub struct LogParser {
     unhandled_logs: Arc<RwLock<Vec<Log>>>,
     #[allow(unused)]
     matching_errors: Arc<RwLock<Vec<String>>>,
-    path_to_snapshot: String,
+    backup_in_progress: Arc<RwLock<bool>>,
 }
 
-impl LogParser {
+impl<
+        AS: AskManagementRead
+            + AskManagementWrite
+            + RequestorCounters
+            + ProofCounters
+            + MarketRequestCounters
+            + CompletedProofsManagement
+            + TimingOperations,
+        GS: GeneratorRegistration
+            + GeneratorStakeComputeManagement
+            + GeneratorMarketManagement
+            + GeneratorSlashingManagement
+            + GeneratorLockManagement
+            + GeneratorAvailability
+            + GeneratorMetadata
+            + GeneratorQuery
+            + GeneratorFilter
+            + GeneratorKeyStoreFilterInterfaceTrait<KS>
+            + GeneratorEarningsAndSlashing
+            + WithdrawalManagement
+            + JobMissedCounter
+            + GeneratorAdditionalQuery,
+        MS: MarketMetadataStoreRead + MarketMetadataStoreWrite,
+        KS: KeyStoreOperations,
+        CS: CostStoreOperations,
+        SS: OperatorStakeManagement
+            + TokenLockManagement
+            + VaultSnapshotManagement
+            + SlashResultManagement,
+        NS: NativeStakingOperations,
+        SM: StakeManagerOperations,
+    > LogParser<AS, GS, MS, KS, CS, SS, NS, SM>
+{
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         should_stop: Arc<AtomicBool>,
@@ -121,18 +187,18 @@ impl LogParser {
         staking_manager: StakingManagerInstance,
         matching_engine_key: String,
         matching_engine_slave_keys: Vec<String>,
-        shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
-        shared_generator_store: Arc<RwLock<GeneratorStore>>,
-        shared_market_store: Arc<RwLock<MarketMetadataStore>>,
-        shared_key_store: Arc<RwLock<KeyStore>>,
-        shared_cost_store: Arc<RwLock<CostStore>>,
-        shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
-        shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
-        shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+        shared_local_ask_store: Arc<RwLock<AS>>,
+        shared_generator_store: Arc<RwLock<GS>>,
+        shared_market_store: Arc<RwLock<MS>>,
+        shared_key_store: Arc<RwLock<KS>>,
+        shared_cost_store: Arc<RwLock<CS>>,
+        shared_symbiotic_stake_store: Arc<RwLock<SS>>,
+        shared_native_stake_store: Arc<RwLock<NS>>,
+        shared_stake_manager_store: Arc<RwLock<SM>>,
         chain_id: String,
         unhandled_logs: Arc<RwLock<Vec<Log>>>,
         matching_errors: Arc<RwLock<Vec<String>>>,
-        path_to_snapshot: String,
+        backup_in_progress: Arc<RwLock<bool>>,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
             .unwrap()
@@ -169,19 +235,26 @@ impl LogParser {
             rpc_url,
             unhandled_logs,
             matching_errors,
-            path_to_snapshot,
+            backup_in_progress,
         }
     }
 
     pub async fn parse(&self) -> anyhow::Result<()> {
         let mut matches_upto: Option<U64> = None;
-        let mut last_backup_tried_at = tokio::time::Instant::now();
 
         loop {
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
             }
+
+            if let Ok(back_going_on) = self.backup_in_progress.try_read() {
+                if *back_going_on {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+            }
+            // if not read lock, let parser run as it is
 
             let (mut start_block, end_block) = match self
                 .get_start_end_block()
@@ -195,92 +268,6 @@ impl LogParser {
                     continue;
                 }
             };
-
-            // once in every n loops, the indexers makes a local backup to avoid parsing from start.
-            // this is useless if the shape of the data the indexers creates changes.
-
-            let time_since_last_backup = last_backup_tried_at.elapsed();
-            log::debug!(
-                "Time since last backup: {} sec",
-                time_since_last_backup.as_secs_f64()
-            );
-
-            if time_since_last_backup > tokio::time::Duration::from_secs(120) {
-                // make backup here
-                let market_store = self.shared_market_store.read().await;
-                let ask_store = self.shared_local_ask_store.read().await;
-                let generator_store = self.shared_generator_store.read().await;
-                let native_store = self.shared_native_stake_store.read().await;
-                let symbiotic_store = self.shared_symbiotic_stake_store.read().await;
-                let cost_store = self.shared_cost_store.read().await;
-                let key_store = self.shared_key_store.read().await;
-                let stake_manager_store = self.shared_stake_manager_store.read().await;
-                let parsed_block = self.start_block.read().await;
-
-                let dump = Dump {
-                    market_metadata_store: market_store.clone(),
-                    local_ask_store: ask_store.clone(),
-                    generator_store: generator_store.clone(),
-                    native_staking_store: native_store.clone(),
-                    symbiotic_stake_store: symbiotic_store.clone(),
-                    cost_store: cost_store.clone(),
-                    key_store: key_store.clone(),
-                    stake_manager_store: stake_manager_store.clone(),
-                    parsed_block: parsed_block.clone(),
-                };
-
-                let dump = match dump.create_encrypted_dump().await {
-                    Ok(data) => data,
-                    Err(err) => {
-                        log::error!("Error creating dump: {}", err);
-                        last_backup_tried_at = tokio::time::Instant::now();
-                        continue;
-                    }
-                };
-
-                let path_to_snapshot = Path::new(&self.path_to_snapshot);
-                match serde_json::to_string(&dump) {
-                    Ok(json_string) => {
-                        // Ensure the directory exists
-                        if let Some(parent) = path_to_snapshot.parent() {
-                            if let Err(e) = fs::create_dir_all(parent).await {
-                                log::error!("Failed to create directory {:?}: {}", parent, e);
-                                // Handle the error as needed, e.g., continue or return
-                            }
-                        }
-
-                        // Write the JSON string to the file asynchronously
-                        match fs::File::create(path_to_snapshot).await {
-                            Ok(mut file) => {
-                                if let Err(e) = file.write_all(json_string.as_bytes()).await {
-                                    log::error!(
-                                        "Failed to write to file {:?}: {}",
-                                        path_to_snapshot,
-                                        e
-                                    );
-                                    // Handle the error as needed
-                                } else {
-                                    log::info!(
-                                        "Successfully backed up dump to {:?}",
-                                        path_to_snapshot
-                                    );
-                                }
-                            }
-                            Err(e) => {
-                                log::error!("Failed to create file {:?}: {}", path_to_snapshot, e);
-                                // Handle the error as needed
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        log::error!("Failed to serialize Dump: {}", e);
-                        // Handle the serialization error as needed
-                    }
-                }
-
-                last_backup_tried_at = tokio::time::Instant::now();
-                continue;
-            }
 
             if let Some(_matches_upto) = matches_upto.filter(|&m| m == end_block) {
                 #[cfg(feature = "disable_match_creation")]
@@ -501,15 +488,7 @@ impl LogParser {
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         use kalypso_helper::try_read_contract_error_log;
 
-        use crate::{
-            ask_lib::ask_store::{AskManagementRead, AskManagementWrite},
-            generator_lib::{
-                key_store::KeyStoreOperations,
-                stake_manager_store::StakeManagerOperations,
-                traits::{GeneratorAdditionalQuery, GeneratorAvailability, JobMissedCounter},
-            },
-            utility::TokenTracker,
-        };
+        use crate::utility::TokenTracker;
 
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
@@ -659,13 +638,13 @@ impl LogParser {
                     self.shared_native_stake_store
                         .read()
                         .await
-                        .tokens_to_lock
+                        .tokens_to_lock()
                         .clone()
                         + self
                             .shared_symbiotic_stake_store
                             .read()
                             .await
-                            .tokens_to_lock
+                            .tokens_to_lock()
                             .clone()
                 };
 
@@ -936,24 +915,25 @@ impl LogParser {
     async fn get_idle_generators(
         &self,
         random_pending_ask: LocalAsk,
-        generator_store: &Arc<RwLock<GeneratorStore>>,
-        _: &Arc<RwLock<MarketMetadataStore>>,
-        key_store: &Arc<RwLock<KeyStore>>,
+        generator_store: &Arc<RwLock<GS>>,
+        _: &Arc<RwLock<MS>>,
+        key_store: &Arc<RwLock<KS>>,
         task_reward: U256,
-        native_staking_store: &Arc<RwLock<NativeStakingStore>>,
-        symbiotic_staking_store: &Arc<RwLock<SymbioticStakeStore>>,
+        native_staking_store: &Arc<RwLock<NS>>,
+        symbiotic_staking_store: &Arc<RwLock<SS>>,
     ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
 
-        use crate::generator_lib::traits::{GeneratorFilter, GeneratorQuery};
         let generator_store = generator_store.read().await;
         let key_store = key_store.read().await;
         let native_staking_store = native_staking_store.read().await;
         let symbiotic_staking_store = symbiotic_staking_store.read().await;
 
-        let native_stake_requirements = native_staking_store.tokens_to_lock.to_address_token_pair();
+        let native_stake_requirements = native_staking_store
+            .tokens_to_lock()
+            .to_address_token_pair();
         let symbiotic_stake_requirements = symbiotic_staking_store
-            .tokens_to_lock
+            .tokens_to_lock()
             .to_address_token_pair();
 
         log::debug!(
