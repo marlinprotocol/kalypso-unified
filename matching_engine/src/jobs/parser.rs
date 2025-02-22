@@ -1,8 +1,8 @@
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
+use crate::ask_lib::ask_store::LocalAskStore;
 use crate::costs::CostStore;
-use crate::{ask_lib::ask_store::LocalAskStore, Dump};
 
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::generator_lib::generator_store;
@@ -66,8 +66,6 @@ type NativeStakingInstance =
 type StakingManagerInstance =
     bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
-use std::path::Path;
-
 pub struct LogParser {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
@@ -98,7 +96,7 @@ pub struct LogParser {
     unhandled_logs: Arc<RwLock<Vec<Log>>>,
     #[allow(unused)]
     matching_errors: Arc<RwLock<Vec<String>>>,
-    path_to_snapshot: String,
+    backup_in_progress: Arc<RwLock<bool>>,
 }
 
 impl LogParser {
@@ -129,7 +127,7 @@ impl LogParser {
         chain_id: String,
         unhandled_logs: Arc<RwLock<Vec<Log>>>,
         matching_errors: Arc<RwLock<Vec<String>>>,
-        path_to_snapshot: String,
+        backup_in_progress: Arc<RwLock<bool>>,
     ) -> Self {
         let provider_http = Provider::<Http>::try_from(&rpc_url)
             .unwrap()
@@ -166,19 +164,26 @@ impl LogParser {
             rpc_url,
             unhandled_logs,
             matching_errors,
-            path_to_snapshot,
+            backup_in_progress,
         }
     }
 
     pub async fn parse(&self) -> anyhow::Result<()> {
         let mut matches_upto: Option<U64> = None;
-        let mut last_backup_tried_at = tokio::time::Instant::now();
 
         loop {
             if self.should_stop.load(Ordering::Acquire) {
                 log::info!("Gracefully shutting down...");
                 break;
             }
+
+            if let Ok(back_going_on) = self.backup_in_progress.try_read() {
+                if *back_going_on {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    continue;
+                }
+            }
+            // if not read lock, let parser run as it is
 
             let (mut start_block, end_block) = match self
                 .get_start_end_block()
@@ -192,46 +197,6 @@ impl LogParser {
                     continue;
                 }
             };
-
-            // once in every n loops, the indexers makes a local backup to avoid parsing from start.
-            // this is useless if the shape of the data the indexers creates changes.
-
-            let time_since_last_backup = last_backup_tried_at.elapsed();
-            log::debug!(
-                "Time since last backup: {} sec",
-                time_since_last_backup.as_secs_f64()
-            );
-
-            if time_since_last_backup > tokio::time::Duration::from_secs(120) {
-                // make backup here
-                let market_store = self.shared_market_store.read().await;
-                let ask_store = self.shared_local_ask_store.read().await;
-                let generator_store = self.shared_generator_store.read().await;
-                let native_store = self.shared_native_stake_store.read().await;
-                let symbiotic_store = self.shared_symbiotic_stake_store.read().await;
-                let cost_store = self.shared_cost_store.read().await;
-                let key_store = self.shared_key_store.read().await;
-                let stake_manager_store = self.shared_stake_manager_store.read().await;
-                let parsed_block = self.start_block.read().await;
-                let path_to_snapshot = Path::new(&self.path_to_snapshot);
-
-                Dump::local_backup(
-                    market_store,
-                    ask_store,
-                    generator_store,
-                    native_store,
-                    symbiotic_store,
-                    cost_store,
-                    key_store,
-                    stake_manager_store,
-                    parsed_block,
-                    path_to_snapshot,
-                )
-                .await;
-
-                last_backup_tried_at = tokio::time::Instant::now();
-                continue;
-            }
 
             if let Some(_matches_upto) = matches_upto.filter(|&m| m == end_block) {
                 #[cfg(feature = "disable_match_creation")]
