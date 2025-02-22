@@ -4,7 +4,9 @@ use serde_json::json;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::symbiotic_stake_store::{
+    OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
+};
 use crate::models::WelcomeResponse;
 use crate::utility::address_to_string;
 
@@ -16,8 +18,10 @@ use crate::utility::address_to_string;
     ),
     tag = "Manage"
 )]
-pub async fn get_snapshot(
-    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+pub async fn get_snapshot<
+    SS: VaultSnapshotManagement + OperatorStakeManagement + SlashResultManagement + TokenLockManagement,
+>(
+    _local_symbiotic_store: Data<Arc<RwLock<SS>>>,
 ) -> actix_web::Result<HttpResponse> {
     let local_symbiotic_store = {
         match _local_symbiotic_store.try_read() {
@@ -31,7 +35,7 @@ pub async fn get_snapshot(
     };
 
     let operators: Vec<_> = local_symbiotic_store
-        .operators
+        .operators()
         .iter()
         .map(|(addr, tracker)| {
             json!({
@@ -42,7 +46,7 @@ pub async fn get_snapshot(
         .collect();
 
     let vault_snapshots: Vec<_> = local_symbiotic_store
-        .vault_snapshots
+        .vault_snapshots()
         .iter()
         .map(|(timestamp, snapshot)| {
             let snapshot: Vec<_> = snapshot
@@ -72,7 +76,7 @@ pub async fn get_snapshot(
         .collect();
 
     let slash_results: Vec<_> = local_symbiotic_store
-        .slash_results
+        .slash_result()
         .iter()
         .map(|(timestamp, slash_result)| {
             let slash_result: Vec<_> = slash_result
@@ -100,18 +104,18 @@ pub async fn get_snapshot(
         .collect();
 
     let vault_snapshot_indexes: Vec<_> = local_symbiotic_store
-        .vault_snapshot_indexes
+        .vault_snapshot_indexes()
         .iter()
         .map(|a| a.to_string())
         .collect();
 
     let slash_result_indexes: Vec<_> = local_symbiotic_store
-        .slash_result_indexes
+        .slash_result_indexes()
         .iter()
         .map(|a| a.to_string())
         .collect();
 
-    let tokens_to_lock = local_symbiotic_store.tokens_to_lock.to_token_amount();
+    let tokens_to_lock = local_symbiotic_store.tokens_to_lock().to_token_amount();
 
     return Ok(HttpResponse::Ok().json(json!({
         "operators": operators,

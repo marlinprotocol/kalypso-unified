@@ -53,3 +53,22 @@ impl ToPlainDump for EncryptedDump {
 pub trait ToPlainDump {
     fn get_dump(&self) -> Result<Dump, Box<dyn std::error::Error>>;
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{dump::ToEncryptedDump, encrypted_dump::ToPlainDump};
+
+    use super::Dump;
+    use serde_json;
+
+    #[tokio::test]
+    async fn test_encryption_and_decrytion() {
+        // create default dump
+        let dump = Dump::default();
+
+        let encrypted_dump = dump.create_encrypted_dump().await.unwrap();
+        let decrypted_dump = encrypted_dump.get_dump().unwrap();
+        let decrypted_dump_str = serde_json::to_string(&decrypted_dump).unwrap();
+        dbg!(decrypted_dump_str);
+    }
+}

@@ -1,14 +1,14 @@
 use super::cache::CachedResponse;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::{AskManagementRead, CompletedProofsManagement, ProofCounters};
-use crate::generator_lib::generator_store::GeneratorStore;
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
 use crate::generator_lib::traits::{GeneratorAdditionalQuery, GeneratorAvailability};
 use crate::market_metadata::{MarketMetadataStoreRead, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
 use crate::utility::{TokenAmount, TokenTracker};
-use crate::{ask_lib::ask_store::LocalAskStore, market_metadata::MarketMetadataStore};
+
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
 use actix_web::HttpResponse;
@@ -75,12 +75,18 @@ static MARKET_RESPONSE: Lazy<RwLock<CachedMarketResponse>> =
     ),
     tag = "UI"
 )]
-pub async fn total_market_info(
-    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
-    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
-    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+pub async fn total_market_info<
+    MS: MarketMetadataStoreRead + Send + Sync,
+    AS: AskManagementRead + CompletedProofsManagement + ProofCounters + Send + Sync,
+    GS: GeneratorAdditionalQuery + GeneratorAvailability + Send + Sync,
+    NS: NativeStakingOperations + Send + Sync,
+    SS: TokenLockManagement + Send + Sync,
+>(
+    _local_market_store: Data<Arc<RwLock<MS>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
+    _local_native_store: Data<Arc<RwLock<NS>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SS>>>,
 ) -> actix_web::Result<HttpResponse> {
     // Step 1: Check if there's a cached response (lock for reading)
     try_read_and_get_if_valid!(MARKET_RESPONSE, market_cache, Duration::from_millis(100));
@@ -117,12 +123,19 @@ pub async fn total_market_info(
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_market_response<'a>(
-    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
-    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
-    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
-    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
-    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
+async fn recompute_market_response<
+    'a,
+    MS: MarketMetadataStoreRead,
+    AS: AskManagementRead + CompletedProofsManagement + ProofCounters,
+    GS: GeneratorAdditionalQuery + GeneratorAvailability,
+    NS: NativeStakingOperations,
+    SS: TokenLockManagement,
+>(
+    local_market_store: RwLockReadGuard<'a, MS>,
+    local_ask_store: RwLockReadGuard<'a, AS>,
+    local_generator_store: RwLockReadGuard<'a, GS>,
+    local_native_store: RwLockReadGuard<'a, NS>,
+    local_symbiotic_store: RwLockReadGuard<'a, SS>,
 ) -> MarketResponse {
     log::trace!("Starting recompute_market_response");
 
@@ -194,8 +207,8 @@ async fn recompute_market_response<'a>(
             total_earnings_map.insert(market_id.clone(), total_earnings);
 
             // Extract slashing_penalty
-            let slashing_penalty = local_native_store.tokens_to_lock.clone()
-                + local_symbiotic_store.tokens_to_lock.clone();
+            let slashing_penalty = local_native_store.tokens_to_lock().clone()
+                + local_symbiotic_store.tokens_to_lock().clone();
             slashing_penalty_map.insert(market_id.clone(), slashing_penalty);
         }
 

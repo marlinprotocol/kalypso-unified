@@ -1,9 +1,5 @@
 use crate::{
-    ask_lib::{
-        ask_status::AskState,
-        ask_store::{AskManagementRead, LocalAskStore},
-        Proof,
-    },
+    ask_lib::{ask_status::AskState, ask_store::AskManagementRead, Proof},
     models::{
         GetAskStatus, GetAskStatusResponse, GetProofResponse, GetStatusResponse, WelcomeResponse,
     },
@@ -25,8 +21,8 @@ use tokio::sync::RwLock;
     ),
     tag = "Manage"
 )]
-pub async fn get_status(
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+pub async fn get_status<AS: AskManagementRead + Send + Sync>(
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
 ) -> actix_web::Result<HttpResponse> {
     let local_ask_store = {
         match _local_ask_store.try_read() {
@@ -54,9 +50,9 @@ pub async fn get_status(
     ),
     tag = "Manage"
 )]
-pub async fn get_ask_proof_by_ask_id(
+pub async fn get_ask_proof_by_ask_id<AS: AskManagementRead + Send + Sync>(
     _payload: web::Json<GetAskStatus>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
 ) -> actix_web::Result<HttpResponse> {
     let ask_id: String = _payload.ask_id.clone();
     let ask_id_u256: U256 = U256::from_dec_str(&ask_id).expect("Failed to parse string");
@@ -113,9 +109,9 @@ pub async fn get_ask_proof_by_ask_id(
     ),
     tag = "Manage"
 )]
-pub async fn get_ask_status_askid(
+pub async fn get_ask_status_askid<AS: AskManagementRead + Send + Sync>(
     _payload: web::Json<GetAskStatus>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
 ) -> actix_web::Result<HttpResponse> {
     let local_ask_store = {
         match _local_ask_store.try_read() {
@@ -176,8 +172,8 @@ pub async fn get_ask_status_askid(
     ),
     tag = "Manage"
 )]
-pub async fn get_ask(
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+pub async fn get_ask<AS: AskManagementRead + Send + Sync>(
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
     path: web::Path<(String,)>,
 ) -> actix_web::Result<HttpResponse> {
     let ask_id = match U256::from_dec_str(&path.into_inner().0) {

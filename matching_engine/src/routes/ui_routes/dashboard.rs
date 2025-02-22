@@ -4,18 +4,15 @@ use crate::ask_lib::ask_store::{
     AskManagementRead, CompletedProofsManagement, ProofCounters, RequestorCounters,
     TimingOperations,
 };
-use crate::generator_lib::native_stake_store::{NativeStakingOperations, NativeStakingStore};
-use crate::generator_lib::symbiotic_stake_store::{SymbioticStakeStore, TokenLockManagement};
+
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
 use crate::generator_lib::traits::{GeneratorAdditionalQuery, GeneratorRegistration};
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::models::WelcomeResponse;
 use crate::utility::{
     address_to_string, bytes_to_string, convert_to_option_string, tx_to_string, TokenAmount,
     USDC_TOKEN,
-};
-use crate::{
-    ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore,
-    market_metadata::MarketMetadataStore,
 };
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
@@ -139,12 +136,24 @@ static DASHBOARD_RESPONSE: Lazy<RwLock<CachedDashboardResponse>> =
     ),
     tag = "UI"
 )]
-pub async fn get_dashboard(
-    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
-    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
-    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+pub async fn get_dashboard<
+    MS: MarketMetadataStoreRead + Send + Sync,
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations
+        + Send
+        + Sync,
+    GS: GeneratorAdditionalQuery + GeneratorRegistration + Send + Sync,
+    NS: NativeStakingOperations + Send + Sync,
+    SS: TokenLockManagement + Send + Sync,
+>(
+    _local_market_store: Data<Arc<RwLock<MS>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
+    _local_native_store: Data<Arc<RwLock<NS>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SS>>>,
 ) -> actix_web::Result<HttpResponse> {
     try_read_and_get_if_valid!(
         DASHBOARD_RESPONSE,
@@ -185,12 +194,23 @@ pub async fn get_dashboard(
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_dashboard_response<'a>(
-    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
-    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
-    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
-    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
-    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
+async fn recompute_dashboard_response<
+    'a,
+    MS: MarketMetadataStoreRead,
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations,
+    GS: GeneratorAdditionalQuery + GeneratorRegistration,
+    NS: NativeStakingOperations,
+    SS: TokenLockManagement,
+>(
+    local_market_store: RwLockReadGuard<'a, MS>,
+    local_ask_store: RwLockReadGuard<'a, AS>,
+    local_generator_store: RwLockReadGuard<'a, GS>,
+    local_native_store: RwLockReadGuard<'a, NS>,
+    local_symbiotic_store: RwLockReadGuard<'a, SS>,
 ) -> DashboardResponse {
     // Step 1: Retrieve all market metadata and count of markets
     let (all_markets, count_markets, market_median_map) = {

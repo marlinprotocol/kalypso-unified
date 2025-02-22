@@ -1,18 +1,17 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::{
-    AskManagementRead, CompletedProofsManagement, LocalAskStore, MarketRequestCounters,
-    ProofCounters, TimingOperations,
+    AskManagementRead, CompletedProofsManagement, MarketRequestCounters, ProofCounters,
+    RequestorCounters, TimingOperations,
 };
-use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::generator_store::GeneratorMeta;
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
 use crate::generator_lib::traits::{
-    GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorRegistration,
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
+    GeneratorRegistration,
 };
-use crate::market_metadata::{
-    MarketMetadataStore, MarketMetadataStoreRead, MarketSetupData, MinHardware,
-};
+use crate::market_metadata::{MarketMetadataStoreRead, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
 use crate::utility::{
@@ -24,7 +23,6 @@ use actix_web::HttpResponse;
 use ethers::types::U256;
 use im::HashMap;
 use once_cell::sync::Lazy;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, RwLockReadGuard};
@@ -208,8 +206,17 @@ struct JobRespone {
     ),
     tag = "UI"
 )]
-pub async fn jobs(
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+pub async fn jobs<
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations
+        + MarketRequestCounters
+        + Send
+        + Sync,
+>(
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
     path: web::Path<(String,)>,
 ) -> actix_web::Result<HttpResponse> {
     let market_id: U256 = match U256::from_dec_str(&path.0) {
@@ -270,12 +277,30 @@ pub async fn jobs(
     ),
     tag = "UI"
 )]
-pub async fn single_market(
-    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
-    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
-    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+pub async fn single_market<
+    MS: MarketMetadataStoreRead + Send + Sync,
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations
+        + MarketRequestCounters
+        + Send
+        + Sync,
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorAvailability
+        + GeneratorEarningsAndSlashing
+        + Send
+        + Sync,
+    NS: NativeStakingOperations + Send + Sync,
+    SS: TokenLockManagement + Send + Sync,
+>(
+    _local_market_store: Data<Arc<RwLock<MS>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
+    _local_native_store: Data<Arc<RwLock<NS>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SS>>>,
     path: web::Path<(String,)>,
     // query: web::Query<QueryParams>, // If required add latter
 ) -> actix_web::Result<HttpResponse> {
@@ -342,13 +367,28 @@ pub async fn single_market(
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_single_market_response<'a>(
+async fn recompute_single_market_response<
+    'a,
+    MS: MarketMetadataStoreRead,
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations
+        + MarketRequestCounters,
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorAvailability
+        + GeneratorEarningsAndSlashing,
+    NS: NativeStakingOperations,
+    SS: TokenLockManagement,
+>(
     market_id: U256,
-    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
-    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
-    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
-    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
-    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
+    local_market_store: RwLockReadGuard<'a, MS>,
+    local_ask_store: RwLockReadGuard<'a, AS>,
+    local_generator_store: RwLockReadGuard<'a, GS>,
+    local_native_store: RwLockReadGuard<'a, NS>,
+    local_symbiotic_store: RwLockReadGuard<'a, SS>,
 ) -> Option<SingleMarketResponse> {
     let marketmetadata = local_market_store.get_market_by_market_id(&market_id);
 
@@ -366,10 +406,8 @@ async fn recompute_single_market_response<'a>(
         .to_string();
     let registered_generators = local_generator_store.get_all_by_market_id(&market_id);
 
-    let _local_generator_store_arc = Arc::new(local_generator_store.clone());
-
-    let total_min_stake =
-        local_native_store.tokens_to_lock.clone() + local_symbiotic_store.tokens_to_lock.clone();
+    let total_min_stake = local_native_store.tokens_to_lock().clone()
+        + local_symbiotic_store.tokens_to_lock().clone();
 
     Some(SingleMarketResponse {
         median_cost,
@@ -382,15 +420,13 @@ async fn recompute_single_market_response<'a>(
             .unwrap_or_default()
             .to_string(),
         total_slashed: registered_generators
-            .into_par_iter()
+            .into_iter()
             .map(|elem| {
-                let store = Arc::clone(&_local_generator_store_arc);
-                match store.get_slashing_per_generator_per_market(&elem.address, &market_id) {
-                    Some(slashed) => slashed,
-                    None => TokenTracker::new(),
-                }
+                local_generator_store
+                    .get_slashing_per_generator_per_market(&elem.address, &market_id)
+                    .unwrap_or_else(TokenTracker::new)
             })
-            .reduce(|| TokenTracker::new(), |acc, elem| acc + elem)
+            .fold(TokenTracker::new(), |acc, elem| acc + elem)
             .to_token_amount(),
         hardware_requirement: marketmetadata.deserialize_market_bytes().min_hardware,
         min_stake: total_min_stake.to_token_amount(),

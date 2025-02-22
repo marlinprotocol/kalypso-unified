@@ -12,14 +12,23 @@ use kalypso_helper::middlewares::request_limiter::ConcurrencyLimiter;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 
+use crate::ask_lib::ask_store::{
+    AskManagementRead, CompletedProofsManagement, MarketRequestCounters, ProofCounters,
+    RequestorCounters, TimingOperations,
+};
 use crate::costs::CostStore;
-use crate::generator_lib::key_store::KeyStore;
-use crate::generator_lib::native_stake_store::NativeStakingStore;
+use crate::generator_lib::key_store::KeyStoreOperations;
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
 use crate::generator_lib::stake_manager_store::StakeManagerStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use crate::market_metadata::MarketMetadataStore;
+use crate::generator_lib::symbiotic_stake_store::{
+    OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
+};
+use crate::generator_lib::traits::{
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
+    GeneratorRegistration, WithdrawalManagement,
+};
+use crate::market_metadata::MarketMetadataStoreRead;
 use crate::routes::{get_core_scope, get_stats_scope, get_swagger, ui_scope};
-use crate::{ask_lib::ask_store::LocalAskStore, generator_lib::generator_store::GeneratorStore};
 
 type EntityRegistryInstance = Arc<
     RwLock<
@@ -29,16 +38,32 @@ type EntityRegistryInstance = Arc<
     >,
 >;
 
-pub struct MatchingEngineServer {
-    shared_market_data: Arc<RwLock<MarketMetadataStore>>,
-    shared_local_ask_data: Arc<RwLock<LocalAskStore>>,
+pub struct MatchingEngineServer<
+    MS: MarketMetadataStoreRead,
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations
+        + MarketRequestCounters,
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorEarningsAndSlashing
+        + GeneratorAvailability
+        + WithdrawalManagement,
+    NS: NativeStakingOperations,
+    SS: TokenLockManagement + VaultSnapshotManagement + OperatorStakeManagement + SlashResultManagement,
+    KS: KeyStoreOperations,
+> {
+    shared_market_data: Arc<RwLock<MS>>,
+    shared_local_ask_data: Arc<RwLock<AS>>,
     shared_parsed_block: Arc<RwLock<U64>>,
     shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
     shared_entity_key_registry: EntityRegistryInstance,
-    shared_generator_data: Arc<RwLock<GeneratorStore>>,
-    shared_native_staking_data: Arc<RwLock<NativeStakingStore>>,
-    shared_symbiotic_staking_data: Arc<RwLock<SymbioticStakeStore>>,
-    shared_key_data: Arc<RwLock<KeyStore>>,
+    shared_generator_data: Arc<RwLock<GS>>,
+    shared_native_staking_data: Arc<RwLock<NS>>,
+    shared_symbiotic_staking_data: Arc<RwLock<SS>>,
+    shared_key_data: Arc<RwLock<KS>>,
     shared_cost_store_data: Arc<RwLock<CostStore>>,
     shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
     relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
@@ -47,18 +72,47 @@ pub struct MatchingEngineServer {
     shared_matching_errors: Arc<RwLock<Vec<String>>>,
 }
 
-impl MatchingEngineServer {
+impl<
+        MS: MarketMetadataStoreRead + Send + Sync + 'static,
+        AS: AskManagementRead
+            + CompletedProofsManagement
+            + ProofCounters
+            + RequestorCounters
+            + TimingOperations
+            + MarketRequestCounters
+            + Send
+            + Sync
+            + 'static,
+        GS: GeneratorAdditionalQuery
+            + GeneratorRegistration
+            + GeneratorEarningsAndSlashing
+            + GeneratorAvailability
+            + WithdrawalManagement
+            + Send
+            + Sync
+            + 'static,
+        NS: NativeStakingOperations + Send + Sync + 'static,
+        SS: TokenLockManagement
+            + VaultSnapshotManagement
+            + OperatorStakeManagement
+            + SlashResultManagement
+            + Send
+            + Sync
+            + 'static,
+        KS: KeyStoreOperations + Send + Sync + 'static,
+    > MatchingEngineServer<MS, AS, GS, NS, SS, KS>
+{
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        shared_market_data: Arc<RwLock<MarketMetadataStore>>,
-        shared_local_ask_data: Arc<RwLock<LocalAskStore>>,
+        shared_market_data: Arc<RwLock<MS>>,
+        shared_local_ask_data: Arc<RwLock<AS>>,
         shared_parsed_block: Arc<RwLock<U64>>,
         shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
         shared_entity_key_registry: EntityRegistryInstance,
-        shared_generator_data: Arc<RwLock<GeneratorStore>>,
-        shared_native_staking_data: Arc<RwLock<NativeStakingStore>>,
-        shared_symbiotic_staking_data: Arc<RwLock<SymbioticStakeStore>>,
-        shared_key_data: Arc<RwLock<KeyStore>>,
+        shared_generator_data: Arc<RwLock<GS>>,
+        shared_native_staking_data: Arc<RwLock<NS>>,
+        shared_symbiotic_staking_data: Arc<RwLock<SS>>,
+        shared_key_data: Arc<RwLock<KS>>,
         shared_cost_store_data: Arc<RwLock<CostStore>>,
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
         relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
@@ -131,12 +185,12 @@ impl MatchingEngineServer {
                 .app_data(Data::new(self.shared_matching_errors.clone()))
                 .service(get_swagger())
                 .service(
-                    ui_scope()
+                    ui_scope::<MS, AS, GS, NS, SS, KS>()
                         .wrap(ui_request_concurrency)
                         .wrap(ui_rate_limiter),
                 )
                 .service(
-                    get_stats_scope()
+                    get_stats_scope::<AS, GS, SS>()
                         .wrap(stats_request_concurrency)
                         .wrap(stats_rate_limiter),
                 )

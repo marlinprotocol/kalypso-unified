@@ -1,12 +1,12 @@
 use super::cache::CachedResponse;
 use super::single_generator::{ComputeBreakDown, StakeBreakDown};
-use crate::generator_lib::generator_store::{GeneratorMeta, GeneratorStore};
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
+use crate::generator_lib::generator_store::GeneratorMeta;
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
 use crate::generator_lib::traits::{
     GeneratorAdditionalQuery, GeneratorEarningsAndSlashing, GeneratorRegistration,
 };
-use crate::market_metadata::{MarketMetadataStore, MarketMetadataStoreRead};
+use crate::market_metadata::MarketMetadataStoreRead;
 use crate::models::WelcomeResponse;
 use crate::utility::{address_to_string, TokenAmount, TokenTracker};
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
@@ -84,11 +84,16 @@ struct Market {
     ),
     tag = "UI"
 )]
-pub async fn get_generators_all(
-    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
-    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
-    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
+pub async fn get_generators_all<
+    MS: MarketMetadataStoreRead + Send + Sync,
+    GS: GeneratorAdditionalQuery + GeneratorRegistration + GeneratorEarningsAndSlashing + Send + Sync,
+    NS: NativeStakingOperations + Send + Sync,
+    SS: TokenLockManagement + Send + Sync,
+>(
+    _local_market_store: Data<Arc<RwLock<MS>>>,
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
+    _local_native_store: Data<Arc<RwLock<NS>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SS>>>,
 ) -> actix_web::Result<HttpResponse> {
     try_read_and_get_if_valid!(
         GENERATOR_RESPONSE,
@@ -127,11 +132,17 @@ pub async fn get_generators_all(
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_generator_response<'a>(
-    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
-    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
-    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
-    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
+async fn recompute_generator_response<
+    'a,
+    MS: MarketMetadataStoreRead,
+    GS: GeneratorAdditionalQuery + GeneratorRegistration + GeneratorEarningsAndSlashing,
+    NS: NativeStakingOperations,
+    SS: TokenLockManagement,
+>(
+    local_generator_store: RwLockReadGuard<'a, GS>,
+    local_native_store: RwLockReadGuard<'a, NS>,
+    local_symbiotic_store: RwLockReadGuard<'a, SS>,
+    local_market_store: RwLockReadGuard<'a, MS>,
 ) -> AllGeneratorResponse {
     // Step 1: Acquire the lock and extract all necessary data
     let generator_details = {
@@ -184,8 +195,8 @@ async fn recompute_generator_response<'a>(
         // Construct the markets
         let mut markets = Vec::with_capacity(all_markets_of_generator.len());
         let (all_tokens_supported, _): (Vec<Address>, Vec<U256>) =
-            (local_native_store.tokens_to_lock.clone()
-                + local_symbiotic_store.tokens_to_lock.clone())
+            (local_native_store.tokens_to_lock().clone()
+                + local_symbiotic_store.tokens_to_lock().clone())
             .to_address_token_pair()
             .into_iter()
             .unzip();

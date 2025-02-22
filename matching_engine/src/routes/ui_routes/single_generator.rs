@@ -1,57 +1,44 @@
-use crate::ask_lib::ask::LocalAsk;
-use crate::ask_lib::ask_store::AskManagementRead;
-use crate::ask_lib::ask_store::CompletedProofsManagement;
-use crate::ask_lib::ask_store::LocalAskStore;
-use crate::ask_lib::ask_store::TimingOperations;
-use crate::generator_lib::delegation::Operation;
-use crate::generator_lib::delegation::Source;
-use crate::generator_lib::generator_store::GeneratorMeta;
-use crate::generator_lib::key_store::KeyInfo;
-use crate::generator_lib::key_store::KeyStore;
-use crate::generator_lib::key_store::KeyStoreOperations;
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use crate::generator_lib::traits::GeneratorAdditionalQuery;
-use crate::generator_lib::traits::GeneratorAvailability;
-use crate::generator_lib::traits::GeneratorEarningsAndSlashing;
-use crate::generator_lib::traits::GeneratorRegistration;
-use crate::generator_lib::traits::WithdrawalManagement;
-use crate::market_metadata::MarketMetadataStore;
+// Local crate imports
+use crate::ask_lib::{
+    ask::LocalAsk,
+    ask_status::AskState,
+    ask_store::{AskManagementRead, CompletedProofsManagement, TimingOperations},
+};
+
+use crate::generator_lib::{
+    delegation::{Operation, Source},
+    generator_store::GeneratorMeta,
+    key_store::{KeyInfo, KeyStoreOperations},
+    native_stake_store::NativeStakingOperations,
+    symbiotic_stake_store::TokenLockManagement,
+    traits::{
+        GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
+        GeneratorRegistration, WithdrawalManagement,
+    },
+};
+
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::models::WelcomeResponse;
 use crate::try_read_or_lock;
-use crate::utility::address_to_string;
-use crate::utility::address_token_pair_to_token_amount;
-use crate::utility::bytes_to_string;
-use crate::utility::convert_to_option_string;
-use crate::utility::tx_to_string;
-use crate::utility::TokenAmount;
-use crate::utility::TokenTracker;
-use crate::utility::USDC_TOKEN;
-use actix_web::web;
-use actix_web::HttpResponse;
-use ethers::types::Address;
-use ethers::types::U256;
-use im::HashMap;
-use once_cell::sync::Lazy;
-use rayon::iter::IndexedParallelIterator;
-use rayon::iter::IntoParallelIterator;
-use rayon::iter::ParallelIterator;
-use serde::Deserialize;
-use serde::Serialize;
-use tokio::sync::RwLock;
-use tokio::sync::RwLockReadGuard;
-use tokio::time::Duration;
-
-use utoipa::IntoParams;
-use utoipa::ToSchema;
-
-use crate::ask_lib::ask_status::AskState;
-use crate::generator_lib::generator_store::GeneratorStore;
-use actix_web::web::Data;
-use std::sync::Arc;
+use crate::utility::{
+    address_to_string, address_token_pair_to_token_amount, bytes_to_string,
+    convert_to_option_string, tx_to_string, TokenAmount, TokenTracker, USDC_TOKEN,
+};
 
 use super::cache::CachedResponse;
+
+// External crate imports
+use actix_web::web::Data;
+use actix_web::{web, HttpResponse};
+use ethers::types::{Address, U256};
+use im::HashMap;
+use once_cell::sync::Lazy;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use tokio::sync::{RwLock, RwLockReadGuard};
+use tokio::time::Duration;
+use utoipa::{IntoParams, ToSchema};
 
 type CachedSingleGeneratorResponse = CachedResponse<GeneratorResponse>;
 
@@ -421,8 +408,16 @@ struct WithdrawalResponse {
     ),
     tag = "UI"
 )]
-pub async fn withdrawal_request(
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+pub async fn withdrawal_request<
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorAvailability
+        + GeneratorEarningsAndSlashing
+        + WithdrawalManagement
+        + Send
+        + Sync,
+>(
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
     path: web::Path<(String,)>,
 ) -> actix_web::Result<HttpResponse> {
     let generator_id: Address = match path.into_inner().0.parse() {
@@ -470,13 +465,26 @@ pub async fn withdrawal_request(
     ),
     tag = "UI"
 )]
-pub async fn single_generator(
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _local_generator_store: Data<Arc<RwLock<GeneratorStore>>>,
-    _local_key_store: Data<Arc<RwLock<KeyStore>>>,
-    _local_native_store: Data<Arc<RwLock<NativeStakingStore>>>,
-    _local_symbiotic_store: Data<Arc<RwLock<SymbioticStakeStore>>>,
-    _local_market_store: Data<Arc<RwLock<MarketMetadataStore>>>,
+pub async fn single_generator<
+    MS: MarketMetadataStoreRead + Send + Sync,
+    AS: AskManagementRead + CompletedProofsManagement + TimingOperations + Send + Sync,
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorAvailability
+        + GeneratorEarningsAndSlashing
+        + WithdrawalManagement
+        + Send
+        + Sync,
+    NS: NativeStakingOperations + Send + Sync,
+    SS: TokenLockManagement + Send + Sync,
+    KS: KeyStoreOperations + Send + Sync,
+>(
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
+    _local_key_store: Data<Arc<RwLock<KS>>>,
+    _local_native_store: Data<Arc<RwLock<NS>>>,
+    _local_symbiotic_store: Data<Arc<RwLock<SS>>>,
+    _local_market_store: Data<Arc<RwLock<MS>>>,
 
     path: web::Path<(String,)>,
     query: web::Query<QueryParams>,
@@ -560,15 +568,27 @@ pub async fn single_generator(
     return Ok(HttpResponse::Ok().json(new_response));
 }
 
-async fn recompute_single_generator_response<'a>(
+async fn recompute_single_generator_response<
+    'a,
+    MS: MarketMetadataStoreRead,
+    AS: AskManagementRead + CompletedProofsManagement + TimingOperations,
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorAvailability
+        + GeneratorEarningsAndSlashing
+        + WithdrawalManagement,
+    NS: NativeStakingOperations,
+    SS: TokenLockManagement,
+    KS: KeyStoreOperations,
+>(
     generator_id: Address,
     query: GeneratorQuery,
-    local_ask_store: RwLockReadGuard<'a, LocalAskStore>,
-    local_generator_store: RwLockReadGuard<'a, GeneratorStore>,
-    local_key_store: RwLockReadGuard<'a, KeyStore>,
-    local_native_store: RwLockReadGuard<'a, NativeStakingStore>,
-    local_symbiotic_store: RwLockReadGuard<'a, SymbioticStakeStore>,
-    local_market_store: RwLockReadGuard<'a, MarketMetadataStore>,
+    local_ask_store: RwLockReadGuard<'a, AS>,
+    local_generator_store: RwLockReadGuard<'a, GS>,
+    local_key_store: RwLockReadGuard<'a, KS>,
+    local_native_store: RwLockReadGuard<'a, NS>,
+    local_symbiotic_store: RwLockReadGuard<'a, SS>,
+    local_market_store: RwLockReadGuard<'a, MS>,
 ) -> Option<GeneratorResponse> {
     let generator_data = local_generator_store.get_by_address(&generator_id);
 
@@ -581,10 +601,11 @@ async fn recompute_single_generator_response<'a>(
         local_generator_store.get_all_markets_of_generator(&generator_id);
 
     let (all_tokens_supported, _): (Vec<Address>, Vec<U256>) =
-        (local_native_store.tokens_to_lock.clone() + local_symbiotic_store.tokens_to_lock.clone())
-            .to_address_token_pair()
-            .into_iter()
-            .unzip();
+        (local_native_store.tokens_to_lock().clone()
+            + local_symbiotic_store.tokens_to_lock().clone())
+        .to_address_token_pair()
+        .into_iter()
+        .unzip();
 
     let details = generator_data.deserialize_generator_bytes();
     Some(GeneratorResponse {
@@ -709,7 +730,7 @@ async fn recompute_single_generator_response<'a>(
                     .collect::<Vec<LocalAsk>>();
 
                 local_asks
-                    .into_par_iter()
+                    .into_iter()
                     .map(|a| Job {
                         ask_id: a.ask_id.to_string(),
                         market: MarketInfo {
@@ -749,7 +770,7 @@ async fn recompute_single_generator_response<'a>(
                 query.query.completed_jobs_skip.unwrap_or_default(),
                 query.query.completed_jobs.unwrap_or_else(|| DEFAULT_COUNT),
             )
-            .into_par_iter()
+            .into_iter()
             .take(DEFAULT_COUNT)
             .map(|ask| Job {
                 ask_id: ask.ask_id.to_string(),
@@ -806,7 +827,7 @@ async fn recompute_single_generator_response<'a>(
             .collect::<Vec<Job>>(),
         slashing_history: local_generator_store
             .get_slashing_records(&generator_id)
-            .into_par_iter()
+            .into_iter()
             .skip(query.query.slashing_history_skip.unwrap_or_default())
             .take(
                 query
