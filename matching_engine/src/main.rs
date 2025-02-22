@@ -4,7 +4,7 @@ use std::io;
 use dotenv::dotenv;
 use matching_engine::dump::Dump;
 use matching_engine::encrypted_dump::EncryptedDump;
-use matching_engine::{MatchingEngine, MatchingEngineConfig};
+use matching_engine::{in_memory_matching_engine::InMemoryMatchingEngine, MatchingEngineConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let indexer_port: Option<u16> = indexer_port.parse().ok();
 
     // Initialize the matching engine
-    let matching_engine = MatchingEngine::from_config(config, indexer_port);
+    let matching_engine = InMemoryMatchingEngine::from_config(config, indexer_port);
 
     // Attempt to load the dump file
     let encrypted_dump_paths = [
