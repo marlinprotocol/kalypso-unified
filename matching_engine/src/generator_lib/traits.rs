@@ -10,7 +10,7 @@ use super::delegation::{Delegation, Operation, Source};
 use super::generator_query::GeneratorQueryResult;
 use super::generator_state::GeneratorState;
 use super::generator_store::{Generator, GeneratorInfoPerMarket};
-use super::key_store::KeyStore;
+use super::key_store::KeyStoreOperations;
 use super::withdrawal_request::WithdrawlRequest;
 use super::SlashingRecord;
 
@@ -155,10 +155,13 @@ pub trait GeneratorFilter {
         generator_query: GeneratorQueryResult,
         min_stake: Vec<(Address, U256)>,
     ) -> GeneratorQueryResult;
+}
+
+pub trait GeneratorKeyStoreFilterInterfaceTrait<KS: KeyStoreOperations> {
     fn filter_by_has_private_inputs_support(
         &self,
         generator_query: GeneratorQueryResult,
-        key_store: RwLockReadGuard<'_, KeyStore>,
+        key_store: RwLockReadGuard<'_, KS>,
     ) -> GeneratorQueryResult;
 }
 

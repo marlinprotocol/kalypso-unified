@@ -1,16 +1,27 @@
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
-use crate::ask_lib::ask_store::LocalAskStore;
-use crate::costs::CostStore;
+use crate::ask_lib::ask_store::{
+    AskManagementRead, AskManagementWrite, CompletedProofsManagement, MarketRequestCounters,
+    ProofCounters, RequestorCounters, TimingOperations,
+};
+use crate::costs::CostStoreOperations;
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::stake_manager_store::StakeManagerOperations;
+use crate::generator_lib::traits::{
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorFilter,
+    GeneratorKeyStoreFilterInterfaceTrait, GeneratorLockManagement, GeneratorMarketManagement,
+    GeneratorMetadata, GeneratorQuery, GeneratorRegistration, GeneratorSlashingManagement,
+    GeneratorStakeComputeManagement, JobMissedCounter, WithdrawalManagement,
+};
 
 #[cfg(not(feature = "disable_match_creation"))]
 use crate::generator_lib::generator_store;
 
-use crate::generator_lib::native_stake_store::NativeStakingStore;
-use crate::generator_lib::stake_manager_store::StakeManagerStore;
-use crate::generator_lib::symbiotic_stake_store::SymbioticStakeStore;
-use crate::market_metadata::MarketMetadataStore;
+use crate::generator_lib::symbiotic_stake_store::{
+    OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
+};
+use crate::market_metadata::{MarketMetadataStoreRead, MarketMetadataStoreWrite};
 use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
@@ -43,7 +54,7 @@ use crate::{
     generator_lib::{generator_helper, generator_state::GeneratorState},
 };
 
-use crate::generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
+use crate::generator_lib::key_store::KeyStoreOperations;
 
 type EntityRegistryInstance = bindings::entity_key_registry::EntityKeyRegistry<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -66,7 +77,35 @@ type NativeStakingInstance =
 type StakingManagerInstance =
     bindings::staking_manager::StakingManager<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>;
 
-pub struct LogParser {
+pub struct LogParser<
+    AS: AskManagementRead
+        + AskManagementWrite
+        + RequestorCounters
+        + ProofCounters
+        + MarketRequestCounters
+        + CompletedProofsManagement
+        + TimingOperations,
+    GS: GeneratorRegistration
+        + GeneratorStakeComputeManagement
+        + GeneratorMarketManagement
+        + GeneratorSlashingManagement
+        + GeneratorLockManagement
+        + GeneratorAvailability
+        + GeneratorMetadata
+        + GeneratorQuery
+        + GeneratorFilter
+        + GeneratorKeyStoreFilterInterfaceTrait<KS>
+        + GeneratorEarningsAndSlashing
+        + WithdrawalManagement
+        + JobMissedCounter
+        + GeneratorAdditionalQuery,
+    MS: MarketMetadataStoreRead + MarketMetadataStoreWrite,
+    KS: KeyStoreOperations,
+    CS: CostStoreOperations,
+    SS: OperatorStakeManagement + TokenLockManagement + VaultSnapshotManagement + SlashResultManagement,
+    NS: NativeStakingOperations,
+    SM: StakeManagerOperations,
+> {
     should_stop: Arc<AtomicBool>,
     start_block: Arc<RwLock<U64>>,
     block_range: U64,
@@ -80,14 +119,14 @@ pub struct LogParser {
     provider_http: Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     matching_engine_key: Vec<u8>,
     matching_engine_slave_keys: Vec<Vec<u8>>,
-    shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
-    shared_generator_store: Arc<RwLock<GeneratorStore>>,
-    shared_market_store: Arc<RwLock<MarketMetadataStore>>,
-    shared_key_store: Arc<RwLock<KeyStore>>,
-    shared_cost_store: Arc<RwLock<CostStore>>,
-    shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
-    shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
-    shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+    shared_local_ask_store: Arc<RwLock<AS>>,
+    shared_generator_store: Arc<RwLock<GS>>,
+    shared_market_store: Arc<RwLock<MS>>,
+    shared_key_store: Arc<RwLock<KS>>,
+    shared_cost_store: Arc<RwLock<CS>>,
+    shared_symbiotic_stake_store: Arc<RwLock<SS>>,
+    shared_native_stake_store: Arc<RwLock<NS>>,
+    shared_stake_manager_store: Arc<RwLock<SM>>,
     #[allow(unused)]
     chain_id: String,
     #[allow(unused)]
@@ -99,7 +138,39 @@ pub struct LogParser {
     backup_in_progress: Arc<RwLock<bool>>,
 }
 
-impl LogParser {
+impl<
+        AS: AskManagementRead
+            + AskManagementWrite
+            + RequestorCounters
+            + ProofCounters
+            + MarketRequestCounters
+            + CompletedProofsManagement
+            + TimingOperations,
+        GS: GeneratorRegistration
+            + GeneratorStakeComputeManagement
+            + GeneratorMarketManagement
+            + GeneratorSlashingManagement
+            + GeneratorLockManagement
+            + GeneratorAvailability
+            + GeneratorMetadata
+            + GeneratorQuery
+            + GeneratorFilter
+            + GeneratorKeyStoreFilterInterfaceTrait<KS>
+            + GeneratorEarningsAndSlashing
+            + WithdrawalManagement
+            + JobMissedCounter
+            + GeneratorAdditionalQuery,
+        MS: MarketMetadataStoreRead + MarketMetadataStoreWrite,
+        KS: KeyStoreOperations,
+        CS: CostStoreOperations,
+        SS: OperatorStakeManagement
+            + TokenLockManagement
+            + VaultSnapshotManagement
+            + SlashResultManagement,
+        NS: NativeStakingOperations,
+        SM: StakeManagerOperations,
+    > LogParser<AS, GS, MS, KS, CS, SS, NS, SM>
+{
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         should_stop: Arc<AtomicBool>,
@@ -116,14 +187,14 @@ impl LogParser {
         staking_manager: StakingManagerInstance,
         matching_engine_key: String,
         matching_engine_slave_keys: Vec<String>,
-        shared_local_ask_store: Arc<RwLock<LocalAskStore>>,
-        shared_generator_store: Arc<RwLock<GeneratorStore>>,
-        shared_market_store: Arc<RwLock<MarketMetadataStore>>,
-        shared_key_store: Arc<RwLock<KeyStore>>,
-        shared_cost_store: Arc<RwLock<CostStore>>,
-        shared_symbiotic_stake_store: Arc<RwLock<SymbioticStakeStore>>,
-        shared_native_stake_store: Arc<RwLock<NativeStakingStore>>,
-        shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+        shared_local_ask_store: Arc<RwLock<AS>>,
+        shared_generator_store: Arc<RwLock<GS>>,
+        shared_market_store: Arc<RwLock<MS>>,
+        shared_key_store: Arc<RwLock<KS>>,
+        shared_cost_store: Arc<RwLock<CS>>,
+        shared_symbiotic_stake_store: Arc<RwLock<SS>>,
+        shared_native_stake_store: Arc<RwLock<NS>>,
+        shared_stake_manager_store: Arc<RwLock<SM>>,
         chain_id: String,
         unhandled_logs: Arc<RwLock<Vec<Log>>>,
         matching_errors: Arc<RwLock<Vec<String>>>,
@@ -417,15 +488,7 @@ impl LogParser {
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
         use kalypso_helper::try_read_contract_error_log;
 
-        use crate::{
-            ask_lib::ask_store::{AskManagementRead, AskManagementWrite},
-            generator_lib::{
-                key_store::KeyStoreOperations,
-                stake_manager_store::StakeManagerOperations,
-                traits::{GeneratorAdditionalQuery, GeneratorAvailability, JobMissedCounter},
-            },
-            utility::TokenTracker,
-        };
+        use crate::utility::TokenTracker;
 
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
@@ -575,13 +638,13 @@ impl LogParser {
                     self.shared_native_stake_store
                         .read()
                         .await
-                        .tokens_to_lock
+                        .tokens_to_lock()
                         .clone()
                         + self
                             .shared_symbiotic_stake_store
                             .read()
                             .await
-                            .tokens_to_lock
+                            .tokens_to_lock()
                             .clone()
                 };
 
@@ -852,24 +915,25 @@ impl LogParser {
     async fn get_idle_generators(
         &self,
         random_pending_ask: LocalAsk,
-        generator_store: &Arc<RwLock<GeneratorStore>>,
-        _: &Arc<RwLock<MarketMetadataStore>>,
-        key_store: &Arc<RwLock<KeyStore>>,
+        generator_store: &Arc<RwLock<GS>>,
+        _: &Arc<RwLock<MS>>,
+        key_store: &Arc<RwLock<KS>>,
         task_reward: U256,
-        native_staking_store: &Arc<RwLock<NativeStakingStore>>,
-        symbiotic_staking_store: &Arc<RwLock<SymbioticStakeStore>>,
+        native_staking_store: &Arc<RwLock<NS>>,
+        symbiotic_staking_store: &Arc<RwLock<SS>>,
     ) -> Vec<generator_store::GeneratorInfoPerMarket> {
         // Ensure Generator implements Clone
 
-        use crate::generator_lib::traits::{GeneratorFilter, GeneratorQuery};
         let generator_store = generator_store.read().await;
         let key_store = key_store.read().await;
         let native_staking_store = native_staking_store.read().await;
         let symbiotic_staking_store = symbiotic_staking_store.read().await;
 
-        let native_stake_requirements = native_staking_store.tokens_to_lock.to_address_token_pair();
+        let native_stake_requirements = native_staking_store
+            .tokens_to_lock()
+            .to_address_token_pair();
         let symbiotic_stake_requirements = symbiotic_staking_store
-            .tokens_to_lock
+            .tokens_to_lock()
             .to_address_token_pair();
 
         log::debug!(

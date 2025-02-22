@@ -14,14 +14,16 @@ use crate::{
         },
         traits::{
             GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
-            GeneratorFilter, GeneratorLockManagement, GeneratorMarketManagement, GeneratorMetadata,
-            GeneratorQuery, GeneratorRegistration, GeneratorSlashingManagement,
-            GeneratorStakeComputeManagement, JobMissedCounter, WithdrawalManagement,
+            GeneratorFilter, GeneratorKeyStoreFilterInterfaceTrait, GeneratorLockManagement,
+            GeneratorMarketManagement, GeneratorMetadata, GeneratorQuery, GeneratorRegistration,
+            GeneratorSlashingManagement, GeneratorStakeComputeManagement, JobMissedCounter,
+            WithdrawalManagement,
         },
     },
     market_metadata::{MarketMetadataStoreRead, MarketMetadataStoreWrite},
 };
 
+// Here traits only for reference, need to implement everyone explicity
 pub trait AskStoreTrait:
     AskManagementRead
     + AskManagementWrite
@@ -33,7 +35,7 @@ pub trait AskStoreTrait:
 {
 }
 
-pub trait GeneratorStoreTrait:
+pub trait GeneratorStoreTrait<KS: KeyStoreOperations>:
     GeneratorRegistration
     + GeneratorStakeComputeManagement
     + GeneratorMarketManagement
@@ -43,6 +45,7 @@ pub trait GeneratorStoreTrait:
     + GeneratorMetadata
     + GeneratorQuery
     + GeneratorFilter
+    + GeneratorKeyStoreFilterInterfaceTrait<KS>
     + GeneratorEarningsAndSlashing
     + WithdrawalManagement
     + JobMissedCounter
@@ -52,6 +55,7 @@ pub trait GeneratorStoreTrait:
 
 pub trait MarketStoreTrait: MarketMetadataStoreRead + MarketMetadataStoreWrite {}
 
+// TODO
 pub trait KeyStoreTrait: KeyStoreOperations {}
 
 pub trait CostStoreTrait: CostStoreOperations {}
