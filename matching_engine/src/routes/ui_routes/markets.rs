@@ -224,8 +224,6 @@ async fn recompute_market_response<
         )
     }; // Both locks are released here
 
-    log::trace!("Released locks on MarketMetadataStore and LocalAskStore");
-
     // Step 2: Process the data using explicit loops without holding any locks
     let mut markets = Vec::with_capacity(all_markets_meta.len());
 
