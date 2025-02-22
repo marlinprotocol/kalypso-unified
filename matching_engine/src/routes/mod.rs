@@ -35,68 +35,108 @@ pub struct GetRequestResponse {
     encrypted_data: String,
 }
 
-pub fn ui_scope() -> actix_web::Scope {
+pub fn ui_scope<
+    MS: MarketMetadataStoreRead + Send + Sync + 'static,
+    AS: AskManagementRead
+        + CompletedProofsManagement
+        + ProofCounters
+        + RequestorCounters
+        + TimingOperations
+        + MarketRequestCounters
+        + Send
+        + Sync
+        + 'static,
+    GS: GeneratorAdditionalQuery
+        + GeneratorRegistration
+        + GeneratorEarningsAndSlashing
+        + GeneratorAvailability
+        + WithdrawalManagement
+        + Send
+        + Sync
+        + 'static,
+    NS: NativeStakingOperations + Send + Sync + 'static,
+    SS: TokenLockManagement + Send + Sync + 'static,
+    KS: KeyStoreOperations + Send + Sync + 'static,
+>() -> actix_web::Scope {
     web::scope("/ui")
         .route("/welcome", web::get().to(ui_routes::welcome::welcome))
         .route(
             "/dashboard",
-            web::get().to(ui_routes::dashboard::get_dashboard),
+            web::get().to(ui_routes::dashboard::get_dashboard::<MS, AS, GS, NS, SS>),
         )
         .route(
             "/generators",
-            web::get().to(ui_routes::generators::get_generators_all),
+            web::get().to(ui_routes::generators::get_generators_all::<MS, GS, NS, SS>),
         )
         .route(
             "/generator/{id}",
-            web::get().to(ui_routes::single_generator::single_generator),
+            web::get().to(ui_routes::single_generator::single_generator::<MS, AS, GS, NS, SS, KS>),
         )
         .route(
             "/markets",
-            web::get().to(ui_routes::markets::total_market_info),
+            web::get().to(ui_routes::markets::total_market_info::<MS, AS, GS, NS, SS>),
         )
         .route(
             "/market/{id}",
-            web::get().to(ui_routes::single_market::single_market),
+            web::get().to(ui_routes::single_market::single_market::<MS, AS, GS, NS, SS>),
         )
         .route(
             "/market_jobs/{id}",
-            web::get().to(ui_routes::single_market::jobs),
+            web::get().to(ui_routes::single_market::jobs::<AS>),
         )
         .route(
             "/withdrawals/{id}",
-            web::get().to(ui_routes::single_generator::withdrawal_request),
+            web::get().to(ui_routes::single_generator::withdrawal_request::<GS>),
         )
 }
 
-pub fn get_stats_scope() -> actix_web::Scope {
+pub fn get_stats_scope<
+    AS: AskManagementRead + ProofCounters + TimingOperations + Send + Sync + 'static,
+    GS: GeneratorAdditionalQuery
+        + GeneratorAvailability
+        + GeneratorRegistration
+        + Send
+        + Sync
+        + 'static,
+    SS: VaultSnapshotManagement
+        + OperatorStakeManagement
+        + SlashResultManagement
+        + TokenLockManagement
+        + Send
+        + Sync
+        + 'static,
+>() -> actix_web::Scope {
     web::scope("/stats")
         .route("/welcome", web::get().to(chain_status::welcome))
-        .route("/getStatus", web::get().to(ask_status::get_status))
+        .route("/getStatus", web::get().to(ask_status::get_status::<AS>))
         .route(
             "/getKeyBalance",
             web::get().to(chain_status::gas_key_balance),
         )
         .route(
             "/getAskStatus",
-            web::post().to(ask_status::get_ask_status_askid),
+            web::post().to(ask_status::get_ask_status_askid::<AS>),
         )
-        .route("/getAsk/{id}", web::get().to(ask_status::get_ask))
+        .route("/getAsk/{id}", web::get().to(ask_status::get_ask::<AS>))
         .route(
             "/getProof",
-            web::post().to(ask_status::get_ask_proof_by_ask_id),
+            web::post().to(ask_status::get_ask_proof_by_ask_id::<AS>),
         )
         .route(
             "/getPrivInput",
-            web::post().to(get_priv_inputs::get_priv_input),
+            web::post().to(get_priv_inputs::get_priv_input::<AS>),
         )
         .route(
             "/getLatestBlock",
             web::get().to(chain_status::get_latest_block_number),
         )
-        .route("/marketInfo", web::post().to(market_info::market_info))
+        .route(
+            "/marketInfo",
+            web::post().to(market_info::market_info::<AS, GS>),
+        )
         .route(
             "/marketStats/{marketId}",
-            web::get().to(market_info::market_stats),
+            web::get().to(market_info::market_stats::<AS, GS>),
         )
         .route("/dump", web::get().to(ui_routes::welcome::get_dump))
         .route(
@@ -113,10 +153,28 @@ pub fn get_stats_scope() -> actix_web::Scope {
         )
         .route(
             "/symbiotic_snapshot",
-            web::get().to(symbiotic_snapshot::get_snapshot),
+            web::get().to(symbiotic_snapshot::get_snapshot::<SS>),
         )
 }
 
+use crate::ask_lib::ask_store::AskManagementRead;
+use crate::ask_lib::ask_store::CompletedProofsManagement;
+use crate::ask_lib::ask_store::MarketRequestCounters;
+use crate::ask_lib::ask_store::ProofCounters;
+use crate::ask_lib::ask_store::RequestorCounters;
+use crate::ask_lib::ask_store::TimingOperations;
+use crate::generator_lib::key_store::KeyStoreOperations;
+use crate::generator_lib::native_stake_store::NativeStakingOperations;
+use crate::generator_lib::symbiotic_stake_store::OperatorStakeManagement;
+use crate::generator_lib::symbiotic_stake_store::SlashResultManagement;
+use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
+use crate::generator_lib::symbiotic_stake_store::VaultSnapshotManagement;
+use crate::generator_lib::traits::GeneratorAdditionalQuery;
+use crate::generator_lib::traits::GeneratorAvailability;
+use crate::generator_lib::traits::GeneratorEarningsAndSlashing;
+use crate::generator_lib::traits::GeneratorRegistration;
+use crate::generator_lib::traits::WithdrawalManagement;
+use crate::market_metadata::MarketMetadataStoreRead;
 use crate::routes::ask_status::*;
 use crate::routes::chain_status::*;
 use crate::routes::market_info::*;

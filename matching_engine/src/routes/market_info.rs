@@ -1,9 +1,6 @@
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
-use crate::ask_lib::ask_store::{
-    AskManagementRead, LocalAskStore, ProofCounters, TimingOperations,
-};
-use crate::generator_lib::generator_store::GeneratorStore;
+use crate::ask_lib::ask_store::{AskManagementRead, ProofCounters, TimingOperations};
 use crate::generator_lib::traits::{
     GeneratorAdditionalQuery, GeneratorAvailability, GeneratorRegistration,
 };
@@ -29,10 +26,13 @@ use tokio::sync::RwLock;
     ),
     tag = "Manage"
 )]
-pub async fn market_stats(
+pub async fn market_stats<
+    AS: AskManagementRead + ProofCounters + TimingOperations + Send + Sync,
+    GS: GeneratorAdditionalQuery + GeneratorAvailability + GeneratorRegistration + Send + Sync,
+>(
     market_id: web::Path<String>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
+    _generator_store: Data<Arc<RwLock<GS>>>,
 ) -> actix_web::Result<HttpResponse> {
     let local_ask_store = {
         match _local_ask_store.try_read() {
@@ -131,10 +131,13 @@ pub async fn market_stats(
     ),
     tag = "Manage"
 )]
-pub async fn market_info(
+pub async fn market_info<
+    AS: AskManagementRead + ProofCounters + TimingOperations + Send + Sync,
+    GS: GeneratorAdditionalQuery + GeneratorAvailability + GeneratorRegistration + Send + Sync,
+>(
     _payload: web::Json<MarketInfo>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
-    _generator_store: Data<Arc<RwLock<GeneratorStore>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
+    _generator_store: Data<Arc<RwLock<GS>>>,
 ) -> actix_web::Result<HttpResponse> {
     let local_ask_store = {
         match _local_ask_store.try_read() {

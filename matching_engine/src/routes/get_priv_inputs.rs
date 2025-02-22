@@ -1,7 +1,6 @@
 use super::EntityRegistryInstance;
 use super::GetRequestResponse;
 use crate::ask_lib::ask_store::AskManagementRead;
-use crate::ask_lib::ask_store::LocalAskStore;
 use crate::models::WelcomeResponse;
 use crate::utility;
 use actix_web::web;
@@ -22,9 +21,9 @@ pub struct GetPrivInput {
     signature: String,
 }
 
-pub async fn get_priv_input(
+pub async fn get_priv_input<AS: AskManagementRead + Send + Sync>(
     _payload: web::Json<GetPrivInput>,
-    _local_ask_store: Data<Arc<RwLock<LocalAskStore>>>,
+    _local_ask_store: Data<Arc<RwLock<AS>>>,
     _matching_engine_key: Data<Arc<RwLock<Vec<u8>>>>,
     _entity_key_registry: EntityRegistryInstance,
 ) -> actix_web::Result<HttpResponse> {

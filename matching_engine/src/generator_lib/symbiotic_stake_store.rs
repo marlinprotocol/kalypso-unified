@@ -271,6 +271,10 @@ impl OperatorStakeManagement for SymbioticStakeStore {
     fn clean_operators(&mut self) {
         self.operators = HashMap::new();
     }
+
+    fn operators(&self) -> HashMap<Address, TokenTracker> {
+        self.operators.clone()
+    }
 }
 
 impl TokenLockManagement for SymbioticStakeStore {
@@ -315,6 +319,14 @@ impl VaultSnapshotManagement for SymbioticStakeStore {
             .map(|snapshots| snapshots.values().cloned().collect())
             .unwrap_or_default()
     }
+
+    fn vault_snapshots(&self) -> HashMap<U256, HashMap<U256, VaultSnapshot>> {
+        self.vault_snapshots.clone()
+    }
+
+    fn vault_snapshot_indexes(&self) -> Vec<U256> {
+        self.vault_snapshot_indexes.clone()
+    }
 }
 impl SlashResultManagement for SymbioticStakeStore {
     fn store_slash_result(&mut self, captured_timestamp: U256, index: U256, result: SlashResult) {
@@ -339,6 +351,14 @@ impl SlashResultManagement for SymbioticStakeStore {
             .map(|results| results.values().cloned().collect())
             .unwrap_or_default()
     }
+
+    fn slash_result(&self) -> HashMap<U256, HashMap<U256, SlashResult>> {
+        self.slash_results.clone()
+    }
+
+    fn slash_result_indexes(&self) -> Vec<U256> {
+        self.slash_result_indexes.clone()
+    }
 }
 
 pub trait OperatorStakeManagement {
@@ -358,6 +378,9 @@ pub trait OperatorStakeManagement {
 
     /// Clear all operator stake data.
     fn clean_operators(&mut self);
+
+    /// all operators
+    fn operators(&self) -> HashMap<Address, TokenTracker>;
 }
 
 /// Trait for managing lock tokens.
@@ -386,6 +409,8 @@ pub trait VaultSnapshotManagement {
 
     /// Retrieve all vault snapshots for a given capture timestamp.
     fn get_all_vault_snapshots(&self, captured_timestamp: U256) -> Vec<VaultSnapshot>;
+    fn vault_snapshots(&self) -> HashMap<U256, HashMap<U256, VaultSnapshot>>;
+    fn vault_snapshot_indexes(&self) -> Vec<U256>;
 }
 
 /// Trait for managing slash results.
@@ -398,4 +423,7 @@ pub trait SlashResultManagement {
 
     /// Retrieve all slash results for a given capture timestamp.
     fn get_all_slash_results(&self, captured_timestamp: U256) -> Vec<SlashResult>;
+
+    fn slash_result(&self) -> HashMap<U256, HashMap<U256, SlashResult>>;
+    fn slash_result_indexes(&self) -> Vec<U256>;
 }
