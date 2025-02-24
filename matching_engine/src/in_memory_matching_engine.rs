@@ -370,20 +370,105 @@ impl InMemoryMatchingEngine {
                 // When it's time for a backup (after 120 seconds)
                 if time_since_last_backup > tokio::time::Duration::from_secs(120) {
                     {
-                        *backup_in_progress.write().await = true;
+                        if let Ok(mut backup) = backup_in_progress.try_write() {
+                            *backup = true;
+                        } else {
+                            continue;
+                        }
                     }
                     // --- Backup code goes here ---
                     // For example, call your backup routine.
 
-                    let market_store = shared_market_store.read().await;
-                    let ask_store = shared_local_ask_store.read().await;
-                    let generator_store = shared_generator_data.read().await;
-                    let native_store = shared_native_store.read().await;
-                    let symbiotic_store = shared_symbiotic_staking_store.read().await;
-                    let cost_store = shared_cost_store.read().await;
-                    let key_store = shared_key_store.read().await;
-                    let stake_manager_store = shared_stake_manager_store.read().await;
-                    let parsed_block = shared_parsed_block.read().await;
+                    let market_store = match shared_market_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let ask_store = match shared_local_ask_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let generator_store = match shared_generator_data.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let native_store = match shared_native_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let symbiotic_store = match shared_symbiotic_staking_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let cost_store = match shared_cost_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let key_store = match shared_key_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let stake_manager_store = match shared_stake_manager_store.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
+                    let parsed_block = match shared_parsed_block.try_read() {
+                        Ok(data) => data,
+                        Err(err) => {
+                            log::warn!("{:?}", err);
+                            {
+                                *backup_in_progress.write().await = false;
+                            }
+                            continue;
+                        }
+                    };
                     let path_to_snapshot = Path::new(&path_to_snapshot);
 
                     Dump::local_backup(
@@ -409,7 +494,7 @@ impl InMemoryMatchingEngine {
                     continue;
                 }
 
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                tokio::time::sleep(Duration::from_millis(1234)).await;
             }
 
             Ok(())

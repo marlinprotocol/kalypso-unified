@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use ethers::types::U256;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -9,6 +10,7 @@ pub struct CostStore {
     data: HashMap<u8, U256>,
 }
 
+#[async_trait]
 impl CostStoreOperations for CostStore {
     // Create a new CostStore
     fn new() -> Self {
@@ -18,17 +20,17 @@ impl CostStoreOperations for CostStore {
     }
 
     // Upsert function: insert or update a key-value pair
-    fn upsert(&mut self, key: u8, value: U256) {
+    async fn upsert(&mut self, key: u8, value: U256) {
         self.data.insert(key, value);
     }
 
     // Remove function: remove a key-value pair by key
-    fn remove(&mut self, key: u8) -> Option<U256> {
+    async fn remove(&mut self, key: u8) -> Option<U256> {
         self.data.remove(&key)
     }
 
     // Get function: retrieve a value by key
-    fn get(&self, key: u8) -> Option<U256> {
+    async fn get(&self, key: u8) -> Option<U256> {
         self.data.get(&key).cloned()
     }
 }

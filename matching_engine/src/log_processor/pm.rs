@@ -711,7 +711,11 @@ where
         let secret_type = update_cost_per_byte_log.secret_type;
         let cost_per_byte = update_cost_per_byte_log.cost_per_input_bytes;
 
-        cost_store.write().await.upsert(secret_type, cost_per_byte);
+        cost_store
+            .write()
+            .await
+            .upsert(secret_type, cost_per_byte)
+            .await;
 
         log::info!(
             "Cost per input byte changed to {:?} for input {:?}",
