@@ -1,14 +1,9 @@
-use ask_lib::ask_store::LocalAskStore;
 use dump::Dump;
 use encrypted_dump::{EncryptedDump, ToPlainDump};
-use generator_lib::native_stake_store::NativeStakingStore;
-use generator_lib::stake_manager_store::StakeManagerStore;
-use generator_lib::symbiotic_stake_store::SymbioticStakeStore;
 use market_metadata::MarketMetadataStore;
 
-use costs::{CostStore, CostStoreOperations};
+use costs::CostStoreOperations;
 use ethers::prelude::*;
-use generator_lib::{generator_store::GeneratorStore, key_store::KeyStore};
 use jobs::{parser::LogParser, server::MatchingEngineServer};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -19,10 +14,14 @@ use tokio::task::JoinHandle;
 
 use ethers::types::U64;
 
-use crate::{
-    ask_lib, costs, dump, encrypted_dump, generator_lib, jobs, market_metadata,
-    MatchingEngineConfig,
-};
+use crate::in_memory_stores::ask_store::LocalAskStore;
+use crate::in_memory_stores::cost_store::CostStore;
+use crate::in_memory_stores::generator_store::GeneratorStore;
+use crate::in_memory_stores::key_store::KeyStore;
+use crate::in_memory_stores::native_stake_store::NativeStakingStore;
+use crate::in_memory_stores::stake_manager_store::StakeManagerStore;
+use crate::in_memory_stores::symbiotic_stake_store::SymbioticStakeStore;
+use crate::{costs, dump, encrypted_dump, jobs, market_metadata, MatchingEngineConfig};
 
 pub struct InMemoryMatchingEngine {
     config: MatchingEngineConfig,
