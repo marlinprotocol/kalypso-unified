@@ -601,7 +601,7 @@ async fn recompute_single_generator_response<
         local_generator_store.get_all_markets_of_generator(&generator_id);
 
     let (all_tokens_supported, _): (Vec<Address>, Vec<U256>) =
-        (local_native_store.tokens_to_lock().clone()
+        (local_native_store.tokens_to_lock().await.clone()
             + local_symbiotic_store.tokens_to_lock().clone())
         .to_address_token_pair()
         .into_iter()

@@ -250,6 +250,9 @@ impl<
 
             if let Ok(back_going_on) = self.backup_in_progress.try_read() {
                 if *back_going_on {
+                    log::debug!("Backup in progress, sleeping parser");
+                    // manually dropping it to avoid continue write starvation during backups
+                    drop(back_going_on);
                     tokio::time::sleep(Duration::from_secs(1)).await;
                     continue;
                 }
@@ -639,6 +642,7 @@ impl<
                         .read()
                         .await
                         .tokens_to_lock()
+                        .await
                         .clone()
                         + self
                             .shared_symbiotic_stake_store
@@ -931,6 +935,7 @@ impl<
 
         let native_stake_requirements = native_staking_store
             .tokens_to_lock()
+            .await
             .to_address_token_pair();
         let symbiotic_stake_requirements = symbiotic_staking_store
             .tokens_to_lock()

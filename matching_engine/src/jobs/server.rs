@@ -16,10 +16,11 @@ use crate::ask_lib::ask_store::{
     AskManagementRead, CompletedProofsManagement, MarketRequestCounters, ProofCounters,
     RequestorCounters, TimingOperations,
 };
-use crate::costs::CostStore;
+
+use crate::costs::CostStoreOperations;
 use crate::generator_lib::key_store::KeyStoreOperations;
 use crate::generator_lib::native_stake_store::NativeStakingOperations;
-use crate::generator_lib::stake_manager_store::StakeManagerStore;
+use crate::generator_lib::stake_manager_store::StakeManagerOperations;
 use crate::generator_lib::symbiotic_stake_store::{
     OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
 };
@@ -54,6 +55,8 @@ pub struct MatchingEngineServer<
     NS: NativeStakingOperations,
     SS: TokenLockManagement + VaultSnapshotManagement + OperatorStakeManagement + SlashResultManagement,
     KS: KeyStoreOperations,
+    SM: StakeManagerOperations,
+    CS: CostStoreOperations,
 > {
     shared_market_data: Arc<RwLock<MS>>,
     shared_local_ask_data: Arc<RwLock<AS>>,
@@ -64,8 +67,8 @@ pub struct MatchingEngineServer<
     shared_native_staking_data: Arc<RwLock<NS>>,
     shared_symbiotic_staking_data: Arc<RwLock<SS>>,
     shared_key_data: Arc<RwLock<KS>>,
-    shared_cost_store_data: Arc<RwLock<CostStore>>,
-    shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+    shared_cost_store_data: Arc<RwLock<CS>>,
+    shared_stake_manager_store: Arc<RwLock<SM>>,
     relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
     should_stop: Arc<AtomicBool>,
     shared_unhandled_logs: Arc<RwLock<Vec<Log>>>,
@@ -100,7 +103,9 @@ impl<
             + Sync
             + 'static,
         KS: KeyStoreOperations + Send + Sync + 'static,
-    > MatchingEngineServer<MS, AS, GS, NS, SS, KS>
+        SM: StakeManagerOperations + Send + Sync + 'static,
+        CS: CostStoreOperations + Send + Sync + 'static,
+    > MatchingEngineServer<MS, AS, GS, NS, SS, KS, SM, CS>
 {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -113,8 +118,8 @@ impl<
         shared_native_staking_data: Arc<RwLock<NS>>,
         shared_symbiotic_staking_data: Arc<RwLock<SS>>,
         shared_key_data: Arc<RwLock<KS>>,
-        shared_cost_store_data: Arc<RwLock<CostStore>>,
-        shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
+        shared_cost_store_data: Arc<RwLock<CS>>,
+        shared_stake_manager_store: Arc<RwLock<SM>>,
         relayer_key_balance: Arc<RwLock<ethers::types::U256>>,
         should_stop: Arc<AtomicBool>,
         shared_unhandled_logs: Arc<RwLock<Vec<Log>>>,

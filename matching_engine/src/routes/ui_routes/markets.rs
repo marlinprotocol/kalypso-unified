@@ -207,7 +207,7 @@ async fn recompute_market_response<
             total_earnings_map.insert(market_id.clone(), total_earnings);
 
             // Extract slashing_penalty
-            let slashing_penalty = local_native_store.tokens_to_lock().clone()
+            let slashing_penalty = local_native_store.tokens_to_lock().await.clone()
                 + local_symbiotic_store.tokens_to_lock().clone();
             slashing_penalty_map.insert(market_id.clone(), slashing_penalty);
         }

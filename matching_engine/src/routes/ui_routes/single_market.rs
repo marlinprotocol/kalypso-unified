@@ -406,7 +406,7 @@ async fn recompute_single_market_response<
         .to_string();
     let registered_generators = local_generator_store.get_all_by_market_id(&market_id);
 
-    let total_min_stake = local_native_store.tokens_to_lock().clone()
+    let total_min_stake = local_native_store.tokens_to_lock().await.clone()
         + local_symbiotic_store.tokens_to_lock().clone();
 
     Some(SingleMarketResponse {

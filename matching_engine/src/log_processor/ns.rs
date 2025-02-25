@@ -88,7 +88,7 @@ where
         let token = event_log.token;
 
         log::debug!("Removed token: {}", token);
-        native_store.remove_lock_token(token);
+        native_store.remove_lock_token(token).await;
         return Ok(());
     }
 
@@ -107,7 +107,7 @@ where
         let amount = event_log.amount;
 
         log::debug!("AmountToLockSet: Token: {}  Amount: {}", token, amount);
-        native_store.set_lock_token(token, amount);
+        native_store.set_lock_token(token, amount).await;
         return Ok(());
     }
 

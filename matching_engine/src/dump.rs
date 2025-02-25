@@ -1,11 +1,9 @@
 use crate::{
-    ask_lib::ask_store::LocalAskStore,
-    costs::CostStore,
     encrypted_dump::EncryptedDump,
-    generator_lib::{
-        generator_store::GeneratorStore, key_store::KeyStore,
-        native_stake_store::NativeStakingStore, stake_manager_store::StakeManagerStore,
-        symbiotic_stake_store::SymbioticStakeStore,
+    in_memory_stores::{
+        ask_store::LocalAskStore, cost_store::CostStore, generator_store::GeneratorStore,
+        key_store::KeyStore, native_stake_store::NativeStakingStore,
+        stake_manager_store::StakeManagerStore, symbiotic_stake_store::SymbioticStakeStore,
     },
     market_metadata::MarketMetadataStore,
     MatchingEngineConfig,

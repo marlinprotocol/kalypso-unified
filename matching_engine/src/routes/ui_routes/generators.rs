@@ -195,7 +195,7 @@ async fn recompute_generator_response<
         // Construct the markets
         let mut markets = Vec::with_capacity(all_markets_of_generator.len());
         let (all_tokens_supported, _): (Vec<Address>, Vec<U256>) =
-            (local_native_store.tokens_to_lock().clone()
+            (local_native_store.tokens_to_lock().await.clone()
                 + local_symbiotic_store.tokens_to_lock().clone())
             .to_address_token_pair()
             .into_iter()

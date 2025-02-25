@@ -411,7 +411,7 @@ async fn recompute_dashboard_response<
         markets,
         recent_proofs,
         task_assignment_requirements: TaskRequirements {
-            native: local_native_store.tokens_to_lock().to_token_amount(),
+            native: local_native_store.tokens_to_lock().await.to_token_amount(),
             symbiotic: local_symbiotic_store.tokens_to_lock().to_token_amount(),
         },
     }

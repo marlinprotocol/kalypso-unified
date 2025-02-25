@@ -6,7 +6,6 @@ pub mod ask;
 pub mod ask_query;
 pub mod ask_status;
 pub mod ask_store;
-pub mod completed_proofs;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Proof {

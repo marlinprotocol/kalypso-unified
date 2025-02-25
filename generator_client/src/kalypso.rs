@@ -63,7 +63,7 @@ pub async fn generate_config_file(
     ecies_private_key: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create config_file_folder
-    let folder_path = "../generator_config";
+    let folder_path = "./generator_config";
     if fs::metadata(&folder_path).await.is_ok() {
         log::info!("generator_config folder already exists!");
     } else {
@@ -99,7 +99,7 @@ pub async fn generate_runtime_file(
     runtime_config_body: &SetupRequestBodyRuntimeConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create config_file_folder
-    let folder_path = "../generator_config";
+    let folder_path = "./generator_config";
     if fs::metadata(&folder_path).await.is_ok() {
         log::info!("generator_config folder already exists!");
     } else {
@@ -193,7 +193,7 @@ pub async fn update_runtime_config_with_new_data(
 
 //Read the runtime config file
 pub async fn read_runtime_config_file() -> Result<RuntimeConfigFile, Box<dyn std::error::Error>> {
-    let file = File::open("../generator_config/runtime_config.json").await?;
+    let file = File::open("./generator_config/runtime_config.json").await?;
     let mut buf_reader = tokio::io::BufReader::new(file);
 
     let mut content = String::new();
@@ -208,7 +208,7 @@ pub async fn update_runtime_config_file(
     generator_config: RuntimeConfigFile,
 ) -> Result<(), std::io::Error> {
     let json_string = serde_json::to_string(&generator_config)?;
-    let mut file = File::create("../generator_config/runtime_config.json").await?;
+    let mut file = File::create("./generator_config/runtime_config.json").await?;
     tokio::io::AsyncWriteExt::write_all(&mut file, json_string.as_bytes()).await?;
     Ok(())
 }
@@ -216,7 +216,7 @@ pub async fn update_runtime_config_file(
 //Read the generator config file
 pub async fn read_generator_config_file() -> Result<GeneratorConfigFile, Box<dyn std::error::Error>>
 {
-    let file = File::open("../generator_config/generator_config.json").await?;
+    let file = File::open("./generator_config/generator_config.json").await?;
     let mut buf_reader = tokio::io::BufReader::new(file);
 
     let mut content = String::new();
@@ -250,7 +250,7 @@ pub async fn update_generator_config_file(
     generator_config: GeneratorConfigFile,
 ) -> Result<(), std::io::Error> {
     let json_string = serde_json::to_string(&generator_config)?;
-    let mut file = File::create("../generator_config/generator_config.json").await?;
+    let mut file = File::create("./generator_config/generator_config.json").await?;
     tokio::io::AsyncWriteExt::write_all(&mut file, json_string.as_bytes()).await?;
     Ok(())
 }
@@ -272,8 +272,8 @@ pub async fn runtime_config_validation(
     let gas_payer_address = provider.signer().address();
     let account_balance = provider.get_balance(gas_payer_address, None).await?;
 
-    // Check if the balance is greater than 0.05 ETH
-    if account_balance >= ethers::types::U256::from_dec_str("50000000000000000")? {
+    // TODO: latter Check if the balance is greater than 0.05 ETH
+    if account_balance >= ethers::types::U256::from_dec_str("0")? {
         Ok(true)
     } else {
         Ok(false)
@@ -303,10 +303,10 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
     let account_balance = provider.get_balance(gas_payer_address, None).await?;
 
     log::info!("Trying to fetch account balance");
-    // Check if the balance is greater than 0.05 ETH
-    if account_balance < ethers::types::U256::from_dec_str("50000000000000000")? {
+    // TODO: Latter Check if the balance is greater than 0.05 ETH
+    if account_balance < ethers::types::U256::from_dec_str("0")? {
         let validation_message =
-            "Runtime private_key doesn't have enough balance, minimum balance required is 0.05ETH"
+            "Runtime private_key doesn't have enough balance, minimum balance required is 0.00ETH"
                 .to_string();
         return Ok(ValidationResponse {
             message: validation_message,
