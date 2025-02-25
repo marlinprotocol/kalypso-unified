@@ -107,6 +107,42 @@ table! {
 }
 
 
+// schema.rs
+diesel::table! {
+    generators (id) {
+        id -> Int4,
+        address -> Varchar,
+        market_id -> Nullable<Varchar>,
+        state -> Int4,
+        reward_address -> Varchar,
+        compute_power -> Numeric,
+    }
+}
+
+diesel::table! {
+    stakes (id) {
+        id -> Int4,
+        generator_address -> Varchar,
+        token_address -> Varchar,
+        amount -> Numeric,
+        block_number -> Int8,
+        transaction_index -> Int8,
+        log_index -> Int8,
+        tx_hash -> Varchar,
+        source -> Int4,
+    }
+}
+
+diesel::table! {
+    withdrawals (id) {
+        id -> Int4,
+        operator_address -> Varchar,
+        amount -> Numeric,
+        requested_at -> Timestamp,
+    }
+}
+
+
 joinable!(proofs -> asks (ask_id));
 joinable!(proof_counters -> requestors (market_id));
 allow_tables_to_appear_in_same_query!(asks, proofs, requestors, proof_counters, timing_operations);
