@@ -272,8 +272,8 @@ pub async fn runtime_config_validation(
     let gas_payer_address = provider.signer().address();
     let account_balance = provider.get_balance(gas_payer_address, None).await?;
 
-    // Check if the balance is greater than 0.05 ETH
-    if account_balance >= ethers::types::U256::from_dec_str("50000000000000000")? {
+    // TODO: latter Check if the balance is greater than 0.05 ETH
+    if account_balance >= ethers::types::U256::from_dec_str("0")? {
         Ok(true)
     } else {
         Ok(false)
@@ -306,7 +306,7 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
     // TODO: Latter Check if the balance is greater than 0.05 ETH
     if account_balance < ethers::types::U256::from_dec_str("0")? {
         let validation_message =
-            "Runtime private_key doesn't have enough balance, minimum balance required is 0.05ETH"
+            "Runtime private_key doesn't have enough balance, minimum balance required is 0.00ETH"
                 .to_string();
         return Ok(ValidationResponse {
             message: validation_message,
