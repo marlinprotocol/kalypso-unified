@@ -608,52 +608,54 @@ where
         );
 
         log::debug!("Complete Proof not Generated");
-        let possible_slashing = local_ask_store.get_associated_stake_lock(&bid_id);
 
-        if let Some(possible_slashing) = possible_slashing {
-            let slashing_timestamp =
-                get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
-                    .await
-                    .unwrap_or_default();
-            let (native_slashing_tokens, native_slashings) = possible_slashing
-                .native
-                .to_address_token_pair()
-                .into_iter()
-                .unzip();
-            generator_store.note_entry_slashing(
-                &generator_address,
-                &bid_id,
-                &ask.market_id,
-                native_slashing_tokens,
-                native_slashings,
-                vec![],
-                vec![],
-                tx_to_string(&log.transaction_hash.unwrap()),
-                &ask.reward,
-                &ask.deadline,
-                &U64::from(proof_cycle_completed_on.as_u64()),
-                &slashing_timestamp,
-            );
+        if cfg!(feature = "record_possible_slashing_incidents") {
+            let possible_slashing = local_ask_store.get_associated_stake_lock(&bid_id);
+            if let Some(possible_slashing) = possible_slashing {
+                let slashing_timestamp =
+                    get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
+                        .await
+                        .unwrap_or_default();
+                let (native_slashing_tokens, native_slashings) = possible_slashing
+                    .native
+                    .to_address_token_pair()
+                    .into_iter()
+                    .unzip();
+                generator_store.note_entry_slashing(
+                    &generator_address,
+                    &bid_id,
+                    &ask.market_id,
+                    native_slashing_tokens,
+                    native_slashings,
+                    vec![],
+                    vec![],
+                    tx_to_string(&log.transaction_hash.unwrap()),
+                    &ask.reward,
+                    &ask.deadline,
+                    &U64::from(proof_cycle_completed_on.as_u64()),
+                    &slashing_timestamp,
+                );
 
-            let (symbiotic_slashing_tokens, symbiotic_slashings) = possible_slashing
-                .symbiotic
-                .to_address_token_pair()
-                .into_iter()
-                .unzip();
-            generator_store.note_entry_slashing(
-                &generator_address,
-                &bid_id,
-                &ask.market_id,
-                vec![],
-                vec![],
-                symbiotic_slashing_tokens,
-                symbiotic_slashings,
-                tx_to_string(&log.transaction_hash.unwrap()),
-                &ask.reward,
-                &ask.deadline,
-                &U64::from(proof_cycle_completed_on.as_u64()),
-                &slashing_timestamp,
-            );
+                let (symbiotic_slashing_tokens, symbiotic_slashings) = possible_slashing
+                    .symbiotic
+                    .to_address_token_pair()
+                    .into_iter()
+                    .unzip();
+                generator_store.note_entry_slashing(
+                    &generator_address,
+                    &bid_id,
+                    &ask.market_id,
+                    vec![],
+                    vec![],
+                    symbiotic_slashing_tokens,
+                    symbiotic_slashings,
+                    tx_to_string(&log.transaction_hash.unwrap()),
+                    &ask.reward,
+                    &ask.deadline,
+                    &U64::from(proof_cycle_completed_on.as_u64()),
+                    &slashing_timestamp,
+                );
+            }
         }
 
         local_ask_store.delete_all_associated_stake_locks(&bid_id);
