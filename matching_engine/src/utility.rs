@@ -399,13 +399,17 @@ pub async fn get_timestamp_from_l2block_number(_: &str, _: &U256) -> Option<U256
 
 #[cfg(feature = "add_timestamp_to_asks")]
 pub async fn get_timestamp_from_l2block_number(rpc_url: &str, l2_block_num: &U256) -> Option<U256> {
+    get_block_timestamp(rpc_url, l2_block_num).await
+}
+
+pub async fn get_block_timestamp(rpc_url: &str, block_num: &U256) -> Option<U256> {
     let provider = match Provider::<Http>::try_from(rpc_url) {
         Ok(data) => data,
         _ => return None,
     };
 
     let timestamp = {
-        let block = provider.get_block(l2_block_num.as_u64()).await;
+        let block = provider.get_block(block_num.as_u64()).await;
         if block.is_err() {
             None
         } else {

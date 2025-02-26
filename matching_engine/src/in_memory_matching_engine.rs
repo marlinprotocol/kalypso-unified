@@ -354,6 +354,7 @@ impl InMemoryMatchingEngine {
         let backup_handle: JoinHandle<Result<(), anyhow::Error>> = tokio::spawn(async move {
             let mut last_backup_tried_at = tokio::time::Instant::now();
             loop {
+                tokio::time::sleep(Duration::from_millis(100)).await;
                 if should_stop_clone.load(Ordering::Acquire) {
                     log::info!("Gracefully shutting down backup...");
                     break;

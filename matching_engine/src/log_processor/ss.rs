@@ -4,7 +4,7 @@ use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use tokio::sync::RwLock;
 
 use crate::{
-    ask_lib::ask_store::AskManagementRead,
+    ask_lib::ask_store::{AskManagementRead, ProofMarketStakeLockManagement},
     generator_lib::{
         delegation,
         symbiotic_stake_store::{
@@ -17,7 +17,7 @@ use crate::{
         },
     },
     log_processor::constants,
-    utility::{get_l1_block_from_l2_block, tx_to_string},
+    utility::{get_l1_block_from_l2_block, tx_to_string, TokenTracker},
 };
 
 pub async fn process_symbiotic_staking_logs<G, S, A>(
@@ -43,7 +43,7 @@ where
         + TokenLockManagement
         + VaultSnapshotManagement,
 
-    A: AskManagementRead,
+    A: AskManagementRead + ProofMarketStakeLockManagement,
 {
     if constants::SYMBIOTIC_STAKING_TOPICS_SKIP
         .get(&log.topics[0])
@@ -509,6 +509,7 @@ where
         let address = stake_lock_logs.prover;
         let stake_locked = stake_lock_logs.amount;
         let token_address = stake_lock_logs.token;
+        let ask_id = stake_lock_logs.bid_id;
 
         generator_store.update_on_stake_locked(
             &address,
@@ -516,6 +517,13 @@ where
             stake_locked,
             delegation::Source::Symbiotic,
         );
+
+        {
+            ask_store.write().await.add_associated_symbiotic_stake_lock(
+                &ask_id,
+                TokenTracker::from_address_token_pair((token_address, stake_locked)),
+            )
+        };
         return Ok(());
     }
 

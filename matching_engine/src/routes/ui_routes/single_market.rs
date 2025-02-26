@@ -66,7 +66,7 @@ struct SingleMarketResponse {
     /// Number of registered generators
     registered_generators: usize,
     /// deprecated: Slashing penalty (no slashing yet)
-    slashing_penalty: Vec<TokenAmount>,
+    slashing_penalty: TaskRequirements,
     /// Median cost of proof generation
     median_cost: String,
     /// Median time of proof generation
@@ -78,7 +78,7 @@ struct SingleMarketResponse {
     /// deprecated: Hardware requirement (use .market_setup_data.min_hardware instead)
     hardware_requirement: MinHardware,
     /// Minimum stake required
-    min_stake: Vec<TokenAmount>,
+    min_stake: TaskRequirements,
     /// Jobs
     jobs: Jobs,
     /// Market setup data
@@ -148,6 +148,7 @@ struct MarketQuery {
 }
 
 use super::cache::CachedResponse;
+use super::dashboard::TaskRequirements;
 use super::single_generator::StakeBreakDown;
 
 type CachedSingleMarketResponse = CachedResponse<SingleMarketResponse>;
@@ -406,15 +407,24 @@ async fn recompute_single_market_response<
         .to_string();
     let registered_generators = local_generator_store.get_all_by_market_id(&market_id);
 
-    let total_min_stake = local_native_store.tokens_to_lock().await.clone()
-        + local_symbiotic_store.tokens_to_lock().clone();
-
+    let task_requirement = TaskRequirements {
+        native: local_native_store
+            .tokens_to_lock()
+            .await
+            .clone()
+            .to_token_amount(),
+        symbiotic: local_symbiotic_store
+            .tokens_to_lock()
+            .clone()
+            .to_token_amount(),
+    };
     Some(SingleMarketResponse {
         median_cost,
         median_proof_time,
         registered_generators: registered_generators.len(),
         // slashing_penalty: slashing_penalty.to_token_amount(),// TODO enable this after slashing is enabled
-        slashing_penalty: TokenTracker::default().to_token_amount(),
+        // slashing_penalty: TokenTracker::default().to_token_amount(),
+        slashing_penalty: task_requirement.clone(),
         total_earnings: local_market_store
             .get_earnings(&market_id)
             .unwrap_or_default()
@@ -429,7 +439,7 @@ async fn recompute_single_market_response<
             .fold(TokenTracker::new(), |acc, elem| acc + elem)
             .to_token_amount(),
         hardware_requirement: marketmetadata.deserialize_market_bytes().min_hardware,
-        min_stake: total_min_stake.to_token_amount(),
+        min_stake: task_requirement,
         jobs: Jobs {
             proofs_generated: local_ask_store.get_proof_count(&market_id),
             proofs_pending: {

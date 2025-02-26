@@ -3,7 +3,7 @@ use crate::ask_lib::ask_status::{get_ask_state, AskState};
 
 use crate::ask_lib::ask_store::{
     AskManagementRead, AskManagementWrite, CompletedProofsManagement, MarketRequestCounters,
-    ProofCounters, RequestorCounters, TimingOperations,
+    ProofCounters, ProofMarketStakeLockManagement, RequestorCounters, TimingOperations,
 };
 use crate::costs::CostStoreOperations;
 use crate::generator_lib::native_stake_store::NativeStakingOperations;
@@ -84,7 +84,8 @@ pub struct LogParser<
         + ProofCounters
         + MarketRequestCounters
         + CompletedProofsManagement
-        + TimingOperations,
+        + TimingOperations
+        + ProofMarketStakeLockManagement,
     GS: GeneratorRegistration
         + GeneratorStakeComputeManagement
         + GeneratorMarketManagement
@@ -145,7 +146,8 @@ impl<
             + ProofCounters
             + MarketRequestCounters
             + CompletedProofsManagement
-            + TimingOperations,
+            + TimingOperations
+            + ProofMarketStakeLockManagement,
         GS: GeneratorRegistration
             + GeneratorStakeComputeManagement
             + GeneratorMarketManagement

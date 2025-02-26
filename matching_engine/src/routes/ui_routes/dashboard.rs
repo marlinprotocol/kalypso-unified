@@ -50,12 +50,12 @@ pub struct DashboardResponse {
     task_assignment_requirements: TaskRequirements,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-struct TaskRequirements {
+#[derive(Default, Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub struct TaskRequirements {
     /// Minimum Native Stake Required for generator to receive a job. (Any one of the element in the vector)
-    native: Vec<TokenAmount>,
+    pub native: Vec<TokenAmount>,
     /// Minimum Symbiotic Stake Required for generator to receive a job. (Any one of the element in the vector)
-    symbiotic: Vec<TokenAmount>,
+    pub symbiotic: Vec<TokenAmount>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
