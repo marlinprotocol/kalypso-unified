@@ -1,4 +1,5 @@
 use super::cache::CachedResponse;
+use super::dashboard::TaskRequirements;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::{AskManagementRead, CompletedProofsManagement, ProofCounters};
 
@@ -7,7 +8,7 @@ use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
 use crate::generator_lib::traits::{GeneratorAdditionalQuery, GeneratorAvailability};
 use crate::market_metadata::{MarketMetadataStoreRead, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
-use crate::utility::{TokenAmount, TokenTracker};
+use crate::utility::TokenAmount;
 
 use crate::{try_read_and_get_if_valid, try_read_or_lock};
 use actix_web::web::Data;
@@ -50,7 +51,7 @@ pub struct Market {
     /// total earnings in the market
     total_earnings: String,
     /// deprecated: slashing penalty in the market (no penaltly for now)
-    slashing_penalty: Vec<TokenAmount>,
+    slashing_penalty: TaskRequirements,
     /// deprecated: status of the market
     status: bool,
     /// setup data of the market
@@ -207,9 +208,20 @@ async fn recompute_market_response<
             total_earnings_map.insert(market_id.clone(), total_earnings);
 
             // Extract slashing_penalty
-            let slashing_penalty = local_native_store.tokens_to_lock().await.clone()
-                + local_symbiotic_store.tokens_to_lock().clone();
-            slashing_penalty_map.insert(market_id.clone(), slashing_penalty);
+            slashing_penalty_map.insert(
+                market_id.clone(),
+                TaskRequirements {
+                    native: local_native_store
+                        .tokens_to_lock()
+                        .await
+                        .clone()
+                        .to_token_amount(),
+                    symbiotic: local_symbiotic_store
+                        .tokens_to_lock()
+                        .clone()
+                        .to_token_amount(),
+                },
+            );
         }
 
         (
@@ -246,7 +258,7 @@ async fn recompute_market_response<
             .get(&market_id)
             .cloned()
             .unwrap_or_default();
-        let _slashing_penalty = slashing_penalty_map
+        let slashing_penalty = slashing_penalty_map
             .get(&market_id)
             .cloned()
             .unwrap_or_default();
@@ -262,7 +274,7 @@ async fn recompute_market_response<
             median_cost_per_proof,
             failed_requests,
             total_earnings,
-            slashing_penalty: TokenTracker::default().to_token_amount(),
+            slashing_penalty,
             status: true, // Adjust as needed
             market_setup_data: meta.deserialize_market_bytes(),
             registered_generators: local_generator_store.get_all_by_market_id(&market_id).len(),

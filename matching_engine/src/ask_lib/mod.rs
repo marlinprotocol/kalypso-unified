@@ -2,6 +2,8 @@ use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, fmt::Formatter, fmt::Result};
 
+use crate::utility::TokenTracker;
+
 pub mod ask;
 pub mod ask_query;
 pub mod ask_status;
@@ -42,4 +44,10 @@ impl Default for Proof {
     fn default() -> Self {
         Proof::FailedProofGeneration
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AssociatedStakeLock {
+    pub native: TokenTracker,
+    pub symbiotic: TokenTracker,
 }

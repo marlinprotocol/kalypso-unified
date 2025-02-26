@@ -1,11 +1,13 @@
 use ethers::core::types::U256;
 use ethers::prelude::*;
 
+use crate::utility::TokenTracker;
+
 use super::{
     ask::LocalAsk,
     ask_query::AskQueryResult,
     ask_status::{AskState, LocalAskStatus},
-    Proof, RemoveReason,
+    AssociatedStakeLock, Proof, RemoveReason,
 };
 
 /// Trait 1a – AskManagementWrite:
@@ -98,4 +100,12 @@ pub trait TimingOperations {
     fn get_job_created_on_timestamp(&self, ask_id: &U256) -> Option<U256>;
     fn update_job_created_on_timestamp(&mut self, ask_id: &U256, created_on_timestamp: U256);
     fn get_overall_proving_time(&self, ask_id: &U256) -> Option<U256>;
+}
+
+pub trait ProofMarketStakeLockManagement {
+    fn get_associated_stake_lock(&self, ask_id: &U256) -> Option<AssociatedStakeLock>;
+    fn add_associated_native_stake_lock(&mut self, ask_id: &U256, stake_locked: TokenTracker);
+    fn add_associated_symbiotic_stake_lock(&mut self, ask_id: &U256, stake_locked: TokenTracker);
+
+    fn delete_all_associated_stake_locks(&mut self, ask_id: &U256);
 }

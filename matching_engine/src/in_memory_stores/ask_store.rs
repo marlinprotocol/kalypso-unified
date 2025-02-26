@@ -8,10 +8,13 @@ use crate::{
         self,
         ask_store::{
             AskManagementRead, AskManagementWrite, CompletedProofsManagement,
-            MarketRequestCounters, ProofCounters, RequestorCounters, TimingOperations,
+            MarketRequestCounters, ProofCounters, ProofMarketStakeLockManagement,
+            RequestorCounters, TimingOperations,
         },
+        AssociatedStakeLock,
     },
     counters::counters::GenericCounters,
+    utility::TokenTracker,
 };
 
 use ask_lib::{
@@ -96,6 +99,8 @@ pub struct LocalAskStore {
         deserialize_with = "deserialize_u256_map"
     )]
     job_completed_on_timestamp: HashMap<U256, U256>,
+
+    associated_stake_locks: HashMap<U256, AssociatedStakeLock>,
 }
 
 use crate::utility::deserialize_u256_map;
@@ -122,6 +127,7 @@ impl LocalAskStore {
             job_created_on_timestamp: HashMap::new(),
             job_matched_on_timestamp: HashMap::new(),
             job_completed_on_timestamp: HashMap::new(),
+            associated_stake_locks: HashMap::new(),
         }
     }
 }
@@ -462,5 +468,39 @@ impl TimingOperations for LocalAskStore {
         let created_on = self.get_job_created_on_timestamp(ask_id)?;
         let completed_on = self.get_job_completed_on_timestamp(ask_id)?;
         Some(completed_on.saturating_sub(created_on))
+    }
+}
+
+impl ProofMarketStakeLockManagement for LocalAskStore {
+    fn get_associated_stake_lock(&self, ask_id: &U256) -> Option<AssociatedStakeLock> {
+        self.associated_stake_locks.get(ask_id).cloned()
+    }
+
+    fn add_associated_native_stake_lock(&mut self, ask_id: &U256, stake_locked: TokenTracker) {
+        self.associated_stake_locks
+            .entry(*ask_id)
+            .and_modify(|lock| {
+                lock.native = lock.native.clone() + stake_locked.clone();
+            })
+            .or_insert_with(|| AssociatedStakeLock {
+                native: stake_locked,
+                symbiotic: TokenTracker::default(),
+            });
+    }
+
+    fn add_associated_symbiotic_stake_lock(&mut self, ask_id: &U256, stake_locked: TokenTracker) {
+        self.associated_stake_locks
+            .entry(*ask_id)
+            .and_modify(|lock| {
+                lock.symbiotic = lock.symbiotic.clone() + stake_locked.clone();
+            })
+            .or_insert_with(|| AssociatedStakeLock {
+                native: TokenTracker::default(),
+                symbiotic: stake_locked,
+            });
+    }
+
+    fn delete_all_associated_stake_locks(&mut self, ask_id: &U256) {
+        self.associated_stake_locks.remove(ask_id);
     }
 }

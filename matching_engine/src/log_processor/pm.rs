@@ -2,25 +2,27 @@ use crate::{
     ask_lib::{
         ask::LocalAsk,
         ask_status::AskState,
-        ask_store::{AskManagementRead, AskManagementWrite, TimingOperations},
+        ask_store::{
+            AskManagementRead, AskManagementWrite, ProofMarketStakeLockManagement, TimingOperations,
+        },
     },
     market_metadata::{MarketMetadata, MarketMetadataStoreWrite},
 };
 
 use crate::costs::CostStoreOperations;
 use crate::generator_lib::traits::{
-    GeneratorAdditionalQuery, GeneratorMarketManagement, JobMissedCounter,
+    GeneratorAdditionalQuery, GeneratorMarketManagement, GeneratorSlashingManagement,
+    JobMissedCounter,
 };
 
-use crate::utility::get_l1_block_from_l2_block;
-use crate::utility::get_timestamp_from_l2block_number;
-use crate::utility::tx_to_string;
-use crate::utility::u256_to_system_time;
+use crate::utility::{
+    get_block_timestamp, get_l1_block_from_l2_block, get_timestamp_from_l2block_number,
+    tx_to_string, u256_to_system_time,
+};
 use ethers::prelude::{k256::ecdsa::SigningKey, *};
 use im::HashSet;
 
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 use tokio::sync::RwLock;
 
 use kalypso_helper::secret_inputs_helpers;
@@ -45,8 +47,11 @@ pub async fn process_proof_market_place_logs<A, G, M, C>(
     unhandled_logs: &Arc<RwLock<Vec<Log>>>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
-    A: AskManagementRead + AskManagementWrite + TimingOperations,
-    G: GeneratorAdditionalQuery + GeneratorMarketManagement + JobMissedCounter,
+    A: AskManagementRead + AskManagementWrite + TimingOperations + ProofMarketStakeLockManagement,
+    G: GeneratorAdditionalQuery
+        + GeneratorMarketManagement
+        + JobMissedCounter
+        + GeneratorSlashingManagement,
     M: MarketMetadataStoreWrite,
     C: CostStoreOperations,
 {
@@ -379,6 +384,8 @@ where
                     proof_generator_cost,
                 );
         }
+
+        local_ask_store.delete_all_associated_stake_locks(&bid_id);
         return Ok(());
     }
 
@@ -590,16 +597,66 @@ where
 
         generator_store.reduce_active_requests(&generator_address, &ask.market_id);
 
-        let closed_time_stamp =
-            get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
-                .await
-                .unwrap_or_default();
+        log::debug!("get_block_timestamp only exposed for counting missed jobs inside enclave based on time");
         generator_store.count_job_missed_by_generator(
             generator_address.clone(),
-            u256_to_system_time(closed_time_stamp),
+            u256_to_system_time(
+                get_block_timestamp(rpc_url, &proof_cycle_completed_on)
+                    .await
+                    .unwrap_or_default(),
+            ),
         );
 
         log::debug!("Complete Proof not Generated");
+        let possible_slashing = local_ask_store.get_associated_stake_lock(&bid_id);
+
+        if let Some(possible_slashing) = possible_slashing {
+            let slashing_timestamp =
+                get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
+                    .await
+                    .unwrap_or_default();
+            let (native_slashing_tokens, native_slashings) = possible_slashing
+                .native
+                .to_address_token_pair()
+                .into_iter()
+                .unzip();
+            generator_store.note_entry_slashing(
+                &generator_address,
+                &bid_id,
+                &ask.market_id,
+                native_slashing_tokens,
+                native_slashings,
+                vec![],
+                vec![],
+                tx_to_string(&log.transaction_hash.unwrap()),
+                &ask.reward,
+                &ask.deadline,
+                &U64::from(proof_cycle_completed_on.as_u64()),
+                &slashing_timestamp,
+            );
+
+            let (symbiotic_slashing_tokens, symbiotic_slashings) = possible_slashing
+                .symbiotic
+                .to_address_token_pair()
+                .into_iter()
+                .unzip();
+            generator_store.note_entry_slashing(
+                &generator_address,
+                &bid_id,
+                &ask.market_id,
+                vec![],
+                vec![],
+                symbiotic_slashing_tokens,
+                symbiotic_slashings,
+                tx_to_string(&log.transaction_hash.unwrap()),
+                &ask.reward,
+                &ask.deadline,
+                &U64::from(proof_cycle_completed_on.as_u64()),
+                &slashing_timestamp,
+            );
+        }
+
+        local_ask_store.delete_all_associated_stake_locks(&bid_id);
         return Ok(());
     }
 
@@ -697,6 +754,8 @@ where
                 .await
                 .note_proof_submission_stats_for_invalid_inputs(&market_id, proof_generator_cost);
         }
+
+        local_ask_store.delete_all_associated_stake_locks(&bid_id);
         log::debug!("Complete: invalid input attestation event operation");
         return Ok(());
     }

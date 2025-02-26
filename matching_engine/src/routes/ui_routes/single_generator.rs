@@ -680,9 +680,7 @@ async fn recompute_single_generator_response<
                     .to_string(),
                 proofs_missed: info.proofs_slashed.to_string(),
                 proofs_generated: info.proofs_submitted.to_string(),
-                // TODO: actual value. Enable this after slashing is added back
-                // slashing_penalties_incured: info.proofs_slashed.to_string(),
-                slashing_penalties_incured: "0".to_owned(),
+                slashing_penalties_incured: info.proofs_slashed.to_string(),
                 pending_proofs: info.active_requests.to_string(),
                 min_hardware_requirement: {
                     let info = local_market_store.get_market_by_market_id(&info.market_id);
