@@ -1,11 +1,10 @@
-#[cfg(not(feature = "disable_match_creation"))]
-use crate::ask_lib::ask_status::{get_ask_state, AskState};
-
+use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_store::{
     AskManagementRead, AskManagementWrite, CompletedProofsManagement, MarketRequestCounters,
     ProofCounters, ProofMarketStakeLockManagement, RequestorCounters, TimingOperations,
 };
 use crate::costs::CostStoreOperations;
+use crate::generator_lib::generator_state::GeneratorState;
 use crate::generator_lib::native_stake_store::NativeStakingOperations;
 use crate::generator_lib::stake_manager_store::StakeManagerOperations;
 use crate::generator_lib::traits::{
@@ -14,9 +13,7 @@ use crate::generator_lib::traits::{
     GeneratorMetadata, GeneratorQuery, GeneratorRegistration, GeneratorSlashingManagement,
     GeneratorStakeComputeManagement, JobMissedCounter, WithdrawalManagement,
 };
-
-#[cfg(not(feature = "disable_match_creation"))]
-use crate::generator_lib::generator_store;
+use crate::generator_lib::{generator_helper, generator_store};
 
 use crate::generator_lib::symbiotic_stake_store::{
     OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
@@ -25,18 +22,10 @@ use crate::market_metadata::{MarketMetadataStoreRead, MarketMetadataStoreWrite};
 use anyhow::Result;
 use ethers::prelude::*;
 use k256::ecdsa::SigningKey;
-
-#[cfg(not(feature = "disable_match_creation"))]
-use kalypso_helper::secret_inputs_helpers;
-
 use std::collections::HashMap;
 
-#[cfg(not(feature = "disable_match_creation"))]
-use std::ops::Sub;
-
-#[cfg(not(feature = "disable_match_creation"))]
-use std::str::FromStr;
-
+use crate::generator_lib::key_store::KeyStoreOperations;
+use crate::log_processor;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -45,16 +34,6 @@ use std::{
     time::Duration,
 };
 use tokio::sync::RwLock;
-
-use crate::log_processor;
-
-#[cfg(not(feature = "disable_match_creation"))]
-use crate::{
-    ask_lib::ask::LocalAsk,
-    generator_lib::{generator_helper, generator_state::GeneratorState},
-};
-
-use crate::generator_lib::key_store::KeyStoreOperations;
 
 type EntityRegistryInstance = bindings::entity_key_registry::EntityKeyRegistry<
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -275,7 +254,6 @@ impl<
             };
 
             if let Some(_matches_upto) = matches_upto.filter(|&m| m == end_block) {
-                #[cfg(feature = "disable_match_creation")]
                 log::warn!(
                     "All matches made up to {}. Waiting for a few seconds",
                     _matches_upto
@@ -447,7 +425,6 @@ impl<
                 .map_err(|e| format!("Failed to create match: {}", e.to_string()))
             {
                 Ok(upto) => {
-                    #[cfg(not(feature = "disable_match_creation"))]
                     log::info!("Completed match assignment upto: {}", upto);
 
                     Some(upto)
@@ -483,17 +460,13 @@ impl<
         Ok((start_block, end_block))
     }
 
-    #[cfg(feature = "disable_match_creation")]
     async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
-        tokio::time::sleep(Duration::from_secs(5)).await; // just to mimic match creation time and may be free resource for else where
-        Ok(end_block)
-    }
-
-    #[cfg(not(feature = "disable_match_creation"))]
-    async fn create_match(&self, end_block: U64) -> Result<U64, Box<dyn std::error::Error>> {
-        use kalypso_helper::try_read_contract_error_log;
-
+        use crate::ask_lib::ask_status::get_ask_state;
+        use crate::ask_lib::ask_status::AskState;
         use crate::utility::TokenTracker;
+        use kalypso_helper::secret_inputs_helpers;
+        use std::ops::Sub;
+        use std::str::FromStr;
 
         log::debug!("processed till {:?}. Waiting for new blocks", end_block);
         let ask_store = { self.shared_local_ask_store.read().await };
@@ -832,83 +805,90 @@ impl<
         log::debug!("Signature: {:?}", signature);
         log::debug!("Tx signed at {:?}", std::time::Instant::now());
 
-        // // Assign batch task here
-        let mut batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
-            ask_ids.clone(),
-            generators.clone(),
-            new_acls.clone(),
-            ethers::types::Bytes::from_str(&signature.to_string()).unwrap(),
-        );
+        #[cfg(not(feature = "disable_match_creation"))]
+        {
+            use kalypso_helper::try_read_contract_error_log;
+            let mut batch_relay_tx_pending = self.proof_marketplace.relay_batch_assign_tasks(
+                ask_ids.clone(),
+                generators.clone(),
+                new_acls.clone(),
+                ethers::types::Bytes::from_str(&signature.to_string()).unwrap(),
+            );
 
-        log::debug!("Tx created at {:?}", std::time::Instant::now());
+            log::debug!("Tx created at {:?}", std::time::Instant::now());
 
-        if cfg!(feature = "force_transactions") {
-            batch_relay_tx_pending = batch_relay_tx_pending.gas(10_000_000);
-        }
+            if cfg!(feature = "force_transactions") {
+                batch_relay_tx_pending = batch_relay_tx_pending.gas(10_000_000);
+            }
 
-        let batch_relay_tx =
-            match batch_relay_tx_pending
-                .send()
-                .await
-                .map_err(|e: ContractError<_>| {
-                    log::error!("========================\n");
-                    try_read_contract_error_log!(
-                        e,
-                        bindings::proof_marketplace::ProofMarketplaceErrors,
-                        "ProofMarketplace"
-                    );
-
-                    try_read_contract_error_log!(
-                        e,
-                        bindings::entity_key_registry::EntityKeyRegistryErrors,
-                        "EntityKeyRegistry"
-                    );
-
-                    try_read_contract_error_log!(
-                        e,
-                        bindings::native_staking::NativeStakingErrors,
-                        "NativeStaking"
-                    );
-
-                    try_read_contract_error_log!(
-                        e,
-                        bindings::symbiotic_staking::SymbioticStakingErrors,
-                        "SymbioticStaking"
-                    );
-
-                    try_read_contract_error_log!(
-                        e,
-                        bindings::staking_manager::StakingManagerErrors,
-                        "StakeManager"
-                    );
-
-                    try_read_contract_error_log!(e, bindings::error::ErrorErrors, "OtherErrors");
-                    format!("Failed to send transaction: {}", e)
-                }) {
-                Ok(data) => data.confirmations(10),
-                Err(err) => {
-                    log::error!("{}", err);
-                    log::error!("failed sending the transaction");
-                    if let Ok(mut errors) = self.matching_errors.try_write() {
-                        errors.push(err.to_string());
-                    } else {
-                        log::warn!(
-                            "Could not acquire lock on matching_errors to record the error."
+            let batch_relay_tx =
+                match batch_relay_tx_pending
+                    .send()
+                    .await
+                    .map_err(|e: ContractError<_>| {
+                        log::error!("========================\n");
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::proof_marketplace::ProofMarketplaceErrors,
+                            "ProofMarketplace"
                         );
+
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::entity_key_registry::EntityKeyRegistryErrors,
+                            "EntityKeyRegistry"
+                        );
+
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::native_staking::NativeStakingErrors,
+                            "NativeStaking"
+                        );
+
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::symbiotic_staking::SymbioticStakingErrors,
+                            "SymbioticStaking"
+                        );
+
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::staking_manager::StakingManagerErrors,
+                            "StakeManager"
+                        );
+
+                        try_read_contract_error_log!(
+                            e,
+                            bindings::error::ErrorErrors,
+                            "OtherErrors"
+                        );
+                        format!("Failed to send transaction: {}", e)
+                    }) {
+                    Ok(data) => data.confirmations(10),
+                    Err(err) => {
+                        log::error!("{}", err);
+                        log::error!("failed sending the transaction");
+                        if let Ok(mut errors) = self.matching_errors.try_write() {
+                            errors.push(err.to_string());
+                        } else {
+                            log::warn!(
+                                "Could not acquire lock on matching_errors to record the error."
+                            );
+                        }
+
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        return Err("Failed creating matching".into());
                     }
+                };
 
-                    tokio::time::sleep(Duration::from_secs(2)).await;
-                    return Err("Failed creating matching".into());
-                }
-            };
+            let batch_relay_tx = batch_relay_tx.await.unwrap().unwrap();
 
-        let batch_relay_tx = batch_relay_tx.await.unwrap().unwrap();
-
-        log::info!(
-            "Relayed {:?} requests tx: {:?}",
-            ask_ids.clone().len(),
-            batch_relay_tx.transaction_hash
-        );
+            log::info!(
+                "Relayed {:?} requests tx: {:?}",
+                ask_ids.clone().len(),
+                batch_relay_tx.transaction_hash
+            );
+        }
 
         if self.should_stop.load(Ordering::Acquire) {
             log::info!("Gracefully shutting down...");
@@ -917,7 +897,6 @@ impl<
         Ok(end_block)
     }
 
-    #[cfg(not(feature = "disable_match_creation"))]
     async fn get_idle_generators(
         &self,
         random_pending_ask: LocalAsk,
