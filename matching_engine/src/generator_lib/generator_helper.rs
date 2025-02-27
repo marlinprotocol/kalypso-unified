@@ -83,6 +83,16 @@ pub fn weighted_time_cost_random_selection(
         })
         .collect();
 
+    log::debug!(
+        "Weights: {:?}. Total Weight {:?}",
+        weights,
+        weights
+            .iter()
+            .copied()
+            .reduce(|a, x| a + x)
+            .unwrap_or_default()
+    );
+
     // Create a weighted distribution and sample an index.
     let dist = WeightedIndex::new(&weights).ok()?;
     let mut rng = rand::thread_rng();
@@ -91,6 +101,7 @@ pub fn weighted_time_cost_random_selection(
     Some(vec[index].clone())
 }
 
+#[deprecated(note = "use weighted_time_cost_random_selection")]
 pub fn weighted_random_selection(
     vec: Vec<GeneratorInfoPerMarket>,
 ) -> Option<GeneratorInfoPerMarket> {
@@ -185,9 +196,6 @@ pub fn weighted_random_selection(
     let min_weight = weights.iter().cloned().fold(f64::INFINITY, f64::min);
     let adjusted_weights: Vec<f64> = weights.iter().map(|&w| w - min_weight + 1.0).collect();
 
-    // println!("{:?}",&weights);
-    // println!();
-    // println!("{:?}",&adjusted_weights);
     let dist = WeightedIndex::new(&adjusted_weights).unwrap();
     let mut rng = rand::thread_rng();
     let index = dist.sample(&mut rng);
@@ -451,10 +459,73 @@ mod tests {
         let actual_ratio = generator1_count as f64 / generator2_count as f64;
 
         assert!(
-            (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
+            (actual_ratio - expected_ratio).abs() < 0.01 * expected_ratio,
             "Expected ratio: {}, Actual ratio: {}",
             expected_ratio,
             actual_ratio
         );
+    }
+
+    #[test]
+    fn test_weighted_time_cost_random_selection_time_and_cost_variation_2() {
+        let generator1 = create_generator_info(50000, 5000, 0, 0, 0);
+        let generator2 = create_generator_info(100000, 10000, 0, 0, 0);
+        let generator3 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator4 = create_generator_info(100000, 10000, 0, 0, 0);
+        let generator5 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator6 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator7 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator8 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator9 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator10 = create_generator_info(1000000, 10000, 0, 0, 0);
+        let generator11 = create_generator_info(1000000, 10000, 0, 0, 0);
+
+        let generators = vec![
+            generator1.clone(),
+            generator2.clone(),
+            generator3.clone(),
+            generator4.clone(),
+            generator5.clone(),
+            generator6.clone(),
+            generator7.clone(),
+            generator8.clone(),
+            generator9.clone(),
+            generator10.clone(),
+            generator11.clone(),
+        ];
+
+        let mut missed_jobs = HashMap::new();
+        missed_jobs.insert(generator1.address, 0);
+        missed_jobs.insert(generator2.address, 1);
+        missed_jobs.insert(generator3.address, 0);
+        missed_jobs.insert(generator4.address, 0);
+        missed_jobs.insert(generator5.address, 0);
+        missed_jobs.insert(generator6.address, 2);
+        missed_jobs.insert(generator7.address, 3);
+        missed_jobs.insert(generator8.address, 0);
+        missed_jobs.insert(generator9.address, 0);
+        missed_jobs.insert(generator10.address, 0);
+        missed_jobs.insert(generator11.address, 0);
+
+        let total_count = 10000;
+        let mut selection_counts: HashMap<_, usize> = HashMap::new();
+
+        for _ in 0..total_count {
+            if let Some(selected) =
+                weighted_time_cost_random_selection(generators.clone(), missed_jobs.clone())
+            {
+                *selection_counts.entry(selected.address).or_insert(0) += 1;
+            }
+        }
+
+        println!("Selection Ratios:");
+        for generator in &generators {
+            let count = selection_counts
+                .get(&generator.address)
+                .copied()
+                .unwrap_or(0);
+            let ratio = count as f64 / total_count as f64;
+            println!("Generator {}: {:.6}", generator.address, ratio);
+        }
     }
 }

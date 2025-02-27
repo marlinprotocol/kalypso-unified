@@ -7,7 +7,6 @@ use ethers::core::rand::seq::SliceRandom;
 use ethers::core::rand::{self, thread_rng};
 use ethers::core::utils::hex::FromHex;
 
-#[cfg(any(feature = "use_l1_block_numbers", feature = "add_timestamp_to_asks"))]
 use ethers::prelude::*;
 
 #[cfg(feature = "use_l1_block_numbers")]
@@ -561,4 +560,23 @@ pub fn u256_to_system_time(timestamp: U256) -> SystemTime {
     // Convert U256 to u64. Ensure that your timestamp really fits in u64!
     let timestamp_secs = timestamp.as_u64();
     UNIX_EPOCH + Duration::from_secs(timestamp_secs)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_block_number_to_system_time() {
+        let rpc_url = "https://sepolia-rollup.arbitrum.io/rpc";
+        let block_timestamp =
+            get_block_timestamp(rpc_url, &U256::from_dec_str("127755465").unwrap())
+                .await
+                .unwrap_or_default();
+
+        println!("{}", block_timestamp);
+        let missed_at_time = u256_to_system_time(block_timestamp);
+
+        println!("{:?}", missed_at_time);
+    }
 }

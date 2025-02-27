@@ -80,6 +80,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utility::{get_block_timestamp, u256_to_system_time};
+    use ethers::types::U256;
 
     #[test]
     fn test_entry_counter_basic() {
@@ -124,5 +126,25 @@ mod tests {
 
         // Only the current event should count.
         assert_eq!(counter.count(&key), 1);
+    }
+
+    #[tokio::test]
+    async fn test_block_number_to_system_time() {
+        let rpc_url = "https://sepolia-rollup.arbitrum.io/rpc";
+        let block_timestamp =
+            get_block_timestamp(rpc_url, &U256::from_dec_str("127755465").unwrap())
+                .await
+                .unwrap_or_default();
+
+        let missed_at_time = u256_to_system_time(block_timestamp);
+
+        let retention = Duration::from_secs(10);
+        let mut counter = EntryCounter::new(retention);
+        let key = "prune_key".to_string();
+
+        counter.add(key.clone(), missed_at_time);
+
+        // because event occured long back and sliding window is 10 secs for this test
+        assert_eq!(counter.count(&key), 0);
     }
 }

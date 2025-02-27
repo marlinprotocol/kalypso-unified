@@ -597,16 +597,32 @@ where
 
         generator_store.reduce_active_requests(&generator_address, &ask.market_id);
 
-        log::debug!("get_block_timestamp only exposed for counting missed jobs inside enclave based on time");
-        generator_store.count_job_missed_by_generator(
-            generator_address.clone(),
-            u256_to_system_time(
-                get_block_timestamp(rpc_url, &proof_cycle_completed_on)
-                    .await
-                    .unwrap_or_default(),
-            ),
+        let missed_at_time = u256_to_system_time(
+            get_block_timestamp(rpc_url, &proof_cycle_completed_on)
+                .await
+                .unwrap_or_default(),
+        );
+        log::debug!(
+            "Generator {:?}, in market {:?}, at time {:?}, on block {:?} missed job",
+            &generator_address,
+            &ask.market_id,
+            &missed_at_time,
+            &proof_cycle_completed_on
         );
 
+        log::debug!("get_block_timestamp only exposed for counting missed jobs inside enclave based on time");
+        generator_store.count_job_missed_by_generator(generator_address.clone(), missed_at_time);
+
+        let all_gens = generator_store.all_generators_address();
+
+        for gen in all_gens.iter() {
+            let total_jobs_missed_till_now = generator_store.get_job_missed_count(&gen);
+            log::debug!(
+                "Generator {:?}. Total Missed Jobs {:?}",
+                &gen,
+                &total_jobs_missed_till_now
+            );
+        }
         log::debug!("Complete Proof not Generated");
 
         if cfg!(feature = "record_possible_slashing_incidents") {
