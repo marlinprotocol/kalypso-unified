@@ -50,24 +50,48 @@ pub fn weighted_time_cost_random_selection(
         max_proposed_time
     };
 
+    log::debug!(
+        "Max Proof Generation Cost: {}",
+        max_proof_generation_cost.to_string()
+    );
+    log::debug!(
+        "Max Proof Generation Time: {}",
+        max_proposed_time.to_string()
+    );
+
     // Compute a positive weight for each candidate.
     // Convert U256 values to f64 (assuming they fit into u64) and normalize.
     let weights: Vec<f64> = vec
         .iter()
         .map(|gen| {
-            let cost = gen.proof_generation_cost.as_u64() as f64;
+            log::debug!("============#================");
+            let cost = if gen.proof_generation_cost.is_zero() {
+                U256::one()
+            } else {
+                gen.proof_generation_cost
+            }
+            .as_u64() as f64;
             let time = gen.proposed_time.as_u64() as f64;
             let max_cost = max_proof_generation_cost.as_u64() as f64;
             let max_time = max_proposed_time.as_u64() as f64;
 
+            log::debug!("Generator: {:?} cost: {} time: {}", gen.address, cost, time);
+
             // Normalize (0 is best, 1 is worst)
             let norm_cost = cost / max_cost;
             let norm_time = time / max_time;
-
+            log::debug!(
+                "Generator: {:?} norm_cost: {} norm_time: {}",
+                gen.address,
+                norm_cost,
+                norm_time
+            );
             // Higher weight is better (prefer lower cost and time).
             // We add 1.0 so that even the worst candidate gets a strictly positive weight.
             let mut weight =
                 (1.0 * (1.0 / norm_cost) * (1.0 / norm_time)).clamp(f64::MIN, f64::MAX);
+
+            log::debug!("Generator: {:?} clamped_weights: {}", gen.address, weight);
 
             // Exponentially decrease weight with the number of missed jobs.
             // For each missed job, multiply weight by 0.5.
@@ -75,14 +99,26 @@ pub fn weighted_time_cost_random_selection(
                 weight *= 2_f64.powi(-(missed as i32));
             }
 
+            log::debug!(
+                "Generator: {:?} adjusted weighted for missed jobs: {}",
+                gen.address,
+                weight
+            );
+
             // Ensure weight is strictly positive.
             if weight <= 0.0 {
                 weight = f64::MIN;
             }
+
+            log::debug!("Generator: {:?} weight: {}", gen.address, weight);
+
+            log::debug!("============#================");
             weight
         })
         .collect();
 
+    let generators: Vec<Address> = vec.iter().map(|gen| gen.address).collect();
+    log::debug!("Generators used in weight calc. {:?}", generators);
     log::debug!(
         "Weights: {:?}. Total Weight {:?}",
         weights,
