@@ -230,16 +230,23 @@ impl TokenTracker {
     }
 
     pub fn sub_token(&mut self, token: &Address, amount: &U256) -> Result<(), String> {
-        if let Some(entry) = self.tokens.get_mut(token) {
-            if *entry >= *amount {
-                *entry -= *amount; // Decrement the token amount
-                Ok(())
-            } else {
-                Err(format!("Insufficient balance for token: {:?}", token))
+        // Assuming the updated implementation:
+        if let Some(balance) = self.tokens.get(token) {
+            if *balance < *amount {
+                return Err(format!("Insufficient balance for token: {:?}", token));
             }
         } else {
-            Err(format!("Token not found: {:?}", token))
+            return Err(format!("Token not found: {:?}", token));
         }
+        {
+            let entry = self.tokens.get_mut(token).unwrap();
+            *entry -= *amount;
+            if *entry != U256::zero() {
+                return Ok(());
+            }
+        }
+        self.tokens.remove(token);
+        Ok(())
     }
 
     #[allow(unused)]
@@ -578,5 +585,71 @@ mod tests {
         let missed_at_time = u256_to_system_time(block_timestamp);
 
         println!("{:?}", missed_at_time);
+    }
+
+    #[tokio::test]
+    async fn test_token_tracker_1() {
+        let mut tracker1 = TokenTracker::default();
+        let mut tracker2 = TokenTracker::default();
+
+        let token1: Address = "0x1234432112344321123443211234432112344321"
+            .parse()
+            .unwrap();
+        let token2: Address = "0x9886769098867690988676909886769098867690"
+            .parse()
+            .unwrap();
+        let amount1 = U256::from_dec_str("100").unwrap();
+        let amount2 = U256::from_dec_str("50").unwrap();
+
+        tracker1.add_token(&token1, &amount1);
+        tracker2.add_token(&token1, &amount1);
+
+        assert_eq!(tracker1, tracker2);
+        tracker2.add_token(&token2, &amount2);
+
+        assert_ne!(tracker1, tracker2);
+        tracker2.sub_token(&token2, &amount2).unwrap();
+        assert_eq!(tracker1, tracker2);
+
+        let result = tracker2.sub_token(&token2, &amount2);
+        assert_eq!(result.is_err(), true);
+
+        tracker2.sub_token(&token1, &amount1).unwrap();
+        assert_eq!(tracker2, TokenTracker::default());
+    }
+
+    #[tokio::test]
+    async fn test_token_tracker_2() {
+        let mut tracker1 = TokenTracker::default();
+        let mut tracker2 = TokenTracker::default();
+        let mut tracker3 = TokenTracker::default();
+
+        let token1: Address = "0x1234432112344321123443211234432112344321"
+            .parse()
+            .unwrap();
+        let token2: Address = "0x9886769098867690988676909886769098867690"
+            .parse()
+            .unwrap();
+        let token3: Address = "0x4565128745651287456512874565128745651287"
+            .parse()
+            .unwrap();
+        let amount1 = U256::from_dec_str("100").unwrap();
+        let amount2 = U256::from_dec_str("50").unwrap();
+        let amount3 = U256::from_dec_str("37").unwrap();
+
+        tracker1.add_token(&token1, &amount1);
+        tracker2.add_token(&token2, &amount2);
+        tracker3.add_token(&token3, &amount3);
+
+        let mut result_tracker = TokenTracker::default();
+        result_tracker.add_token(&token1, &amount1);
+        result_tracker.add_token(&token2, &amount2);
+
+        assert_eq!(tracker1.clone() + tracker2.clone(), result_tracker);
+
+        assert_eq!(tracker1.clone() - tracker2.clone(), tracker1); // imagine this as set
+        assert_eq!(tracker1.clone() - tracker3.clone(), tracker1); // imagine this as set
+
+        assert_eq!(tracker1.clone() + tracker2.clone(), result_tracker); // imagine this as set
     }
 }
