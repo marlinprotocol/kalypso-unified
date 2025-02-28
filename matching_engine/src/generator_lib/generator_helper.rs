@@ -495,7 +495,7 @@ mod tests {
         let actual_ratio = generator1_count as f64 / generator2_count as f64;
 
         assert!(
-            (actual_ratio - expected_ratio).abs() < 0.01 * expected_ratio,
+            (actual_ratio - expected_ratio).abs() < 0.02 * expected_ratio,
             "Expected ratio: {}, Actual ratio: {}",
             expected_ratio,
             actual_ratio

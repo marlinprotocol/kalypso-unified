@@ -1,4 +1,5 @@
 use super::cache::CachedResponse;
+use super::dashboard::TokenList;
 use super::single_generator::{ComputeBreakDown, StakeBreakDown};
 use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::native_stake_store::NativeStakingOperations;
@@ -28,8 +29,10 @@ struct AllGeneratorResponse {
     registered_generators: usize,
     /// deprecated: total staked amount (this is amount in native staking module)
     total_staked: Vec<TokenAmount>,
-    /// total delegation amount (this is amount in symbiotic staking module)
+    /// deprecated: total delegation amount (this is amount in symbiotic staking module)
     total_delegation: Vec<TokenAmount>,
+    /// Total Collateral locked in different modules
+    total_collateral_list: TokenList,
 }
 
 type CachedGeneratorResponse = CachedResponse<AllGeneratorResponse>;
@@ -185,12 +188,12 @@ async fn recompute_generator_response<
 
     // Step 2: Process the data outside the locked scope using explicit loops
     let mut result = Vec::with_capacity(generator_details.len());
-    let mut total_stake = TokenTracker::new();
-    let mut total_delegation = TokenTracker::new();
+    let mut collateral_in_native_module = TokenTracker::new();
+    let mut collateral_in_symbiotic_module = TokenTracker::new();
 
     for (_, operator_data, all_markets_of_generator, total_earning) in generator_details {
-        total_stake += operator_data.clone().total_native_stake;
-        total_delegation += operator_data.clone().total_symbiotic_stake;
+        collateral_in_native_module += operator_data.clone().total_native_stake;
+        collateral_in_symbiotic_module += operator_data.clone().total_symbiotic_stake;
 
         // Construct the markets
         let mut markets = Vec::with_capacity(all_markets_of_generator.len());
@@ -278,7 +281,11 @@ async fn recompute_generator_response<
     AllGeneratorResponse {
         result,
         registered_generators,
-        total_staked: total_stake.to_token_amount(),
-        total_delegation: total_delegation.to_token_amount(),
+        total_staked: collateral_in_native_module.to_token_amount(),
+        total_delegation: collateral_in_symbiotic_module.to_token_amount(),
+        total_collateral_list: TokenList {
+            native: collateral_in_native_module.to_token_amount(),
+            symbiotic: collateral_in_symbiotic_module.to_token_amount(),
+        },
     }
 }
