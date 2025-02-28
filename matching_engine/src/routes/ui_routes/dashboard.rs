@@ -47,14 +47,12 @@ pub struct DashboardResponse {
     recent_proofs: Vec<RecentProof>,
 
     /// The task assignment requirements.
-    task_assignment_requirements: TaskRequirements,
+    task_assignment_requirements: TokenList,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone, ToSchema)]
-pub struct TaskRequirements {
-    /// Minimum Native Stake Required for generator to receive a job. (Any one of the element in the vector)
+pub struct TokenList {
     pub native: Vec<TokenAmount>,
-    /// Minimum Symbiotic Stake Required for generator to receive a job. (Any one of the element in the vector)
     pub symbiotic: Vec<TokenAmount>,
 }
 
@@ -410,7 +408,7 @@ async fn recompute_dashboard_response<
         unique_requestors: local_ask_store.total_requestor_count(),
         markets,
         recent_proofs,
-        task_assignment_requirements: TaskRequirements {
+        task_assignment_requirements: TokenList {
             native: local_native_store.tokens_to_lock().await.to_token_amount(),
             symbiotic: local_symbiotic_store.tokens_to_lock().to_token_amount(),
         },

@@ -66,7 +66,7 @@ struct SingleMarketResponse {
     /// Number of registered generators
     registered_generators: usize,
     /// deprecated: Slashing penalty (no slashing yet)
-    slashing_penalty: TaskRequirements,
+    slashing_penalty: TokenList,
     /// Median cost of proof generation
     median_cost: String,
     /// Median time of proof generation
@@ -78,7 +78,7 @@ struct SingleMarketResponse {
     /// deprecated: Hardware requirement (use .market_setup_data.min_hardware instead)
     hardware_requirement: MinHardware,
     /// Minimum stake required
-    min_stake: TaskRequirements,
+    min_stake: TokenList,
     /// Jobs
     jobs: Jobs,
     /// Market setup data
@@ -148,7 +148,7 @@ struct MarketQuery {
 }
 
 use super::cache::CachedResponse;
-use super::dashboard::TaskRequirements;
+use super::dashboard::TokenList;
 use super::single_generator::StakeBreakDown;
 
 type CachedSingleMarketResponse = CachedResponse<SingleMarketResponse>;
@@ -407,7 +407,7 @@ async fn recompute_single_market_response<
         .to_string();
     let registered_generators = local_generator_store.get_all_by_market_id(&market_id);
 
-    let task_requirement = TaskRequirements {
+    let task_requirement = TokenList {
         native: local_native_store
             .tokens_to_lock()
             .await
