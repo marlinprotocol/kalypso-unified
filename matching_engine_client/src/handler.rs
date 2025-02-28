@@ -552,6 +552,7 @@ pub fn routes(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
         .service(test_handler)
         .service(stop_matching_engine_handler)
+        .service(start_matching_engine_handler)
         .service(start_matching_engine_handler_encrypted)
         .service(restart_matching_engine_handler)
         .service(restart_matching_engine_handler_encrypted)
