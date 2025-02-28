@@ -1,5 +1,5 @@
 use super::cache::CachedResponse;
-use super::dashboard::TaskRequirements;
+use super::dashboard::TokenList;
 use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask_store::{AskManagementRead, CompletedProofsManagement, ProofCounters};
 
@@ -51,7 +51,7 @@ pub struct Market {
     /// total earnings in the market
     total_earnings: String,
     /// deprecated: slashing penalty in the market (no penaltly for now)
-    slashing_penalty: TaskRequirements,
+    slashing_penalty: TokenList,
     /// deprecated: status of the market
     status: bool,
     /// setup data of the market
@@ -210,7 +210,7 @@ async fn recompute_market_response<
             // Extract slashing_penalty
             slashing_penalty_map.insert(
                 market_id.clone(),
-                TaskRequirements {
+                TokenList {
                     native: local_native_store
                         .tokens_to_lock()
                         .await
