@@ -282,15 +282,18 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
     let public_key = ecies::PublicKey::parse(&prepended_key_array).unwrap();
     let encoded_key = hex::encode(public_key.serialize_compressed());
     let contract_ecies_public_key = "0x".to_string() + &encoded_key;
-
-    if local_ecies_pub_key != contract_ecies_public_key {
-        let validation_message =
-            "Matching engine ecies pub key does not match the the ecies pub key in registry."
-                .to_string();
-        return Ok(ValidationResponse {
-            message: validation_message,
-            status: false,
-        });
+    let skip_verification =
+        std::env::var("SKIP_VERIFICATION").unwrap_or_else(|_| "false".to_string()) == "true";
+    if !skip_verification {
+        if local_ecies_pub_key != contract_ecies_public_key {
+            let validation_message =
+                "Matching engine ecies pub key does not match the the ecies pub key in registry."
+                    .to_string();
+            return Ok(ValidationResponse {
+                message: validation_message,
+                status: false,
+            });
+        }
     }
 
     // Check if the balance is greater than 0.05 ETH
