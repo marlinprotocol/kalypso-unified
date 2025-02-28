@@ -66,7 +66,7 @@ struct SingleMarketResponse {
     /// Number of registered generators
     registered_generators: usize,
     /// deprecated: Slashing penalty (no slashing yet)
-    slashing_penalty: TokenList,
+    slashing_penalty: Vec<TokenAmount>,
     /// Median cost of proof generation
     median_cost: String,
     /// Median time of proof generation
@@ -78,7 +78,7 @@ struct SingleMarketResponse {
     /// deprecated: Hardware requirement (use .market_setup_data.min_hardware instead)
     hardware_requirement: MinHardware,
     /// Minimum stake required
-    min_stake: TokenList,
+    min_stake: Vec<TokenAmount>,
     /// Jobs
     jobs: Jobs,
     /// Market setup data
@@ -89,6 +89,8 @@ struct SingleMarketResponse {
     unmatched_jobs: Vec<JobInfo>,
     /// List of completed jobs
     completed_jobs: Vec<JobInfo>,
+    /// Slashing penalty per module
+    slashing_penalty_list: TokenList,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -418,13 +420,18 @@ async fn recompute_single_market_response<
             .clone()
             .to_token_amount(),
     };
+
+    let slashing_penalty = local_native_store.tokens_to_lock().await.clone()
+        + local_symbiotic_store.tokens_to_lock().clone();
+
     Some(SingleMarketResponse {
         median_cost,
         median_proof_time,
         registered_generators: registered_generators.len(),
         // slashing_penalty: slashing_penalty.to_token_amount(),// TODO enable this after slashing is enabled
         // slashing_penalty: TokenTracker::default().to_token_amount(),
-        slashing_penalty: task_requirement.clone(),
+        slashing_penalty_list: task_requirement.clone(),
+        slashing_penalty: slashing_penalty.to_token_amount(),
         total_earnings: local_market_store
             .get_earnings(&market_id)
             .unwrap_or_default()
@@ -439,7 +446,7 @@ async fn recompute_single_market_response<
             .fold(TokenTracker::new(), |acc, elem| acc + elem)
             .to_token_amount(),
         hardware_requirement: marketmetadata.deserialize_market_bytes().min_hardware,
-        min_stake: task_requirement,
+        min_stake: slashing_penalty.to_token_amount(),
         jobs: Jobs {
             proofs_generated: local_ask_store.get_proof_count(&market_id),
             proofs_pending: {
