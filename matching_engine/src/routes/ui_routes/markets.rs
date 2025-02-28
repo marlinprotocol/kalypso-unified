@@ -50,14 +50,16 @@ pub struct Market {
     failed_requests: String,
     /// total earnings in the market
     total_earnings: String,
-    /// deprecated: slashing penalty in the market (no penaltly for now)
-    slashing_penalty: TokenList,
+    /// deprecated: slashing penalty in the market (use slashing_penalty_list)
+    slashing_penalty: Vec<TokenAmount>,
     /// deprecated: status of the market
     status: bool,
     /// setup data of the market
     market_setup_data: MarketSetupData,
     /// number of generators registered in the market
     registered_generators: usize,
+    /// slashing penalty per module
+    slashing_penalty_list: TokenList,
 }
 
 type CachedMarketResponse = CachedResponse<MarketResponse>;
@@ -149,7 +151,8 @@ async fn recompute_market_response<
         median_cost_map,
         failed_requests_map,
         total_earnings_map,
-        slashing_penalty_map,
+        slashing_penalty_list_map,
+        slashing_penatly_map,
     ) = {
         // Extract all market metadata
         let all_markets_meta = local_market_store.get_all_markets().to_owned(); // Clone to own the data
@@ -161,7 +164,8 @@ async fn recompute_market_response<
         let mut median_cost_map = std::collections::HashMap::new();
         let mut failed_requests_map = std::collections::HashMap::new();
         let mut total_earnings_map = std::collections::HashMap::new();
-        let mut slashing_penalty_map = std::collections::HashMap::new();
+        let mut slashing_penalty_list_map = std::collections::HashMap::new();
+        let mut slashing_penalty = std::collections::HashMap::new();
 
         // Iterate over each market metadata and extract relevant data
         for meta in &all_markets_meta {
@@ -208,7 +212,7 @@ async fn recompute_market_response<
             total_earnings_map.insert(market_id.clone(), total_earnings);
 
             // Extract slashing_penalty
-            slashing_penalty_map.insert(
+            slashing_penalty_list_map.insert(
                 market_id.clone(),
                 TokenList {
                     native: local_native_store
@@ -222,6 +226,12 @@ async fn recompute_market_response<
                         .to_token_amount(),
                 },
             );
+            slashing_penalty.insert(
+                market_id.clone(),
+                (local_native_store.tokens_to_lock().await.clone()
+                    + local_symbiotic_store.tokens_to_lock().clone())
+                .to_token_amount(),
+            );
         }
 
         (
@@ -232,7 +242,8 @@ async fn recompute_market_response<
             median_cost_map,
             failed_requests_map,
             total_earnings_map,
-            slashing_penalty_map,
+            slashing_penalty_list_map,
+            slashing_penalty,
         )
     }; // Both locks are released here
 
@@ -258,7 +269,12 @@ async fn recompute_market_response<
             .get(&market_id)
             .cloned()
             .unwrap_or_default();
-        let slashing_penalty = slashing_penalty_map
+        let slashing_penalty_list = slashing_penalty_list_map
+            .get(&market_id)
+            .cloned()
+            .unwrap_or_default();
+
+        let slashing_penalty = slashing_penatly_map
             .get(&market_id)
             .cloned()
             .unwrap_or_default();
@@ -274,10 +290,11 @@ async fn recompute_market_response<
             median_cost_per_proof,
             failed_requests,
             total_earnings,
-            slashing_penalty,
+            slashing_penalty_list,
             status: true, // Adjust as needed
             market_setup_data: meta.deserialize_market_bytes(),
             registered_generators: local_generator_store.get_all_by_market_id(&market_id).len(),
+            slashing_penalty,
         };
 
         markets.push(market);
