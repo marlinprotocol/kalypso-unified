@@ -88,7 +88,7 @@ impl CompletedProofsTrait for CompletedProofs {
         }
 
         // Sort the proofs by ask_id in descending order (most recent first)
-        all_proofs.sort_by(|a, b| a.ask_id.cmp(&b.ask_id));
+        all_proofs.sort_by(|a, b| b.ask_id.cmp(&a.ask_id));
 
         // Return the most recent n proofs
         all_proofs.into_iter().take(n).collect()
