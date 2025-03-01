@@ -151,7 +151,6 @@ table! {
         market_id -> Varchar,                       // U256 as text
         slashing_tx -> Text,                        // Transaction hash as text
         price_offered -> Text,                      // U256 as text
-        // Additional fields (if any) can be added here.
     }
 }
 
@@ -166,20 +165,19 @@ table! {
         operation -> Varchar,                       // Operation as string or enum representation
         block_number -> Varchar,                    // U64 as text
         transaction_index -> Varchar,               // U64 as text
-        // Add additional fields if necessary.
     }
 }
 
 // WithdrawalRequests table: Handles withdrawal requests per generator.
 table! {
     withdrawal_requests (id) {
-        id -> Int4,                                 // Auto-incrementing primary key (or use composite keys)
+        id -> Int4,                                 // Auto-incrementing primary key
         generator_address -> Varchar,               // Foreign key to generators.address
         account -> Varchar,                         // The account (H160 as string)
         token -> Varchar,                           // The token (H160 as string)
         amount -> Text,                             // U256 as text
         request_index -> Text,                      // U256 as text
-        timestamp -> Text,                          // U256 as text (or a proper timestamp type if preferred)
+        timestamp -> Text,                          // U256 as text 
     }
 }
 

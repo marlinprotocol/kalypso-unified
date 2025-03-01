@@ -166,10 +166,10 @@ impl AskManagementWrite for AskDatabase {
         // Only delete if the ask's state is Completed.
         let id_bytes = u256_to_bytes(*id);
         // Assuming Completed is represented as 1.
-        diesel::delete(ask_records.filter(ask_id.eq(id_bytes))
-            .filter(state.eq(vec![AskState::Completed as u8])))
-            .execute(&self.conn)
-            .expect("Failed to delete ask");
+        // diesel::delete(ask_records.filter(ask_id.eq(id_bytes))
+        //     .filter(state.eq(vec![AskState::Completed as u8])))
+        //     .execute(&self.conn)
+        //     .expect("Failed to delete ask");
     }
 
     fn modify_state(&mut self, id: &U256, new_state: AskState) {
@@ -190,13 +190,20 @@ impl AskManagementWrite for AskDatabase {
             .expect("Failed to update generator");
     }
 
-    fn update_ask_acl(&mut self, id: &U256, new_acl: Option<Bytes>) {
-        let id_bytes = u256_to_bytes(*id);
-        let acl_bytes = new_acl.map(|b| b.to_vec());
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(secret_acl.eq(acl_bytes))
-            .execute(&self.conn)
-            .expect("Failed to update ACL");
+    fn update_ask_acl(&self, id: &U256, new_acl: Option<Bytes>) {
+        let mut store = self.private_store.store.lock().unwrap();
+
+        if let Some(entry) = store.get_mut(id) {
+            entry.secret_acl = new_acl.map(|b| b.to_vec());
+        } else {
+            store.insert(
+                *id,
+                AskPrivateInputs {
+                    secret_data: None, // Keeping secret_data unchanged
+                    secret_acl: new_acl.map(|b| b.to_vec()),
+                },
+            );
+        }
     }
 
     fn update_deadline(&mut self, id: &U256, new_deadline: U256) {
@@ -228,22 +235,11 @@ impl AskManagementWrite for AskDatabase {
     }
 
     fn note_invalid_inputs(&mut self, id: &U256, new_proof_cost: U256, new_proof_transaction: String) {
-        let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set((
-                proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
-                proof_transaction.eq(Some(new_proof_transaction)),
-            ))
-            .execute(&self.conn)
-            .expect("Failed to note invalid inputs");
+        // implement
     }
 
     fn note_proof_denied(&mut self, id: &U256, new_proof_transaction: String) {
-        let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(proof_transaction.eq(Some(new_proof_transaction)))
-            .execute(&self.conn)
-            .expect("Failed to note proof denied");
+        // implement    
     }
 }
 

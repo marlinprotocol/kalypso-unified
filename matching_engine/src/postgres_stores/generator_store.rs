@@ -17,7 +17,7 @@ pub struct NewGenerator {
     pub native_stake_locked: String,          // Serialize TokenTracker
     pub symbiotic_stake_locked: String,       // Serialize TokenTracker
     pub active_market_places: String,         // U256 as string
-    pub declared_compute: String,             // U256 as string
+    pub declared_compute: String,             // U256 as string (needs to initialized with 1, handle that)
     pub intended_stake_util: String,          // U256 as string
     pub intended_compute_util: String,        // U256 as string
     pub generator_data: Vec<u8>,              // Bytea for binary data
@@ -368,21 +368,85 @@ impl GeneratorStakeComputeManagement for DieselGeneratorStore {
     }
 
     fn update_reward_address(&mut self, address: &Address, new_reward_address: Address) {
-        // Update the reward_address field.
-        unimplemented!("Update reward address");
+   
+        // Convert addresses to the string representations stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        let new_reward_addr_str = format!("{:?}", new_reward_addr);
+
+        // Update the reward_address field in the generators table.
+        diesel::update(generators.filter(address.eq(addr_str)))
+            .set(reward_address.eq(new_reward_addr_str))
+            .execute(&self.conn)
+            .expect("Failed to update reward address");
+        
     }
 
-    fn add_extra_compute(&mut self, address: &Address, compute: U256) {
-        // Update compute allocations in the generators table.
-        unimplemented!("Add extra compute");
+    fn add_extra_compute(&mut self, generator_addr: &Address, extra_compute: U256) {
+        // Convert the generator address to the string representation used in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        
+        self.conn.transaction::<(), Error, _>(|| {
+            // Fetch the current declared_compute value (stored as text).
+            let current_declared_compute: String = generators
+                .filter(address.eq(&addr_str))
+                .select(declared_compute)
+                .first(&self.conn)?;
+            
+            // Parse the current value to U256. If parsing fails, default to zero.
+            let current_compute = U256::from_dec_str(&current_declared_compute)
+                .unwrap_or_else(|_| U256::zero());
+            
+            // Add the extra compute.
+            let new_compute = current_compute + extra_compute;
+            
+            // Update the generator record with the new value (as a string).
+            diesel::update(generators.filter(address.eq(&addr_str)))
+                .set(declared_compute.eq(new_compute.to_string()))
+                .execute(&self.conn)?;
+            
+            Ok(())
+        }).expect("Failed to update extra compute");
     }
 
-    fn update_intended_compute_util(&mut self, address: &Address, new_compute_util: U256) {
-        unimplemented!("Update intended compute util");
+    fn update_intended_compute_util(&mut self, generator_addr: &Address, new_compute_util: U256) {
+        // Convert the generator address to the string representation stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        
+        // Convert U256 to string since the DB column is Text.
+        let new_compute_util_str = new_compute_util.to_string();
+
+        // Update the intended_compute_util field in the generators table.
+        diesel::update(generators.filter(address.eq(addr_str)))
+            .set(intended_compute_util.eq(new_compute_util_str))
+            .execute(&self.conn)
+            .expect("Failed to update intended compute util");
     }
 
-    fn remove_compute(&mut self, address: &Address, compute: U256) {
-        unimplemented!("Remove compute");
+    fn remove_compute(&mut self, generator_addr: &Address, compute: U256) {
+        // Convert the generator address to the string representation used in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+
+        self.conn.transaction::<(), Error, _>(|| {
+            // Fetch the current declared_compute value from the DB (stored as text).
+            let current_compute_str: String = generators
+                .filter(address.eq(&addr_str))
+                .select(declared_compute)
+                .first(&self.conn)?;
+
+            // Parse the string into a U256
+            let current_compute = U256::from_dec_str(&current_compute_str)
+                .unwrap();
+
+            // Subtract the specified compute.
+            let new_compute = current_compute - compute;
+
+            // Update the declared_compute field with the new value.
+            diesel::update(generators.filter(address.eq(&addr_str)))
+                .set(declared_compute.eq(new_compute.to_string()))
+                .execute(&self.conn)?;
+
+            Ok(())
+        }).expect("Failed to update declared_compute");
     }
 }
 
@@ -390,38 +454,194 @@ impl GeneratorStakeComputeManagement for DieselGeneratorStore {
 /// Generator Market Management
 /// -------------------------
 impl GeneratorMarketManagement for DieselGeneratorStore {
-    fn update_state(&mut self, address: &Address, market_id: &U256, new_state: GeneratorState) {
-        // Update the 'state' column in the generator_markets table.
-        unimplemented!("Update generator market state");
+    fn update_state(&mut self, generator_addr: &Address, market: &U256, new_state: GeneratorState) {
+        // Convert the address and market_id into the string representations as stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        let market_id_str = market.to_string();
+        let new_state_str = new_state.to_string();
+
+        diesel::update(generator_markets.filter(generator_address.eq(&addr_str))
+            .filter(market_id.eq(&market_id_str)))
+            .set(state.eq(Some(new_state_str)))
+            .execute(&self.conn)
+            .expect("Failed to update generator market state");
     }
 
     fn update_on_assigned_task(&mut self, address: &Address, market_id: &U256) {
-        // Update fields (like active_requests) on assignment.
-        unimplemented!("Update on assigned task");
+
+        // Convert the address and market_id to string representations as stored in the DB.
+        let address_str = format!("{:?}", address);
+        let market_id_str = market.to_string();
+
+        // First, fetch the current record for this generator/market.
+        let record: Option<GeneratorMarketRecord> = generator_markets
+            .filter(generator_address.eq(&address_str))
+            .filter(market_id.eq(&market_id_str))
+            .first::<GeneratorMarketRecord>(&self.conn)
+            .optional()
+            .expect("Error loading generator market record");
+
+        if let Some(rec) = record {
+            // Parse the current active_requests value from a String to U256.
+            let current_active_requests = rec
+                .active_requests
+                .parse::<U256>()
+                .unwrap_or_else(|_| U256::zero());
+            let new_active_requests = current_active_requests + U256::one();
+            let new_active_requests_str = new_active_requests.to_string();
+
+            // Update the record in the database.
+            diesel::update(generator_markets.filter(generator_address.eq(&address_str))
+                .filter(market_id.eq(&market_id_str)))
+                .set(active_requests.eq(new_active_requests_str))
+                .execute(&self.conn)
+                .expect("Failed to update active_requests");
+        }
+    
     }
 
     fn update_on_submit_proof(
-        &mut self,
-        address: &Address,
-        market_id: &U256,
-        earning: &U256,
-        block_number: &U64,
-    ) {
-        // Update proofs_submitted counter and add earning to the earnings field.
-        unimplemented!("Update on submit proof");
+            &mut self,
+            address: &Address,
+            market: &U256,
+            earning: &U256,
+            block_number: &U64,
+        ) {
+            // Calculate kalypso points for this proof.
+            let kalypso_points_per_proof = get_points(block_number.as_u64());
+    
+            // Convert address and market into their stored string representations.
+            let address_str = format!("{:?}", address);
+            let market_id_str = market.to_string();
+    
+            // Execute all updates within a single transaction.
+            self.conn.transaction::<(), Error, _>(|| {
+                // --- Update the generator_markets record ---
+                // Fetch the existing generator market record.
+                let gen_market_opt = generator_markets::table
+                    .filter(generator_markets::generator_address.eq(&address_str))
+                    .filter(generator_markets::market_id.eq(&market_id_str))
+                    .first::<GeneratorMarketRecord>(&self.conn)
+                    .optional()?;
+    
+                if let Some(gen_market) = gen_market_opt {
+                    // Parse the text fields into U256. (Adjust parsing as needed.)
+                    let current_active_requests = U256::from_dec_str(&gen_market.active_requests)
+                        .unwrap_or(U256::zero());
+                    let current_proofs_submitted = U256::from_dec_str(&gen_market.proofs_submitted)
+                        .unwrap_or(U256::zero());
+                    let current_market_earnings = U256::from_dec_str(&gen_market.earnings)
+                        .unwrap_or(U256::zero());
+                    let current_market_kalypso_points = U256::from_dec_str(&gen_market.kalypso_points)
+                        .unwrap_or(U256::zero());
+    
+                    // Calculate new values.
+                    let new_active_requests = current_active_requests - U256::one();
+                    let new_proofs_submitted = current_proofs_submitted + U256::one();
+                    let new_market_earnings = current_market_earnings + *earning;
+                    let new_market_kalypso_points = current_market_kalypso_points + kalypso_points_per_proof;
+    
+                    // Update the generator_markets record.
+                    diesel::update(generator_markets::table.filter(generator_markets::generator_address.eq(&address_str))
+                        .filter(generator_markets::market_id.eq(&market_id_str)))
+                        .set((
+                            generator_markets::active_requests.eq(new_active_requests.to_string()),
+                            generator_markets::proofs_submitted.eq(new_proofs_submitted.to_string()),
+                            generator_markets::earnings.eq(new_market_earnings.to_string()),
+                            generator_markets::kalypso_points.eq(new_market_kalypso_points.to_string()),
+                        ))
+                        .execute(&self.conn)?;
+                }
+    
+                let gen_opt = generators::table
+                    .filter(generators::address.eq(&address_str))
+                    .first::<GeneratorRecord>(&self.conn)
+                    .optional()?;
+    
+                if let Some(gen) = gen_opt {
+                    let current_total_earnings = U256::from_dec_str(&gen.earnings)
+                        .unwrap_or(U256::zero());
+                    let current_total_kalypso_points = U256::from_dec_str(&gen.kalypso_points)
+                        .unwrap_or(U256::zero());
+    
+                    let new_total_earnings = current_total_earnings + *earning;
+                    let new_total_kalypso_points = current_total_kalypso_points + kalypso_points_per_proof;
+    
+                    diesel::update(generators::table.filter(generators::address.eq(&address_str)))
+                        .set((
+                            generators::earnings.eq(new_total_earnings.to_string()),
+                            generators::kalypso_points.eq(new_total_kalypso_points.to_string()),
+                        ))
+                        .execute(&self.conn)?;
+                }
+    
+            Ok(())
+        }).expect("Transaction failed updating on submit proof");
+        
+    }
+    
+
+    fn reduce_active_requests(&mut self, generator_addr: &Address, market: &U256) {
+        // Convert address and market to the string representations stored in the DB.
+        let address_str = format!("{:?}", generator_addr);
+        let market_id_str = market.to_string();
+
+        self.conn.transaction::<(), Error, _>(|| {
+            // Fetch the current generator market record.
+            let record_opt = generator_markets
+                .filter(generator_address.eq(&address_str))
+                .filter(market_id.eq(&market_id_str))
+                .first::<GeneratorMarketRecord>(&self.conn)
+                .optional()?;
+
+            if let Some(record) = record_opt {
+                // Parse current active_requests and proofs_slashed from their text representations.
+                let current_active_requests = U256::from_dec_str(&record.active_requests)
+                    .unwrap_or(U256::zero());
+                let current_proofs_slashed = U256::from_dec_str(&record.proofs_slashed)
+                    .unwrap_or(U256::zero());
+
+                // Compute new values.
+                let new_active_requests = current_active_requests - U256::one();
+                let new_proofs_slashed = current_proofs_slashed + U256::one();
+
+                // Update the record.
+                diesel::update(generator_markets.filter(generator_address.eq(&address_str))
+                    .filter(market_id.eq(&market_id_str)))
+                    .set((
+                        active_requests.eq(new_active_requests.to_string()),
+                        proofs_slashed.eq(new_proofs_slashed.to_string()),
+                    ))
+                    .execute(&self.conn)?;
+            }
+            Ok(())
+        }).expect("Transaction failed updating reduce_active_requests");
     }
 
-    fn reduce_active_requests(&mut self, generator_address: &Address, market_id: &U256) {
-        unimplemented!("Reduce active requests");
+    fn pause_assignments_across_all_markets(&mut self, generator_addr: &Address) {
+        // Convert the generator address to the string representation as stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        let pending_state = GeneratorState::PendingConfirmation.to_string();
+
+        // Update all rows in the generator_markets table for this generator,
+        // setting their state to PendingConfirmation.
+        diesel::update(generator_markets.filter(generator_address.eq(&addr_str)))
+            .set(state.eq(Some(pending_state)))
+            .execute(&self.conn)
+            .expect("Failed to update state for all markets");
     }
 
-    fn pause_assignments_across_all_markets(&mut self, address: &Address) {
-        // Set a paused state in all market records for this generator.
-        unimplemented!("Pause assignments across all markets");
-    }
+    fn resume_assignments_accross_all_markets(&mut self, generator_addr: &Address) {
+        // Convert the generator address to the string representation stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        let joined_state = GeneratorState::Joined.to_string();
 
-    fn resume_assignments_accross_all_markets(&mut self, address: &Address) {
-        unimplemented!("Resume assignments across all markets");
+        // Update all rows in the generator_markets table for this generator,
+        // setting their state to "Joined"
+        diesel::update(generator_markets.filter(generator_address.eq(&addr_str)))
+            .set(state.eq(Some(joined_state)))
+            .execute(&self.conn)
+            .expect("Failed to update state to Joined for all markets");
     }
 }
 
@@ -474,12 +694,58 @@ impl GeneratorLockManagement for DieselGeneratorStore {
         unimplemented!("Update stake released");
     }
 
-    fn update_on_compute_locked(&mut self, address: &Address, compute_locked: U256) {
-        unimplemented!("Update compute locked");
+    fn update_on_compute_locked(&mut self, generator_addr: &Address, compute_locked: U256) {
+        // Convert the generator address to the string representation used in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+
+        self.conn.transaction::<(), Error, _>(|| {
+            // Fetch the current compute_consumed value from the DB (stored as text).
+            let current_compute_str: String = generators
+                .filter(address.eq(&addr_str))
+                .select(compute_consumed)
+                .first(&self.conn)?;
+
+            // Parse the current compute value; default to zero if parsing fails.
+            let current_compute = U256::from_dec_str(&current_compute_str)
+                .unwrap();
+            // Add the new compute_locked amount.
+            let new_compute = current_compute + compute_locked;
+
+            // Update the compute_consumed field with the new value (as a string).
+            diesel::update(generators.filter(address.eq(&addr_str)))
+                .set(compute_consumed.eq(new_compute.to_string()))
+                .execute(&self.conn)?;
+
+            Ok(())
+        })
+        .expect("Failed to update compute_consumed");
     }
 
-    fn update_on_compute_released(&mut self, address: &Address, compute_released: U256) {
-        unimplemented!("Update compute released");
+    fn update_on_compute_released(&mut self, generator_addr: &Address, compute_released: U256) {
+        // Convert the generator address to the string representation used in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+
+        self.conn.transaction::<(), Error, _>(|| {
+            // Fetch the current compute_consumed value from the DB (stored as text).
+            let current_compute_str: String = generators
+                .filter(address.eq(&addr_str))
+                .select(compute_consumed)
+                .first(&self.conn)?;
+
+            // Parse the current compute value; default to zero if parsing fails.
+            let current_compute = U256::from_dec_str(&current_compute_str)
+                .unwrap();
+            // Add the new compute_locked amount.
+            let new_compute = current_compute - compute_locked;
+
+            // Update the compute_consumed field with the new value (as a string).
+            diesel::update(generators.filter(address.eq(&addr_str)))
+                .set(compute_consumed.eq(new_compute.to_string()))
+                .execute(&self.conn)?;
+
+            Ok(())
+        })
+        .expect("Failed to update compute_consumed");
     }
 }
 
@@ -652,9 +918,14 @@ impl WithdrawalManagement for DieselGeneratorStore {
 /// Generator Metadata
 /// -------------------------
 impl GeneratorMetadata for DieselGeneratorStore {
-    fn update_generator_metadata(&mut self, generator_address: Address, generator_meta_data: Bytes) {
-        // Update the generator_data field in the generators table.
-        unimplemented!("Update generator metadata");
+    fn update_generator_metadata(&mut self, generator_addr: Address, generator_meta_data: Bytes) {
+        // Convert the generator address to the string representation stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+        
+        diesel::update(generators.filter(address.eq(addr_str)))
+            .set(generator_data.eq(generator_meta_data.to_vec()))
+            .execute(&self.conn)
+            .expect("Failed to update generator metadata");
     }
 }
 
@@ -664,15 +935,28 @@ impl GeneratorMetadata for DieselGeneratorStore {
 impl JobMissedCounter for DieselGeneratorStore {
     fn count_job_missed_by_generator(
         &mut self,
-        generator_address: Address,
-        timestamp: SystemTime,
+        generator_addr: Address,
+        _timestamp: SystemTime, // timestamp is not stored in this DB version
     ) {
-        // Increment or log the job missed counter for the generator.
-        unimplemented!("Count job missed by generator");
+        // Convert the generator address to the string representation stored in the DB.
+        let addr_str = format!("{:?}", generator_addr);
+
+        // Increment the jobs_missed_counter by one.
+        // Diesel supports arithmetic expressions on columns if the types implement the operators.
+        diesel::update(generators.filter(address.eq(&addr_str)))
+            .set(jobs_missed_counter.eq(jobs_missed_counter + 1))
+            .execute(&self.conn)
+            .expect("Failed to update jobs missed counter");
     }
 
-    fn get_job_missed_count(&self, generator_address: &Address) -> usize {
-        unimplemented!("Get job missed count")
+    fn get_job_missed_count(&self, generator_addr: &Address) -> usize {
+        let addr_str = format!("{:?}", generator_addr);
+        // Query the current jobs_missed_counter value.
+        generators
+            .filter(address.eq(&addr_str))
+            .select(jobs_missed_counter)
+            .first::<i32>(&self.conn)
+            .expect("Failed to fetch jobs missed counter") as usize
     }
 }
 
@@ -708,10 +992,22 @@ impl GeneratorAdditionalQuery for DieselGeneratorStore {
     fn get_by_address_and_market(
         &self,
         address: &Address,
-        market_id: &U256,
+        market: &U256,
     ) -> Option<GeneratorInfoPerMarket> {
-        // Query the generator_markets table for a specific generator-market pair.
-        unimplemented!("Get generator info for address and market");
+        // Convert the address and market_id into the string representations as stored in the DB.
+        let address_str = format!("{:?}", address);
+        let market_id_str = market.to_string();
+
+        // Query the generator_markets table for a record matching the address and market_id.
+        let result = generator_markets
+            .filter(generator_address.eq(address_str))
+            .filter(market_id.eq(market_id_str))
+            .first::<GeneratorMarketRecord>(&self.conn)
+            .optional()  // Returns Ok(Some(record)) if found, Ok(None) if not found.
+            .expect("Error fetching generator market record");
+
+        // Convert the record to GeneratorInfoPerMarket if it exists.
+        result.map(GeneratorInfoPerMarket::from)
     }
 
     fn get_all_markets_of_generator(&self, address: &Address) -> Vec<GeneratorInfoPerMarket> {
