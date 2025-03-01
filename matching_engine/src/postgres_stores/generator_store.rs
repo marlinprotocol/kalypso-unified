@@ -337,14 +337,63 @@ impl GeneratorStakeComputeManagement for DieselGeneratorStore {
         amount: &U256,
         block_number: U64,
         transaction_index: U64,
-        log_index: U256,
-        tx: String,
+        log_index: U256, // not stored in delegations table per schema, but available if needed
+        tx: String,      // same as above
         source: Source,
     ) {
-        // Update the appropriate token tracker in the generators table.
-        // You might need to deserialize, update, and reserialize the TokenTracker.
-        unimplemented!("Update extra stake in the DB");
+        // Convert addresses and amount to strings.
+        let gen_addr_str = format!("{:?}", generator_address);
+        let token_addr_str = format!("{:?}", token_address);
+        let amount_str = amount.to_string();
+
+        // Run all operations in a single transaction.
+        self.conn.transaction::<(), Error, _>(|| {
+            // 1. Update the generator's token tracker.
+            // Determine which column to update based on the source.
+            let (current_tracker_column, update_column) = match source {
+                Source::Native => (generators::total_native_stake, generators::total_native_stake),
+                Source::Symbiotic => (generators::total_symbiotic_stake, generators::total_symbiotic_stake),
+            };
+
+            // Fetch the current token tracker from the generators table.
+            let current_tracker: String = generators::table
+                .filter(generators::address.eq(&gen_addr_str))
+                .select(current_tracker_column)
+                .first(&self.conn)?;
+
+            // Use a helper function to update the tracker (e.g., updating a JSON map).
+            // let new_tracker = update_token_tracker(&current_tracker, &token_addr_str, amount)
+            //     .expect("Failed to update token tracker");
+
+            // check token additions and subs
+
+            // Update the corresponding column in the generators table.
+            diesel::update(generators::table.filter(generators::address.eq(&gen_addr_str)))
+                .set(update_column.eq(new_tracker))
+                .execute(&self.conn)?;
+
+            // 2. Insert a new delegation record.
+            // Prepare a new delegation record. This struct must correspond to the `delegations` table.
+            let new_delegation = NewDelegation {
+                generator_address: gen_addr_str.clone(),
+                delegated_address: token_addr_str.clone(),
+                delegated_amount: amount_str,
+                source: source.to_string(),
+                operation: Operation::Delegate.to_string(),
+                block_number: block_number.to_string(),
+                transaction_index: transaction_index.to_string(),
+                // If your delegations table/schema supports log_index and tx, add them here.
+            };
+
+            diesel::insert_into(delegations::table)
+                .values(&new_delegation)
+                .execute(&self.conn)?;
+
+            Ok(())
+        })
+        .expect("Failed to add extra stake");
     }
+}
 
     fn update_intended_stake_util(&mut self, address: &Address, new_stake_util: U256) {
         // Update the 'intended_stake_util' column in the generators table.
@@ -448,7 +497,7 @@ impl GeneratorStakeComputeManagement for DieselGeneratorStore {
             Ok(())
         }).expect("Failed to update declared_compute");
     }
-}
+
 
 /// -------------------------
 /// Generator Market Management
