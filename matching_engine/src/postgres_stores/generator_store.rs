@@ -2,7 +2,18 @@ use diesel::Insertable;
 use crate::schema::{
     generators, generator_markets, token_trackers, slashing_records, delegations, withdrawal_requests,
 };
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 use ethers::core::types::{Address, U256, U64, Bytes};
+use std::time::SystemTime;
+use std::collections::HashMap;
+use std::collections::BTreeSet;
+use tokio::sync::RwLockReadGuard;
+use ethers::core::types::{Address, U256, U64, Bytes};
+// Import your Diesel schema and model conversion modules.
+use crate::schema::*;
+use crate::models_insertable::*;
+use crate::models_query::*;
 
 /// New record for the `generators` table.
 #[derive(Debug, Insertable)]
@@ -211,34 +222,7 @@ impl From<WithdrawalRequestRecord> for WithdrawlRequest {
     }
 }
 
-// diesel_store.rs
 
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
-use ethers::core::types::{Address, U256, U64, Bytes};
-use std::time::SystemTime;
-use std::collections::HashMap;
-use std::collections::BTreeSet;
-use tokio::sync::RwLockReadGuard;
-
-// Import your Diesel schema and model conversion modules.
-use crate::schema::*;
-use crate::models_insertable::*;
-use crate::models_query::*;
-
-// Import your domain types and traits (assumed to be defined elsewhere).
-use crate::domain::{
-    Generator,
-    GeneratorInfoPerMarket,
-    WithdrawlRequest,
-    GeneratorState,
-    TokenTracker,
-    SlashingRecord,
-    Delegation,
-    Operation,
-    Source,
-    GeneratorQueryResult,
-};
 
 /// Our Diesel-based store which uses a connection pool.
 pub struct DieselGeneratorStore {
