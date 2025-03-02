@@ -135,7 +135,8 @@ impl TryFrom<AskRecord> for LocalAsk {
 
 /// Database-backed implementation.
 pub struct AskDatabase {
-    conn: PgConnection,
+    // conn: PgConnection,
+    pool: Pool<ConnectionManager<PgConnection>>,
     private_store: PrivateInputStore,
 }
 /// Implement AskManagementWrite for AskDatabase.
@@ -163,13 +164,7 @@ impl AskManagementWrite for AskDatabase {
     
 
     fn remove_ask_only_if_completed(&mut self, id: &U256, _reason: RemoveReason) {
-        // Only delete if the ask's state is Completed.
-        let id_bytes = u256_to_bytes(*id);
-        // Assuming Completed is represented as 1.
-        // diesel::delete(ask_records.filter(ask_id.eq(id_bytes))
-        //     .filter(state.eq(vec![AskState::Completed as u8])))
-        //     .execute(&self.conn)
-        //     .expect("Failed to delete ask");
+        // don't do anything
     }
 
     fn modify_state(&mut self, id: &U256, new_state: AskState) {

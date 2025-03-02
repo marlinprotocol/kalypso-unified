@@ -229,15 +229,15 @@ pub struct DieselGeneratorStore {
     pub pool: Pool<ConnectionManager<PgConnection>>,
 }
 
-impl DieselGeneratorStore {
-    pub fn new(database_url: &str) -> Self {
-        let manager = ConnectionManager::<PgConnection>::new(database_url);
-        let pool = Pool::builder()
-            .build(manager)
-            .expect("Failed to create connection pool");
-        DieselGeneratorStore { pool }
-    }
-}
+// impl DieselGeneratorStore {
+//     pub fn new(database_url: &str) -> Self {
+//         let manager = ConnectionManager::<PgConnection>::new(database_url);
+//         let pool = Pool::builder()
+//             .build(manager)
+//             .expect("Failed to create connection pool");
+//         DieselGeneratorStore { pool }
+//     }
+// }
 
 /// -------------------------
 /// Generator Registration
