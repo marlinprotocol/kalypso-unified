@@ -1,4 +1,4 @@
-// tests/integration_tests.rs
+// tests/test_postgres_askstore.rs
 
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
@@ -7,7 +7,7 @@ use diesel::result::Error;
 use std::env;
 use ethers::core::types::{U256, Address, Bytes, H256};
 
-// Import your production code. Adjust the crate name (here assumed as `my_crate`) as needed.
+
 use my_crate::{
     AskDatabase, LocalAsk, AskState, PrivateInputStore,
     u256_to_bytes, bytes_to_u256,
