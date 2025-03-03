@@ -26,7 +26,7 @@ use crate::generator_lib::symbiotic_stake_store::{
 };
 use crate::generator_lib::traits::{
     GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
-    GeneratorRegistration, WithdrawalManagement,
+    GeneratorRegistration, JobMissedCounter, WithdrawalManagement,
 };
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::routes::{get_core_scope, get_stats_scope, get_swagger, ui_scope};
@@ -90,6 +90,7 @@ impl<
             + GeneratorRegistration
             + GeneratorEarningsAndSlashing
             + GeneratorAvailability
+            + JobMissedCounter
             + WithdrawalManagement
             + Send
             + Sync
