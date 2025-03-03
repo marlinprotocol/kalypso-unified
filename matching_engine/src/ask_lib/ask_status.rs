@@ -54,7 +54,7 @@ pub fn get_ask_state(state: u8) -> AskState {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Default)]
 pub struct LocalAskStatus {
     pub created: usize,
     pub unassigned: usize,

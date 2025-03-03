@@ -3,8 +3,8 @@ use std::io;
 
 use dotenv::dotenv;
 use matching_engine::dump::Dump;
-use matching_engine::encrypted_dump::EncryptedDump;
-use matching_engine::{in_memory_matching_engine::InMemoryMatchingEngine, MatchingEngineConfig};
+// use matching_engine::encrypted_dump::EncryptedDump;
+use matching_engine::{postgres_matching_engine::PostgresMatchingEngine, MatchingEngineConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -25,48 +25,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let indexer_port: Option<u16> = indexer_port.parse().ok();
 
     // Initialize the matching engine
-    let matching_engine = InMemoryMatchingEngine::from_config(config, indexer_port);
+    let matching_engine = PostgresMatchingEngine::from_config(config, indexer_port);
 
     // Attempt to load the dump file
-    let encrypted_dump_paths = [
-        "../matching_engine_config/encrypted_dump.json",
-        "./matching_engine_config/encrypted_dump.json",
-    ];
+    // let encrypted_dump_paths = [
+    //     "../matching_engine_config/encrypted_dump.json",
+    //     "./matching_engine_config/encrypted_dump.json",
+    // ];
 
-    match read_file_from_paths(&encrypted_dump_paths) {
-        Ok(dump_content) => {
-            let enc_dump: EncryptedDump = serde_json::from_str(&dump_content)?;
-            matching_engine
-                .run_from_encrypted_dump(enc_dump, encrypted_dump_paths[1].to_string())
-                .await?;
-        }
-        Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            // Handle the NotFound error case
-            let plain_dump = [
-                "../matching_engine_config/dump.json",
-                "./matching_engine_config/dump.json",
-            ];
+    // match read_file_from_paths(&encrypted_dump_paths) {
+    //     Ok(dump_content) => {
+    //         let enc_dump: EncryptedDump = serde_json::from_str(&dump_content)?;
+    //         matching_engine
+    //             .run_from_encrypted_dump(enc_dump, encrypted_dump_paths[1].to_string())
+    //             .await?;
+    //     }
+    //     Err(e) if e.kind() == io::ErrorKind::NotFound => {
+    //         // Handle the NotFound error case
+    //         let plain_dump = [
+    //             "../matching_engine_config/dump.json",
+    //             "./matching_engine_config/dump.json",
+    //         ];
 
-            match read_file_from_paths(&plain_dump) {
-                Ok(dump_content) => {
-                    let dump: Dump = serde_json::from_str(&dump_content)?;
-                    matching_engine
-                        .run_from_dump(dump, encrypted_dump_paths[1].to_string())
-                        .await?;
-                }
-                Err(_) => {
-                    matching_engine
-                        .run(encrypted_dump_paths[1].to_string())
-                        .await?;
-                }
-            }
-        }
-        Err(_) => {
-            matching_engine
-                .run(encrypted_dump_paths[1].to_string())
-                .await?;
-        }
-    }
+    //         match read_file_from_paths(&plain_dump) {
+    //             Ok(dump_content) => {
+    //                 let dump: Dump = serde_json::from_str(&dump_content)?;
+    //                 matching_engine
+    //                     .run_from_dump(dump, encrypted_dump_paths[1].to_string())
+    //                     .await?;
+    //             }
+    //             Err(_) => {
+    //                 matching_engine
+    //                     .run(encrypted_dump_paths[1].to_string())
+    //                     .await?;
+    //             }
+    //         }
+    //     }
+    //     Err(_) => {
+        //     matching_engine
+        //         .run(encrypted_dump_paths[1].to_string())
+        //         .await?;
+        // }
+    // }
+    matching_engine.run("".into()).await?;
 
     Ok(())
 }
