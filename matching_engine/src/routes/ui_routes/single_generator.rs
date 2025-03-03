@@ -1,8 +1,11 @@
 // Local crate imports
-use crate::ask_lib::{
-    ask::LocalAsk,
-    ask_status::AskState,
-    ask_store::{AskManagementRead, CompletedProofsManagement, TimingOperations},
+use crate::{
+    ask_lib::{
+        ask::LocalAsk,
+        ask_status::AskState,
+        ask_store::{AskManagementRead, CompletedProofsManagement, TimingOperations},
+    },
+    generator_lib::traits::JobMissedCounter,
 };
 
 use crate::generator_lib::{
@@ -128,6 +131,9 @@ struct GeneratorResponse {
 
     /// Active jobs of the generator
     active_jobs: String,
+
+    /// Jobs Missed
+    jobs_missed: String,
 
     /// Number of markets Generator has participated in
     no_of_markets: String,
@@ -261,9 +267,6 @@ struct Slash {
     /// Market Info
     market: MarketInfo,
 
-    /// Slashing Request Transaction Hash
-    request: String,
-
     /// Price Offered
     price_offered: String,
 
@@ -275,6 +278,8 @@ struct Slash {
 
     /// Source of the slashing (Native or Symbiotic) (no slashing exists as of now)
     source: String,
+
+    slashing_transaction_hash: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -472,6 +477,7 @@ pub async fn single_generator<
         + GeneratorRegistration
         + GeneratorAvailability
         + GeneratorEarningsAndSlashing
+        + JobMissedCounter
         + WithdrawalManagement
         + Send
         + Sync,
@@ -576,6 +582,7 @@ async fn recompute_single_generator_response<
         + GeneratorRegistration
         + GeneratorAvailability
         + GeneratorEarningsAndSlashing
+        + JobMissedCounter
         + WithdrawalManagement,
     NS: NativeStakingOperations,
     SS: TokenLockManagement,
@@ -624,6 +631,9 @@ async fn recompute_single_generator_response<
             .into_iter()
             .map(|info| info.active_requests)
             .fold(U256::zero(), |a, x| a + x)
+            .to_string(),
+        jobs_missed: local_generator_store
+            .get_job_missed_count(&generator_id)
             .to_string(),
         no_of_markets: all_markets_of_generator.len().to_string(),
         total_earnings: local_generator_store
@@ -847,7 +857,7 @@ async fn recompute_single_generator_response<
                         .map(|a| address_to_string(a))
                         .collect::<Vec<String>>(),
                 },
-                request: record.slashing_tx,
+                slashing_transaction_hash: record.slashing_tx,
                 price_offered: record.price_offered.to_string(),
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
                 source: record.source.to_string(),

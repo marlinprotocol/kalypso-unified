@@ -51,6 +51,7 @@ pub fn ui_scope<
         + GeneratorEarningsAndSlashing
         + GeneratorAvailability
         + WithdrawalManagement
+        + JobMissedCounter
         + Send
         + Sync
         + 'static,
@@ -173,6 +174,7 @@ use crate::generator_lib::traits::GeneratorAdditionalQuery;
 use crate::generator_lib::traits::GeneratorAvailability;
 use crate::generator_lib::traits::GeneratorEarningsAndSlashing;
 use crate::generator_lib::traits::GeneratorRegistration;
+use crate::generator_lib::traits::JobMissedCounter;
 use crate::generator_lib::traits::WithdrawalManagement;
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::routes::ask_status::*;
