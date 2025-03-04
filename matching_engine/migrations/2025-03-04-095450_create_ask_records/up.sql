@@ -1,0 +1,26 @@
+-- Your SQL goes here
+CREATE TABLE ask_records (
+    ask_id BYTEA PRIMARY KEY,
+    market_id BYTEA NOT NULL,
+    reward BYTEA NOT NULL,
+    expiry BYTEA NOT NULL,
+    deadline BYTEA NOT NULL,
+    time_requested_for_proof_generation BYTEA NOT NULL,
+    prover_refund_address BYTEA NOT NULL,
+    prover_data BYTEA NOT NULL,
+    has_private_inputs BOOLEAN NOT NULL,
+    state BYTEA,
+    generator BYTEA,
+    invalid_secret_flag BOOLEAN NOT NULL,
+    created_on BYTEA NOT NULL,
+    created_on_l1 BYTEA NOT NULL,
+    create_transaction BYTEA NOT NULL,
+    proof BYTEA,
+    proving_time_taken BYTEA,
+    proving_cost_taken BYTEA,
+    proof_transaction TEXT,
+    proof_cycle_completed_on BYTEA,
+    job_created_on_timestamp BYTEA,
+    job_matched_on_timestamp BYTEA,
+    job_completed_on_timestamp BYTEA
+);

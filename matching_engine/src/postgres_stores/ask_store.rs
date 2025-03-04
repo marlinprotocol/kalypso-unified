@@ -60,7 +60,7 @@ impl AskManagementWrite for AskDatabase {
     }
 
     fn update_ask_acl(&mut self, id: &U256, new_acl: Option<Bytes>) {
-        let mut store = self.private_store.store;
+        let store = &mut self.private_store.store;
 
         if let Some(entry) = store.get_mut(id) {
             entry.secret_acl = new_acl.map(|b| b.to_vec());
