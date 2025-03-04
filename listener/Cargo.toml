@@ -30,6 +30,12 @@ uuid= {version = "1.4.1", features = ["v4","fast-rng","macro-diagnostics"]}
 warp = "0.3"
 
 [features]
-default = []
+default = ["mainnet"]
+
+mainnet = []
+beta = []
+
+testnet = ["beta"] # added for backward compatibility
+
+# if operator want to force broadcast transactions on chain
 force_transactions = []
-testnet = []

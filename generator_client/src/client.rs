@@ -27,12 +27,24 @@ use helper::common_handlers::{
 };
 
 #[derive(OpenApi)]
-#[openapi(info(
-    title = "Kalypso Generator Client APIs",
-    description = "APIs to interact with generator via client",
-    version = "beta",
-    license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
-))]
+#[openapi(
+    info(
+        title = "Kalypso Generator Client APIs",
+        description = "APIs to interact with generator via client",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else {
+            "beta"
+        },
+        license(name = "MIT License", url = "https://opensource.org/licenses/MIT"),
+    ),
+    tags(
+        (name = "Not Tested", description = "These APIs are not tested and should not be used in any environment"),
+        (name = "Secure", description = "These APIs are secure and should be used to load generator configurations"),
+        (name = "Deprecated", description = "These APIs are deprecated and should not be used in any environment"),
+
+    )
+)]
 #[openapi(paths(
     start_program_handler,
     stop_program_handler,

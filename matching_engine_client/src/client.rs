@@ -16,6 +16,7 @@ use crate::handler::{
     __path_get_matching_engine_public_keys, __path_get_matching_engine_status_handler,
     __path_restart_matching_engine_handler, __path_restart_matching_engine_handler_encrypted,
     __path_start_matching_engine_handler, __path_start_matching_engine_handler_encrypted,
+    __path_stop_matching_engine_handler, __path_stop_matching_engine_handler_encrypted,
     __path_test_handler, __path_update_matching_engine_config,
     __path_update_matching_engine_config_encrypted,
 };
@@ -29,8 +30,12 @@ use helper::common_handlers::{
 #[openapi(
     info(
         title = "Kalypso Matching Engine Client APIs",
-        description = "APIs to interact with matching engine via client",
-        version = "beta",
+        description = "APIs to interact with matching engine via client. Note this is an unauthenticated API and should not be exposed to the internet. Once authenticated you can expose the API to the internet",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else {
+            "beta"
+        },
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
     ),
     tags(
@@ -54,7 +59,9 @@ use helper::common_handlers::{
     sign_address,
     sign_address_encrypted,
     sign_attestation,
-    sign_attestation_encrypted
+    sign_attestation_encrypted,
+    stop_matching_engine_handler,
+    stop_matching_engine_handler_encrypted
 ))]
 struct ApiDoc;
 

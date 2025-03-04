@@ -45,9 +45,10 @@ struct BenchmarkResponse {
     path = "/api/startProgram",
     request_body = SupervisordInputBody,
     responses(
-        (status = 200, description = "Start the Generator if all properties are set"),
+        (status = 200, description = "Returns 200 status if program started successfully"),
     ),
-    tag = "Deprecated"
+    tag = "Deprecated",
+    description = "Start the Generator if all properties are set"
 )]
 #[post("/startProgram")]
 async fn start_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
@@ -111,9 +112,10 @@ async fn start_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> imp
     path = "/api/stopProgram",
     request_body = SupervisordInputBody,
     responses(
-        (status = 200, description = "Stop the Generator"),
+        (status = 200, description = "Returns 200 if the generator is stopped"),
     ),
-    tag = "Deprecated"
+    tag = "Deprecated",
+    description = "Stops the Generator"
 )]
 #[post("/stopProgram")]
 async fn stop_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
@@ -155,9 +157,10 @@ async fn stop_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl
     path = "/api/restartProgram",
     request_body = SupervisordInputBody,
     responses(
-        (status = 200, description = "Restart the Generator"),
+        (status = 200, description = "Returns 200 if the generator is restarted"),
     ),
-    tag = "Deprecated"
+    tag = "Deprecated",
+    description = "Restarts the Generator"
 )]
 #[post("/restartProgram")]
 async fn restart_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> impl Responder {
@@ -244,9 +247,10 @@ async fn restart_program_handler(jsonbody: web::Json<SupervisordInputBody>) -> i
         ("program_name" = String, Path, description = "Program Name"),
     ),
     responses(
-        (status = 200, description = "Restart the Generator"),
+        (status = 200, description = "Program Status"),
     ),
-    tag = "Read"
+    tag = "Read",
+    description = "Returns the status of program_name running inside generator"
 )]
 #[get("/getProgramStatus")]
 async fn get_program_status_handler(program_name: web::Query<ProgramName>) -> impl Responder {
@@ -291,9 +295,10 @@ async fn get_program_status_handler(program_name: web::Query<ProgramName>) -> im
     path = "/api/generatorConfigSetup",
     request_body = GeneratorConfigSetupRequestBody,
     responses(
-        (status = 200, description = "Loads Config into generator"),
+        (status = 200, description = "Returns 200 if config is loaded successfully into generator"),
     ),
-    tag = "Deprecated"
+    tag = "Deprecated",
+    description = "Loads Config into generator. Insecure and should not be used in production"
 )]
 #[post("/generatorConfigSetup")]
 async fn generate_config_setup(
@@ -330,9 +335,10 @@ async fn generate_config_setup(
     path = "/api/generatorConfigSetupEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Loads Config into generator securely. Currently Only possible via kalypso-cli"),
+        (status = 200, description = "Returns 200 if config is loaded securely and successfully into generator"),
     ),
-    tag = "Secure"
+    tag = "Secure",
+    description = "Loads Config into generator securely. Currently Only possible via kalypso-cli"
 )]
 #[post("/generatorConfigSetupEncrypted")]
 async fn generate_config_setup_encrypted(
@@ -386,9 +392,10 @@ async fn generate_config_setup_encrypted(
     path = "/api/updateRuntimeConfig",
     request_body = UpdateRuntimeConfig,
     responses(
-        (status = 200, description = "Updates Runtime Config"),
+        (status = 200, description = "Returns 200 if runtime config is updated successfully"),
     ),
-    tag = "Deprecated"
+    tag = "Deprecated",
+    description = "Updates Runtime Config"
 )]
 #[put("/updateRuntimeConfig")]
 async fn update_runtime_config(jsonbody: web::Json<UpdateRuntimeConfig>) -> impl Responder {
@@ -421,9 +428,10 @@ async fn update_runtime_config(jsonbody: web::Json<UpdateRuntimeConfig>) -> impl
     path = "/api/updateRuntimeConfigEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Updates Runtime Config securely. Currently Only possible via kalypso-cli"),
+        (status = 200, description = "Returns 200 if runtime config is updated securely. Currently only possible via kalypso-cli"),
     ),
-    tag = "Secure"
+    tag = "Secure",
+    description = "Updates Runtime Config securely. Currently Only possible via kalypso-cli"
 )]
 #[put("/updateRuntimeConfigEncrypted")]
 async fn update_runtime_config_encrypted(
@@ -475,9 +483,10 @@ async fn update_runtime_config_encrypted(
     path = "/api/addNewGenerator",
     request_body = AddNewGenerator,
     responses(
-        (status = 200, description = "Add New operator to listen to"),
+        (status = 200, description = "Returns 200 if new address is added to the generator config"),
     ),
-    tag = "Not Tested"
+    tag = "Not Tested",
+    description = "Add New operator to listen to."
 )]
 #[post("/addNewGenerator")]
 async fn add_new_generator_config(

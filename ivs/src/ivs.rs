@@ -39,9 +39,10 @@ pub trait IVSTrait: Send + Sync {
     get,
     path = "/api/test",
     responses(
-        (status = 200, description = "Check Server Connection", body = models::TestResponse),
+        (status = 200, description = "Returns 200 if server is reachable", body = models::TestResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to test if server is running"
 )]
 async fn test_handler() -> impl Responder {
     HttpResponse::Ok().json(TestResponse {
@@ -54,9 +55,10 @@ async fn test_handler() -> impl Responder {
     path = "/api/checkInput",
     request_body = InputPayload,
     responses(
-        (status = 200, description = "Check Inputs are correct or not", body = CheckInputResponse),
+        (status = 200, description = "Return true if inputs are valid", body = CheckInputResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to check the input is valid or not"
 )]
 async fn input_handler<T: IVSTrait>(
     ivs: web::Data<T>,
@@ -70,9 +72,10 @@ async fn input_handler<T: IVSTrait>(
     post,
     path = "/api/getAttestationForInvalidInputs",
     responses(
-        (status = 200, description = "Check Inputs are correct or not", body = models::GenerateProofResponse),
+        (status = 200, description = "Returns attestation if the inputs are invalid", body = models::GenerateProofResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to fetch attestation if the inputs are invalid. This is used to prove that the inputs are invalid"
 )]
 async fn invalid_input_handler<T: IVSTrait>(
     ivs: web::Data<T>,
@@ -101,9 +104,10 @@ async fn invalid_input_handler<T: IVSTrait>(
     path = "/api/checkEncryptedInputs",
     request_body = EncryptedInputPayload,
     responses(
-        (status = 200, description = "Check If Encrypted inputs are valid or not", body = CheckInputResponse),
+        (status = 200, description = "Returns true if encrypted inputs are valid", body = CheckInputResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to check if encrypted inputs are valid of not"
 )]
 async fn encrypted_input_handler<T: IVSTrait>(
     ivs: web::Data<T>,
@@ -190,9 +194,10 @@ async fn encrypted_input_handler<T: IVSTrait>(
     path = "/api/verifyInputsAndProof",
     request_body = VerifyInputsAndProof,
     responses(
-        (status = 200, description = "Check If proof is valid against inputs are valid or not", body = VerifyInputAndProofResponse),
+        (status = 200, description = "Returns true if inputs and proofs match", body = VerifyInputAndProofResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to get check if inputs and proof are valid. Note: This is different from /api/checkInput or /api/checkEncryptedInputs"
 )]
 async fn verify_handler<T: IVSTrait>(
     ivs: web::Data<T>,
@@ -207,9 +212,10 @@ async fn verify_handler<T: IVSTrait>(
     path = "/api/signInputsAndProofForNonConfidentialInputs",
     request_body = SignInputsAndProofForNonConfidentialInput,
     responses(
-        (status = 200, description = "Get signed inputs and proofs", body = models::GenerateProofResponse),
+        (status = 200, description = "Returns attestation if inputs and proof match", body = models::GenerateProofResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to get attestation if inputs and proof are valid: Note: This is different from /api/getAttestationForInvalidInputs"
 )]
 async fn signed_inputs_handler<T: IVSTrait>(
     ivs: web::Data<T>,
@@ -240,7 +246,11 @@ async fn signed_inputs_handler<T: IVSTrait>(
     info(
         title = "Ivs",
         description = "APIs to interact with ivs",
-        version = "beta",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else {
+            "beta"
+        },
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
     ),
     tags(
@@ -307,7 +317,11 @@ use generator_models::generator::__path_proof_handler;
     info(
         title = "Confidential Prover",
         description = "APIs to interact with confidential prover",
-        version = "beta",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else {
+            "beta"
+        },
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
     ),
     tags(

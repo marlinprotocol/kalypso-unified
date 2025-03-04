@@ -326,7 +326,7 @@ async fn get_matching_engine_status_handler() -> impl Responder {
     responses(
         (status = 200, description = "Load Matching Engine Config"),
     ),
-    tag = "Manage"
+    tag = "Deprecated"
 )]
 #[post("/matchingEngineConfigSetup")]
 async fn generate_config_setup(
