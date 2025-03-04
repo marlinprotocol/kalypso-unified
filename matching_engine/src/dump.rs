@@ -5,6 +5,7 @@ use crate::{
         key_store::KeyStore, native_stake_store::NativeStakingStore,
         stake_manager_store::StakeManagerStore, symbiotic_stake_store::SymbioticStakeStore,
     },
+    latest_block_store::LatestBlockStore,
     market_metadata::MarketMetadataStore,
     MatchingEngineConfig,
 };
@@ -27,7 +28,7 @@ pub struct Dump {
     pub cost_store: CostStore,
     pub key_store: KeyStore,
     pub stake_manager_store: StakeManagerStore,
-    pub parsed_block: U64,
+    pub parsed_block: LatestBlockStore,
 }
 
 use std::path::Path;
@@ -43,7 +44,7 @@ impl Dump {
         shared_cost_store: RwLockReadGuard<'_, CostStore>,
         shared_key_store: RwLockReadGuard<'_, KeyStore>,
         shared_stake_manager_store: RwLockReadGuard<'_, StakeManagerStore>,
-        shared_parsed_block: RwLockReadGuard<'_, U64>,
+        shared_parsed_block: RwLockReadGuard<'_, LatestBlockStore>,
         path_to_snapshot: &Path,
     ) {
         let market_store = shared_market_store.clone();

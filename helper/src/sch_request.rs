@@ -218,7 +218,7 @@ mod tests {
         let enclave_pub_key = ecies::PublicKey::from_secret_key(&enclave_priv_key).serialize();
 
         // any chain id is fine
-        let chain_id = U64::from_str_radix("11213", 10).unwrap();
+        let chain_id = U64::from_dec_str("11213").unwrap();
 
         // some json to send
         let nested_json_to_send = json!({

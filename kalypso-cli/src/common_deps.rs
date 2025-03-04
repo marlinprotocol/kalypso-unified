@@ -2,7 +2,6 @@
 
 use ethers::prelude::*;
 use std::future::Future;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use kalypso_helper::try_read_contract_error;
@@ -1771,7 +1770,7 @@ impl CommonDeps {
             matching_engine_client_url: matching_engine_client_url.to_string(),
             matching_engine_attestation_utility: matching_engine_attestation_utility.to_string(),
             matching_engine_pcrs,
-            chain_id: U64::from_str(&chain_id).unwrap(),
+            chain_id: U64::from_dec_str(&chain_id).unwrap(),
         })
     }
 }
@@ -1924,7 +1923,7 @@ impl CommonDeps {
             matching_engine_client_url: matching_engine_client_url.to_string(),
             matching_engine_attestation_utility: matching_engine_attestation_utility.to_string(),
             matching_engine_pcrs,
-            chain_id: U64::from_str(&chain_id).unwrap(),
+            chain_id: U64::from_dec_str(&chain_id).unwrap(),
             proof_marketplace,
             signer,
             attestation_verifier: attestation_verifier_url.to_string(),

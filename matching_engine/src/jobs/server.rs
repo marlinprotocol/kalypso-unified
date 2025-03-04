@@ -7,7 +7,7 @@ use ethers::core::k256::ecdsa::SigningKey;
 use ethers::middleware::SignerMiddleware;
 use ethers::providers::{Http, Provider};
 use ethers::signers::Wallet;
-use ethers::types::{Log, U64};
+use ethers::types::Log;
 use kalypso_helper::middlewares::request_limiter::ConcurrencyLimiter;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
@@ -28,6 +28,7 @@ use crate::generator_lib::traits::{
     GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
     GeneratorRegistration, JobMissedCounter, WithdrawalManagement,
 };
+use crate::latest_block_store::LatestBlockStoreTrait;
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::routes::{get_core_scope, get_stats_scope, get_swagger, ui_scope};
 
@@ -57,10 +58,11 @@ pub struct MatchingEngineServer<
     KS: KeyStoreOperations,
     SM: StakeManagerOperations,
     CS: CostStoreOperations,
+    BS: LatestBlockStoreTrait,
 > {
     shared_market_data: Arc<RwLock<MS>>,
     shared_local_ask_data: Arc<RwLock<AS>>,
-    shared_parsed_block: Arc<RwLock<U64>>,
+    shared_parsed_block: Arc<RwLock<BS>>,
     shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
     shared_entity_key_registry: EntityRegistryInstance,
     shared_generator_data: Arc<RwLock<GS>>,
@@ -106,13 +108,14 @@ impl<
         KS: KeyStoreOperations + Send + Sync + 'static,
         SM: StakeManagerOperations + Send + Sync + 'static,
         CS: CostStoreOperations + Send + Sync + 'static,
-    > MatchingEngineServer<MS, AS, GS, NS, SS, KS, SM, CS>
+        BS: LatestBlockStoreTrait + Send + Sync + 'static,
+    > MatchingEngineServer<MS, AS, GS, NS, SS, KS, SM, CS, BS>
 {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         shared_market_data: Arc<RwLock<MS>>,
         shared_local_ask_data: Arc<RwLock<AS>>,
-        shared_parsed_block: Arc<RwLock<U64>>,
+        shared_parsed_block: Arc<RwLock<BS>>,
         shared_matching_key_clone: Arc<RwLock<Vec<u8>>>,
         shared_entity_key_registry: EntityRegistryInstance,
         shared_generator_data: Arc<RwLock<GS>>,
@@ -196,7 +199,7 @@ impl<
                         .wrap(ui_rate_limiter),
                 )
                 .service(
-                    get_stats_scope::<AS, GS, SS>()
+                    get_stats_scope::<AS, GS, SS, BS>()
                         .wrap(stats_request_concurrency)
                         .wrap(stats_rate_limiter),
                 )
