@@ -32,6 +32,7 @@ service_check_helper = {path = "../generator", package = "generator"}
 tokio = { version = "1.15.0", features = ["full"] }
 utoipa = "5"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
+diesel = { version = "2.0", features = ["postgres", "r2d2"] }
 
 [features]
 # inside enclaves
