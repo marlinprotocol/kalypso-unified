@@ -1,20 +1,20 @@
-
-use diesel::prelude::*;
-use ethers::core::types::{U256, Address, Bytes};
-use std::vec::Vec;
+use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_query::AskQueryResult;
 use crate::ask_lib::ask_status::{AskState, LocalAskStatus};
-use crate::ask_lib::ask_store::{AskManagementRead, AskManagementWrite, CompletedProofsManagement, MarketRequestCounters, ProofCounters, ProofMarketStakeLockManagement, RequestorCounters, TimingOperations};
+use crate::ask_lib::ask_store::{
+    AskManagementRead, AskManagementWrite, CompletedProofsManagement, MarketRequestCounters,
+    ProofCounters, ProofMarketStakeLockManagement, RequestorCounters, TimingOperations,
+};
 use crate::ask_lib::{self, AssociatedStakeLock, Proof, RemoveReason};
-use crate::ask_lib::ask::LocalAsk;
-use crate::schema::ask_records::dsl::*;
 use crate::postgres_stores::models::*;
+use crate::schema::ask_records::dsl::*;
 use crate::utility::TokenTracker;
-
+use diesel::prelude::*;
+use ethers::core::types::{Address, Bytes, U256};
+use std::vec::Vec;
 
 /// Implement AskManagementWrite for AskDatabase.
 impl AskManagementWrite for AskDatabase {
-
     fn insert(&mut self, ask: LocalAsk) {
         // Convert to AskRecord, which omits private inputs.
         let record: AskRecord = ask.clone().into();
@@ -35,7 +35,6 @@ impl AskManagementWrite for AskDatabase {
         }
     }
 
-
     fn remove_ask_only_if_completed(&mut self, id: &U256, _reason: RemoveReason) {
         // don't do anything
     }
@@ -43,7 +42,7 @@ impl AskManagementWrite for AskDatabase {
     fn modify_state(&mut self, id: &U256, new_state: AskState) {
         let id_bytes = u256_to_bytes(*id);
         let new_state_bytes = vec![new_state as u8];
-        
+
         diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
             .set(state.eq(new_state_bytes))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -105,7 +104,12 @@ impl AskManagementWrite for AskDatabase {
             .expect("Failed to store valid proof");
     }
 
-    fn note_invalid_inputs(&mut self, id: &U256, new_proof_cost: U256, new_proof_transaction: String) {
+    fn note_invalid_inputs(
+        &mut self,
+        id: &U256,
+        new_proof_cost: U256,
+        new_proof_transaction: String,
+    ) {
         let id_bytes = u256_to_bytes(*id);
         diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
             .set((
@@ -117,7 +121,6 @@ impl AskManagementWrite for AskDatabase {
             ))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to note invalid inputs");
-    
     }
 
     fn note_proof_denied(&mut self, id: &U256, new_proof_transaction: String) {
@@ -129,54 +132,74 @@ impl AskManagementWrite for AskDatabase {
                 proof_type.eq(Some("FailedProofGeneration".to_string())),
             ))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
-            .expect("Failed to note proof denied"); 
+            .expect("Failed to note proof denied");
     }
 }
 
 impl AskManagementRead for AskDatabase {
     fn get_proving_time(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(proving_time_taken)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
 
     fn get_proving_cost(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(proving_cost_taken)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
 
     fn get_proof_transaction(&self, id: &U256) -> Option<String> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(proof_transaction)
-            .first::<Option<String>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<String>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .flatten()
     }
 
     fn get_proof_by_ask_id(&self, id: &U256) -> Option<Proof> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(proof)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| Proof::from(ask_lib::Proof::ValidProof(Bytes::from(b)))))
     }
 
     fn get_by_market_id(&self, market: &U256) -> AskQueryResult {
         let market_bytes = u256_to_bytes(*market);
-        let results = ask_records.filter(market_id.eq(market_bytes))
+        let results = ask_records
+            .filter(market_id.eq(market_bytes))
             .select(AskRecord::as_select())
             .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to load asks by market");
-        AskQueryResult { asks: Some(results.into_iter().filter_map(|rec| self.try_from_ask_record(rec).ok()).collect()) }
+        AskQueryResult {
+            asks: Some(
+                results
+                    .into_iter()
+                    .filter_map(|rec| self.try_from_ask_record(rec).ok())
+                    .collect(),
+            ),
+        }
     }
 
     fn get_by_ask_state_except_complete(&self, st: AskState) -> AskQueryResult {
@@ -184,12 +207,19 @@ impl AskManagementRead for AskDatabase {
         let complete_state = vec![AskState::Complete as u8];
         let target_state = vec![st as u8];
         let results = ask_records
-                    .filter(state.eq(target_state))
-                    .filter(state.ne(complete_state))
-                    .select(AskRecord::as_select())
-                    .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
-                    .expect("Failed to load asks by state");
-        AskQueryResult { asks: Some(results.into_iter().filter_map(|rec| self.try_from_ask_record(rec).ok()).collect()) }
+            .filter(state.eq(target_state))
+            .filter(state.ne(complete_state))
+            .select(AskRecord::as_select())
+            .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .expect("Failed to load asks by state");
+        AskQueryResult {
+            asks: Some(
+                results
+                    .into_iter()
+                    .filter_map(|rec| self.try_from_ask_record(rec).ok())
+                    .collect(),
+            ),
+        }
     }
 
     fn get_cleanup_asks(&self) -> AskQueryResult {
@@ -200,15 +230,19 @@ impl AskManagementRead for AskDatabase {
             .expect("Failed to load cleanup asks");
         // Call the conversion method on each record.
         AskQueryResult {
-            asks: Some(results.into_iter()
-                .filter_map(|rec| self.try_from_ask_record(rec).ok())
-                .collect())
+            asks: Some(
+                results
+                    .into_iter()
+                    .filter_map(|rec| self.try_from_ask_record(rec).ok())
+                    .collect(),
+            ),
         }
     }
 
     fn get_by_ask_id(&self, id: &U256) -> Option<LocalAsk> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(AskRecord::as_select())
             .first::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .ok()
@@ -217,9 +251,11 @@ impl AskManagementRead for AskDatabase {
 
     fn get_ask_status(&self) -> LocalAskStatus {
         // Example: count asks by state.
-        let all_asks = ask_records.select(AskRecord::as_select()).load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
+        let all_asks = ask_records
+            .select(AskRecord::as_select())
+            .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to load asks");
-        let mut status = LocalAskStatus{
+        let mut status = LocalAskStatus {
             created: 0,
             unassigned: 0,
             assigned: 0,
@@ -227,7 +263,7 @@ impl AskManagementRead for AskDatabase {
             deadline_crossed: 0,
             invalid_secret: 0,
         };
-        
+
         for rec in all_asks {
             if let Some(s) = rec.state.and_then(|v| v.get(0).cloned()) {
                 match s {
@@ -249,7 +285,8 @@ impl AskManagementRead for AskDatabase {
 impl RequestorCounters for AskDatabase {
     fn total_requestor_count(&self) -> usize {
         // Count distinct requestor addresses (using prover_refund_address).
-        ask_records.select(prover_refund_address)
+        ask_records
+            .select(prover_refund_address)
             .distinct()
             .load::<Vec<u8>>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|v| v.len())
@@ -258,7 +295,8 @@ impl RequestorCounters for AskDatabase {
 
     fn total_requestors_by_market_count(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
-        ask_records.filter(market_id.eq(market_bytes))
+        ask_records
+            .filter(market_id.eq(market_bytes))
             .select(prover_refund_address)
             .distinct()
             .load::<Vec<u8>>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -270,7 +308,8 @@ impl RequestorCounters for AskDatabase {
 impl ProofCounters for AskDatabase {
     fn get_proof_count(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
-        ask_records.filter(market_id.eq(market_bytes))
+        ask_records
+            .filter(market_id.eq(market_bytes))
             .filter(proof.is_not_null())
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -279,7 +318,8 @@ impl ProofCounters for AskDatabase {
     }
 
     fn get_total_proof_count(&self) -> usize {
-        ask_records.filter(proof.is_not_null())
+        ask_records
+            .filter(proof.is_not_null())
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -290,7 +330,8 @@ impl ProofCounters for AskDatabase {
 impl MarketRequestCounters for AskDatabase {
     fn get_request_count_by_market_id(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
-        ask_records.filter(market_id.eq(market_bytes))
+        ask_records
+            .filter(market_id.eq(market_bytes))
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -298,7 +339,8 @@ impl MarketRequestCounters for AskDatabase {
     }
 
     fn get_total_request_count(&self) -> usize {
-        ask_records.count()
+        ask_records
+            .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
             .unwrap_or(0)
@@ -309,8 +351,13 @@ impl CompletedProofsManagement for AskDatabase {
     fn get_failed_request_count_by_market_id(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
         // Assuming Failed state is represented as 2.
-        ask_records.filter(market_id.eq(market_bytes))
-            .filter(state.eq(vec![AskState::InvalidSecret as u8]).or(state.eq(vec![AskState::DeadlineCrossed as u8])))
+        ask_records
+            .filter(market_id.eq(market_bytes))
+            .filter(
+                state
+                    .eq(vec![AskState::InvalidSecret as u8])
+                    .or(state.eq(vec![AskState::DeadlineCrossed as u8])),
+            )
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -318,7 +365,12 @@ impl CompletedProofsManagement for AskDatabase {
     }
 
     fn get_failed_request_count(&self) -> usize {
-        ask_records.filter(state.eq(vec![AskState::InvalidSecret as u8]).or(state.eq(vec![AskState::DeadlineCrossed as u8])))
+        ask_records
+            .filter(
+                state
+                    .eq(vec![AskState::InvalidSecret as u8])
+                    .or(state.eq(vec![AskState::DeadlineCrossed as u8])),
+            )
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -335,7 +387,12 @@ impl CompletedProofsManagement for AskDatabase {
         return Vec::new();
     }
 
-    fn get_completed_proof_of_generator(&self, gen: &Address, skip: usize, count: usize) -> Vec<LocalAsk> {
+    fn get_completed_proof_of_generator(
+        &self,
+        gen: &Address,
+        skip: usize,
+        count: usize,
+    ) -> Vec<LocalAsk> {
         // let gen_bytes = gen.as_bytes().to_vec();
         // let results = ask_records.filter(generator.eq(Some(gen_bytes)))
         //     .filter(state.eq(vec![AskState::Complete as u8]))
@@ -347,7 +404,12 @@ impl CompletedProofsManagement for AskDatabase {
         return Vec::new();
     }
 
-    fn get_completed_proofs_of_market(&self, market: &U256, skip: usize, count: usize) -> Vec<LocalAsk> {
+    fn get_completed_proofs_of_market(
+        &self,
+        market: &U256,
+        skip: usize,
+        count: usize,
+    ) -> Vec<LocalAsk> {
         // let market_bytes = u256_to_bytes(*market);
         // let results = ask_records.filter(market_id.eq(market_bytes))
         //     .filter(state.eq(vec![AskState::Complete as u8]))
@@ -363,9 +425,12 @@ impl CompletedProofsManagement for AskDatabase {
 impl TimingOperations for AskDatabase {
     fn get_proof_proof_cycle_completed_on(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(proof_cycle_completed_on)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
@@ -380,9 +445,12 @@ impl TimingOperations for AskDatabase {
 
     fn get_job_completed_on_timestamp(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(job_completed_on_timestamp)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
@@ -397,9 +465,12 @@ impl TimingOperations for AskDatabase {
 
     fn get_job_matched_on_timestamp(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(job_matched_on_timestamp)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
@@ -414,9 +485,12 @@ impl TimingOperations for AskDatabase {
 
     fn get_job_created_on_timestamp(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(job_created_on_timestamp)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
@@ -432,29 +506,36 @@ impl TimingOperations for AskDatabase {
     fn get_overall_proving_time(&self, id: &U256) -> Option<U256> {
         // In this example, we assume the overall proving time is stored directly.
         let id_bytes = u256_to_bytes(*id);
-        ask_records.filter(ask_id.eq(id_bytes))
+        ask_records
+            .filter(ask_id.eq(id_bytes))
             .select(proving_time_taken)
-            .first::<Option<Vec<u8>>>(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .first::<Option<Vec<u8>>>(
+                &mut self.pool.get().expect("Failed to get connection from pool"),
+            )
             .ok()
             .and_then(|opt| opt.map(|b| bytes_to_u256(&b)))
     }
 }
 
 impl ProofMarketStakeLockManagement for AskDatabase {
-    fn get_associated_stake_lock(&self, ask_id_db: &U256) -> Option<AssociatedStakeLock>{
+    fn get_associated_stake_lock(&self, ask_id_db: &U256) -> Option<AssociatedStakeLock> {
         // unimplemented
         None
     }
-    
-    fn add_associated_native_stake_lock(&mut self, ask_id_db: &U256, stake_locked: TokenTracker){
+
+    fn add_associated_native_stake_lock(&mut self, ask_id_db: &U256, stake_locked: TokenTracker) {
         // unimplemented
     }
 
-    fn add_associated_symbiotic_stake_lock(&mut self, ask_id_db: &U256, stake_locked: TokenTracker){
+    fn add_associated_symbiotic_stake_lock(
+        &mut self,
+        ask_id_db: &U256,
+        stake_locked: TokenTracker,
+    ) {
         // unimplemented
     }
 
-    fn delete_all_associated_stake_locks(&mut self, ask_id_db: &U256){
+    fn delete_all_associated_stake_locks(&mut self, ask_id_db: &U256) {
         //unimplemented
     }
 }

@@ -4,7 +4,10 @@ use std::io;
 use dotenv::dotenv;
 use matching_engine::dump::Dump;
 use matching_engine::encrypted_dump::EncryptedDump;
-use matching_engine::{in_memory_matching_engine::InMemoryMatchingEngine, postgres_matching_engine::PostgresMatchingEngine, MatchingEngineConfig};
+use matching_engine::{
+    in_memory_matching_engine::InMemoryMatchingEngine,
+    postgres_matching_engine::PostgresMatchingEngine, MatchingEngineConfig,
+};
 
 // #[tokio::main]
 // async fn main() -> Result<(), Box<dyn std::error::Error>> {

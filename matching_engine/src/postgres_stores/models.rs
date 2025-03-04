@@ -1,14 +1,12 @@
+use crate::ask_lib::ask_status::AskState;
+use diesel::pg::PgConnection;
 use diesel::r2d2::ConnectionManager;
 use diesel::{prelude::*, r2d2::Pool};
-use diesel::pg::PgConnection;
-use ethers::core::types::{U256, Address, Bytes, H256};
+use ethers::core::types::{Address, Bytes, H256, U256};
 use std::{collections::HashMap, vec::Vec};
-use crate::ask_lib::ask_status::AskState;
-
 
 use crate::ask_lib::ask::LocalAsk;
 use crate::schema::ask_records;
-
 
 #[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
 #[table_name = "ask_records"]
@@ -47,7 +45,6 @@ pub struct AskPrivateInputs {
     pub secret_acl: Option<Vec<u8>>,
 }
 
-
 pub struct PrivateInputStore {
     pub store: HashMap<U256, AskPrivateInputs>,
 }
@@ -67,7 +64,6 @@ impl PrivateInputStore {
         self.store.get(ask_id_val).cloned()
     }
 }
-
 
 // Helper conversion functions.
 pub fn u256_to_bytes(val: U256) -> Vec<u8> {
@@ -95,7 +91,9 @@ impl From<LocalAsk> for AskRecord {
             reward: u256_to_bytes(ask.reward),
             expiry: u256_to_bytes(ask.expiry),
             deadline: u256_to_bytes(ask.deadline),
-            time_requested_for_proof_generation: u256_to_bytes(ask.time_requested_for_proof_generation),
+            time_requested_for_proof_generation: u256_to_bytes(
+                ask.time_requested_for_proof_generation,
+            ),
             prover_refund_address: ask.prover_refund_address.as_bytes().to_vec(),
             prover_data: ask.prover_data.to_vec(),
             has_private_inputs: ask.has_private_inputs,
@@ -119,14 +117,16 @@ impl From<LocalAsk> for AskRecord {
     }
 }
 
-
 impl AskDatabase {
     pub fn try_from_ask_record(&self, rec: AskRecord) -> Result<LocalAsk, String> {
         // let private_inputs = self.private_store.get(&bytes_to_u256(&rec.ask_id)).unwrap_or(None);
-        let private_inputs = self.private_store.get(&bytes_to_u256(&rec.ask_id)).unwrap_or(AskPrivateInputs {
-            secret_data: None,
-            secret_acl: None,
-        });
+        let private_inputs = self
+            .private_store
+            .get(&bytes_to_u256(&rec.ask_id))
+            .unwrap_or(AskPrivateInputs {
+                secret_data: None,
+                secret_acl: None,
+            });
         Ok(LocalAsk {
             secret_acl: private_inputs.secret_acl.map(Bytes::from),
             secret_data: private_inputs.secret_data.map(Bytes::from),
@@ -135,19 +135,21 @@ impl AskDatabase {
             reward: bytes_to_u256(&rec.reward),
             expiry: bytes_to_u256(&rec.expiry),
             deadline: bytes_to_u256(&rec.deadline),
-            time_requested_for_proof_generation: bytes_to_u256(&rec.time_requested_for_proof_generation),
+            time_requested_for_proof_generation: bytes_to_u256(
+                &rec.time_requested_for_proof_generation,
+            ),
             prover_refund_address: Address::from_slice(&rec.prover_refund_address),
             prover_data: Bytes::from(rec.prover_data),
             has_private_inputs: rec.has_private_inputs,
             state: rec.state.map(|v| match v.get(0) {
-            Some(&0) => AskState::Null,
-            Some(&1) => AskState::Create,
-            Some(&2) => AskState::UnAssigned,
-            Some(&3) => AskState::Assigned,
-            Some(&4) => AskState::Complete,
-            Some(&5) => AskState::DeadlineCrossed,
-            Some(&6) => AskState::InvalidSecret,
-            _ => AskState::Create,
+                Some(&0) => AskState::Null,
+                Some(&1) => AskState::Create,
+                Some(&2) => AskState::UnAssigned,
+                Some(&3) => AskState::Assigned,
+                Some(&4) => AskState::Complete,
+                Some(&5) => AskState::DeadlineCrossed,
+                Some(&6) => AskState::InvalidSecret,
+                _ => AskState::Create,
             }),
             generator: rec.generator.map(|b| Address::from_slice(&b)),
             invalid_secret_flag: rec.invalid_secret_flag,
@@ -158,4 +160,3 @@ impl AskDatabase {
         })
     }
 }
-    

@@ -29,9 +29,6 @@ diesel::table! {
     }
 }
 
-
-
-
 // diesel::table! {
 //     ask_records (ask_id) {
 //         ask_id -> Binary,

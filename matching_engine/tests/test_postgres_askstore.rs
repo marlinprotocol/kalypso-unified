@@ -2,22 +2,22 @@
 
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::PgConnection;
 use diesel::result::Error;
+use diesel::PgConnection;
+use dotenv::dotenv;
+use ethers::core::types::{Address, Bytes, U256};
 use matching_engine::ask_lib::ask_store::{AskManagementRead, AskManagementWrite};
 use std::env;
-use ethers::core::types::{U256, Address, Bytes};
-use dotenv::dotenv;
 
-use matching_engine::postgres_stores::models::*;
 use matching_engine::ask_lib::ask::LocalAsk;
 use matching_engine::ask_lib::ask_status::AskState;
+use matching_engine::postgres_stores::models::*;
 use matching_engine::schema::ask_records::dsl::*;
 
 /// Initializes a connection pool using the TEST_DATABASE_URL environment variable.
 /// The pool is configured to have a maximum of 1 connection.
 fn init_test_pool() -> Pool<ConnectionManager<PgConnection>> {
-    dotenv().ok(); 
+    dotenv().ok();
     let database_url = env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let manager = ConnectionManager::<PgConnection>::new(database_url);
     Pool::builder()
@@ -36,7 +36,9 @@ fn sample_local_ask(id: u64) -> LocalAsk {
         expiry: U256::from(1000 + id),
         deadline: U256::from(2000 + id),
         time_requested_for_proof_generation: U256::from(3000 + id),
-        prover_refund_address: "0x0000000000000000000000000000000000000001".parse().unwrap(),
+        prover_refund_address: "0x0000000000000000000000000000000000000001"
+            .parse()
+            .unwrap(),
         prover_data: Bytes::from(Vec::from("data".as_bytes())),
         has_private_inputs: false,
         secret_data: None,
@@ -46,7 +48,9 @@ fn sample_local_ask(id: u64) -> LocalAsk {
         invalid_secret_flag: false,
         created_on: U256::from(4000 + id),
         created_on_l1: U256::from(5000 + id),
-        create_transaction: "0x0000000000000000000000000000000000000000000000000000000000000001".parse().unwrap(),
+        create_transaction: "0x0000000000000000000000000000000000000000000000000000000000000001"
+            .parse()
+            .unwrap(),
     }
 }
 
@@ -61,7 +65,6 @@ fn test_connection() {
         Err(e) => eprintln!("Database connection failed: {:?}", e),
     }
 }
-
 
 /// Test inserting a LocalAsk and retrieving it by ask_id.
 #[test]
@@ -114,7 +117,10 @@ fn test_insert_and_get_by_ask_id1() {
 
     // Verify the record was deleted.
     let fetched_after_delete = db.get_by_ask_id(&ask.ask_id);
-    assert!(fetched_after_delete.is_none(), "Expected no record after deletion");
+    assert!(
+        fetched_after_delete.is_none(),
+        "Expected no record after deletion"
+    );
 }
 
 // Test modifying the state of an ask.
@@ -145,8 +151,10 @@ fn test_modify_state() {
 
     // Verify the record was deleted.
     let fetched_after_delete = db.get_by_ask_id(&ask.ask_id);
-    assert!(fetched_after_delete.is_none(), "Expected no record after deletion");
-
+    assert!(
+        fetched_after_delete.is_none(),
+        "Expected no record after deletion"
+    );
 }
 
 // /// Test updating the generator for an ask.
@@ -165,12 +173,14 @@ fn test_update_ask_generator() {
     db.insert(ask.clone());
 
     // Update generator address.
-    let new_gen: Address = "0x000000000000000000000000000000000000dead".parse().unwrap();
+    let new_gen: Address = "0x000000000000000000000000000000000000dead"
+        .parse()
+        .unwrap();
     db.update_ask_generator(&ask.ask_id, Some(new_gen));
     let fetched = db.get_by_ask_id(&ask.ask_id).unwrap();
     assert!(fetched.generator.is_some(), "Generator should be set");
     assert_eq!(fetched.generator.unwrap(), new_gen);
-    
+
     // Cleanup: delete the inserted record.
     {
         let mut conn = pool.get().expect("Failed to get connection from pool");
@@ -181,9 +191,10 @@ fn test_update_ask_generator() {
 
     // Verify the record was deleted.
     let fetched_after_delete = db.get_by_ask_id(&ask.ask_id);
-    assert!(fetched_after_delete.is_none(), "Expected no record after deletion");
-
-
+    assert!(
+        fetched_after_delete.is_none(),
+        "Expected no record after deletion"
+    );
 }
 
 /// Test updating the ask ACL in the private store.
@@ -214,13 +225,11 @@ fn test_update_ask_acl() {
     // Verify that the ACL in the private store is updated.
     let entry = db.private_store.get(&_ask_id).unwrap();
     assert_eq!(entry.secret_acl, Some(new_acl.to_vec()));
-    
 }
 
 /// Test updating the deadline of an ask.
 #[test]
 fn test_update_deadline() {
-
     let pool = init_test_pool();
     let private_store = PrivateInputStore::new();
     let mut db = AskDatabase {
@@ -245,14 +254,15 @@ fn test_update_deadline() {
 
     // Verify the record was deleted.
     let fetched_after_delete = db.get_by_ask_id(&ask.ask_id);
-    assert!(fetched_after_delete.is_none(), "Expected no record after deletion");
-
+    assert!(
+        fetched_after_delete.is_none(),
+        "Expected no record after deletion"
+    );
 }
 
 /// Test storing a valid proof.
 #[test]
 fn test_store_valid_proof() {
-    
     let pool = init_test_pool();
     let private_store = PrivateInputStore::new();
     let mut db = AskDatabase {
@@ -268,10 +278,15 @@ fn test_store_valid_proof() {
     let new_proof_cost = U256::from(2222);
     let new_proof_tx = "0xprooftransaction".to_string();
 
-    db.store_valid_proof(&ask.ask_id, new_proof.clone(), new_proof_time, new_proof_cost, new_proof_tx.clone());
+    db.store_valid_proof(
+        &ask.ask_id,
+        new_proof.clone(),
+        new_proof_time,
+        new_proof_cost,
+        new_proof_tx.clone(),
+    );
 
     // proof fetching will require modification in the model.rs file
-
 
     // Fetch the record directly using Diesel to verify the proof fields.
     {
@@ -283,8 +298,9 @@ fn test_store_valid_proof() {
 
     // Verify the record was deleted.
     let fetched_after_delete = db.get_by_ask_id(&ask.ask_id);
-    assert!(fetched_after_delete.is_none(), "Expected no record after deletion");
+    assert!(
+        fetched_after_delete.is_none(),
+        "Expected no record after deletion"
+    );
     // (Additional assertions for proving_time_taken, proving_cost_taken, and proof_transaction can be added.)
-        
-    
 }

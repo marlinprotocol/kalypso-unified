@@ -12,7 +12,6 @@ use tokio::task::JoinHandle;
 
 use ethers::types::U64;
 
-use crate::postgres_stores::models::{AskDatabase, PrivateInputStore};
 use crate::in_memory_stores::cost_store::CostStore;
 use crate::in_memory_stores::generator_store::GeneratorStore;
 use crate::in_memory_stores::key_store::KeyStore;
@@ -20,6 +19,7 @@ use crate::in_memory_stores::native_stake_store::NativeStakingStore;
 use crate::in_memory_stores::stake_manager_store::StakeManagerStore;
 use crate::in_memory_stores::symbiotic_stake_store::SymbioticStakeStore;
 use crate::postgres_stores::initialize_pool::init_pool;
+use crate::postgres_stores::models::{AskDatabase, PrivateInputStore};
 use crate::{costs, jobs, market_metadata, MatchingEngineConfig};
 
 pub struct PostgresMatchingEngine {
@@ -68,7 +68,6 @@ impl PostgresMatchingEngine {
     }
 
     pub async fn run(&self, path_to_snapshot: String) -> anyhow::Result<()> {
-
         let database_url = "DATABASE_URL";
         let pool = init_pool(&database_url);
 
@@ -77,7 +76,6 @@ impl PostgresMatchingEngine {
             pool: pool.clone(),
             private_store: PrivateInputStore::new(),
         };
-
 
         let generator_list_store = GeneratorStore::default();
         let key_list_store = KeyStore::default();
@@ -318,7 +316,6 @@ impl PostgresMatchingEngine {
         });
 
         handles.push(parser_handle);
-
 
         for handle in handles {
             let _ = handle.await;

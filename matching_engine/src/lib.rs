@@ -5,13 +5,13 @@ pub mod dump;
 pub mod encrypted_dump;
 pub mod generator_lib;
 pub mod in_memory_matching_engine;
-pub mod postgres_matching_engine;
-pub mod postgres_stores;
 pub mod in_memory_stores;
 pub mod market_metadata;
 pub mod models;
-pub mod utility;
+pub mod postgres_matching_engine;
+pub mod postgres_stores;
 pub mod schema;
+pub mod utility;
 
 mod jobs;
 mod log_processor;
