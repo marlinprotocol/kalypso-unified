@@ -96,7 +96,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .await?;
         }
     }
-    matching_engine.run("".into()).await?;
 
     Ok(())
 }
