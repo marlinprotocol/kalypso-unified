@@ -1,5 +1,3 @@
-use dump::Dump;
-use encrypted_dump::{EncryptedDump, ToPlainDump};
 use market_metadata::MarketMetadataStore;
 
 use costs::CostStoreOperations;
@@ -22,7 +20,7 @@ use crate::in_memory_stores::native_stake_store::NativeStakingStore;
 use crate::in_memory_stores::stake_manager_store::StakeManagerStore;
 use crate::in_memory_stores::symbiotic_stake_store::SymbioticStakeStore;
 use crate::postgres_stores::initialize_pool::init_pool;
-use crate::{costs, dump, encrypted_dump, jobs, market_metadata, MatchingEngineConfig};
+use crate::{costs, jobs, market_metadata, MatchingEngineConfig};
 
 pub struct PostgresMatchingEngine {
     config: MatchingEngineConfig,
@@ -321,157 +319,6 @@ impl PostgresMatchingEngine {
 
         handles.push(parser_handle);
 
-        let should_stop_clone = should_stop.clone();
-        let backup_handle: JoinHandle<Result<(), anyhow::Error>> = tokio::spawn(async move {
-            let mut last_backup_tried_at = tokio::time::Instant::now();
-            loop {
-                if should_stop_clone.load(Ordering::Acquire) {
-                    log::info!("Gracefully shutting down backup...");
-                    break;
-                }
-
-                let time_since_last_backup = last_backup_tried_at.elapsed();
-                log::debug!(
-                    "Time since last backup: {} sec",
-                    time_since_last_backup.as_secs_f64()
-                );
-
-                // once in every n loops, the indexers makes a local backup to avoid parsing from start.
-                // this is useless if the shape of the data the indexers creates changes.
-                // When it's time for a backup (after 120 seconds)
-                if time_since_last_backup > tokio::time::Duration::from_secs(120) {
-                    {
-                        if let Ok(mut backup) = backup_in_progress.try_write() {
-                            *backup = true;
-                        } else {
-                            continue;
-                        }
-                    }
-                    // --- Backup code goes here ---
-                    // For example, call your backup routine.
-
-                    let market_store = match shared_market_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let ask_store = match shared_postgres_ask_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let generator_store = match shared_generator_data.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let native_store = match shared_native_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let symbiotic_store = match shared_symbiotic_staking_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let cost_store = match shared_cost_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let key_store = match shared_key_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let stake_manager_store = match shared_stake_manager_store.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let parsed_block = match shared_parsed_block.try_read() {
-                        Ok(data) => data,
-                        Err(err) => {
-                            log::warn!("{:?}", err);
-                            {
-                                *backup_in_progress.write().await = false;
-                            }
-                            continue;
-                        }
-                    };
-                    let path_to_snapshot = Path::new(&path_to_snapshot);
-
-                    // Dump::local_backup(
-                    //     market_store,
-                    //     ask_store,
-                    //     generator_store,
-                    //     native_store,
-                    //     symbiotic_store,
-                    //     cost_store,
-                    //     key_store,
-                    //     stake_manager_store,
-                    //     parsed_block,
-                    //     path_to_snapshot,
-                    // )
-                    // .await;
-
-                    // After backup is done, set backup_in_progress to false
-                    // {
-                    //     *backup_in_progress.write().await = false;
-                    // }
-
-                    // last_backup_tried_at = tokio::time::Instant::now();
-                    continue;
-                }
-
-                tokio::time::sleep(Duration::from_millis(1234)).await;
-            }
-
-            Ok(())
-        });
-
-        handles.push(backup_handle);
 
         for handle in handles {
             let _ = handle.await;

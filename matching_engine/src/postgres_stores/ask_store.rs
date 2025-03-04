@@ -287,7 +287,6 @@ impl ProofCounters for AskDatabase {
     }
 }
 
-
 impl MarketRequestCounters for AskDatabase {
     fn get_request_count_by_market_id(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
@@ -305,7 +304,6 @@ impl MarketRequestCounters for AskDatabase {
             .unwrap_or(0)
     }
 }
-
 
 impl CompletedProofsManagement for AskDatabase {
     fn get_failed_request_count_by_market_id(&self, market: &U256) -> usize {
@@ -361,7 +359,6 @@ impl CompletedProofsManagement for AskDatabase {
         return Vec::new();
     }
 }
-
 
 impl TimingOperations for AskDatabase {
     fn get_proof_proof_cycle_completed_on(&self, id: &U256) -> Option<U256> {
