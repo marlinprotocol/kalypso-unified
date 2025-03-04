@@ -21,6 +21,7 @@ use crate::in_memory_stores::key_store::KeyStore;
 use crate::in_memory_stores::native_stake_store::NativeStakingStore;
 use crate::in_memory_stores::stake_manager_store::StakeManagerStore;
 use crate::in_memory_stores::symbiotic_stake_store::SymbioticStakeStore;
+use crate::latest_block_store::LatestBlockStore;
 use crate::{costs, dump, encrypted_dump, jobs, market_metadata, MatchingEngineConfig};
 
 pub struct InMemoryMatchingEngine {
@@ -117,7 +118,9 @@ impl InMemoryMatchingEngine {
         let symbiotic_staking_store = SymbioticStakeStore::default();
         let native_staking_store = NativeStakingStore::default();
         let stake_manager_store = StakeManagerStore::default();
-        let start_block_string = self.config.clone().start_block;
+        let latest_block_store =
+            LatestBlockStore::new_from_dec_string(self.config.start_block.clone())
+                .unwrap_or_default();
 
         // wrapping around is case to shared across threads
         let shared_local_ask_store = Arc::new(RwLock::new(local_ask_store));
@@ -128,9 +131,7 @@ impl InMemoryMatchingEngine {
         let shared_symbiotic_staking_store = Arc::new(RwLock::new(symbiotic_staking_store));
         let shared_native_store = Arc::new(RwLock::new(native_staking_store));
         let shared_stake_manager_store = Arc::new(RwLock::new(stake_manager_store));
-        let shared_parsed_block_number_store = Arc::new(RwLock::new(
-            U64::from_dec_str(&start_block_string).expect("Unable to rad start_block"),
-        ));
+        let shared_parsed_block_number_store = Arc::new(RwLock::new(latest_block_store));
 
         self._run(
             shared_local_ask_store,
@@ -157,7 +158,7 @@ impl InMemoryMatchingEngine {
         shared_symbiotic_staking_store: Arc<RwLock<SymbioticStakeStore>>,
         shared_native_store: Arc<RwLock<NativeStakingStore>>,
         shared_stake_manager_store: Arc<RwLock<StakeManagerStore>>,
-        shared_parsed_block_number_store: Arc<RwLock<U64>>,
+        shared_parsed_block_number_store: Arc<RwLock<LatestBlockStore>>,
         path_to_snapshot: String,
     ) -> anyhow::Result<()> {
         let relayer_key_balance = Arc::new(RwLock::new(ethers::types::U256::zero()));

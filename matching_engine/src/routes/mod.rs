@@ -106,6 +106,7 @@ pub fn get_stats_scope<
         + Send
         + Sync
         + 'static,
+    BS: LatestBlockStoreTrait + Send + Sync + 'static,
 >() -> actix_web::Scope {
     web::scope("/stats")
         .route("/welcome", web::get().to(chain_status::welcome))
@@ -129,7 +130,7 @@ pub fn get_stats_scope<
         )
         .route(
             "/getLatestBlock",
-            web::get().to(chain_status::get_latest_block_number),
+            web::get().to(chain_status::get_latest_block_number::<BS>),
         )
         .route(
             "/marketInfo",
@@ -176,6 +177,7 @@ use crate::generator_lib::traits::GeneratorEarningsAndSlashing;
 use crate::generator_lib::traits::GeneratorRegistration;
 use crate::generator_lib::traits::JobMissedCounter;
 use crate::generator_lib::traits::WithdrawalManagement;
+use crate::latest_block_store::LatestBlockStoreTrait;
 use crate::market_metadata::MarketMetadataStoreRead;
 use crate::routes::ask_status::*;
 use crate::routes::chain_status::*;

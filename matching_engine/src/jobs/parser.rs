@@ -18,6 +18,7 @@ use crate::generator_lib::{generator_helper, generator_store};
 use crate::generator_lib::symbiotic_stake_store::{
     OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
 };
+use crate::latest_block_store::LatestBlockStoreTrait;
 use crate::market_metadata::{MarketMetadataStoreRead, MarketMetadataStoreWrite};
 use anyhow::Result;
 use ethers::prelude::*;
@@ -85,9 +86,10 @@ pub struct LogParser<
     SS: OperatorStakeManagement + TokenLockManagement + VaultSnapshotManagement + SlashResultManagement,
     NS: NativeStakingOperations,
     SM: StakeManagerOperations,
+    BS: LatestBlockStoreTrait,
 > {
     should_stop: Arc<AtomicBool>,
-    start_block: Arc<RwLock<U64>>,
+    start_block: Arc<RwLock<BS>>,
     block_range: U64,
     confirmations: U64,
     proof_marketplace: ProofMarketplaceInstance,
@@ -150,14 +152,15 @@ impl<
             + SlashResultManagement,
         NS: NativeStakingOperations,
         SM: StakeManagerOperations,
-    > LogParser<AS, GS, MS, KS, CS, SS, NS, SM>
+        BS: LatestBlockStoreTrait,
+    > LogParser<AS, GS, MS, KS, CS, SS, NS, SM, BS>
 {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         should_stop: Arc<AtomicBool>,
         rpc_url: String,
         relayer_signer: Wallet<SigningKey>,
-        start_block: Arc<RwLock<U64>>,
+        start_block: Arc<RwLock<BS>>,
         block_range: U64,
         confirmations: U64,
         proof_marketplace: ProofMarketplaceInstance,
@@ -415,7 +418,7 @@ impl<
                 }
 
                 start_block = end_block + 1;
-                *self.start_block.write().await = start_block;
+                self.start_block.write().await.set_latest_block(start_block);
                 continue;
             }
 
@@ -450,7 +453,7 @@ impl<
                 return Err("Failed fetching latest block number".into());
             }
         };
-        let start_block = { *self.start_block.read().await };
+        let start_block = self.start_block.read().await.get_latest_block();
         let end_block = if start_block + self.block_range > latest_block {
             latest_block - 1
         } else {

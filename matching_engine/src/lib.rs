@@ -6,6 +6,7 @@ pub mod encrypted_dump;
 pub mod generator_lib;
 pub mod in_memory_matching_engine;
 pub mod in_memory_stores;
+pub mod latest_block_store;
 pub mod market_metadata;
 pub mod models;
 pub mod utility;
