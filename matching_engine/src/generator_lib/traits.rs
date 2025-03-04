@@ -206,12 +206,12 @@ pub trait GeneratorMetadata {
 /// JobMissedCounter:
 /// Handles counting jobs missed by a generator.
 pub trait JobMissedCounter {
-    fn count_job_missed_by_generator(
+    fn count_job_missed_by_generator_in_window(
         &mut self,
         generator_address: Address,
         timestamp: std::time::SystemTime,
     );
-    fn get_job_missed_count(&self, generator_address: &Address) -> usize;
+    fn get_job_missed_count_in_window(&self, generator_address: &Address) -> usize;
 }
 
 pub trait GeneratorAdditionalQuery {

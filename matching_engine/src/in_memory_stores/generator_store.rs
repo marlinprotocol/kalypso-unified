@@ -1179,7 +1179,7 @@ impl GeneratorMetadata for GeneratorStore {
 }
 
 impl JobMissedCounter for GeneratorStore {
-    fn count_job_missed_by_generator(
+    fn count_job_missed_by_generator_in_window(
         &mut self,
         generator_address: Address,
         timestamp: std::time::SystemTime,
@@ -1187,7 +1187,7 @@ impl JobMissedCounter for GeneratorStore {
         self.jobs_missed_counter.add(generator_address, timestamp);
     }
 
-    fn get_job_missed_count(&self, generator_address: &Address) -> usize {
+    fn get_job_missed_count_in_window(&self, generator_address: &Address) -> usize {
         self.jobs_missed_counter.count(generator_address)
     }
 }

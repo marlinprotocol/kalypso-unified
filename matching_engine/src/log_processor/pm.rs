@@ -611,12 +611,13 @@ where
         );
 
         log::debug!("get_block_timestamp only exposed for counting missed jobs inside enclave based on time");
-        generator_store.count_job_missed_by_generator(generator_address.clone(), missed_at_time);
+        generator_store
+            .count_job_missed_by_generator_in_window(generator_address.clone(), missed_at_time);
 
         let all_gens = generator_store.all_generators_address();
 
         for gen in all_gens.iter() {
-            let total_jobs_missed_till_now = generator_store.get_job_missed_count(&gen);
+            let total_jobs_missed_till_now = generator_store.get_job_missed_count_in_window(&gen);
             log::debug!(
                 "Generator {:?}. Total Missed Jobs {:?}",
                 &gen,
