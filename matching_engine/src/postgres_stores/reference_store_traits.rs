@@ -12,5 +12,6 @@ pub trait AskStoreTrait:
     + MarketRequestCounters
     + CompletedProofsManagement
     + TimingOperations
+    + ProofMarketStakeLockManagement
 {
 }

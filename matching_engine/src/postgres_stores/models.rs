@@ -47,23 +47,43 @@ pub struct AskPrivateInputs {
     pub secret_acl: Option<Vec<u8>>,
 }
 
+// pub struct PrivateInputStore {
+//     pub store: Mutex<HashMap<U256, AskPrivateInputs>>,
+// }
+
+// impl PrivateInputStore {
+//     pub fn new() -> Self {
+//         Self {
+//             store: Mutex::new(HashMap::new()),
+//         }
+//     }
+
+//     pub async fn insert(&self, ask_id_val: U256, inputs: AskPrivateInputs) {
+//         self.store.lock().await.insert(ask_id_val, inputs);
+//     }
+
+//     pub async fn get(&self, ask_id_val: &U256) -> Option<AskPrivateInputs> {
+//         self.store.lock().await.get(ask_id_val).cloned()
+//     }
+// }
+
 pub struct PrivateInputStore {
-    pub store: Mutex<HashMap<U256, AskPrivateInputs>>,
+    pub store: HashMap<U256, AskPrivateInputs>,
 }
 
 impl PrivateInputStore {
     pub fn new() -> Self {
         Self {
-            store: Mutex::new(HashMap::new()),
+            store: HashMap::new(),
         }
     }
 
-    pub async fn insert(&self, ask_id_val: U256, inputs: AskPrivateInputs) {
-        self.store.lock().await.insert(ask_id_val, inputs);
+    pub fn insert(&mut self, ask_id_val: U256, inputs: AskPrivateInputs) {
+        self.store.insert(ask_id_val, inputs);
     }
 
-    pub async fn get(&self, ask_id_val: &U256) -> Option<AskPrivateInputs> {
-        self.store.lock().await.get(ask_id_val).cloned()
+    pub fn get(&self, ask_id_val: &U256) -> Option<AskPrivateInputs> {
+        self.store.get(ask_id_val).cloned()
     }
 }
 
@@ -77,6 +97,13 @@ pub fn u256_to_bytes(val: U256) -> Vec<u8> {
 
 pub fn bytes_to_u256(b: &[u8]) -> U256 {
     U256::from_big_endian(b)
+}
+
+/// Database-backed implementation.
+pub struct AskDatabase {
+    // conn: PgConnection,
+    pub(crate) pool: Pool<ConnectionManager<PgConnection>>,
+    pub(crate) private_store: PrivateInputStore,
 }
 
 impl From<LocalAsk> for AskRecord {
@@ -112,12 +139,12 @@ impl From<LocalAsk> for AskRecord {
 
 
 impl AskDatabase {
-    pub async fn try_from_ask_record(&self, rec: AskRecord) -> Result<LocalAsk, String> {
-        let private_inputs = self.private_store.get(&bytes_to_u256(&rec.ask_id)).await.unwrap_or(AskPrivateInputs {
+    pub fn try_from_ask_record(&self, rec: AskRecord) -> Result<LocalAsk, String> {
+        // let private_inputs = self.private_store.get(&bytes_to_u256(&rec.ask_id)).unwrap_or(None);
+        let private_inputs = self.private_store.get(&bytes_to_u256(&rec.ask_id)).unwrap_or(AskPrivateInputs {
             secret_data: None,
             secret_acl: None,
         });
-
         Ok(LocalAsk {
             secret_acl: private_inputs.secret_acl.map(Bytes::from),
             secret_data: private_inputs.secret_data.map(Bytes::from),
@@ -146,22 +173,16 @@ impl AskDatabase {
             created_on_l1: bytes_to_u256(&rec.created_on_l1),
             create_transaction: H256::from_slice(&rec.create_transaction),
         })
-                }
-        }
+    }
+}
     
         
-        impl TryFrom<AskRecord> for LocalAsk {
-            type Error = String;
-            fn try_from(rec: AskRecord) -> Result<Self, Self::Error> {
-                // need to have an instance of AskDatabase to call try_from_ask_record
-                unimplemented!()
-            }
-        }
+// impl TryFrom<AskRecord> for LocalAsk {
+//     type Error = String;
+//     fn try_from(rec: AskRecord) -> Result<Self, Self::Error> {
+//         // need to have an instance of AskDatabase to call try_from_ask_record
+//         unimplemented!()
+//     }
+// }
 
 
-/// Database-backed implementation.
-pub struct AskDatabase {
-    // conn: PgConnection,
-    pub(crate) pool: Pool<ConnectionManager<PgConnection>>,
-    pub(crate) private_store: PrivateInputStore,
-}
