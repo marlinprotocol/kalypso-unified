@@ -17,7 +17,7 @@ utoipa = "5"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 
 [features]
-default = ["mainnet"]
+default = ["beta"]
 
 mainnet = []
 beta = []

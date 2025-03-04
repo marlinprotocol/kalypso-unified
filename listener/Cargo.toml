@@ -30,7 +30,7 @@ uuid= {version = "1.4.1", features = ["v4","fast-rng","macro-diagnostics"]}
 warp = "0.3"
 
 [features]
-default = ["mainnet"]
+default = ["beta"]
 
 mainnet = []
 beta = []

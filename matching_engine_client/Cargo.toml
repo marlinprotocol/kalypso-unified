@@ -31,7 +31,7 @@ validator = { version = "0.18.1", features = ["derive"] }
 actix-rt = "2"
 
 [features]
-default = ["mainnet"]
+default = ["beta"]
 
 mainnet = []
 beta = []
