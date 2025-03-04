@@ -16,6 +16,7 @@ CREATE TABLE ask_records (
     created_on_l1 BYTEA NOT NULL,
     create_transaction BYTEA NOT NULL,
     proof BYTEA,
+    proof_type VARCHAR,
     proving_time_taken BYTEA,
     proving_cost_taken BYTEA,
     proof_transaction TEXT,

@@ -14,7 +14,7 @@ use tokio::task::JoinHandle;
 
 use ethers::types::U64;
 
-use crate::postgres_stores::ask_store::{AskDatabase, PrivateInputStore};
+use crate::postgres_stores::models::{AskDatabase, PrivateInputStore};
 use crate::in_memory_stores::cost_store::CostStore;
 use crate::in_memory_stores::generator_store::GeneratorStore;
 use crate::in_memory_stores::key_store::KeyStore;

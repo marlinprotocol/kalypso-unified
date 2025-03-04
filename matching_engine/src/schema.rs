@@ -18,6 +18,7 @@ diesel::table! {
         created_on_l1 -> Bytea,
         create_transaction -> Bytea,
         proof -> Nullable<Bytea>,
+        proof_type -> Nullable<Varchar>,
         proving_time_taken -> Nullable<Bytea>,
         proving_cost_taken -> Nullable<Bytea>,
         proof_transaction -> Nullable<Text>,

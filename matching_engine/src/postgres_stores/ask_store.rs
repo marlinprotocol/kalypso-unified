@@ -98,17 +98,38 @@ impl AskManagementWrite for AskDatabase {
                 proving_time_taken.eq(Some(u256_to_bytes(new_proof_time))),
                 proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
                 proof_transaction.eq(Some(new_proof_transaction)),
+                // Set proof_type to "ValidProof" when proof is valid.
+                proof_type.eq(Some("ValidProof".to_string())),
             ))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to store valid proof");
     }
 
     fn note_invalid_inputs(&mut self, id: &U256, new_proof_cost: U256, new_proof_transaction: String) {
-        // implement
+        let id_bytes = u256_to_bytes(*id);
+        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+            .set((
+                // Update the cost and transaction details.
+                proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
+                proof_transaction.eq(Some(new_proof_transaction)),
+                // Set proof_type to "InvalidInputAttestation" when inputs are invalid.
+                proof_type.eq(Some("InvalidInputAttestation".to_string())),
+            ))
+            .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .expect("Failed to note invalid inputs");
+    
     }
 
     fn note_proof_denied(&mut self, id: &U256, new_proof_transaction: String) {
-        // implement    
+        let id_bytes = u256_to_bytes(*id);
+        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+            .set((
+                proof_transaction.eq(Some(new_proof_transaction)),
+                // Set proof_type to "FailedProofGeneration" to indicate the proof was denied.
+                proof_type.eq(Some("FailedProofGeneration".to_string())),
+            ))
+            .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
+            .expect("Failed to note proof denied"); 
     }
 }
 
@@ -424,7 +445,8 @@ impl TimingOperations for AskDatabase {
 
 impl ProofMarketStakeLockManagement for AskDatabase {
     fn get_associated_stake_lock(&self, ask_id_db: &U256) -> Option<AssociatedStakeLock>{
-            None
+        // unimplemented
+        None
     }
     
     fn add_associated_native_stake_lock(&mut self, ask_id_db: &U256, stake_locked: TokenTracker){
@@ -438,5 +460,4 @@ impl ProofMarketStakeLockManagement for AskDatabase {
     fn delete_all_associated_stake_locks(&mut self, ask_id_db: &U256){
         //unimplemented
     }
-
 }

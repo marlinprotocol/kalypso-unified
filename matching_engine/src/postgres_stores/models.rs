@@ -2,12 +2,11 @@ use diesel::r2d2::ConnectionManager;
 use diesel::{prelude::*, r2d2::Pool};
 use diesel::pg::PgConnection;
 use ethers::core::types::{U256, Address, Bytes, H256};
-use tokio::sync::Mutex;
 use std::{collections::HashMap, vec::Vec};
-use crate::ask_lib::ask_status::{AskState};
+use crate::ask_lib::ask_status::AskState;
 
 
-use crate::{ask_lib::ask::LocalAsk};
+use crate::ask_lib::ask::LocalAsk;
 use crate::schema::ask_records;
 
 
@@ -32,6 +31,7 @@ pub struct AskRecord {
     pub create_transaction: Vec<u8>,
     // Other fields like proofs, timestamps are also stored here.
     pub proof: Option<Vec<u8>>,
+    pub proof_type: Option<String>,
     pub proving_time_taken: Option<Vec<u8>>,
     pub proving_cost_taken: Option<Vec<u8>>,
     pub proof_transaction: Option<String>,
@@ -47,25 +47,6 @@ pub struct AskPrivateInputs {
     pub secret_acl: Option<Vec<u8>>,
 }
 
-// pub struct PrivateInputStore {
-//     pub store: Mutex<HashMap<U256, AskPrivateInputs>>,
-// }
-
-// impl PrivateInputStore {
-//     pub fn new() -> Self {
-//         Self {
-//             store: Mutex::new(HashMap::new()),
-//         }
-//     }
-
-//     pub async fn insert(&self, ask_id_val: U256, inputs: AskPrivateInputs) {
-//         self.store.lock().await.insert(ask_id_val, inputs);
-//     }
-
-//     pub async fn get(&self, ask_id_val: &U256) -> Option<AskPrivateInputs> {
-//         self.store.lock().await.get(ask_id_val).cloned()
-//     }
-// }
 
 pub struct PrivateInputStore {
     pub store: HashMap<U256, AskPrivateInputs>,
@@ -102,8 +83,8 @@ pub fn bytes_to_u256(b: &[u8]) -> U256 {
 /// Database-backed implementation.
 pub struct AskDatabase {
     // conn: PgConnection,
-    pub(crate) pool: Pool<ConnectionManager<PgConnection>>,
-    pub(crate) private_store: PrivateInputStore,
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+    pub private_store: PrivateInputStore,
 }
 
 impl From<LocalAsk> for AskRecord {
@@ -126,6 +107,7 @@ impl From<LocalAsk> for AskRecord {
             create_transaction: ask.create_transaction.as_bytes().to_vec(),
 
             proof: None,
+            proof_type: None,
             proving_time_taken: None,
             proving_cost_taken: None,
             proof_transaction: None,
@@ -172,17 +154,8 @@ impl AskDatabase {
             created_on: bytes_to_u256(&rec.created_on),
             created_on_l1: bytes_to_u256(&rec.created_on_l1),
             create_transaction: H256::from_slice(&rec.create_transaction),
+            // add proof here (not needed yet)
         })
     }
 }
     
-        
-// impl TryFrom<AskRecord> for LocalAsk {
-//     type Error = String;
-//     fn try_from(rec: AskRecord) -> Result<Self, Self::Error> {
-//         // need to have an instance of AskDatabase to call try_from_ask_record
-//         unimplemented!()
-//     }
-// }
-
-
