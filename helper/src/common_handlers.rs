@@ -42,11 +42,11 @@ impl SignAttestation {
     post,
     path = "/api/signAddress",
     request_body = SignAddress,
-    description = "Signs the address and returns signature",
+    description = "Enclave signs the address and returns signature. Insecure and should not be used in production",
     responses(
         (status = 200),
     ),
-    tag = "Deprecated"
+    tag = "Deprecated",
 )]
 #[post("/signAddress")]
 async fn sign_address(
@@ -86,9 +86,10 @@ async fn sign_address(
     path = "/api/signAddressEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Sign Address Encrypted. Works only with kalypso-cli", body = EncryptedResponse),
+        (status = 200, description = "Returns 200 status by signing an address", body = EncryptedResponse),
     ),
-    tag = "Secure"
+    tag = "Secure",
+    description = "Sign Address Encrypted. Works only with kalypso-cli"
 )]
 #[post("/signAddressEncrypted")]
 async fn sign_address_encrypted(
@@ -157,7 +158,7 @@ async fn _sign_address(body: &SignAddress, ecies_priv_key: &Vec<u8>) -> Option<V
     post,
     path = "/api/signAttestation",
     request_body = SignAddress,
-    description = "Signs attestation and returns signature",
+    description = "Signs attestation and returns signature. Should not be used in production",
     responses(
         (status = 200),
     ),
@@ -201,9 +202,10 @@ async fn sign_attestation(
     path = "/api/signAttestationEncrypted",
     request_body = SCHPayload,
     responses(
-        (status = 200, description = "Sign Attestation Encrypted. Works only with kalypso-cli", body = EncryptedResponse),
+        (status = 200, description = "Returns 200 by signing an attestation", body = EncryptedResponse),
     ),
-    tag = "Secure"
+    tag = "Secure",
+    description = "Sign Attestation Encrypted. Works only with kalypso-cli"
 )]
 #[post("/signAttestationEncrypted")]
 async fn sign_attestation_encrypted(
@@ -255,9 +257,10 @@ async fn sign_attestation_encrypted(
     get,
     path = "/metrics",
     responses(
-        (status = 200, description = "Prom Metrics for listener"),
+        (status = 200, description = "Returns 200 status with Prometheus Metrics"),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "Fetch Prometheus Metrics for listener"
 )]
 pub async fn metrics_handler(
     state: Data<Arc<Mutex<ListenerMetrics>>>,

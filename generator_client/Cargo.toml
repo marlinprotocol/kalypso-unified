@@ -25,3 +25,9 @@ tokio = { version = "1.16.1", features = ["full"] }
 utoipa = "5"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 validator = { version = "0.18.1", features = ["derive"] }
+
+[features]
+default = ["mainnet"]
+
+mainnet = []
+beta = []

@@ -25,7 +25,11 @@ use kalypso_helper::common_handlers::__path_metrics_handler;
     info(
         title = "Prover Listener",
         description = "Prover Listener Runtime Info",
-        version = "beta",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else {
+            "beta"
+        },
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
     ),
     tags(

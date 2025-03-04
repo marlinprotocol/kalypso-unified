@@ -18,9 +18,10 @@ pub trait GeneratorTrait: Send + Sync {
     get,
     path = "/api/test",
     responses(
-        (status = 200, description = "Check Server Connection", body = TestResponse),
+        (status = 200, description = "Returns 200 if server is reachable", body = TestResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to test if server is running"
 )]
 async fn test_handler() -> impl Responder {
     HttpResponse::Ok().json(TestResponse {
@@ -32,9 +33,10 @@ async fn test_handler() -> impl Responder {
     get,
     path = "/api/benchmark",
     responses(
-        (status = 200, description = "Benchmark Response", body = BenchmarkResponse),
+        (status = 200, description = "Returns 200 and Benchmark Response", body = BenchmarkResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to benchmark proving time of the server"
 )]
 pub async fn benchmark_handler<T: GeneratorTrait>(generator: web::Data<T>) -> impl Responder {
     let result = generator.benchmark().await;
@@ -48,7 +50,8 @@ pub async fn benchmark_handler<T: GeneratorTrait>(generator: web::Data<T>) -> im
     responses(
         (status = 200, description = "Response on proof generation", body = GenerateProofResponse),
     ),
-    tag = "Manage"
+    tag = "Manage",
+    description = "API to fetch the proof from the server"
 )]
 pub async fn proof_handler<T: GeneratorTrait>(
     generator: web::Data<T>,
@@ -63,7 +66,11 @@ pub async fn proof_handler<T: GeneratorTrait>(
     info(
         title = "Generator",
         description = "APIs to interact with generator",
-        version = "beta",
+        version = if cfg!(feature = "mainnet") {
+            "mainnet"
+        } else {
+            "beta"
+        },
         license(name = "MIT License", url = "https://opensource.org/licenses/MIT")
     ),
     tags(
