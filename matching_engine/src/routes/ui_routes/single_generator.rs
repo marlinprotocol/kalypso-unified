@@ -615,6 +615,14 @@ async fn recompute_single_generator_response<
         .unzip();
 
     let details = generator_data.deserialize_generator_bytes();
+
+    let jobs_missed = all_markets_of_generator
+        .clone()
+        .into_iter()
+        .map(|info| info.proofs_slashed)
+        .fold(U256::zero(), |a, x| a + x)
+        .to_string();
+
     Some(GeneratorResponse {
         operator: Operator {
             name: details.display_name.clone(),
@@ -632,9 +640,7 @@ async fn recompute_single_generator_response<
             .map(|info| info.active_requests)
             .fold(U256::zero(), |a, x| a + x)
             .to_string(),
-        jobs_missed: local_generator_store
-            .get_job_missed_count(&generator_id)
-            .to_string(),
+        jobs_missed,
         no_of_markets: all_markets_of_generator.len().to_string(),
         total_earnings: local_generator_store
             .get_total_earning(&generator_id)

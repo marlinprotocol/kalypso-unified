@@ -575,7 +575,8 @@ impl<
                 let generator_store = { self.shared_generator_store.read().await };
                 let mut missed_jobs = HashMap::new();
                 for idle_generator in idle_generators.iter() {
-                    let missed = generator_store.get_job_missed_count(&idle_generator.address);
+                    let missed =
+                        generator_store.get_job_missed_count_in_window(&idle_generator.address);
                     missed_jobs.insert(idle_generator.address, missed);
                 }
                 generator_helper::weighted_time_cost_random_selection(idle_generators, missed_jobs)
