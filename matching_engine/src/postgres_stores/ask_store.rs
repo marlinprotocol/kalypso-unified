@@ -7,7 +7,10 @@ use crate::ask_lib::ask_store::{
 };
 use crate::ask_lib::{self, AssociatedStakeLock, Proof, RemoveReason};
 use crate::postgres_stores::models::*;
-use crate::schema::ask_records::dsl::*;
+
+use crate::schema::ask_records;
+// In future remove this import and use the schema::ask_records; directly.
+
 use crate::utility::TokenTracker;
 use diesel::prelude::*;
 use ethers::core::types::{Address, Bytes, U256};
@@ -20,7 +23,7 @@ impl AskManagementWrite for AskDatabase {
         let record: AskRecord = ask.clone().into();
 
         // Insert non-sensitive fields into the DB.
-        diesel::insert_into(ask_records)
+        diesel::insert_into(ask_records::table)
             .values(&record)
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to insert ask");
@@ -43,8 +46,8 @@ impl AskManagementWrite for AskDatabase {
         let id_bytes = u256_to_bytes(*id);
         let new_state_bytes = vec![new_state as u8];
 
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(state.eq(new_state_bytes))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::state.eq(new_state_bytes))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update state");
     }
@@ -52,8 +55,8 @@ impl AskManagementWrite for AskDatabase {
     fn update_ask_generator(&mut self, id: &U256, new_generator: Option<Address>) {
         let id_bytes = u256_to_bytes(*id);
         let gen_bytes = new_generator.map(|g| g.as_bytes().to_vec());
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(generator.eq(gen_bytes))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::generator.eq(gen_bytes))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update generator");
     }
@@ -76,8 +79,8 @@ impl AskManagementWrite for AskDatabase {
 
     fn update_deadline(&mut self, id: &U256, new_deadline: U256) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(deadline.eq(u256_to_bytes(new_deadline)))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::deadline.eq(u256_to_bytes(new_deadline)))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update deadline");
     }
@@ -91,14 +94,14 @@ impl AskManagementWrite for AskDatabase {
         new_proof_transaction: String,
     ) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
             .set((
-                proof.eq(Some(new_proof.to_vec())),
-                proving_time_taken.eq(Some(u256_to_bytes(new_proof_time))),
-                proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
-                proof_transaction.eq(Some(new_proof_transaction)),
+                ask_records::proof.eq(Some(new_proof.to_vec())),
+                ask_records::proving_time_taken.eq(Some(u256_to_bytes(new_proof_time))),
+                ask_records::proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
+                ask_records::proof_transaction.eq(Some(new_proof_transaction)),
                 // Set proof_type to "ValidProof" when proof is valid.
-                proof_type.eq(Some("ValidProof".to_string())),
+                ask_records::proof_type.eq(Some("ValidProof".to_string())),
             ))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to store valid proof");
@@ -111,13 +114,13 @@ impl AskManagementWrite for AskDatabase {
         new_proof_transaction: String,
     ) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
             .set((
                 // Update the cost and transaction details.
-                proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
-                proof_transaction.eq(Some(new_proof_transaction)),
+                ask_records::proving_cost_taken.eq(Some(u256_to_bytes(new_proof_cost))),
+                ask_records::proof_transaction.eq(Some(new_proof_transaction)),
                 // Set proof_type to "InvalidInputAttestation" when inputs are invalid.
-                proof_type.eq(Some("InvalidInputAttestation".to_string())),
+                ask_records::proof_type.eq(Some("InvalidInputAttestation".to_string())),
             ))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to note invalid inputs");
@@ -125,11 +128,11 @@ impl AskManagementWrite for AskDatabase {
 
     fn note_proof_denied(&mut self, id: &U256, new_proof_transaction: String) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
             .set((
-                proof_transaction.eq(Some(new_proof_transaction)),
+                ask_records::proof_transaction.eq(Some(new_proof_transaction)),
                 // Set proof_type to "FailedProofGeneration" to indicate the proof was denied.
-                proof_type.eq(Some("FailedProofGeneration".to_string())),
+                ask_records::proof_type.eq(Some("FailedProofGeneration".to_string())),
             ))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to note proof denied");
@@ -140,8 +143,8 @@ impl AskManagementRead for AskDatabase {
     fn get_proving_time(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(proving_time_taken)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::proving_time_taken)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -152,8 +155,8 @@ impl AskManagementRead for AskDatabase {
     fn get_proving_cost(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(proving_cost_taken)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::proving_cost_taken)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -164,8 +167,8 @@ impl AskManagementRead for AskDatabase {
     fn get_proof_transaction(&self, id: &U256) -> Option<String> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(proof_transaction)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::proof_transaction)
             .first::<Option<String>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -176,8 +179,8 @@ impl AskManagementRead for AskDatabase {
     fn get_proof_by_ask_id(&self, id: &U256) -> Option<Proof> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(proof)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::proof)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -188,7 +191,7 @@ impl AskManagementRead for AskDatabase {
     fn get_by_market_id(&self, market: &U256) -> AskQueryResult {
         let market_bytes = u256_to_bytes(*market);
         let results = ask_records
-            .filter(market_id.eq(market_bytes))
+            ::table.filter(ask_records::market_id.eq(market_bytes))
             .select(AskRecord::as_select())
             .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to load asks by market");
@@ -207,8 +210,8 @@ impl AskManagementRead for AskDatabase {
         let complete_state = vec![AskState::Complete as u8];
         let target_state = vec![st as u8];
         let results = ask_records
-            .filter(state.eq(target_state))
-            .filter(state.ne(complete_state))
+            ::table.filter(ask_records::state.eq(target_state))
+            .filter(ask_records::state.ne(complete_state))
             .select(AskRecord::as_select())
             .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to load asks by state");
@@ -224,7 +227,7 @@ impl AskManagementRead for AskDatabase {
 
     fn get_cleanup_asks(&self) -> AskQueryResult {
         let results = ask_records
-            .filter(deadline.lt(u256_to_bytes(U256::zero())))
+            ::table.filter(ask_records::deadline.lt(u256_to_bytes(U256::zero())))
             .select(AskRecord::as_select())
             .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to load cleanup asks");
@@ -242,7 +245,7 @@ impl AskManagementRead for AskDatabase {
     fn get_by_ask_id(&self, id: &U256) -> Option<LocalAsk> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
             .select(AskRecord::as_select())
             .first::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .ok()
@@ -251,7 +254,7 @@ impl AskManagementRead for AskDatabase {
 
     fn get_ask_status(&self) -> LocalAskStatus {
         // Example: count asks by state.
-        let all_asks = ask_records
+        let all_asks = ask_records::table
             .select(AskRecord::as_select())
             .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to load asks");
@@ -285,8 +288,8 @@ impl AskManagementRead for AskDatabase {
 impl RequestorCounters for AskDatabase {
     fn total_requestor_count(&self) -> usize {
         // Count distinct requestor addresses (using prover_refund_address).
-        ask_records
-            .select(prover_refund_address)
+        ask_records::table
+            .select(ask_records::prover_refund_address)
             .distinct()
             .load::<Vec<u8>>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|v| v.len())
@@ -296,8 +299,8 @@ impl RequestorCounters for AskDatabase {
     fn total_requestors_by_market_count(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
         ask_records
-            .filter(market_id.eq(market_bytes))
-            .select(prover_refund_address)
+            ::table.filter(ask_records::market_id.eq(market_bytes))
+            .select(ask_records::prover_refund_address)
             .distinct()
             .load::<Vec<u8>>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|v| v.len())
@@ -309,8 +312,8 @@ impl ProofCounters for AskDatabase {
     fn get_proof_count(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
         ask_records
-            .filter(market_id.eq(market_bytes))
-            .filter(proof.is_not_null())
+            ::table.filter(ask_records::market_id.eq(market_bytes))
+            .filter(ask_records::proof.is_not_null())
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -319,7 +322,7 @@ impl ProofCounters for AskDatabase {
 
     fn get_total_proof_count(&self) -> usize {
         ask_records
-            .filter(proof.is_not_null())
+            ::table.filter(ask_records::proof.is_not_null())
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -331,7 +334,7 @@ impl MarketRequestCounters for AskDatabase {
     fn get_request_count_by_market_id(&self, market: &U256) -> usize {
         let market_bytes = u256_to_bytes(*market);
         ask_records
-            .filter(market_id.eq(market_bytes))
+            ::table.filter(ask_records::market_id.eq(market_bytes))
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -339,7 +342,7 @@ impl MarketRequestCounters for AskDatabase {
     }
 
     fn get_total_request_count(&self) -> usize {
-        ask_records
+        ask_records::table
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
             .map(|cnt| cnt as usize)
@@ -352,11 +355,11 @@ impl CompletedProofsManagement for AskDatabase {
         let market_bytes = u256_to_bytes(*market);
         // Assuming Failed state is represented as 2.
         ask_records
-            .filter(market_id.eq(market_bytes))
+            ::table.filter(ask_records::market_id.eq(market_bytes))
             .filter(
-                state
+                ask_records::state
                     .eq(vec![AskState::InvalidSecret as u8])
-                    .or(state.eq(vec![AskState::DeadlineCrossed as u8])),
+                    .or(ask_records::state.eq(vec![AskState::DeadlineCrossed as u8])),
             )
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -366,10 +369,10 @@ impl CompletedProofsManagement for AskDatabase {
 
     fn get_failed_request_count(&self) -> usize {
         ask_records
-            .filter(
-                state
+            ::table.filter(
+                ask_records::state
                     .eq(vec![AskState::InvalidSecret as u8])
-                    .or(state.eq(vec![AskState::DeadlineCrossed as u8])),
+                    .or(ask_records::state.eq(vec![AskState::DeadlineCrossed as u8])),
             )
             .count()
             .get_result::<i64>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -378,7 +381,7 @@ impl CompletedProofsManagement for AskDatabase {
     }
 
     fn get_recent_completed_proofs(&self, n: usize) -> Vec<LocalAsk> {
-        // let results = ask_records.filter(state.eq(vec![AskState::Complete as u8]))
+        // let results = ask_records::table.filter(state.eq(vec![AskState::Complete as u8]))
         //     .order(job_completed_on_timestamp.desc().nulls_last())
         //     .limit(n as i64)
         //     .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -394,8 +397,8 @@ impl CompletedProofsManagement for AskDatabase {
         count: usize,
     ) -> Vec<LocalAsk> {
         // let gen_bytes = gen.as_bytes().to_vec();
-        // let results = ask_records.filter(generator.eq(Some(gen_bytes)))
-        //     .filter(state.eq(vec![AskState::Complete as u8]))
+        // let results = ask_records::table.filter(generator.eq(Some(gen_bytes)))
+        //     ::table.filter(state.eq(vec![AskState::Complete as u8]))
         //     .offset(skip as i64)
         //     .limit(count as i64)
         //     .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -411,8 +414,8 @@ impl CompletedProofsManagement for AskDatabase {
         count: usize,
     ) -> Vec<LocalAsk> {
         // let market_bytes = u256_to_bytes(*market);
-        // let results = ask_records.filter(market_id.eq(market_bytes))
-        //     .filter(state.eq(vec![AskState::Complete as u8]))
+        // let results = ask_records::table.filter(market_id.eq(market_bytes))
+        //     ::table.filter(state.eq(vec![AskState::Complete as u8]))
         //     .offset(skip as i64)
         //     .limit(count as i64)
         //     .load::<AskRecord>(&mut self.pool.get().expect("Failed to get connection from pool"))
@@ -426,8 +429,8 @@ impl TimingOperations for AskDatabase {
     fn get_proof_proof_cycle_completed_on(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(proof_cycle_completed_on)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::proof_cycle_completed_on)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -437,8 +440,8 @@ impl TimingOperations for AskDatabase {
 
     fn update_proof_proof_cycle_completed_on(&mut self, id: &U256, submitted_on: U256) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(proof_cycle_completed_on.eq(Some(u256_to_bytes(submitted_on))))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::proof_cycle_completed_on.eq(Some(u256_to_bytes(submitted_on))))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update proof cycle timestamp");
     }
@@ -446,8 +449,8 @@ impl TimingOperations for AskDatabase {
     fn get_job_completed_on_timestamp(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(job_completed_on_timestamp)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::job_completed_on_timestamp)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -457,8 +460,8 @@ impl TimingOperations for AskDatabase {
 
     fn update_job_completed_on_timestamp(&mut self, id: &U256, ts: U256) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(job_completed_on_timestamp.eq(Some(u256_to_bytes(ts))))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::job_completed_on_timestamp.eq(Some(u256_to_bytes(ts))))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update job completed timestamp");
     }
@@ -466,8 +469,8 @@ impl TimingOperations for AskDatabase {
     fn get_job_matched_on_timestamp(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(job_matched_on_timestamp)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::job_matched_on_timestamp)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -477,8 +480,8 @@ impl TimingOperations for AskDatabase {
 
     fn update_job_matched_on_timestamp(&mut self, id: &U256, ts: U256) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(job_matched_on_timestamp.eq(Some(u256_to_bytes(ts))))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::job_matched_on_timestamp.eq(Some(u256_to_bytes(ts))))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update job matched timestamp");
     }
@@ -486,8 +489,8 @@ impl TimingOperations for AskDatabase {
     fn get_job_created_on_timestamp(&self, id: &U256) -> Option<U256> {
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(job_created_on_timestamp)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::job_created_on_timestamp)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )
@@ -497,8 +500,8 @@ impl TimingOperations for AskDatabase {
 
     fn update_job_created_on_timestamp(&mut self, id: &U256, ts: U256) {
         let id_bytes = u256_to_bytes(*id);
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(job_created_on_timestamp.eq(Some(u256_to_bytes(ts))))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::job_created_on_timestamp.eq(Some(u256_to_bytes(ts))))
             .execute(&mut self.pool.get().expect("Failed to get connection from pool"))
             .expect("Failed to update job created timestamp");
     }
@@ -507,8 +510,8 @@ impl TimingOperations for AskDatabase {
         // In this example, we assume the overall proving time is stored directly.
         let id_bytes = u256_to_bytes(*id);
         ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(proving_time_taken)
+            ::table.filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::proving_time_taken)
             .first::<Option<Vec<u8>>>(
                 &mut self.pool.get().expect("Failed to get connection from pool"),
             )

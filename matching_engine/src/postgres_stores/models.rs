@@ -1,11 +1,20 @@
-use crate::ask_lib::ask_status::AskState;
-use diesel::pg::{PgConnection};
+use diesel::pg::PgConnection;
 use diesel::r2d2::ConnectionManager;
 use diesel::{prelude::*, r2d2::Pool};
 use ethers::core::types::{Address, Bytes, H256, U256};
 use std::{collections::HashMap, vec::Vec};
+
+use crate::ask_lib::ask_status::AskState;
 use crate::ask_lib::ask::LocalAsk;
-use crate::schema::ask_records;
+use crate::generator_lib::{generator_store::{Generator, GeneratorInfoPerMarket}, withdrawal_request::WithdrawlRequest};
+use crate::schema::{ask_records,generator_markets,generators,slashing_records,token_trackers,delegations,withdrawal_requests};
+
+/// Database-backed implementation for AskRecord.
+pub struct AskDatabase {
+    // conn: PgConnection,
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+    pub private_store: PrivateInputStore,
+}
 
 #[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
 #[table_name = "ask_records"]
@@ -66,22 +75,6 @@ impl PrivateInputStore {
     }
 }
 
-// Helper conversion functions.
-pub fn u256_to_bytes(val: U256) -> Vec<u8> {
-    let mut bytes = [0u8; 32];
-    val.to_big_endian(&mut bytes);
-    bytes.to_vec()
-}
-
-pub fn bytes_to_u256(b: &[u8]) -> U256 {
-    U256::from_big_endian(b)
-}
-
-/// Database-backed implementation.
-pub struct AskDatabase {
-    pub pool: Pool<ConnectionManager<PgConnection>>,
-    pub private_store: PrivateInputStore,
-}
 
 impl From<LocalAsk> for AskRecord {
     fn from(ask: LocalAsk) -> Self {
@@ -120,7 +113,6 @@ impl From<LocalAsk> for AskRecord {
 
 impl AskDatabase {
     pub fn try_from_ask_record(&self, rec: AskRecord) -> Result<LocalAsk, String> {
-        // let private_inputs = self.private_store.get(&bytes_to_u256(&rec.ask_id)).unwrap_or(None);
         let private_inputs = self
             .private_store
             .get(&bytes_to_u256(&rec.ask_id))
@@ -160,4 +152,222 @@ impl AskDatabase {
             // add proof here (not needed yet)
         })
     }
+}
+
+/// Our Diesel-based store which uses a connection pool.
+pub struct GeneratorDatabase {
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+}
+
+/// New record for the `generators` table.
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "generators"]
+pub struct GeneratorRecord {
+    pub address: String,                      // e.g., format!("{:?}", generator.address)
+    pub reward_address: String,               // e.g., format!("{:?}", generator.reward_address)
+    pub total_native_stake: String,           // Serialize U256 or TokenTracker as a string or JSON
+    pub total_symbiotic_stake: String,        // Serialize U256 or TokenTracker as a string or JSON
+    pub sum_of_compute_allocations: String,   // U256 as string
+    pub compute_consumed: String,             // U256 as string
+    pub native_stake_locked: String,          // Serialize TokenTracker
+    pub symbiotic_stake_locked: String,       // Serialize TokenTracker
+    pub active_market_places: String,         // U256 as string
+    pub declared_compute: String,             // U256 as string (needs to initialized with 1, handle that)
+    pub intended_stake_util: String,          // U256 as string
+    pub intended_compute_util: String,        // U256 as string
+    pub generator_data: Vec<u8>,              // Bytea for binary data
+    pub active: bool,
+    pub earnings: String,                     // U256 as string
+    pub kalypso_points: String,               // U256 as string
+    pub jobs_missed_counter: i32,             // i32 for counter
+}
+
+/// New record for the `generator_markets` table.
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "generator_markets"]
+pub struct GeneratorMarketRecord {
+    pub generator_address: String,            // e.g., format!("{:?}", generator_info.address)
+    pub market_id: String,                    // U256 as string
+    pub compute_required_per_request: String, // U256 as string
+    pub proof_generation_cost: String,        // U256 as string
+    pub proposed_time: String,                // U256 as string
+    pub active_requests: String,              // U256 as string
+    pub proofs_submitted: String,             // U256 as string
+    pub proofs_slashed: String,               // U256 as string
+    pub state: Option<String>,                // Optional state as a string (or enum)
+    pub earnings: String,                     // U256 as string (per market earnings)
+    pub kalypso_points: String,               // U256 as string (per market points)
+}
+
+/// New record for the `token_trackers` table.
+/// Here, if `market_id` is None, the record applies to generator-wide data.
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "token_trackers"]
+pub struct TokenTrackerRecord {
+    pub generator_address: String,            // Generator address as string
+    pub market_id: Option<String>,            // U256 as string or None for generator-wide
+    pub token: String,                        // Token identifier (H160 as string)
+    pub amount: String,                       // U256 as string
+}
+
+/// New record for the `slashing_records` table.
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "slashing_records"]
+pub struct SlashingRecord {
+    pub generator_address: String,            // Generator address as string
+    pub ask_id: String,                       // U256 as string
+    pub slashing_block_number: String,        // U64 as string
+    pub market_id: String,                    // U256 as string
+    pub slashing_tx: String,                  // Transaction hash as string
+    pub price_offered: String,                // U256 as string
+    // Additional fields can be added if needed.
+}
+
+/// New record for the `delegations` table.
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "delegations"]
+pub struct DelegationRecord {
+    pub generator_address: String,            // Generator address as string
+    pub delegated_address: String,            // Delegated address (H160 as string)
+    pub delegated_amount: String,             // U256 as string
+    pub source: String,                       // Source (as string or serialized enum)
+    pub operation: String,                    // Operation (as string or serialized enum)
+    pub block_number: String,                 // U64 as string
+    pub transaction_index: String,            // U64 as string
+}
+
+/// New record for the `withdrawal_requests` table.
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "withdrawal_requests"]
+pub struct WithdrawalRequestRecord {
+    pub generator_address: String,            // Generator address as string
+    pub account: String,                      // Account (H160 as string)
+    pub token: String,                        // Token (H160 as string)
+    pub amount: String,                       // U256 as string
+    pub request_index: String,                // U256 as string
+    pub timestamp: String,                    // U256 as string (or a proper timestamp type)
+}
+
+impl From<Generator> for GeneratorRecord {
+    fn from(gen: Generator) -> Self {
+        GeneratorRecord {
+            address: format!("{:?}", gen.address),
+            reward_address: format!("{:?}", gen.reward_address),
+            total_native_stake: gen.total_native_stake.to_string(),
+            total_symbiotic_stake: gen.total_symbiotic_stake.to_string(),
+            sum_of_compute_allocations: gen.sum_of_compute_allocations.to_string(),
+            compute_consumed: gen.compute_consumed.to_string(),
+            native_stake_locked: gen.native_stake_locked.to_string(),
+            symbiotic_stake_locked: gen.symbiotic_stake_locked.to_string(),
+            active_market_places: gen.active_market_places.to_string(),
+            declared_compute: gen.declared_compute.to_string(),
+            intended_stake_util: gen.intended_stake_util.to_string(),
+            intended_compute_util: gen.intended_compute_util.to_string(),
+            generator_data: gen.generator_data.to_vec(), // Convert Bytes to Vec<u8>
+            active: gen.active,
+            earnings: gen.earnings.to_string(),
+            kalypso_points: gen.kalypso_points.to_string(),
+            jobs_missed_counter: gen.jobs_missed_counter,
+        }
+    }
+}
+
+impl From<GeneratorRecord> for Generator {
+    fn from(rec: GeneratorRecord) -> Self {
+        Generator {
+            address: rec.address.parse().expect("Invalid address"),
+            reward_address: rec.reward_address.parse().expect("Invalid reward address"),
+            total_native_stake: rec.total_native_stake.parse().expect("Invalid TokenTracker"),
+            total_symbiotic_stake: rec.total_symbiotic_stake.parse().expect("Invalid TokenTracker"),
+            sum_of_compute_allocations: rec.sum_of_compute_allocations.parse().expect("Invalid U256"),
+            compute_consumed: rec.compute_consumed.parse().expect("Invalid U256"),
+            native_stake_locked: rec.native_stake_locked.parse().expect("Invalid TokenTracker"),
+            symbiotic_stake_locked: rec.symbiotic_stake_locked.parse().expect("Invalid TokenTracker"),
+            active_market_places: rec.active_market_places.parse().expect("Invalid U256"),
+            declared_compute: rec.declared_compute.parse().expect("Invalid U256"),
+            intended_stake_util: rec.intended_stake_util.parse().expect("Invalid U256"),
+            intended_compute_util: rec.intended_compute_util.parse().expect("Invalid U256"),
+            generator_data: Bytes::from(rec.generator_data),
+            active: rec.active,
+        }
+    }
+}
+
+// ================================================================
+// Conversions for GeneratorInfoPerMarket
+// ================================================================
+
+impl From<GeneratorInfoPerMarket> for GeneratorMarketRecord {
+    fn from(info: GeneratorInfoPerMarket) -> Self {
+        GeneratorMarketRecord {
+            generator_address: format!("{:?}", info.address),
+            market_id: info.market_id.to_string(),
+            compute_required_per_request: info.compute_required_per_request.to_string(),
+            proof_generation_cost: info.proof_generation_cost.to_string(),
+            proposed_time: info.proposed_time.to_string(),
+            active_requests: info.active_requests.to_string(),
+            proofs_submitted: info.proofs_submitted.to_string(),
+            proofs_slashed: info.proofs_slashed.to_string(),
+            state: info.state.map(|s| s.to_string()),
+            earnings: U256::zero().to_string(),
+            kalypso_points: U256::zero().to_string(),
+        }
+    }
+}
+
+impl From<GeneratorMarketRecord> for GeneratorInfoPerMarket {
+    fn from(rec: GeneratorMarketRecord) -> Self {
+        GeneratorInfoPerMarket {
+            address: rec.generator_address.parse().expect("Invalid address"),
+            market_id: rec.market_id.parse().expect("Invalid market id"),
+            compute_required_per_request: rec.compute_required_per_request.parse().expect("Invalid U256"),
+            proof_generation_cost: rec.proof_generation_cost.parse().expect("Invalid U256"),
+            proposed_time: rec.proposed_time.parse().expect("Invalid U256"),
+            active_requests: rec.active_requests.parse().expect("Invalid U256"),
+            proofs_submitted: rec.proofs_submitted.parse().expect("Invalid U256"),
+            proofs_slashed: rec.proofs_slashed.parse().expect("Invalid U256"),
+            state: rec.state.map(|s| s.parse().expect("Invalid state")), // Assuming GeneratorState implements FromStr
+        }
+    }
+}
+
+// ================================================================
+// Conversions for WithdrawlRequest
+// ================================================================
+
+impl From<WithdrawlRequest> for WithdrawalRequestRecord {
+    fn from(req: WithdrawlRequest) -> Self {
+        WithdrawalRequestRecord {
+            // The generator_address must be set by the caller (e.g., via context)
+            generator_address: String::new(),
+            account: format!("{:?}", req.account),
+            token: format!("{:?}", req.token),
+            amount: req.amount.to_string(),
+            request_index: req.index.to_string(),
+            timestamp: req.timestamp.to_string(),
+        }
+    }
+}
+
+impl From<WithdrawalRequestRecord> for WithdrawlRequest {
+    fn from(rec: WithdrawalRequestRecord) -> Self {
+        WithdrawlRequest {
+            account: rec.account.parse().expect("Invalid account"),
+            token: rec.token.parse().expect("Invalid token"),
+            amount: rec.amount.parse().expect("Invalid amount"),
+            index: rec.request_index.parse().expect("Invalid index"),
+            timestamp: rec.timestamp.parse().expect("Invalid timestamp"),
+        }
+    }
+}
+
+// Helper conversion functions.
+pub fn u256_to_bytes(val: U256) -> Vec<u8> {
+    let mut bytes = [0u8; 32];
+    val.to_big_endian(&mut bytes);
+    bytes.to_vec()
+}
+
+pub fn bytes_to_u256(b: &[u8]) -> U256 {
+    U256::from_big_endian(b)
 }
