@@ -1,10 +1,9 @@
 use crate::ask_lib::ask_status::AskState;
-use diesel::pg::PgConnection;
+use diesel::pg::{PgConnection};
 use diesel::r2d2::ConnectionManager;
 use diesel::{prelude::*, r2d2::Pool};
 use ethers::core::types::{Address, Bytes, H256, U256};
 use std::{collections::HashMap, vec::Vec};
-
 use crate::ask_lib::ask::LocalAsk;
 use crate::schema::ask_records;
 
@@ -37,7 +36,9 @@ pub struct AskRecord {
     pub job_created_on_timestamp: Option<Vec<u8>>,
     pub job_matched_on_timestamp: Option<Vec<u8>>,
     pub job_completed_on_timestamp: Option<Vec<u8>>,
+    pub associated_stake_locks: Option<String>,
 }
+
 
 #[derive(Debug, Clone)]
 pub struct AskPrivateInputs {
@@ -78,7 +79,6 @@ pub fn bytes_to_u256(b: &[u8]) -> U256 {
 
 /// Database-backed implementation.
 pub struct AskDatabase {
-    // conn: PgConnection,
     pub pool: Pool<ConnectionManager<PgConnection>>,
     pub private_store: PrivateInputStore,
 }
@@ -113,6 +113,7 @@ impl From<LocalAsk> for AskRecord {
             job_created_on_timestamp: None,
             job_matched_on_timestamp: None,
             job_completed_on_timestamp: None,
+            associated_stake_locks: None,
         }
     }
 }

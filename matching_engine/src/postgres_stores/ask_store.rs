@@ -518,24 +518,107 @@ impl TimingOperations for AskDatabase {
 }
 
 impl ProofMarketStakeLockManagement for AskDatabase {
-    fn get_associated_stake_lock(&self, ask_id_db: &U256) -> Option<AssociatedStakeLock> {
-        // unimplemented
-        None
+    /// Fetches and deserializes the associated stake locks for a given ask.
+    fn get_associated_stake_lock(&self, ask_id_val: &U256) -> Option<AssociatedStakeLock> {
+        let id_bytes = u256_to_bytes(*ask_id_val);
+        let mut conn = self.pool.get().expect("Failed to get connection from pool");
+        let json_str: Option<String> = ask_records
+            .filter(ask_id.eq(id_bytes))
+            .select(associated_stake_locks)
+            .first(&mut conn)
+            .expect("Error loading associated stake locks");
+        json_str.and_then(|s| serde_json::from_str(&s).ok())
     }
 
-    fn add_associated_native_stake_lock(&mut self, ask_id_db: &U256, stake_locked: TokenTracker) {
-        // unimplemented
+
+    /// Adds the given native stake lock to the associated stake locks.
+    /// If no associated stake lock exists, a new one is created.
+    fn add_associated_native_stake_lock(&mut self, ask_id_val: &U256, stake_locked: TokenTracker) {
+        let id_bytes = u256_to_bytes(*ask_id_val);
+        let mut conn = self.pool.get().expect("Failed to get connection from pool");
+
+        // Retrieve the current associated stake locks as a JSON string.
+        let current: Option<String> = ask_records
+            .filter(ask_id.eq(id_bytes.clone()))
+            .select(associated_stake_locks)
+            .first(&mut conn)
+            .expect("Error loading associated stake locks");
+        // Deserialize or initialize a default AssociatedStakeLock.
+        let mut assoc_lock: AssociatedStakeLock = if let Some(json_str) = current {
+            serde_json::from_str(&json_str)
+                .unwrap_or_else(|_| AssociatedStakeLock {
+                    native: TokenTracker::default(),
+                    symbiotic: TokenTracker::default(),
+                })
+        } else {
+            AssociatedStakeLock {
+                native: TokenTracker::default(),
+                symbiotic: TokenTracker::default(),
+            }
+        };
+
+        // Add the stake_locked value to the native tracker.
+        // (Assuming `TokenTracker` implements addition appropriately.)
+        assoc_lock.native = assoc_lock.native.clone() + stake_locked;
+
+        // Serialize back to a JSON string.
+        let new_json = serde_json::to_string(&assoc_lock).expect("Failed to serialize AssociatedStakeLock");
+
+        // Update the record in the DB.
+        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+            .set(associated_stake_locks.eq(Some(new_json)))
+            .execute(&mut conn)
+            .expect("Failed to update associated stake locks");
     }
+
 
     fn add_associated_symbiotic_stake_lock(
         &mut self,
-        ask_id_db: &U256,
+        ask_id_val: &U256,
         stake_locked: TokenTracker,
     ) {
-        // unimplemented
+        let id_bytes = u256_to_bytes(*ask_id_val);
+        let mut conn = self.pool.get().expect("Failed to get connection from pool");
+
+        let current: Option<String> = ask_records
+            .filter(ask_id.eq(id_bytes.clone()))
+            .select(associated_stake_locks)
+            .first(&mut conn)
+            .expect("Error loading associated stake locks");
+
+        let mut assoc_lock: AssociatedStakeLock = if let Some(json_str) = current {
+            serde_json::from_str(&json_str)
+                .unwrap_or_else(|_| AssociatedStakeLock {
+                    native: TokenTracker::default(),
+                    symbiotic: TokenTracker::default(),
+                })
+        } else {
+            AssociatedStakeLock {
+                native: TokenTracker::default(),
+                symbiotic: TokenTracker::default(),
+            }
+        };
+
+        assoc_lock.symbiotic = assoc_lock.symbiotic.clone() + stake_locked;
+
+        let new_json = serde_json::to_string(&assoc_lock).expect("Failed to serialize AssociatedStakeLock");
+
+        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+            .set(associated_stake_locks.eq(Some(new_json)))
+            .execute(&mut conn)
+            .expect("Failed to update associated stake locks");
     }
 
-    fn delete_all_associated_stake_locks(&mut self, ask_id_db: &U256) {
-        //unimplemented
+
+    /// Deletes all associated stake locks for the given ask (i.e. sets the column to null).
+    fn delete_all_associated_stake_locks(&mut self, ask_id_val: &U256) {
+        let id_bytes = u256_to_bytes(*ask_id_val);
+        let mut conn = self.pool.get().expect("Failed to get connection from pool");
+
+        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
+            .set(associated_stake_locks.eq::<Option<String>>(None))
+            .execute(&mut conn)
+            .expect("Failed to delete associated stake locks");
     }
+    
 }

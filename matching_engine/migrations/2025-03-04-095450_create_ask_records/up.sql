@@ -23,5 +23,6 @@ CREATE TABLE ask_records (
     proof_cycle_completed_on BYTEA,
     job_created_on_timestamp BYTEA,
     job_matched_on_timestamp BYTEA,
-    job_completed_on_timestamp BYTEA
+    job_completed_on_timestamp BYTEA,
+    associated_stake_locks TEXT;
 );

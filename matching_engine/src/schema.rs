@@ -26,37 +26,102 @@ diesel::table! {
         job_created_on_timestamp -> Nullable<Bytea>,
         job_matched_on_timestamp -> Nullable<Bytea>,
         job_completed_on_timestamp -> Nullable<Bytea>,
+        associated_stake_locks -> Nullable<Text>,
     }
 }
 
-// diesel::table! {
-//     ask_records (ask_id) {
-//         ask_id -> Binary,
-//         market_id -> Binary,
-//         reward -> Binary,
-//         expiry -> Binary,
-//         deadline -> Binary,
-//         time_requested_for_proof_generation -> Binary,
-//         prover_refund_address -> Binary,
-//         prover_data -> Binary,
-//         has_private_inputs -> Bool,
-//         secret_data -> Nullable<Binary>,
-//         secret_acl -> Nullable<Binary>,
-//         state -> Nullable<Binary>,
-//         generator -> Nullable<Binary>,
-//         invalid_secret_flag -> Bool,
-//         created_on -> Binary,
-//         created_on_l1 -> Binary,
-//         create_transaction -> Binary,
+diesel::table! {
+    delegations (id) {
+        id -> Int4,
+        generator_address -> Text,
+        delegated_address -> Text,
+        delegated_amount -> Text,
+        source -> Text,
+        operation -> Text,
+        block_number -> Text,
+        transaction_index -> Text,
+    }
+}
 
-//         proof -> Nullable<Binary>,
-//         proving_time_taken -> Nullable<Binary>,
-//         proving_cost_taken -> Nullable<Binary>,
-//         proof_transaction -> Nullable<Text>,
+diesel::table! {
+    generator_markets (id) {
+        id -> Int4,
+        generator_address -> Text,
+        market_id -> Text,
+        compute_required_per_request -> Text,
+        proof_generation_cost -> Text,
+        proposed_time -> Text,
+        active_requests -> Text,
+        proofs_submitted -> Text,
+        proofs_slashed -> Text,
+        state -> Nullable<Text>,
+        earnings -> Text,
+        kalypso_points -> Text,
+    }
+}
 
-//         proof_cycle_completed_on -> Nullable<Binary>,
-//         job_created_on_timestamp -> Nullable<Binary>,
-//         job_matched_on_timestamp -> Nullable<Binary>,
-//         job_completed_on_timestamp -> Nullable<Binary>,
-//     }
-// }
+diesel::table! {
+    generators (address) {
+        address -> Text,
+        reward_address -> Text,
+        total_native_stake -> Text,
+        total_symbiotic_stake -> Text,
+        sum_of_compute_allocations -> Text,
+        compute_consumed -> Text,
+        native_stake_locked -> Text,
+        symbiotic_stake_locked -> Text,
+        active_market_places -> Text,
+        declared_compute -> Text,
+        intended_stake_util -> Text,
+        intended_compute_util -> Text,
+        generator_data -> Bytea,
+        active -> Bool,
+        earnings -> Text,
+        kalypso_points -> Text,
+        jobs_missed_counter -> Int4,
+    }
+}
+
+diesel::table! {
+    slashing_records (id) {
+        id -> Int4,
+        generator_address -> Text,
+        ask_id -> Text,
+        slashing_block_number -> Text,
+        market_id -> Text,
+        slashing_tx -> Text,
+        price_offered -> Text,
+    }
+}
+
+diesel::table! {
+    token_trackers (id) {
+        id -> Int4,
+        generator_address -> Text,
+        market_id -> Nullable<Text>,
+        token -> Text,
+        amount -> Text,
+    }
+}
+
+diesel::table! {
+    withdrawal_requests (id) {
+        id -> Int4,
+        generator_address -> Text,
+        account -> Text,
+        token -> Text,
+        amount -> Text,
+        request_index -> Text,
+        timestamp -> Text,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    ask_records,
+    delegations,
+    generator_markets,
+    generators,
+    slashing_records,
+    token_trackers,
+    withdrawal_requests,
+);
