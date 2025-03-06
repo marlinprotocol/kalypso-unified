@@ -66,7 +66,7 @@ impl PostgresMatchingEngine {
     }
 
     pub async fn run(&self, path_to_snapshot: String) -> anyhow::Result<()> {
-        let database_url = "DATABASE_URL";
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let pool = init_pool(&database_url);
 
         // Create both structs sharing the same pool.

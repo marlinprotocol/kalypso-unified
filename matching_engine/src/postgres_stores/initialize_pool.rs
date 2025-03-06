@@ -5,7 +5,7 @@ pub fn init_pool(database_url: &str) -> Pool<ConnectionManager<PgConnection>> {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
     // Limit pool to a single connection
     Pool::builder()
-        .max_size(1)
+        .max_size(5)
         .build(manager)
         .expect("Failed to create pool.")
 }
