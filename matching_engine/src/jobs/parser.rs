@@ -330,6 +330,8 @@ impl<
                                     &self.shared_generator_store,
                                     &self.shared_market_store,
                                     &self.shared_cost_store,
+                                    &self.shared_native_stake_store,
+                                    &self.shared_symbiotic_stake_store,
                                     &self.matching_engine_key,
                                     &self.matching_engine_slave_keys,
                                     &self.rpc_url,

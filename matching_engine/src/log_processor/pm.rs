@@ -5,8 +5,13 @@ use crate::{
         ask_store::{
             AskManagementRead, AskManagementWrite, ProofMarketStakeLockManagement, TimingOperations,
         },
+        AssociatedStakeLock,
+    },
+    generator_lib::{
+        native_stake_store::NativeStakingOperations, symbiotic_stake_store::SlashResultManagement,
     },
     market_metadata::{MarketMetadata, MarketMetadataStoreWrite},
+    utility::TokenTracker,
 };
 
 use crate::costs::CostStoreOperations;
@@ -32,7 +37,7 @@ use bindings::proof_marketplace as pmp;
 use super::constants;
 
 #[allow(clippy::too_many_arguments)]
-pub async fn process_proof_market_place_logs<A, G, M, C>(
+pub async fn process_proof_market_place_logs<A, G, M, C, N, S>(
     log: &Log,
     proof_market_place: &pmp::ProofMarketplace<
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -41,6 +46,8 @@ pub async fn process_proof_market_place_logs<A, G, M, C>(
     generator_store: &Arc<RwLock<G>>,
     market_store: &Arc<RwLock<M>>,
     cost_store: &Arc<RwLock<C>>,
+    native_stake_store: &Arc<RwLock<N>>,
+    symbiotic_stake_store: &Arc<RwLock<S>>,
     matching_engine_key: &[u8],
     matchin_engine_slave_keys: &Vec<Vec<u8>>,
     rpc_url: &str,
@@ -54,6 +61,8 @@ where
         + GeneratorSlashingManagement,
     M: MarketMetadataStoreWrite,
     C: CostStoreOperations,
+    N: NativeStakingOperations,
+    S: SlashResultManagement,
 {
     if constants::PROOF_MARKET_TOPICS_SKIP
         .get(&log.topics[0])
@@ -628,12 +637,35 @@ where
 
         if cfg!(feature = "record_possible_slashing_incidents") {
             let possible_slashing = local_ask_store.get_associated_stake_lock(&bid_id);
-            if let Some(possible_slashing) = possible_slashing {
+            let native_stake_store = { native_stake_store.read().await };
+            let symbiotic_stake_store = { symbiotic_stake_store.read().await };
+
+            if let Some(probable_slashing) = possible_slashing {
+                let actual_slashing = {
+                    let mut native_staking_penatly = TokenTracker::default();
+                    let mut symbiotic_staking_penatly = TokenTracker::default();
+
+                    for a in probable_slashing.native.to_address_token_pair().iter() {
+                        let penatly = native_stake_store.get_slashing_penalty_percent(a.0);
+                        let penatly = penatly * a.1;
+                        native_staking_penatly.add_token(&a.0, &penatly);
+                    }
+                    for a in probable_slashing.symbiotic.to_address_token_pair().iter() {
+                        let penatly = symbiotic_stake_store.get_slashing_penalty_percent(a.0);
+                        let penatly = penatly * a.1;
+                        symbiotic_staking_penatly.add_token(&a.0, &penatly);
+                    }
+
+                    AssociatedStakeLock {
+                        native: native_staking_penatly,
+                        symbiotic: symbiotic_staking_penatly,
+                    }
+                };
                 let slashing_timestamp =
                     get_timestamp_from_l2block_number(rpc_url, &proof_cycle_completed_on)
                         .await
                         .unwrap_or_default();
-                let (native_slashing_tokens, native_slashings) = possible_slashing
+                let (native_slashing_tokens, native_slashings) = actual_slashing
                     .native
                     .to_address_token_pair()
                     .into_iter()
@@ -653,7 +685,7 @@ where
                     &slashing_timestamp,
                 );
 
-                let (symbiotic_slashing_tokens, symbiotic_slashings) = possible_slashing
+                let (symbiotic_slashing_tokens, symbiotic_slashings) = actual_slashing
                     .symbiotic
                     .to_address_token_pair()
                     .into_iter()

@@ -35,4 +35,12 @@ impl NativeStakingOperations for NativeStakingStore {
     async fn tokens_to_lock(&self) -> TokenTracker {
         self.tokens_to_lock.clone()
     }
+
+    fn get_slashing_penalty_percent(&self, _token: Address) -> U256 {
+        U256::zero()
+    }
+
+    fn set_slashing_penalty_percent(&mut self, _token: Address, _percent: U256) {
+        unimplemented!("set_slashing_penalty_percent are not implemented in NativeStakingStore/NativeStakingModule")
+    }
 }

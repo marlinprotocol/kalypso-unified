@@ -11,4 +11,8 @@ pub trait NativeStakingOperations {
     async fn remove_lock_token(&mut self, token: Address);
 
     async fn tokens_to_lock(&self) -> TokenTracker;
+
+    fn get_slashing_penalty_percent(&self, token: Address) -> U256;
+
+    fn set_slashing_penalty_percent(&mut self, token: Address, percent: U256);
 }

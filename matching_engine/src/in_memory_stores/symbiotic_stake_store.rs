@@ -165,4 +165,12 @@ impl SlashResultManagement for SymbioticStakeStore {
     fn slash_result_indexes(&self) -> Vec<U256> {
         self.slash_result_indexes.clone()
     }
+
+    fn get_slashing_penalty_percent(&self, _token: Address) -> U256 {
+        U256::zero()
+    }
+
+    fn set_slashing_penalty_percent(&mut self, _token: Address, _percent: U256) {
+        unimplemented!("set_slashing_penalty_percent are not implemented in SymbioticStakeStore/SymbioticStakeModule")
+    }
 }

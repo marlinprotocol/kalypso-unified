@@ -269,4 +269,7 @@ pub trait SlashResultManagement {
 
     fn slash_result(&self) -> HashMap<U256, HashMap<U256, SlashResult>>;
     fn slash_result_indexes(&self) -> Vec<U256>;
+
+    fn get_slashing_penalty_percent(&self, token: Address) -> U256;
+    fn set_slashing_penalty_percent(&mut self, token: Address, percent: U256);
 }
