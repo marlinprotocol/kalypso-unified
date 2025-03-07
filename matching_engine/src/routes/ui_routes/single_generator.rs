@@ -285,6 +285,9 @@ struct Slash {
 
     /// Transactino hash of the inputs
     inputs_transaction: String,
+
+    /// Requested Proving time
+    time_requested_for_proof_generation: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -879,6 +882,11 @@ async fn recompute_single_generator_response<
                     .get_by_ask_id(&record.ask_id)
                     .unwrap_or_default()
                     .create_transaction
+                    .to_string(),
+                time_requested_for_proof_generation: local_ask_store
+                    .get_by_ask_id(&record.ask_id)
+                    .unwrap_or_default()
+                    .time_requested_for_proof_generation
                     .to_string(),
             })
             .collect(),
