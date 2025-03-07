@@ -3,7 +3,7 @@ use ethers::core::types::U256;
 use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Default)]
 pub struct LocalAsk {
     pub ask_id: U256,
     pub market_id: U256,
