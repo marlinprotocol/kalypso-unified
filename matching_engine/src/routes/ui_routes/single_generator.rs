@@ -286,8 +286,11 @@ struct Slash {
     /// Transactino hash of the inputs
     inputs_transaction: String,
 
-    /// Requested Proving time
-    time_requested_for_proof_generation: String,
+    /// Deadline by which the job should be completed by the generator
+    deadline_for_proof_generation: String,
+
+    // input transaction hash
+    input_transaction_tx: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -879,7 +882,8 @@ async fn recompute_single_generator_response<
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
                 source: record.source.to_string(),
                 inputs_transaction: "0xabcd".to_string(),
-                time_requested_for_proof_generation: record.expected_time.to_string(),
+                deadline_for_proof_generation: record.expected_time.to_string(),
+                input_transaction_tx: record.input_transaction_tx,
             })
             .collect(),
         delegations: local_generator_store

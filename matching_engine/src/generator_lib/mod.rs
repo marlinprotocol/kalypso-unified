@@ -21,6 +21,7 @@ pub struct SlashingRecord {
     pub ask_id: U256,
     pub slashing_block_number: U64,
     pub market_id: U256,
+    pub input_transaction_tx: String,
     pub slashing_tx: String,
     pub price_offered: U256,
     pub expected_time: U256,

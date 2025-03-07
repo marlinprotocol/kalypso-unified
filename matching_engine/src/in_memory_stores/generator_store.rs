@@ -635,6 +635,7 @@ impl GeneratorSlashingManagement for GeneratorStore {
         native_slashings: Vec<U256>,
         symbiotic_tokens_slashed: Vec<Address>,
         symbiotic_slashings: Vec<U256>,
+        input_transaction_tx: String,
         slashing_tx: String,
         price_offered: &U256,
         deadline: &U256,
@@ -679,6 +680,7 @@ impl GeneratorSlashingManagement for GeneratorStore {
                     slashing_block_number: slashing_block_number.clone(),
                     slashing_timestamp: slashing_timestamp.clone(),
                     source: Source::Native,
+                    input_transaction_tx: input_transaction_tx.clone(),
                 });
         }
 
@@ -726,6 +728,7 @@ impl GeneratorSlashingManagement for GeneratorStore {
                     slashing_block_number: slashing_block_number.clone(),
                     slashing_timestamp: slashing_timestamp.clone(),
                     source: Source::Symbiotic,
+                    input_transaction_tx: input_transaction_tx.clone(),
                 });
         }
     }
