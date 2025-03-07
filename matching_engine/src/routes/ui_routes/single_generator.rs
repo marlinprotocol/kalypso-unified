@@ -6,6 +6,7 @@ use crate::{
         ask_store::{AskManagementRead, CompletedProofsManagement, TimingOperations},
     },
     generator_lib::traits::JobMissedCounter,
+    utility::USDC_TOKEN_STRING,
 };
 
 use crate::generator_lib::{
@@ -268,7 +269,7 @@ struct Slash {
     market: MarketInfo,
 
     /// Price Offered
-    price_offered: String,
+    price_offered: TokenAmount,
 
     /// Slashing Penalty (no penalty exists as of now)
     slashing_penalty: TokenAmount,
@@ -868,7 +869,10 @@ async fn recompute_single_generator_response<
                         .collect::<Vec<String>>(),
                 },
                 slashing_transaction_hash: record.slashing_tx,
-                price_offered: record.price_offered.to_string(),
+                price_offered: TokenAmount {
+                    token: USDC_TOKEN_STRING.to_string(),
+                    amount: record.price_offered.to_string(),
+                },
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
                 source: record.source.to_string(),
                 inputs_transaction: local_ask_store
