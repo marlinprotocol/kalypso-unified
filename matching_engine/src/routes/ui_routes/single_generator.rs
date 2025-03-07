@@ -279,7 +279,11 @@ struct Slash {
     /// Source of the slashing (Native or Symbiotic) (no slashing exists as of now)
     source: String,
 
+    /// Transaction hash of the slashing transaction
     slashing_transaction_hash: String,
+
+    /// Transactino hash of the inputs
+    inputs_transaction: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -867,6 +871,11 @@ async fn recompute_single_generator_response<
                 price_offered: record.price_offered.to_string(),
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
                 source: record.source.to_string(),
+                inputs_transaction: local_ask_store
+                    .get_by_ask_id(&record.ask_id)
+                    .unwrap_or_default()
+                    .create_transaction
+                    .to_string(),
             })
             .collect(),
         delegations: local_generator_store
