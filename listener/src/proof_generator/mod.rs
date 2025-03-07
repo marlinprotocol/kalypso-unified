@@ -88,10 +88,24 @@ pub async fn generate_proof(
     } else {
         // market without confidential inputs
         let ivs_url = &markets.get(&market_id.to_string()).unwrap().ivs_url;
-        let generator_url = &markets
+        let mut generator_url = markets
             .get(&market_id.to_string())
             .unwrap()
-            .prover_gateway_url;
+            .prover_gateway_url
+            .clone();
+
+        // fallback to some internal port if gateway is not defined.
+        if generator_url.is_none() {
+            generator_url = Some(format!(
+                "http://localhost:{}/api/generateProof",
+                markets
+                    .get(&market_id.to_string())
+                    .unwrap()
+                    .port
+                    .clone()
+                    .unwrap()
+            ));
+        }
 
         let non_confidential_prover = NonConfidentialProver::new(
             format!("{}/api/checkInput", ivs_url.clone().unwrap()),
