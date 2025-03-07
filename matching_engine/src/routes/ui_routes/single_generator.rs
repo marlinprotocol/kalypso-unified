@@ -878,16 +878,8 @@ async fn recompute_single_generator_response<
                 },
                 slashing_penalty: address_token_pair_to_token_amount(record.slashing_penalty),
                 source: record.source.to_string(),
-                inputs_transaction: local_ask_store
-                    .get_by_ask_id(&record.ask_id)
-                    .unwrap_or_default()
-                    .create_transaction
-                    .to_string(),
-                time_requested_for_proof_generation: local_ask_store
-                    .get_by_ask_id(&record.ask_id)
-                    .unwrap_or_default()
-                    .time_requested_for_proof_generation
-                    .to_string(),
+                inputs_transaction: "0xabcd".to_string(),
+                time_requested_for_proof_generation: record.expected_time.to_string(),
             })
             .collect(),
         delegations: local_generator_store
