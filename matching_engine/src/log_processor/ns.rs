@@ -370,6 +370,7 @@ where
                 native_slashings,
                 vec![],
                 vec![],
+                tx_to_string(&ask.create_transaction),
                 tx_to_string(&log.transaction_hash.unwrap()),
                 &reward,
                 &deadline,

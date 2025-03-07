@@ -89,6 +89,7 @@ pub trait GeneratorSlashingManagement {
         native_slashings: Vec<U256>,
         symbiotic_tokens_slashed: Vec<Address>,
         symbiotic_slashings: Vec<U256>,
+        input_transaction_tx: String,
         slashing_tx: String,
         price_offered: &U256,
         deadline: &U256,
