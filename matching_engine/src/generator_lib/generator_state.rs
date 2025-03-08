@@ -1,3 +1,8 @@
+use std::{
+    fmt::{Display, Formatter, Result},
+    str::FromStr,
+};
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Hash, Copy, Clone)]
@@ -34,5 +39,34 @@ pub fn get_generator_state(state: u8) -> GeneratorState {
         3 => GeneratorState::Wip,
         4 => GeneratorState::RequestedForExit,
         _ => GeneratorState::Null,
+    }
+}
+
+impl Display for GeneratorState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match { self } {
+            GeneratorState::Null => write!(f, "Null"),
+            GeneratorState::Joined => write!(f, "Joined"),
+            GeneratorState::NoComputeAvailable => write!(f, "NoComputeAvailable"),
+            GeneratorState::Wip => write!(f, "Wip"),
+            GeneratorState::RequestedForExit => write!(f, "RequestedForExit"),
+            GeneratorState::PendingConfirmation => write!(f, "PendingConfirmation"),
+        }
+    }
+}
+
+impl FromStr for GeneratorState {
+    type Err = ();
+
+    fn from_str(s: &str) -> std::result::Result<GeneratorState, ()> {
+        match s {
+            "Null" => Ok(GeneratorState::Null),
+            "Joined" => Ok(GeneratorState::Joined),
+            "NoComputeAvailable" => Ok(GeneratorState::NoComputeAvailable),
+            "Wip" => Ok(GeneratorState::Wip),
+            "RequestedForExit" => Ok(GeneratorState::RequestedForExit),
+            "PendingConfirmation" => Ok(GeneratorState::PendingConfirmation),
+            _ => Err(()),
+        }
     }
 }

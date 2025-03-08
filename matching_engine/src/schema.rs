@@ -40,6 +40,8 @@ diesel::table! {
         operation -> Text,
         block_number -> Text,
         transaction_index -> Text,
+        log_index -> Text,
+        tx -> Text,
     }
 }
 
@@ -91,6 +93,10 @@ diesel::table! {
         market_id -> Text,
         slashing_tx -> Text,
         price_offered -> Text,
+        expected_time -> Text,
+        slashing_penalty -> Text,
+        slashing_timestamp -> Text,
+        source -> Text,
     }
 }
 
@@ -98,9 +104,8 @@ diesel::table! {
     token_trackers (id) {
         id -> Int4,
         generator_address -> Text,
-        market_id -> Nullable<Text>,
-        token -> Text,
-        amount -> Text,
+        market_id -> Text, // or Nullable<Text> if we need to allow generator-wide entries
+        token_tracker -> Text, // here we store the aggregated U256 as a string (JSON is also an option)
     }
 }
 
