@@ -525,9 +525,9 @@ impl ProofMarketStakeLockManagement for AskDatabase {
     fn get_associated_stake_lock(&self, ask_id_val: &U256) -> Option<AssociatedStakeLock> {
         let id_bytes = u256_to_bytes(*ask_id_val);
         let mut conn = self.pool.get().expect("Failed to get connection from pool");
-        let json_str: Option<String> = ask_records
-            .filter(ask_id.eq(id_bytes))
-            .select(associated_stake_locks)
+        let json_str: Option<String> = ask_records::table
+            .filter(ask_records::ask_id.eq(id_bytes))
+            .select(ask_records::associated_stake_locks)
             .first(&mut conn)
             .expect("Error loading associated stake locks");
         json_str.and_then(|s| serde_json::from_str(&s).ok())
@@ -541,9 +541,9 @@ impl ProofMarketStakeLockManagement for AskDatabase {
         let mut conn = self.pool.get().expect("Failed to get connection from pool");
 
         // Retrieve the current associated stake locks as a JSON string.
-        let current: Option<String> = ask_records
-            .filter(ask_id.eq(id_bytes.clone()))
-            .select(associated_stake_locks)
+        let current: Option<String> = ask_records::table
+            .filter(ask_records::ask_id.eq(id_bytes.clone()))
+            .select(ask_records::associated_stake_locks)
             .first(&mut conn)
             .expect("Error loading associated stake locks");
         // Deserialize or initialize a default AssociatedStakeLock.
@@ -568,8 +568,8 @@ impl ProofMarketStakeLockManagement for AskDatabase {
         let new_json = serde_json::to_string(&assoc_lock).expect("Failed to serialize AssociatedStakeLock");
 
         // Update the record in the DB.
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(associated_stake_locks.eq(Some(new_json)))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::associated_stake_locks.eq(Some(new_json)))
             .execute(&mut conn)
             .expect("Failed to update associated stake locks");
     }
@@ -583,9 +583,9 @@ impl ProofMarketStakeLockManagement for AskDatabase {
         let id_bytes = u256_to_bytes(*ask_id_val);
         let mut conn = self.pool.get().expect("Failed to get connection from pool");
 
-        let current: Option<String> = ask_records
-            .filter(ask_id.eq(id_bytes.clone()))
-            .select(associated_stake_locks)
+        let current: Option<String> = ask_records::table
+            .filter(ask_records::ask_id.eq(id_bytes.clone()))
+            .select(ask_records::associated_stake_locks)
             .first(&mut conn)
             .expect("Error loading associated stake locks");
 
@@ -606,8 +606,8 @@ impl ProofMarketStakeLockManagement for AskDatabase {
 
         let new_json = serde_json::to_string(&assoc_lock).expect("Failed to serialize AssociatedStakeLock");
 
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(associated_stake_locks.eq(Some(new_json)))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::associated_stake_locks.eq(Some(new_json)))
             .execute(&mut conn)
             .expect("Failed to update associated stake locks");
     }
@@ -618,8 +618,8 @@ impl ProofMarketStakeLockManagement for AskDatabase {
         let id_bytes = u256_to_bytes(*ask_id_val);
         let mut conn = self.pool.get().expect("Failed to get connection from pool");
 
-        diesel::update(ask_records.filter(ask_id.eq(id_bytes)))
-            .set(associated_stake_locks.eq::<Option<String>>(None))
+        diesel::update(ask_records::table.filter(ask_records::ask_id.eq(id_bytes)))
+            .set(ask_records::associated_stake_locks.eq::<Option<String>>(None))
             .execute(&mut conn)
             .expect("Failed to delete associated stake locks");
     }
