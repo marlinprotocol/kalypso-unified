@@ -130,3 +130,45 @@ diesel::allow_tables_to_appear_in_same_query!(
     token_trackers,
     withdrawal_requests,
 );
+
+
+diesel::table! {
+    cost_record (key) {
+        key -> Int2,
+        value -> Bytea,
+    }
+}
+
+diesel::table! {
+    key_record (address, key_index) {
+        address -> Text,
+        key_index -> BigInt,
+        ecies_pub_key -> Nullable<Bytea>,
+    }
+}
+
+diesel::table! {
+    market_metadata (market_id) {
+        market_id -> Text,             // U256 stored as text
+        verifier -> Text,              // Address stored as text (e.g., hex)
+        activation_block -> Text,      // U256 stored as text
+        metadata -> Bytea,             // Binary metadata stored as BYTEA
+        proof_time -> Text,            // U256 stored as text (proof time in blocks)
+        proof_cost -> Text,            // U256 stored as text (proof cost in USDC)
+        earnings -> Text,              // U256 stored as text (earnings in USDC)
+    }
+}
+
+diesel::table! {
+    market_images (id) {
+        id -> Int4,                  // Auto-increment primary key
+        market_id -> Text,           // U256 stored as text, foreign key to market_metadata(market_id)
+        image_type -> Text,          // Image type ("prover" or "ivs")
+        image -> Text,               // H256 stored as text (e.g., hex string)
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    market_metadata,
+    market_images,
+);

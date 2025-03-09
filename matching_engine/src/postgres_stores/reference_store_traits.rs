@@ -48,3 +48,9 @@ pub trait GeneratorStoreTrait<KS: KeyStoreOperations>:
     + GeneratorAdditionalQuery
 {
 }
+
+pub trait MarketStoreTrait: MarketMetadataStoreRead + MarketMetadataStoreWrite {}
+
+pub trait KeyStoreTrait: KeyStoreOperations {}
+
+pub trait CostStoreTrait: CostStoreOperations {}

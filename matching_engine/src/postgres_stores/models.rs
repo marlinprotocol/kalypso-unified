@@ -8,13 +8,14 @@ use std::{collections::HashMap, vec::Vec};
 use crate::ask_lib::ask::LocalAsk;
 use crate::ask_lib::ask_status::AskState;
 
+use crate::generator_lib::key_store::Key;
 use crate::generator_lib::{
     generator_store::{Generator, GeneratorInfoPerMarket},
     withdrawal_request::WithdrawlRequest,
 };
 use crate::schema::{
     ask_records, delegations, generator_markets, generators, slashing_records, token_trackers,
-    withdrawal_requests,
+    withdrawal_requests, cost_record, key_record, market_metadata, market_images
 };
 
 /// Database-backed implementation for AskRecord.
@@ -406,6 +407,76 @@ impl From<WithdrawalRequestRecord> for WithdrawlRequest {
     }
 }
 
+
+/// Structure representing the CostStore.
+pub struct CostDatabase {
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+}
+
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "cost_record"]
+pub struct CostRecord {
+    pub key: i16,
+    pub value: Vec<u8>,
+}
+
+pub struct KeyDatabase {
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+}
+
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "key_record"]
+pub struct KeyStoreRecord {
+    pub address: String,
+    pub key_index: i64,
+    pub ecies_pub_key: Option<Vec<u8>>,
+}
+
+impl From<Key> for KeyStoreRecord {
+    fn from(key: Key) -> Self {
+        KeyStoreRecord {
+            // Convert your Address/H160 to String as needed (e.g., hex encoding)
+            address: key.address.to_string(),  
+            key_index: key.key_index as i64,
+            ecies_pub_key: key.ecies_pub_key.map(|b| b.to_vec()),
+        }
+    }
+}
+
+impl From<KeyStoreRecord> for Key {
+    fn from(rec: KeyStoreRecord) -> Self {
+        Key {
+            address: rec.address.parse().expect("Invalid address"),
+            key_index: rec.key_index as u64,
+            ecies_pub_key: rec.ecies_pub_key.map(Bytes::from),
+        }
+    }
+}
+
+pub struct MarketMetadataStoreDB {
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+}
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "market_metadata"]
+pub struct MarketMetadataRecord {
+    pub market_id: String,
+    pub verifier: String,
+    pub activation_block: String,
+    pub metadata: Vec<u8>,
+    pub proof_time: String,
+    pub proof_cost: String,
+    pub earnings: String,
+}
+
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "market_images"]
+pub struct MarketImageRecord {
+    pub id: i32,
+    pub market_id: String,
+    pub image_type: String,
+    pub image: String,
+}
+
 // Helper conversion functions.
 pub fn u256_to_bytes(val: U256) -> Vec<u8> {
     let mut bytes = [0u8; 32];
@@ -416,3 +487,4 @@ pub fn u256_to_bytes(val: U256) -> Vec<u8> {
 pub fn bytes_to_u256(b: &[u8]) -> U256 {
     U256::from_big_endian(b)
 }
+

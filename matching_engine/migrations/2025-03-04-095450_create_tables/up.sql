@@ -111,3 +111,29 @@ CREATE TABLE withdrawal_requests (
     request_index TEXT NOT NULL,
     timestamp TEXT NOT NULL
 );
+
+CREATE TABLE key_store (
+    address TEXT NOT NULL,
+    key_index BIGINT NOT NULL,
+    ecies_pub_key BYTEA,
+    PRIMARY KEY (address, key_index)
+);
+
+CREATE TABLE market_metadata (
+    market_id TEXT PRIMARY KEY,         -- U256 stored as text
+    verifier TEXT NOT NULL,             -- Address stored as text (e.g., hex)
+    activation_block TEXT NOT NULL,     -- U256 stored as text
+    metadata BYTEA NOT NULL,            -- Bytes stored as BYTEA
+    proof_time TEXT NOT NULL,           -- U256 stored as text (proof time in blocks)
+    proof_cost TEXT NOT NULL,           -- U256 stored as text (proof cost in USDC)
+    earnings TEXT NOT NULL              -- U256 stored as text (earnings in USDC)
+);
+
+-- Create the market images table to store both prover and ivs images
+CREATE TABLE market_images (
+    id SERIAL PRIMARY KEY,
+    market_id TEXT NOT NULL,            -- U256 stored as text, foreign key referencing market_metadata(market_id)
+    image_type TEXT NOT NULL,           -- "prover" or "ivs" (could also be an ENUM)
+    image TEXT NOT NULL,                -- H256 stored as text (e.g., hex string)
+    FOREIGN KEY (market_id) REFERENCES market_metadata(market_id)
+);

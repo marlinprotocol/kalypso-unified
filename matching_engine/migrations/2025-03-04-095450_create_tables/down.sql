@@ -6,3 +6,6 @@ DROP TABLE IF EXISTS generators;
 DROP TABLE IF EXISTS generator_markets;
 DROP TABLE IF EXISTS delegations;
 DROP TABLE IF EXISTS ask_records;
+DROP TABLE key_store;
+DROP TABLE IF EXISTS market_images;
+DROP TABLE IF EXISTS market_metadata;
