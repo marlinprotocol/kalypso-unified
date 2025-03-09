@@ -172,3 +172,16 @@ diesel::allow_tables_to_appear_in_same_query!(
     market_metadata,
     market_images,
 );
+
+diesel::table! {
+    stake_manager_record (address) {
+        address -> Text,
+    }
+}
+
+diesel::table! {
+    native_staking_store (id) {
+        id -> Int4,
+        tokens_to_lock -> Text,
+    }
+}

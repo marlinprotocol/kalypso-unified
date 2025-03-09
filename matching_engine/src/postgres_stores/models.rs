@@ -15,7 +15,7 @@ use crate::generator_lib::{
 };
 use crate::schema::{
     ask_records, delegations, generator_markets, generators, slashing_records, token_trackers,
-    withdrawal_requests, cost_record, key_record, market_metadata, market_images
+    withdrawal_requests, cost_record, key_record, market_metadata, market_images, stake_manager_record, native_staking_store
 };
 
 /// Database-backed implementation for AskRecord.
@@ -475,6 +475,27 @@ pub struct MarketImageRecord {
     pub market_id: String,
     pub image_type: String,
     pub image: String,
+}
+
+pub struct StakeManagerStoreDB {
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+}
+
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "stake_manager_record"]
+pub struct StakeManagerRecord {
+    pub address: String,
+}
+
+pub struct NativeStakingStoreDB {
+    pub pool: Pool<ConnectionManager<PgConnection>>,
+}
+
+#[derive(Debug, Queryable, Insertable, QueryableByName, Selectable)]
+#[table_name = "native_staking_store"]
+pub struct NativeStakingRecord {
+    pub id: i32,
+    pub tokens_to_lock: String, // JSON-serialized TokenTracker
 }
 
 // Helper conversion functions.

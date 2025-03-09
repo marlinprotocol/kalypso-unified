@@ -137,3 +137,8 @@ CREATE TABLE market_images (
     image TEXT NOT NULL,                -- H256 stored as text (e.g., hex string)
     FOREIGN KEY (market_id) REFERENCES market_metadata(market_id)
 );
+
+CREATE TABLE native_staking_store (
+    id SERIAL PRIMARY KEY,
+    tokens_to_lock TEXT NOT NULL
+);

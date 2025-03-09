@@ -9,3 +9,4 @@ DROP TABLE IF EXISTS ask_records;
 DROP TABLE key_store;
 DROP TABLE IF EXISTS market_images;
 DROP TABLE IF EXISTS market_metadata;
+DROP TABLE native_staking_store;

@@ -54,3 +54,12 @@ pub trait MarketStoreTrait: MarketMetadataStoreRead + MarketMetadataStoreWrite {
 pub trait KeyStoreTrait: KeyStoreOperations {}
 
 pub trait CostStoreTrait: CostStoreOperations {}
+
+pub trait SymbioticStore:
+    OperatorStakeManagement + TokenLockManagement + VaultSnapshotManagement + SlashResultManagement
+{
+}
+
+pub trait NativeStakeStoreTrait: NativeStakingOperations {}
+
+pub trait StakeManagerStoreTrait: StakeManagerOperations {}

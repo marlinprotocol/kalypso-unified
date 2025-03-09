@@ -6,3 +6,6 @@ pub mod models;
 pub mod cost_store;
 pub mod key_store;
 pub mod market_metadata_store;
+pub mod stake_manager_store;
+pub mod symbiotic_stake_store;
+pub mod native_stake_store;
