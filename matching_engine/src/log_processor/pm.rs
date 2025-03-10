@@ -371,8 +371,6 @@ where
             proof_generator_cost,
             tx_to_string(&log.transaction_hash.unwrap()),
         );
-        local_ask_store
-            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::ProofCreated);
 
         {
             generator_store.write().await.update_on_submit_proof(
@@ -395,6 +393,9 @@ where
         }
 
         local_ask_store.delete_all_associated_stake_locks(&bid_id);
+
+        local_ask_store
+            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::ProofCreated);
         return Ok(());
     }
 
@@ -553,6 +554,7 @@ where
 
         local_ask_store.update_proof_proof_cycle_completed_on(&bid_id, proof_cycle_completed_on_l1);
         local_ask_store.modify_state(&bid_id, AskState::Complete);
+
         local_ask_store
             .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::BidCancelled);
         return Ok(());
@@ -599,8 +601,6 @@ where
         log::debug!("Proof not Generated: update on slashing penalty");
 
         let ask = local_ask_store.get_by_ask_id(&bid_id).unwrap();
-        local_ask_store
-            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::ProofNotGenerated);
 
         let mut generator_store = generator_store.write().await;
 
@@ -710,6 +710,9 @@ where
         }
 
         local_ask_store.delete_all_associated_stake_locks(&bid_id);
+
+        local_ask_store
+            .remove_ask_only_if_completed(&bid_id, crate::ask_lib::RemoveReason::ProofNotGenerated);
         return Ok(());
     }
 
@@ -778,11 +781,6 @@ where
             (generator_address, market_id)
         };
 
-        local_ask_store.remove_ask_only_if_completed(
-            &bid_id,
-            crate::ask_lib::RemoveReason::InvalidInputsDetected,
-        );
-
         {
             let proof_generator_cost = generator_store
                 .read()
@@ -809,6 +807,12 @@ where
         }
 
         local_ask_store.delete_all_associated_stake_locks(&bid_id);
+
+        local_ask_store.remove_ask_only_if_completed(
+            &bid_id,
+            crate::ask_lib::RemoveReason::InvalidInputsDetected,
+        );
+
         log::debug!("Complete: invalid input attestation event operation");
         return Ok(());
     }
