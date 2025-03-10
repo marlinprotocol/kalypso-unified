@@ -1,8 +1,8 @@
+use super::models::{KeyDatabase, KeyStoreRecord};
 use crate::generator_lib::key_store::{Key, KeyStoreOperations};
 use crate::schema::key_record;
-use super::models::{KeyDatabase, KeyStoreRecord};
-use ethers::core::types::Address;
 use diesel::prelude::*;
+use ethers::core::types::Address;
 use ethers::types::Bytes;
 
 impl KeyStoreOperations for KeyDatabase {
@@ -19,7 +19,6 @@ impl KeyStoreOperations for KeyDatabase {
     }
 
     fn get_by_address(&self, address_val: &Address, value: u64) -> Option<Key> {
-
         let conn = &mut self.pool.get().expect("DB connection error");
 
         key_record::table
@@ -36,7 +35,7 @@ impl KeyStoreOperations for KeyDatabase {
         diesel::delete(
             key_record::table
                 .filter(key_record::address.eq(address_val.to_string()))
-                .filter(key_record::key_index.eq(value as i64))
+                .filter(key_record::key_index.eq(value as i64)),
         )
         .execute(conn)
         .expect("Error deleting from key_store");
@@ -47,7 +46,7 @@ impl KeyStoreOperations for KeyDatabase {
         diesel::update(
             key_record::table
                 .filter(key_record::address.eq(address_val.to_string()))
-                .filter(key_record::key_index.eq(value as i64))
+                .filter(key_record::key_index.eq(value as i64)),
         )
         .set(key_record::ecies_pub_key.eq(new_pub_key.map(|b| b.to_vec())))
         .execute(conn)

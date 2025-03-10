@@ -14,8 +14,9 @@ use crate::generator_lib::{
     withdrawal_request::WithdrawlRequest,
 };
 use crate::schema::{
-    ask_records, delegations, generator_markets, generators, slashing_records, token_trackers,
-    withdrawal_requests, cost_record, key_record, market_metadata, market_images, stake_manager_record, native_staking_store
+    ask_records, cost_record, delegations, generator_markets, generators, key_record,
+    market_images, market_metadata, native_staking_store, slashing_records, stake_manager_record,
+    token_trackers, withdrawal_requests,
 };
 
 /// Database-backed implementation for AskRecord.
@@ -407,7 +408,6 @@ impl From<WithdrawalRequestRecord> for WithdrawlRequest {
     }
 }
 
-
 /// Structure representing the CostStore.
 pub struct CostDatabase {
     pub pool: Pool<ConnectionManager<PgConnection>>,
@@ -436,7 +436,7 @@ impl From<Key> for KeyStoreRecord {
     fn from(key: Key) -> Self {
         KeyStoreRecord {
             // Convert your Address/H160 to String as needed (e.g., hex encoding)
-            address: key.address.to_string(),  
+            address: key.address.to_string(),
             key_index: key.key_index as i64,
             ecies_pub_key: key.ecies_pub_key.map(|b| b.to_vec()),
         }
@@ -508,4 +508,3 @@ pub fn u256_to_bytes(val: U256) -> Vec<u8> {
 pub fn bytes_to_u256(b: &[u8]) -> U256 {
     U256::from_big_endian(b)
 }
-

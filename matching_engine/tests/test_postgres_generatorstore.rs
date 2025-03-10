@@ -7,7 +7,6 @@
 // use std::env;
 // use ethers::core::types::{U256, U64, Address, Bytes, H256};
 
-
 // use my_crate::{
 //     DieselGeneratorStore, Generator, GeneratorInfoPerMarket, NewGenerator, NewGeneratorMarket,
 //     GeneratorRegistration, GeneratorStakeComputeManagement, Operation, Source,

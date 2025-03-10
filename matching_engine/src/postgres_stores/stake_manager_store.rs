@@ -1,11 +1,13 @@
 use ethers::types::Address;
 
-use crate::{generator_lib::stake_manager_store::StakeManagerOperations, schema::stake_manager_record};
+use crate::{
+    generator_lib::stake_manager_store::StakeManagerOperations, schema::stake_manager_record,
+};
 
 use super::models::{StakeManagerRecord, StakeManagerStoreDB};
 
-use diesel::prelude::*;
 use diesel::dsl::exists;
+use diesel::prelude::*;
 
 impl StakeManagerOperations for StakeManagerStoreDB {
     /// Inserts a new pool address into the DB.
@@ -13,7 +15,9 @@ impl StakeManagerOperations for StakeManagerStoreDB {
     fn add(&mut self, pool_address: Address) -> bool {
         let conn = &mut self.pool.get().expect("DB connection error");
         let addr_str = pool_address.to_string();
-        let new_record = StakeManagerRecord { address: addr_str.clone() };
+        let new_record = StakeManagerRecord {
+            address: addr_str.clone(),
+        };
 
         // Use insert_into with an on_conflict clause to ignore duplicates.
         let result = diesel::insert_into(stake_manager_record::table)
@@ -31,9 +35,11 @@ impl StakeManagerOperations for StakeManagerStoreDB {
     fn remove(&mut self, pool_address: &Address) -> bool {
         let conn = &mut self.pool.get().expect("DB connection error");
         let addr_str = pool_address.to_string();
-        let num_deleted = diesel::delete(stake_manager_record::table.filter(stake_manager_record::address.eq(addr_str)))
-            .execute(conn)
-            .expect("Error deleting enabled pool");
+        let num_deleted = diesel::delete(
+            stake_manager_record::table.filter(stake_manager_record::address.eq(addr_str)),
+        )
+        .execute(conn)
+        .expect("Error deleting enabled pool");
         num_deleted > 0
     }
 
@@ -41,9 +47,11 @@ impl StakeManagerOperations for StakeManagerStoreDB {
     fn exists(&self, pool_address: &Address) -> bool {
         let conn = &mut self.pool.get().expect("DB connection error");
         let addr_str = pool_address.to_string();
-        let exists: bool = diesel::select(exists(stake_manager_record::table.filter(stake_manager_record::address.eq(addr_str))))
-            .get_result(conn)
-            .expect("Error checking enabled pool existence");
+        let exists: bool = diesel::select(exists(
+            stake_manager_record::table.filter(stake_manager_record::address.eq(addr_str)),
+        ))
+        .get_result(conn)
+        .expect("Error checking enabled pool existence");
         exists
     }
 
@@ -54,7 +62,8 @@ impl StakeManagerOperations for StakeManagerStoreDB {
             .load(conn)
             .expect("Error loading enabled pools");
         // Parse the stored string back into an Address.
-        records.into_iter()
+        records
+            .into_iter()
             .map(|r| r.address.parse().expect("Invalid address in DB"))
             .collect()
     }

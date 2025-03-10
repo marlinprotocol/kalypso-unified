@@ -131,7 +131,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     withdrawal_requests,
 );
 
-
 diesel::table! {
     cost_record (key) {
         key -> Int2,
@@ -168,10 +167,7 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    market_metadata,
-    market_images,
-);
+diesel::allow_tables_to_appear_in_same_query!(market_metadata, market_images,);
 
 diesel::table! {
     stake_manager_record (address) {

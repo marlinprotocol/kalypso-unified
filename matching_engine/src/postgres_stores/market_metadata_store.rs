@@ -1,40 +1,39 @@
-use diesel::prelude::*;
+use crate::market_metadata::MarketMetadata;
+use crate::market_metadata::{MarketMetadataStoreRead, MarketMetadataStoreWrite};
+use crate::schema::market_images;
+use crate::schema::market_metadata;
 use diesel::insert_into;
+use diesel::prelude::*;
 use ethers::types::Bytes;
 use ethers::types::H256;
 use ethers::types::U256;
-use crate::market_metadata::MarketMetadata;
-use crate::market_metadata::{MarketMetadataStoreWrite, MarketMetadataStoreRead};
-use crate::schema::market_metadata;
-use crate::schema::market_images;
 
 use super::models::MarketMetadataRecord;
 use super::models::MarketMetadataStoreDB;
 
-
 impl MarketMetadataStoreRead for MarketMetadataStoreDB {
     fn count_markets(&self) -> usize {
-            0
-        }
+        0
+    }
 
     fn get_all_markets(&self) -> Vec<MarketMetadata> {
         unimplemented!("get_all_markets")
     }
 
     fn get_median_proof_time(&self) -> U256 {
-        U256::zero()  
+        U256::zero()
     }
 
     fn get_median_proof_time_market_wise(&self, market_id: &U256) -> U256 {
-        U256::zero()  
+        U256::zero()
     }
 
     fn get_median_proof_cost(&self) -> U256 {
-        U256::zero()  
+        U256::zero()
     }
 
     fn get_median_proof_cost_market_wise(&self, market_id: &U256) -> U256 {
-        U256::zero()  
+        U256::zero()
     }
 
     fn get_market_by_market_id(&self, market_id: &U256) -> Option<MarketMetadata> {
@@ -44,14 +43,13 @@ impl MarketMetadataStoreRead for MarketMetadataStoreDB {
     fn get_earnings(&self, market_id: &U256) -> Option<U256> {
         // Safely access the earnings map
         None
-    }    
+    }
 }
 
 impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
     fn insert(&mut self, market: MarketMetadata) {
-        
         let conn = &mut self.pool.get().expect("DB connection error");
-        
+
         let market_id_str = market.market_id.to_string();
         let new_meta = MarketMetadataRecord {
             market_id: market.market_id.to_string(),
@@ -62,7 +60,6 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
             proof_cost: "0".to_string(),
             earnings: "0".to_string(),
         };
-
 
         insert_into(market_metadata::table)
             .values(&new_meta)
@@ -102,9 +99,11 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
         let market_id_str = market_id.to_string();
 
         // Delete from market_metadata.
-        diesel::delete(market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)))
-            .execute(conn)
-            .expect("Error deleting market metadata");
+        diesel::delete(
+            market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)),
+        )
+        .execute(conn)
+        .expect("Error deleting market metadata");
 
         // Delete associated images.
         diesel::delete(market_images::table.filter(market_images::market_id.eq(&market_id_str)))
@@ -124,13 +123,15 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
         // Update proof_time and proof_cost.
 
         // Need to reimplment this
-        diesel::update(market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)))
-            .set((
-                market_metadata::proof_time.eq(proof_time_val.to_string()),
-                market_metadata::proof_cost.eq(proof_cost_val.to_string()),
-            ))
-            .execute(conn)
-            .expect("Error updating proof stats");
+        diesel::update(
+            market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)),
+        )
+        .set((
+            market_metadata::proof_time.eq(proof_time_val.to_string()),
+            market_metadata::proof_cost.eq(proof_cost_val.to_string()),
+        ))
+        .execute(conn)
+        .expect("Error updating proof stats");
 
         // Update earnings: read current earnings, add proof_cost, update.
         let current_earnings: Option<String> = market_metadata::table
@@ -146,10 +147,12 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
             proof_cost_val.to_string()
         };
 
-        diesel::update(market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)))
-            .set(market_metadata::earnings.eq(new_earnings))
-            .execute(conn)
-            .expect("Error updating earnings");
+        diesel::update(
+            market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)),
+        )
+        .set(market_metadata::earnings.eq(new_earnings))
+        .execute(conn)
+        .expect("Error updating earnings");
     }
 
     fn note_proof_submission_stats_for_invalid_inputs(
@@ -161,10 +164,12 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
         let market_id_str = market_id.to_string();
 
         // Update proof_cost.
-        diesel::update(market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)))
-            .set(market_metadata::proof_cost.eq(proof_cost_val.to_string()))
-            .execute(conn)
-            .expect("Error updating proof cost");
+        diesel::update(
+            market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)),
+        )
+        .set(market_metadata::proof_cost.eq(proof_cost_val.to_string()))
+        .execute(conn)
+        .expect("Error updating proof cost");
 
         // Update earnings similarly.
         let current_earnings: Option<String> = market_metadata::table
@@ -180,10 +185,12 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
             proof_cost_val.to_string()
         };
 
-        diesel::update(market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)))
-            .set(market_metadata::earnings.eq(new_earnings))
-            .execute(conn)
-            .expect("Error updating earnings");
+        diesel::update(
+            market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)),
+        )
+        .set(market_metadata::earnings.eq(new_earnings))
+        .execute(conn)
+        .expect("Error updating earnings");
     }
 
     fn add_prover_image(&mut self, market_id: U256, image: H256) {
@@ -252,9 +259,11 @@ impl MarketMetadataStoreWrite for MarketMetadataStoreDB {
         let conn = &mut self.pool.get().expect("DB connection error");
         let market_id_str = market_id.to_string();
 
-        diesel::update(market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)))
-            .set(market_metadata::metadata.eq(metadata_bytes.to_vec()))
-            .execute(conn)
-            .expect("Error updating market metadata bytes");
+        diesel::update(
+            market_metadata::table.filter(market_metadata::market_id.eq(&market_id_str)),
+        )
+        .set(market_metadata::metadata.eq(metadata_bytes.to_vec()))
+        .execute(conn)
+        .expect("Error updating market metadata bytes");
     }
 }
