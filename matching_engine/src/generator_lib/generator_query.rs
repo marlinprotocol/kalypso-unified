@@ -2,13 +2,13 @@ use super::{generator_state::GeneratorState, generator_store::GeneratorInfoPerMa
 use ethers::prelude::*;
 
 #[derive(Clone)]
-pub struct GeneratorQueryResult<'a> {
-    generator_markets: Vec<&'a GeneratorInfoPerMarket>,
+pub struct GeneratorQueryResult {
+    generator_markets: Vec<GeneratorInfoPerMarket>,
 }
 
-impl<'a> GeneratorQueryResult<'a> {
+impl GeneratorQueryResult {
     // Initialize with a collection of generators
-    pub fn new(generator_markets: Vec<&'a GeneratorInfoPerMarket>) -> Self {
+    pub fn new(generator_markets: Vec<GeneratorInfoPerMarket>) -> Self {
         Self { generator_markets }
     }
 
@@ -17,7 +17,7 @@ impl<'a> GeneratorQueryResult<'a> {
         self.generator_markets = self
             .generator_markets
             .into_iter()
-            .filter(|&gen| gen.proof_generation_cost.lt(&task_reward))
+            .filter(|gen| gen.proof_generation_cost.lt(&task_reward))
             .collect();
 
         log::debug!(
@@ -32,7 +32,7 @@ impl<'a> GeneratorQueryResult<'a> {
         self.generator_markets = self
             .generator_markets
             .into_iter()
-            .filter(|&gen| {
+            .filter(|gen| {
                 log::debug!(
                     "Generator: {:?} proposed time: {:?} vs task time: {:?}",
                     gen.address,
@@ -58,7 +58,7 @@ impl<'a> GeneratorQueryResult<'a> {
         self.generator_markets = self
             .generator_markets
             .into_iter() // Use rayon's parallel iterator
-            .filter(|&gen| {
+            .filter(|gen| {
                 if let Some(gen_state) = gen.state {
                     states_set.contains(&gen_state) // Check if the generator state is in the provided states
                 } else {
@@ -82,7 +82,7 @@ impl<'a> GeneratorQueryResult<'a> {
         self.generator_markets = self
             .generator_markets
             .into_iter() // Convert to a parallel iterator
-            .filter(|&gen| gen.market_id == market_id) // Filter in parallel
+            .filter(|gen| gen.market_id == market_id) // Filter in parallel
             .collect(); // Collect back into a Vec
         self
     }
@@ -90,6 +90,6 @@ impl<'a> GeneratorQueryResult<'a> {
     // Final getter to consume the object and retrieve the filtered generators
     pub fn result(self) -> Vec<GeneratorInfoPerMarket> {
         // Clone the elements or map them to owned values
-        self.generator_markets.into_iter().cloned().collect()
+        self.generator_markets
     }
 }

@@ -1005,10 +1005,10 @@ impl GeneratorQuery for GeneratorDatabase {
         // Return references into the cache.
         let cached = self.cache.borrow();
         let cached_result = cached.get(&market_id_str).unwrap();
-        let refs: Vec<&GeneratorInfoPerMarket> = cached_result.iter().collect();
+        let refs: Vec<GeneratorInfoPerMarket> = cached_result.iter().cloned().collect();
 
-        // GeneratorQueryResult::new(refs)
-        GeneratorQueryResult::new(Vec::new())
+        GeneratorQueryResult::new(refs)
+        // GeneratorQueryResult::new(Vec::new())
     }
 
     // not used
@@ -1068,8 +1068,8 @@ impl GeneratorFilter for GeneratorDatabase {
             }
         }
         log::debug!("Generator with idle compute: {}", filtered.len());
-        // GeneratorQueryResult::new(filtered)
-        GeneratorQueryResult::new(Vec::new())
+        GeneratorQueryResult::new(filtered)
+        // GeneratorQueryResult::new(Vec::new())
     }
 
     fn filter_by_available_native_stake(
@@ -1078,7 +1078,7 @@ impl GeneratorFilter for GeneratorDatabase {
         min_stake: Vec<AddressTokenPair>,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
-        let mut filtered: Vec<&GeneratorInfoPerMarket> = Vec::new();
+        let mut filtered: Vec<GeneratorInfoPerMarket> = Vec::new();
 
         for elem in generator_array {
             let conn = &mut self.pool.get().expect("DB connection error");
@@ -1119,7 +1119,7 @@ impl GeneratorFilter for GeneratorDatabase {
                         .expect("Error querying generator market record");
                     if let Some(market_rec) = market_rec {
                         let info = GeneratorInfoPerMarket::from(market_rec);
-                        // filtered.push(&info);
+                        filtered.push(info);
                     }
                 }
             }
@@ -1129,8 +1129,8 @@ impl GeneratorFilter for GeneratorDatabase {
             min_stake,
             filtered.len()
         );
-        // GeneratorQueryResult::new(filtered)
-        GeneratorQueryResult::new(Vec::new())
+        GeneratorQueryResult::new(filtered)
+        // GeneratorQueryResult::new(Vec::new())
     }
 
     fn filter_by_available_symbiotic_stake(
@@ -1139,7 +1139,7 @@ impl GeneratorFilter for GeneratorDatabase {
         min_stake: Vec<AddressTokenPair>,
     ) -> GeneratorQueryResult {
         let generator_array = generator_query.result();
-        let mut filtered: Vec<&GeneratorInfoPerMarket> = Vec::new();
+        let mut filtered: Vec<GeneratorInfoPerMarket> = Vec::new();
 
         for elem in generator_array {
             let conn = &mut self.pool.get().expect("DB connection error");
@@ -1178,7 +1178,7 @@ impl GeneratorFilter for GeneratorDatabase {
                         .expect("Error querying generator market record");
                     if let Some(market_rec) = market_rec {
                         let info = GeneratorInfoPerMarket::from(market_rec);
-                        // filtered.push(&info.clone());
+                        filtered.push(info.clone());
                     }
                 }
             }
@@ -1188,8 +1188,8 @@ impl GeneratorFilter for GeneratorDatabase {
             min_stake,
             filtered.len()
         );
-        // GeneratorQueryResult::new(filtered)
-        GeneratorQueryResult::new(Vec::new())
+        GeneratorQueryResult::new(filtered)
+        // GeneratorQueryResult::new(Vec::new())
     }
 }
 
@@ -1206,7 +1206,7 @@ impl<KS: KeyStoreOperations> GeneratorKeyStoreFilterInterfaceTrait<KS> for Gener
         let generator_array = generator_query.result();
 
         // Create a vector to collect the filtered results.
-        let mut filtered: Vec<&GeneratorInfoPerMarket> = Vec::new();
+        let mut filtered: Vec<GeneratorInfoPerMarket> = Vec::new();
 
         for elem in generator_array {
             // Check the key store for ECIES public key support.
@@ -1228,13 +1228,13 @@ impl<KS: KeyStoreOperations> GeneratorKeyStoreFilterInterfaceTrait<KS> for Gener
 
                 if let Some(record) = result {
                     // Convert the DB record back into a domain object.
-                    // filtered.push(&GeneratorInfoPerMarket::from(record.clone()));
+                    filtered.push(GeneratorInfoPerMarket::from(record.clone()));
                 }
             }
         }
 
-        // GeneratorQueryResult::new(filtered)
-        GeneratorQueryResult::new(Vec::new())
+        GeneratorQueryResult::new(filtered)
+        // GeneratorQueryResult::new(Vec::new())
     }
 }
 
