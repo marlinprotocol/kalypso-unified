@@ -17,7 +17,7 @@ use crate::in_memory_stores::native_stake_store::NativeStakingStore;
 use crate::in_memory_stores::stake_manager_store::StakeManagerStore;
 use crate::in_memory_stores::symbiotic_stake_store::SymbioticStakeStore;
 use crate::postgres_stores::initialize_pool::init_pool;
-use crate::postgres_stores::models::{AskDatabase, PrivateInputStore};
+use crate::postgres_stores::models::{AskDatabase, GeneratorDatabase, PrivateInputStore};
 use crate::{costs, jobs, market_metadata, MatchingEngineConfig};
 
 pub struct PostgresMatchingEngine {
@@ -74,8 +74,9 @@ impl PostgresMatchingEngine {
             pool: pool.clone(),
             private_store: PrivateInputStore::new(),
         };
-
-        let generator_list_store = GeneratorStore::default();
+        let postgres_generator_store = GeneratorDatabase{
+            pool: pool.clone(),
+        };
         let key_list_store = KeyStore::default();
         let cost_store = CostStore::new();
         let market_list_store = MarketMetadataStore::default();
@@ -86,7 +87,7 @@ impl PostgresMatchingEngine {
 
         // wrapping around is case to shared across threads
         let shared_postgres_ask_store = Arc::new(RwLock::new(postgres_ask_store));
-        let shared_generator_store = Arc::new(RwLock::new(generator_list_store));
+        let shared_generator_store = Arc::new(RwLock::new(postgres_generator_store));
         let shared_market_store = Arc::new(RwLock::new(market_list_store));
         let shared_key_store = Arc::new(RwLock::new(key_list_store));
         let shared_cost_store = Arc::new(RwLock::new(cost_store));
@@ -115,7 +116,7 @@ impl PostgresMatchingEngine {
     async fn _run(
         &self,
         shared_postgres_ask_store: Arc<RwLock<AskDatabase>>,
-        shared_generator_store: Arc<RwLock<GeneratorStore>>,
+        shared_generator_store: Arc<RwLock<GeneratorDatabase>>,
         shared_market_store: Arc<RwLock<MarketMetadataStore>>,
         shared_key_store: Arc<RwLock<KeyStore>>,
         shared_cost_store: Arc<RwLock<CostStore>>,
@@ -241,7 +242,7 @@ impl PostgresMatchingEngine {
             shared_parsed_block.clone(),
             shared_matching_key_clone,
             shared_entity_key_registry,
-            shared_generator_data.clone(),
+            shared_generator_data,
             shared_native_store.clone(),
             shared_symbiotic_staking_store.clone(),
             shared_key_store.clone(),

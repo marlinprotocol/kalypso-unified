@@ -998,16 +998,16 @@ impl GeneratorQuery for GeneratorDatabase {
             .collect();
 
         // Store in the cache.
-        self.cache
-            .borrow_mut()
-            .insert(market_id_str.clone(), owned_infos);
+        // self.cache
+        //     .borrow_mut()
+        //     .insert(market_id_str.clone(), owned_infos);
 
-        // Return references into the cache.
-        let cached = self.cache.borrow();
-        let cached_result = cached.get(&market_id_str).unwrap();
-        let refs: Vec<GeneratorInfoPerMarket> = cached_result.iter().cloned().collect();
+        // // Return references into the cache.
+        // let cached = self.cache.borrow();
+        // let cached_result = cached.get(&market_id_str).unwrap();
+        // let refs: Vec<GeneratorInfoPerMarket> = cached_result.iter().cloned().collect();
 
-        GeneratorQueryResult::new(refs)
+        GeneratorQueryResult::new(owned_infos)
         // GeneratorQueryResult::new(Vec::new())
     }
 

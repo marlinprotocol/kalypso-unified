@@ -165,7 +165,7 @@ impl AskDatabase {
 /// Our Diesel-based store which uses a connection pool.
 pub struct GeneratorDatabase {
     pub pool: Pool<ConnectionManager<PgConnection>>,
-    pub cache: RefCell<HashMap<String, Vec<GeneratorInfoPerMarket>>>,
+    // pub cache: RefCell<HashMap<String, Vec<GeneratorInfoPerMarket>>>,
 }
 
 /// New record for the `generators` table.
