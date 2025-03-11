@@ -142,3 +142,7 @@ CREATE TABLE native_staking_store (
     id SERIAL PRIMARY KEY,
     tokens_to_lock TEXT NOT NULL
 );
+
+CREATE TABLE stake_manager_record (
+    address TEXT PRIMARY KEY
+);
