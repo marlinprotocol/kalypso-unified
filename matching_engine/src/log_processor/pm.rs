@@ -173,11 +173,26 @@ where
     ) {
         log::debug!("{:?}", parsed_ask_created_log);
         let mut local_ask_store = { local_ask_store.write().await };
-        let ask_data: (pmp::Bid, _, _, _) = proof_market_place
-            .list_of_bid(parsed_ask_created_log.bid_id)
-            .call()
-            .await
-            .unwrap();
+
+        // when external indexer is used, .block will be used, else falls back to normal query
+        let ask_data: (pmp::Bid, _, _, _) = async {
+            let bid_call = proof_market_place.list_of_bid(parsed_ask_created_log.bid_id);
+
+            if cfg!(feature = "external_indexer") {
+                match bid_call
+                    .clone()
+                    .block(log.block_number.unwrap())
+                    .call()
+                    .await
+                {
+                    Ok(data) => data,
+                    Err(_) => bid_call.call().await.unwrap(),
+                }
+            } else {
+                bid_call.call().await.unwrap()
+            }
+        }
+        .await;
 
         let created_on: U256 = log.block_number.unwrap().as_u64().into();
         let created_on_l1: U256 = get_l1_block_from_l2_block(rpc_url, created_on)
@@ -670,6 +685,7 @@ where
                     .to_address_token_pair()
                     .into_iter()
                     .unzip();
+
                 generator_store.note_entry_slashing(
                     &generator_address,
                     &bid_id,
