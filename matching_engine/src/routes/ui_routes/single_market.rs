@@ -373,9 +373,9 @@ pub async fn single_market<
 
 #[utoipa::path(
     get,
-    path = "/ui/market_generator_score/{if}",
+    path = "/ui/market_generator_score/{id}",
     responses(
-        (status = 200, description = "Returns Generator score if market", body = Vec<MatchingScoreResponse>),
+        (status = 200, description = "Returns Generator score for market", body = Vec<MatchingScoreResponse>),
         (status = 423, description = "Parsing in progress" )
     ),
     params(
