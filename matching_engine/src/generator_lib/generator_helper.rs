@@ -28,6 +28,19 @@ pub fn weighted_time_cost_random_selection(
         return None;
     }
 
+    let weights = get_matching_scores(&vec, &missed_jobs);
+    // Create a weighted distribution and sample an index.
+    let dist = WeightedIndex::new(&weights).ok()?;
+    let mut rng = rand::thread_rng();
+    let index = dist.sample(&mut rng);
+
+    Some(vec[index].clone())
+}
+
+pub fn get_matching_scores(
+    vec: &Vec<GeneratorInfoPerMarket>,
+    missed_jobs: &HashMap<Address, usize>,
+) -> Vec<f64> {
     // Find the maximum values (if they are zero, replace with one to avoid division by zero)
     let max_proof_generation_cost = vec
         .iter()
@@ -129,12 +142,7 @@ pub fn weighted_time_cost_random_selection(
             .unwrap_or_default()
     );
 
-    // Create a weighted distribution and sample an index.
-    let dist = WeightedIndex::new(&weights).ok()?;
-    let mut rng = rand::thread_rng();
-    let index = dist.sample(&mut rng);
-
-    Some(vec[index].clone())
+    weights
 }
 
 #[deprecated(note = "use weighted_time_cost_random_selection")]

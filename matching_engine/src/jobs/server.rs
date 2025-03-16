@@ -25,7 +25,7 @@ use crate::generator_lib::symbiotic_stake_store::{
     OperatorStakeManagement, SlashResultManagement, TokenLockManagement, VaultSnapshotManagement,
 };
 use crate::generator_lib::traits::{
-    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorQuery,
     GeneratorRegistration, JobMissedCounter, WithdrawalManagement,
 };
 use crate::latest_block_store::LatestBlockStoreTrait;
@@ -48,7 +48,8 @@ pub struct MatchingEngineServer<
         + RequestorCounters
         + TimingOperations
         + MarketRequestCounters,
-    GS: GeneratorAdditionalQuery
+    GS: GeneratorQuery
+        + GeneratorAdditionalQuery
         + GeneratorRegistration
         + GeneratorEarningsAndSlashing
         + GeneratorAvailability
@@ -88,7 +89,8 @@ impl<
             + Send
             + Sync
             + 'static,
-        GS: GeneratorAdditionalQuery
+        GS: GeneratorQuery
+            + GeneratorAdditionalQuery
             + GeneratorRegistration
             + GeneratorEarningsAndSlashing
             + GeneratorAvailability
