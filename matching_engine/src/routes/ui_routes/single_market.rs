@@ -441,7 +441,7 @@ async fn get_generator_scores_of_market<
         .iter()
         .zip(matching_scores.iter())
         .map(|(generator_info, score)| MatchingScoreResponse {
-            generator_address: generator_info.address.to_string(),
+            generator_address: format!("{:?}", generator_info.address.to_string()),
             generator_name: local_generator_store
                 .get_by_address(&generator_info.address)
                 .map(|a| a.deserialize_generator_bytes().display_name)
