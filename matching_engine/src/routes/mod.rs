@@ -46,7 +46,8 @@ pub fn ui_scope<
         + Send
         + Sync
         + 'static,
-    GS: GeneratorAdditionalQuery
+    GS: GeneratorQuery
+        + GeneratorAdditionalQuery
         + GeneratorRegistration
         + GeneratorEarningsAndSlashing
         + GeneratorAvailability
@@ -80,6 +81,10 @@ pub fn ui_scope<
         .route(
             "/market/{id}",
             web::get().to(ui_routes::single_market::single_market::<MS, AS, GS, NS, SS>),
+        )
+        .route(
+            "/market_generator_score/{id}",
+            web::get().to(ui_routes::single_market::get_matching_score::<GS>),
         )
         .route(
             "/market_jobs/{id}",
@@ -174,6 +179,7 @@ use crate::generator_lib::symbiotic_stake_store::VaultSnapshotManagement;
 use crate::generator_lib::traits::GeneratorAdditionalQuery;
 use crate::generator_lib::traits::GeneratorAvailability;
 use crate::generator_lib::traits::GeneratorEarningsAndSlashing;
+use crate::generator_lib::traits::GeneratorQuery;
 use crate::generator_lib::traits::GeneratorRegistration;
 use crate::generator_lib::traits::JobMissedCounter;
 use crate::generator_lib::traits::WithdrawalManagement;
@@ -227,7 +233,8 @@ use crate::routes::ui_routes::single_market::*;
     total_market_info,
     single_generator,
     withdrawal_request,
-    single_market
+    single_market,
+    get_matching_score
 ))]
 struct ApiDoc;
 

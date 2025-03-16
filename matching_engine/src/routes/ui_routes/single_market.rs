@@ -4,12 +4,13 @@ use crate::ask_lib::ask_store::{
     AskManagementRead, CompletedProofsManagement, MarketRequestCounters, ProofCounters,
     RequestorCounters, TimingOperations,
 };
+use crate::generator_lib::generator_helper::get_matching_scores;
 use crate::generator_lib::generator_store::GeneratorMeta;
 use crate::generator_lib::native_stake_store::NativeStakingOperations;
 use crate::generator_lib::symbiotic_stake_store::TokenLockManagement;
 use crate::generator_lib::traits::{
-    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing,
-    GeneratorRegistration,
+    GeneratorAdditionalQuery, GeneratorAvailability, GeneratorEarningsAndSlashing, GeneratorQuery,
+    GeneratorRegistration, JobMissedCounter,
 };
 use crate::market_metadata::{MarketMetadataStoreRead, MarketSetupData, MinHardware};
 use crate::models::WelcomeResponse;
@@ -368,6 +369,88 @@ pub async fn single_market<
     }
 
     return Ok(HttpResponse::Ok().json(new_response));
+}
+
+#[utoipa::path(
+    get,
+    path = "/ui/market_generator_score/{if}",
+    responses(
+        (status = 200, description = "Returns Generator score if market", body = Vec<MatchingScoreResponse>),
+        (status = 423, description = "Parsing in progress" )
+    ),
+    params(
+        ("id" = u64, Path, description = "Market ID"),
+    ),
+    tag = "UI"
+)]
+pub async fn get_matching_score<
+    GS: JobMissedCounter + GeneratorQuery + GeneratorRegistration + Send + Sync,
+>(
+    _local_generator_store: Data<Arc<RwLock<GS>>>,
+    path: web::Path<(String,)>,
+    // query: web::Query<QueryParams>, // If required add latter
+) -> actix_web::Result<HttpResponse> {
+    let market_id: U256 = match U256::from_dec_str(&path.0) {
+        Ok(data) => data,
+        _ => {
+            return Ok(HttpResponse::BadRequest().json(WelcomeResponse {
+                status: "Invalid Market Id".into(),
+            }))
+        }
+    };
+
+    try_read_or_lock!(_local_generator_store, local_generator_store);
+
+    let new_response = get_generator_scores_of_market(market_id, local_generator_store).await;
+
+    if new_response.is_empty() {
+        return Ok(HttpResponse::NotFound().json(WelcomeResponse {
+            status: "Market Data Not Found".into(),
+        }));
+    }
+
+    return Ok(HttpResponse::Ok().json(new_response));
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+struct MatchingScoreResponse {
+    generator_address: String,
+    generator_name: Option<String>,
+    score: String,
+}
+
+async fn get_generator_scores_of_market<
+    'a,
+    GS: JobMissedCounter + GeneratorQuery + GeneratorRegistration,
+>(
+    market_id: U256,
+    local_generator_store: RwLockReadGuard<'a, GS>,
+) -> Vec<MatchingScoreResponse> {
+    let generator_info_per_market = local_generator_store
+        .query_by_market_id_and_only_active(&market_id)
+        .result();
+    let mut missed_jobs = std::collections::HashMap::new();
+    for generator_info in generator_info_per_market.iter() {
+        let missed = local_generator_store.get_job_missed_count_in_window(&generator_info.address);
+        missed_jobs.insert(generator_info.address, missed);
+    }
+
+    let matching_scores = get_matching_scores(&generator_info_per_market, &missed_jobs);
+
+    let responses = generator_info_per_market
+        .iter()
+        .zip(matching_scores.iter())
+        .map(|(generator_info, score)| MatchingScoreResponse {
+            generator_address: generator_info.address.to_string(),
+            generator_name: local_generator_store
+                .get_by_address(&generator_info.address)
+                .map(|a| a.deserialize_generator_bytes().display_name)
+                .flatten(),
+            score: score.to_string(),
+        })
+        .collect::<Vec<MatchingScoreResponse>>();
+
+    responses
 }
 
 async fn recompute_single_market_response<
