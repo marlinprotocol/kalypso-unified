@@ -41,8 +41,13 @@ pub async fn build_attestation_raw(
 
     // Check if the response status is successful (2xx)
     if !response.status().is_success() {
-        println!("status code: {}", response.status());
-        return Err("failed building the attestation".into());
+        let status = response.status();
+        let err_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| String::from("No error details"));
+        println!("status code: {}", status);
+        return Err(format!("failed building the attestation: {}", err_text).into());
     }
 
     // Get the response body as a stream of bytes
