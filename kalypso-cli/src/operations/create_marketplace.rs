@@ -4,6 +4,29 @@ use ethers::signers::Signer;
 use kalypso_helper::send_with_optional_gas;
 use std::collections::HashMap;
 
+pub struct CreateTeeVerifier;
+
+#[async_trait]
+impl Operation for CreateTeeVerifier {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let tee_verifier_create_info = CommonDeps::tee_verifier_wrapper_deployer_args(&config)?;
+        let tee_verifier_creation_transaction = send_with_optional_gas!(tee_verifier_create_info
+            .tee_verifier_deployer
+            .create_tee_verifier_wrapper(
+                tee_verifier_create_info.admin,
+                tee_verifier_create_info.attestation_verifier,
+                vec![tee_verifier_create_info.prover_pcrs.into()],
+            ))
+        .map_err(|e| format!("Tee Verifier Creation Transaction failed: {}", e))?;
+
+        println!(
+            "Tee Verifier Creation Transaction: {}",
+            tee_verifier_creation_transaction
+        );
+        Ok(())
+    }
+}
+
 pub struct CreateMarketplace;
 
 #[async_trait]

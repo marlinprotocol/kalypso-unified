@@ -1,0 +1,44 @@
+[
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "contract tee_verifier_wrapper",
+          "name": "a",
+          "type": "address"
+        }
+      ],
+      "name": "TeeVerifierWrapperCreated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "admin",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IAttestationVerifier",
+          "name": "_av",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_proverPcrs",
+          "type": "bytes[]"
+        }
+      ],
+      "name": "create_tee_verifier_wrapper",
+      "outputs": [
+        {
+          "internalType": "contract tee_verifier_wrapper",
+          "name": "a",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
