@@ -92,13 +92,24 @@ pub async fn get_image_id(
         .await?;
 
     if !response.status().is_success() {
+        let status = response.status();
+        let error_info = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Failed to read error response".to_string());
         if print_logs {
             println!(
-                "Attestation verifier responded with status: {}",
-                response.status()
+                "Attestation verifier responded with status: {} error: {}",
+                status, error_info
             );
         }
-        return Err("Failed to verify attestation".into());
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!(
+                "Failed to verify attestation: {} error: {}",
+                status, error_info
+            ),
+        )));
     }
 
     let verifier_response: AttestationVerifierResponse = response.json().await?;
