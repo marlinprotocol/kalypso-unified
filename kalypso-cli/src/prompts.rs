@@ -122,6 +122,11 @@ impl<'a> Prompter<'a> {
             "confirmation".to_string(),
             validate_confirmation as Validator,
         );
+
+        validators.insert(
+            "tee_verifier_wrapper_deployer".to_string(),
+            validate_eth_address,
+        );
         // Add other field validators as needed
 
         Prompter { config, validators }

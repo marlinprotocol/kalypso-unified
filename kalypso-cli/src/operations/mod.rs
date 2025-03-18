@@ -119,6 +119,7 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Check Role Management" => Some(Box::new(role_mgmt::RoleCheck)),
         "Check Other Operators" => Some(Box::new(check_other_operator::CheckOtherOperators)),
         "Check Supported Vaults" => Some(Box::new(symbiotic_opt_in::CheckVaults)),
+        "Deploy Tee Verifier" => Some(Box::new(create_marketplace::CreateTeeVerifier)),
         _ => unimplemented!(),
     }
 }

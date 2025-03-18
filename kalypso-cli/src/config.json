@@ -133,6 +133,12 @@
       "env_var": "VERIFIER_WRAPPER_ADDRESS"
     },
     {
+      "field": "tee_verifier_wrapper_deployer",
+      "prompt": "Enter Tee Verifier Deployer address",
+      "secret": false,
+      "env_var": "TEE_VERIFIER_DEPLOYER_ADDRESS"
+    },
+    {
       "field": "attestation_server_url",
       "prompt": "Enter Attestation Server URL",
       "secret": false,
@@ -820,6 +826,18 @@
       "required_prompts": [
         "symbiotic_rpc_url",
         "middleware_service"
+      ]
+    },
+    {
+      "name": "Deploy Tee Verifier",
+      "description": "Deploy a dedicated Tee Proof Verifier",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "attestation_verifier",
+        "tee_verifier_wrapper_deployer",
+        "prover_image_id"
       ]
     }
   ]

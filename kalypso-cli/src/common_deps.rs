@@ -2269,3 +2269,107 @@ impl CommonDeps {
         })
     }
 }
+
+pub struct TeeVerifierArgs {
+    pub tee_verifier_deployer: bindings::tee_verifier_deployer::TeeVerifierDeployer<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub admin: Address,
+    pub attestation_verifier: Address,
+    #[allow(unused)]
+    pub tee_verifier_wrapper_deployer: Address,
+    pub prover_pcrs: Vec<u8>,
+}
+
+impl CommonDeps {
+    pub fn tee_verifier_wrapper_deployer_args(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<TeeVerifierArgs, String> {
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(
+            config,
+            "tee_verifier_wrapper_deployer",
+            tee_verifier_wrapper_deployer
+        );
+        get_config_ref!(config, "attestation_verifier", attestation_verifier_address);
+        get_config_ref!(config, "prover_image_id", prover_pcrs);
+
+        let attestation_verifier = attestation_verifier_address
+            .parse::<Address>()
+            .map_err(|e| format!("Invalid Attestation Verifier Address: {}", e))?;
+
+        let (tee_verifier_deployer, signer) = get_tee_verifier_deployer(
+            private_key,
+            chain_id,
+            tee_verifier_wrapper_deployer,
+            rpc_url,
+        )?;
+
+        let tee_verifier_wrapper_deployer = tee_verifier_deployer.address();
+
+        let prover_pcrs = {
+            let trimmed_key = if prover_pcrs.starts_with("0x") || prover_pcrs.starts_with("0X") {
+                &prover_pcrs[2..]
+            } else {
+                prover_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        Ok(TeeVerifierArgs {
+            tee_verifier_deployer,
+            admin: signer.address(),
+            attestation_verifier,
+            tee_verifier_wrapper_deployer,
+            prover_pcrs,
+        })
+    }
+}
+
+fn get_tee_verifier_deployer(
+    private_key: &str,
+    chain_id: &str,
+    tee_verifier_deployer_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::tee_verifier_deployer::TeeVerifierDeployer<
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+        >,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    // Parse the Generator Registry address
+    let tee_verifier_deployer = tee_verifier_deployer_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Tee Verifier Deployer address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    let tee_verifier_deployer = bindings::tee_verifier_deployer::TeeVerifierDeployer::new(
+        tee_verifier_deployer,
+        client_arc.clone(),
+    );
+
+    Ok((tee_verifier_deployer, private_key_signer))
+}
