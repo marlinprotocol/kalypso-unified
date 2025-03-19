@@ -1245,7 +1245,6 @@ impl CommonDeps {
         get_config_ref!(config, "attestation_verifier", attestation_verifier_address);
         get_config_ref!(config, "entity_registry", entity_key_registry_address);
         get_config_ref!(config, "internal_prover_port", internal_prover_port);
-        get_config_ref!(config, "input_verification_url", input_verification_url);
 
         let operator_address = operator_address
             .parse::<Address>()
@@ -1336,7 +1335,10 @@ impl CommonDeps {
                             market_id.to_string(),
                             generator_client::model::MarketDetails {
                                 port: internal_prover_port.to_string(),
-                                ivs_url: input_verification_url.to_string(),
+                                ivs_url: format!(
+                                    "http://localhost:{}/api/checkInput",
+                                    internal_prover_port.as_usize()
+                                ),
                             },
                         );
                         markets
