@@ -841,6 +841,53 @@
         "tee_verifier_wrapper_deployer",
         "prover_image_id"
       ]
+    },
+    {
+      "name": "Add Extra Prover Images",
+      "description": "Add Extra Prover Images to market (only confidential)",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id",
+        "prover_image_id"
+      ]
+    },
+    {
+      "name": "Add Extra IVS Images",
+      "description": "Add Extra IVS Images to market (only confidential)",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "proof_marketplace",
+        "market_id",
+        "verification_image_id"
+      ]
+    },
+    {
+      "name": "Add Prover Images To Verifier Wrapper",
+      "description": "Add Prover Images to tee verifier (only works if it is a tee_verifier_wrapper)",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "verifier_wrapper",
+        "prover_image_id"
+      ]
+    },
+    {
+      "name": "Verify Key in Verifier Wrapper",
+      "description": "Verify Key in tee verifier (only works if it is a tee_verifier_wrapper)",
+      "required_prompts": [
+        "private_key",
+        "rpc_url",
+        "chain_id",
+        "verifier_wrapper",
+        "attestation_server_url",
+        "attestation_verifier_url"
+      ]
     }
   ]
 }

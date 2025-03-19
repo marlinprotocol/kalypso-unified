@@ -2375,3 +2375,214 @@ fn get_tee_verifier_deployer(
 
     Ok((tee_verifier_deployer, private_key_signer))
 }
+
+pub struct AddProverToMarketInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub prover_pcrs: Vec<u8>,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn add_prover_to_market_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<AddProverToMarketInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "prover_image_id", prover_pcrs);
+        get_config_ref!(config, "market_id", market_id);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let prover_pcrs = {
+            let trimmed_key = if prover_pcrs.starts_with("0x") || prover_pcrs.starts_with("0X") {
+                &prover_pcrs[2..]
+            } else {
+                prover_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(AddProverToMarketInfo {
+            private_key_signer,
+            proof_marketplace,
+            prover_pcrs,
+            market_id,
+        })
+    }
+}
+
+pub struct AddIvsToMarketInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub proof_marketplace: bindings::proof_marketplace::ProofMarketplace<
+        SignerMiddleware<Provider<Http>, LocalWallet>,
+    >,
+    pub ivs_pcrs: Vec<u8>,
+    pub market_id: U256,
+}
+
+impl CommonDeps {
+    pub fn add_ivs_to_market_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<AddIvsToMarketInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "verification_image_id", verification_image_pcrs);
+        get_config_ref!(config, "market_id", market_id);
+
+        let (proof_marketplace, private_key_signer) = get_proof_marketplace_instance(
+            private_key,
+            chain_id,
+            proof_marketplace_address,
+            rpc_url,
+        )?;
+
+        let verification_image_pcrs = {
+            let trimmed_key = if verification_image_pcrs.starts_with("0x")
+                || verification_image_pcrs.starts_with("0X")
+            {
+                &verification_image_pcrs[2..]
+            } else {
+                verification_image_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid IVS PCRs: {}", e))?
+        };
+
+        let market_id = U256::from_dec_str(market_id.as_str())
+            .map_err(|e| format!("Invalid Market Id: {}", e))?;
+
+        Ok(AddIvsToMarketInfo {
+            private_key_signer,
+            proof_marketplace,
+            ivs_pcrs: verification_image_pcrs,
+            market_id,
+        })
+    }
+}
+
+pub struct AddProverToVerifierWrapperInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub verifier_wraooer:
+        bindings::tee_verifier::TeeVerifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub prover_pcrs: Vec<u8>,
+}
+
+impl CommonDeps {
+    pub fn add_prover_to_tee_verifier_wrapper_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<AddProverToVerifierWrapperInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "verifier_wrapper", verifier_wrapper);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "prover_image_id", prover_pcrs);
+
+        let (tee_verifier, private_key_signer) =
+            get_tee_verifier(private_key, chain_id, verifier_wrapper, rpc_url)?;
+
+        let prover_pcrs = {
+            let trimmed_key = if prover_pcrs.starts_with("0x") || prover_pcrs.starts_with("0X") {
+                &prover_pcrs[2..]
+            } else {
+                prover_pcrs
+            };
+            hex::decode(trimmed_key).map_err(|e| format!("Invalid Prover PCRs: {}", e))?
+        };
+
+        Ok(AddProverToVerifierWrapperInfo {
+            private_key_signer,
+            verifier_wraooer: tee_verifier,
+            prover_pcrs,
+        })
+    }
+}
+
+fn get_tee_verifier(
+    private_key: &str,
+    chain_id: &str,
+    tee_verifier_address: &str,
+    rpc_url: &str,
+) -> Result<
+    (
+        bindings::tee_verifier::TeeVerifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
+        LocalWallet,
+    ),
+    String,
+> {
+    // Parse the private key into a LocalWallet and set the chain ID
+    let private_key_signer = private_key
+        .parse::<LocalWallet>()
+        .map_err(|e| format!("Failed to parse private key: {}", e))?
+        .with_chain_id(
+            chain_id
+                .parse::<u64>()
+                .map_err(|e| format!("Invalid chain_id: {}", e))?,
+        );
+
+    let tee_verifier_address = tee_verifier_address
+        .parse::<Address>()
+        .map_err(|e| format!("Invalid Tee Verifier address: {}", e))?;
+
+    // Initialize the provider
+    let provider_http =
+        Provider::<Http>::try_from(rpc_url).map_err(|e| format!("Invalid RPC URL: {}", e))?;
+
+    // Initialize the SignerMiddleware with the provider and signer
+    let client = SignerMiddleware::new(provider_http.clone(), private_key_signer.clone());
+
+    let client_arc = Arc::new(client);
+
+    let tee_verifier =
+        bindings::tee_verifier::TeeVerifier::new(tee_verifier_address, client_arc.clone());
+
+    Ok((tee_verifier, private_key_signer))
+}
+
+pub struct VerifyKeyInTeeoVerifierWrapperInfo {
+    #[allow(unused)]
+    pub private_key_signer: LocalWallet,
+    pub verifier_wraooer:
+        bindings::tee_verifier::TeeVerifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub attestation_utility: String,
+    pub attestation_verifier_url: String,
+}
+
+impl CommonDeps {
+    pub fn verify_key_in_tee_verifier_wrapper_info(
+        config: &std::collections::HashMap<String, String>,
+    ) -> Result<VerifyKeyInTeeoVerifierWrapperInfo, String> {
+        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "rpc_url", rpc_url);
+        get_config_ref!(config, "verifier_wrapper", verifier_wrapper);
+        get_config_ref!(config, "chain_id", chain_id);
+        get_config_ref!(config, "attestation_server_url", attestation_server_url);
+        get_config_ref!(config, "attestation_verifier_url", attestation_verifier_url);
+
+        let (tee_verifier, private_key_signer) =
+            get_tee_verifier(private_key, chain_id, verifier_wrapper, rpc_url)?;
+
+        Ok(VerifyKeyInTeeoVerifierWrapperInfo {
+            private_key_signer,
+            verifier_wraooer: tee_verifier,
+            attestation_utility: attestation_server_url.to_string(),
+            attestation_verifier_url: attestation_verifier_url.to_string(),
+        })
+    }
+}

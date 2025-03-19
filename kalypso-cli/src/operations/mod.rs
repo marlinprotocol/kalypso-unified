@@ -120,6 +120,14 @@ pub fn get_operation(name: &str) -> Option<Box<dyn Operation>> {
         "Check Other Operators" => Some(Box::new(check_other_operator::CheckOtherOperators)),
         "Check Supported Vaults" => Some(Box::new(symbiotic_opt_in::CheckVaults)),
         "Deploy Tee Verifier" => Some(Box::new(create_marketplace::CreateTeeVerifier)),
+        "Add Extra Prover Images" => Some(Box::new(create_marketplace::AddProverToMarket)),
+        "Add Extra IVS Images" => Some(Box::new(create_marketplace::AddIvsToMarket)),
+        "Add Prover Images To Verifier Wrapper" => {
+            Some(Box::new(create_marketplace::AddImageToTeeVerifier))
+        }
+        "Verify Key in Verifier Wrapper" => {
+            Some(Box::new(create_marketplace::VerifyKeyInTeeVerifier))
+        }
         _ => unimplemented!(),
     }
 }
