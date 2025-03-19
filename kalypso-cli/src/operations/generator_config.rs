@@ -33,6 +33,8 @@ async fn load_config(
         .build()?;
     let full_url = format!("{}/api/generatorConfigSetup", generator_client_url);
 
+    println!("full url: {}", &full_url);
+
     // Prepare the headers
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(reqwest::header::CONTENT_TYPE, "application/json".parse()?);

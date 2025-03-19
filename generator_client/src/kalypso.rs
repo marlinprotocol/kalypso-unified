@@ -71,6 +71,7 @@ pub async fn generate_config_file(
             .await
             .expect("Unable to create new folder");
     }
+    log::info!("Folder path check/create successful");
 
     //Structure data
     let config_file_path = folder_path.to_string() + "/generator_config.json";
@@ -87,10 +88,22 @@ pub async fn generate_config_file(
 
     let generator_config_file = GeneratorConfigFile { generator_config };
 
+    log::info!("contents of generator_config_file create successful");
+
     //Generating the json config file
     let json_string = serde_json::to_string(&generator_config_file)?;
-    let mut file = File::create(config_file_path).await?;
+
+    log::info!("json of generator_config_file create successful");
+    let mut file = File::create(&config_file_path).await?;
+
+    log::info!("create file: {} successful", &config_file_path);
     tokio::io::AsyncWriteExt::write_all(&mut file, json_string.as_bytes()).await?;
+
+    log::info!(
+        "write contents: {} to file: {} successful",
+        &json_string,
+        &config_file_path
+    );
     Ok(())
 }
 
