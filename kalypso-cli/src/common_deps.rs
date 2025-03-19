@@ -1235,7 +1235,7 @@ impl CommonDeps {
         get_config_ref!(config, "operator_address", operator_address);
         get_config_ref!(config, "market_id", market_id);
         get_config_ref!(config, "rpc_url", rpc_url);
-        get_config_ref!(config, "private_key", private_key);
+        get_config_ref!(config, "gas_key", gas_key);
         get_config_ref!(config, "proof_marketplace", proof_marketplace_address);
         get_config_ref!(config, "generator_registry", generator_registry_address);
         get_config_ref!(config, "start_block", start_block);
@@ -1302,7 +1302,7 @@ impl CommonDeps {
                 runtime_config: Some(generator_client::model::SetupRequestBodyRuntimeConfig {
                     ws_url: Some("wss:://not_used_so_using_some_dummy_value_to_pass".into()),
                     http_url: Some(rpc_url.to_string()),
-                    private_key: Some(private_key.to_string()),
+                    private_key: Some(gas_key.to_string()),
                     proof_market_place: Some(format!(
                         "0x{}",
                         hex::encode(proof_marketplace_address.as_bytes().to_vec())

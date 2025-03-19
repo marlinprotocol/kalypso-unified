@@ -616,7 +616,8 @@
         "staking_token",
         "attestation_verifier",
         "entity_registry",
-        "internal_prover_port"
+        "internal_prover_port",
+        "gas_key"
       ]
     },
     {
