@@ -92,3 +92,9 @@ abigen!(
     "./src/TeeVerifierDeployer.json", // Path to the ABI file
     event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
 );
+
+abigen!(
+    TeeVerifier,              // The Rust struct name you want for your contract
+    "./src/TeeVerifier.json", // Path to the ABI file
+    event_derives(serde::Deserialize, serde::Serialize)  // Derive traits for event structs
+);

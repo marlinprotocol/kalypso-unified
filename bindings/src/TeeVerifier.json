@@ -1,0 +1,649 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_admin",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IAttestationVerifier",
+          "name": "_av",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_proverPcrs",
+          "type": "bytes[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherAttestationTooOld",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherImageNotInFamily",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherImageNotWhitelisted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherKeyNotVerified",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherMismatchedLengths",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherPCRsInvalid",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AttestationAutherPubkeyLengthInvalid",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ECDSAInvalidSignature",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "length",
+          "type": "uint256"
+        }
+      ],
+      "name": "ECDSAInvalidSignatureLength",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "s",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ECDSAInvalidSignatureS",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InferredImageIdIsDifferent",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "invalidSignerAddress",
+          "type": "address"
+        }
+      ],
+      "name": "InvalidEnclaveSignature",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidInputs",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "MustBeAnEnclave",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OnlyAdminCanCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "family",
+          "type": "bytes32"
+        }
+      ],
+      "name": "EnclaveImageAddedToFamily",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "family",
+          "type": "bytes32"
+        }
+      ],
+      "name": "EnclaveImageRemovedFromFamily",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "EnclaveImageRevoked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "PCR0",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "PCR1",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "PCR2",
+          "type": "bytes"
+        }
+      ],
+      "name": "EnclaveImageWhitelisted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "enclaveAddress",
+          "type": "address"
+        }
+      ],
+      "name": "EnclaveKeyRevoked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "enclaveAddress",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "enclavePubKey",
+          "type": "bytes"
+        }
+      ],
+      "name": "EnclaveKeyVerified",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "enclaveAddress",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "enclavePubKey",
+          "type": "bytes"
+        }
+      ],
+      "name": "EnclaveKeyWhitelisted",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "ATTESTATION_MAX_AGE",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "ATTESTATION_VERIFIER",
+      "outputs": [
+        {
+          "internalType": "contract IAttestationVerifier",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_proverPcr",
+          "type": "bytes"
+        }
+      ],
+      "name": "addEnclaveImageToFamily",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "checkSampleInputsAndProof",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string[]",
+          "name": "inputs",
+          "type": "string[]"
+        },
+        {
+          "internalType": "string",
+          "name": "proof",
+          "type": "string"
+        }
+      ],
+      "name": "encodeInputAndProofForVerification",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string[]",
+          "name": "inputs",
+          "type": "string[]"
+        }
+      ],
+      "name": "encodeInputs",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "proof",
+          "type": "string"
+        }
+      ],
+      "name": "encodeProof",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_key",
+          "type": "address"
+        }
+      ],
+      "name": "getVerifiedKey",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_imageId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getWhitelistedImage",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "PCR0",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "PCR1",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "PCR2",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct AttestationAuther.EnclaveImage",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "imageId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "family",
+          "type": "bytes32"
+        }
+      ],
+      "name": "isImageInFamily",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sampleInput",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sampleProof",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "encodedData",
+          "type": "bytes"
+        }
+      ],
+      "name": "verify",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyAgainstSampleInputs",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "signature",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "enclavePubKey",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "PCR0",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "PCR1",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "PCR2",
+              "type": "bytes"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestampInMilliseconds",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IAttestationVerifier.Attestation",
+          "name": "attestation",
+          "type": "tuple"
+        }
+      ],
+      "name": "verifyEnclaveKey",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyInputs",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "attestation_data",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyKey",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "proverData",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "proofData",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "proofSignature",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyProofForTeeVerifier",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]

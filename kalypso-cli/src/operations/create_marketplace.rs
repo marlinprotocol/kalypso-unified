@@ -1,8 +1,119 @@
 use crate::{common_deps::CommonDeps, operations::Operation};
 use async_trait::async_trait;
 use ethers::signers::Signer;
+use futures::StreamExt;
 use kalypso_helper::send_with_optional_gas;
 use std::collections::HashMap;
+
+pub struct VerifyKeyInTeeVerifier;
+
+#[async_trait]
+impl Operation for VerifyKeyInTeeVerifier {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let verify_key_in_tee_verifier_info =
+            CommonDeps::verify_key_in_tee_verifier_wrapper_info(&config)?;
+
+        let attestation_stream = kalypso_helper::pcr_helpers::build_attestation(
+            &verify_key_in_tee_verifier_info.attestation_utility,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Building Attestations {}", e))?;
+
+        let attestation_data: Vec<u8> = attestation_stream
+            .fold(Vec::new(), |mut acc, item| async {
+                match item {
+                    Ok(bytes) => {
+                        acc.extend_from_slice(&bytes);
+                        acc
+                    }
+                    Err(e) => {
+                        println!("Error while receiving data: {}", e);
+                        acc
+                    }
+                }
+            })
+            .await;
+
+        let ecies_pubkey =
+            kalypso_helper::pcr_helpers::get_pubkey_from_attestation(attestation_data.clone())
+                .map_err(|e| format!("Failed Getting Pubkey From Attestation {}", e))?;
+
+        println!("Ecies Pubkey of the enclave: {}", hex::encode(ecies_pubkey));
+
+        let verified_attestation = kalypso_helper::pcr_helpers::get_verified_attestation(
+            &verify_key_in_tee_verifier_info.attestation_verifier_url,
+            attestation_data,
+            false,
+        )
+        .await
+        .map_err(|e| format!("Failed Verifying attestation {}", e))?;
+
+        let transaction = send_with_optional_gas!(verify_key_in_tee_verifier_info
+            .verifier_wraooer
+            .verify_key(verified_attestation.into()))
+        .map_err(|e| format!("Transaction failed: {}", e))?;
+
+        println!("Verify Key Transaction: {}", transaction);
+        Ok(())
+    }
+}
+
+pub struct AddImageToTeeVerifier;
+
+#[async_trait]
+impl Operation for AddImageToTeeVerifier {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let add_prover_to_tee_verifier_info =
+            CommonDeps::add_prover_to_tee_verifier_wrapper_info(&config)?;
+        let transaction = send_with_optional_gas!(add_prover_to_tee_verifier_info
+            .verifier_wraooer
+            .add_enclave_image_to_family(add_prover_to_tee_verifier_info.prover_pcrs.into(),))
+        .map_err(|e| format!("Transaction failed: {}", e))?;
+
+        println!("Add Image Transaction: {}", transaction);
+        Ok(())
+    }
+}
+
+pub struct AddIvsToMarket;
+
+#[async_trait]
+impl Operation for AddIvsToMarket {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let add_ivs_to_market_info = CommonDeps::add_ivs_to_market_info(&config)?;
+        let transaction =
+            send_with_optional_gas!(add_ivs_to_market_info.proof_marketplace.add_extra_images(
+                add_ivs_to_market_info.market_id,
+                vec![],
+                vec![add_ivs_to_market_info.ivs_pcrs.into()],
+            ))
+            .map_err(|e| format!("Transaction failed: {}", e))?;
+
+        println!("Add IVS Image Transaction: {}", transaction);
+        Ok(())
+    }
+}
+
+pub struct AddProverToMarket;
+
+#[async_trait]
+impl Operation for AddProverToMarket {
+    async fn execute(&self, config: HashMap<String, String>) -> Result<(), String> {
+        let add_prover_to_market_info = CommonDeps::add_prover_to_market_info(&config)?;
+        let transaction = send_with_optional_gas!(add_prover_to_market_info
+            .proof_marketplace
+            .add_extra_images(
+                add_prover_to_market_info.market_id,
+                vec![add_prover_to_market_info.prover_pcrs.into()],
+                vec![],
+            ))
+        .map_err(|e| format!("Transaction failed: {}", e))?;
+
+        println!("Add Prover Image Transaction: {}", transaction);
+        Ok(())
+    }
+}
 
 pub struct CreateTeeVerifier;
 
