@@ -1299,7 +1299,9 @@ impl CommonDeps {
                     },
                 ]),
                 runtime_config: Some(generator_client::model::SetupRequestBodyRuntimeConfig {
-                    ws_url: Some("wss://arb-sepolia.g.alchemy.com/v2/placeHolderToLaterRemove".into()), // wss is not used but kept in config yet
+                    ws_url: Some(
+                        "wss://arb-sepolia.g.alchemy.com/v2/placeHolderToLaterRemove".into(),
+                    ), // wss is not used but kept in config yet
                     http_url: Some(rpc_url.to_string()),
                     private_key: Some(gas_key.to_string()),
                     proof_market_place: Some(format!(
