@@ -44,7 +44,7 @@ pub async fn _generator_config_setup(
 
     let chain_id = runtime_config_body.chain_id.as_ref().unwrap();
 
-    let rpc_url = runtime_config_body.ws_url.as_ref().unwrap();
+    let rpc_url = runtime_config_body.http_url.as_ref().unwrap();
 
     //Validating the runtime config to check if the runtime address has enough gas.
     let validation_status = runtime_config_validation(private_key, rpc_url, chain_id).await;

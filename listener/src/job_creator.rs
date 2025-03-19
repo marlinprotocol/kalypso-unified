@@ -197,7 +197,6 @@ pub struct MarketDetails {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct RuntimeConfigModel {
-    ws_url: Option<String>,
     http_url: String,
     private_key: String,
     proof_market_place: String,
@@ -384,7 +383,6 @@ impl JobCreator {
         };
 
         let runtime_config_model = RuntimeConfigModel {
-            ws_url: None,
             http_url: http_rpc_url,
             private_key: gas_key,
             proof_market_place,
@@ -442,7 +440,6 @@ impl JobCreator {
         };
 
         let runtime_config_model = RuntimeConfigModel {
-            ws_url: None,
             http_url: http_rpc_url,
             private_key: gas_key,
             proof_market_place,
@@ -513,7 +510,6 @@ impl JobCreator {
         };
 
         let runtime_config_model = RuntimeConfigModel {
-            ws_url: None,
             http_url: http_rpc_url,
             private_key: gas_key,
             proof_market_place,

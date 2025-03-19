@@ -30,12 +30,12 @@ pub async fn _udpate_runtime_config(jsonbody: UpdateRuntimeConfig) -> anyhow::Re
         Some(data) => data,
         None => &config_file.runtime_config.chain_id,
     };
-    let ws_rpc_url = match &jsonbody.ws_url {
+    let rpc_url = match &jsonbody.http_url {
         Some(data) => data,
-        None => &config_file.runtime_config.ws_url,
+        None => &config_file.runtime_config.http_url,
     };
 
-    let validation_status = runtime_config_validation(private_key, ws_rpc_url, chain_id).await;
+    let validation_status = runtime_config_validation(private_key, rpc_url, chain_id).await;
     let validation_status_result = match validation_status {
         Ok(data) => data,
         Err(e) => {
