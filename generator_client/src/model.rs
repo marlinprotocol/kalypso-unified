@@ -109,7 +109,7 @@ pub struct SetupRequestBodyRuntimeConfig {
     pub markets: HashMap<String, MarketDetails>,
 }
 
-#[derive(Serialize, Validate, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Validate, Deserialize, ToSchema)]
 pub struct GeneratorConfigSetupRequestBody {
     #[validate(required(message = "generator_config was not provided in the JSON body"))]
     pub generator_config: Option<Vec<SetupRequestBodyGeneratorConfig>>,
