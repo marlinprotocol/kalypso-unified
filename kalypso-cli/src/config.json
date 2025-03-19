@@ -617,7 +617,8 @@
         "attestation_verifier",
         "entity_registry",
         "internal_prover_port",
-        "gas_key"
+        "gas_key",
+        "start_block"
       ]
     },
     {
