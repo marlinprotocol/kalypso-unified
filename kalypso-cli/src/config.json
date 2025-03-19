@@ -618,8 +618,7 @@
         "entity_registry",
         "internal_prover_port",
         "gas_key",
-        "start_block",
-        "input_verification_url"
+        "start_block"
       ]
     },
     {
