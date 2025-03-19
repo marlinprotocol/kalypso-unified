@@ -52,9 +52,10 @@ pub async fn _generator_config_setup(
         Ok(data) => data,
         Err(e) => {
             log::error!("{}", e);
-            return Err(anyhow::Error::msg(
-                "There was an issue while validating the request".to_string(),
-            ));
+            return Err(anyhow::Error::msg(format!(
+                "There was an issue while validating the request. {}",
+                e.to_string()
+            )));
         }
     };
     if !validation_status_result {

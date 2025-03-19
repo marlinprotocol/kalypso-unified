@@ -262,6 +262,11 @@ pub async fn runtime_config_validation(
     chain_id: &i32,
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let key = private_key;
+    let key = if key.starts_with("0x") {
+        key.to_string()
+    } else {
+        format!("0x{}", key)
+    };
 
     let signer = key
         .parse::<LocalWallet>()
