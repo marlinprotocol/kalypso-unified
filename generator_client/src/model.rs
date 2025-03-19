@@ -29,7 +29,6 @@ pub struct MarketDetails {
 
 #[derive(Serialize, Debug, Deserialize)]
 pub struct RuntimeConfig {
-    pub ws_url: String,
     pub http_url: String,
     pub private_key: String,
     pub proof_market_place: String,
@@ -71,11 +70,6 @@ pub struct SetupRequestBodyGeneratorConfig {
 
 #[derive(Serialize, Debug, Validate, Deserialize, ToSchema)]
 pub struct SetupRequestBodyRuntimeConfig {
-    #[validate(
-        required(message = "A valid wss rpc url (ws_url) was not provided in the runtime_config"),
-        contains(pattern = "wss", message = "wss url is required")
-    )]
-    pub ws_url: Option<String>,
     #[validate(
         required(
             message = "A valid http rpc url (http_url) was not provided in the runtime_config"
@@ -128,8 +122,6 @@ pub struct GetRsaPublicKeyRequest {
 
 #[derive(Serialize, Debug, Validate, Deserialize, Clone, ToSchema)]
 pub struct UpdateRuntimeConfig {
-    #[validate(contains(pattern = "wss", message = "wss url is required"))]
-    pub ws_url: Option<String>,
     #[validate(contains(pattern = "http", message = "http url is required"))]
     pub http_url: Option<String>,
     pub private_key: Option<String>,

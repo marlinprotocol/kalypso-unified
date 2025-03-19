@@ -50,7 +50,6 @@ stderr_logfile_maxbytes=0
      ],
    
      "runtime_config": {
-       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/********************",
        "http_url": "https://arb-sepolia.g.alchemy.com/v2/*******************",
        "start_block":29108940,
        "private_key": "******************************",

@@ -70,7 +70,6 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord
      ],
    
      "runtime_config": {
-       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/********************",
        "http_url": "https://arb-sepolia.g.alchemy.com/v2/*******************",
        "start_block":29108940,
        "private_key": "******************************",
@@ -213,7 +212,6 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord
      ],
    
      "runtime_config": {
-       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/***************",
        "http_url": "https://arb-sepolia.g.alchemy.com/v2/*************",
        "start_block":29108940,
        "private_key": "*********************************",
@@ -249,7 +247,6 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord
 
 ```json
 {
-      "ws_url": "wss://withered-fluent-road.nova-mainnet.quiknode.pro/1b70d9337ca08c879ab8043747ff9e47d6f68fb6/",
       "private_key": "{{private-key}}",
       "proof_market_place": "0xDcF952396f63f2fd6cd762A9582db3f2B50716E7",
       "generator_registry": "0xE31295fba524Bb012A13B56F885A5dbd77A6d647",
@@ -453,7 +450,6 @@ environment=PORT=5000,SUPERVISORD_PATH=./app/supervisord
      ],
    
      "runtime_config": {
-       "ws_url": "wss://arb-sepolia.g.alchemy.com/v2/********************",
        "http_url": "https://arb-sepolia.g.alchemy.com/v2/*******************",
        "start_block":29108940,
        "private_key": "******************************",

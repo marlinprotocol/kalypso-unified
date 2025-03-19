@@ -143,7 +143,6 @@ pub async fn generate_runtime_file(
             .as_ref()
             .unwrap()
             .to_string(),
-        ws_url: runtime_config_body.ws_url.as_ref().unwrap().to_string(),
         http_url: runtime_config_body.http_url.as_ref().unwrap().to_string(),
         payment_token: runtime_config_body
             .payment_token
@@ -184,7 +183,6 @@ pub async fn update_runtime_config_with_new_data(
     let config = &mut config_file.runtime_config;
 
     update_u64_field!(config, json_input, chain_id);
-    update_field!(config, json_input, ws_url);
     update_field!(config, json_input, http_url);
     update_field!(config, json_input, private_key);
     update_field!(config, json_input, proof_market_place);
@@ -286,7 +284,9 @@ pub async fn runtime_config_validation(
         .unwrap()
         .with_chain_id(U64::from_dec_str(&chain_id.to_string()).unwrap().as_u64());
 
-    let provider = Provider::<Ws>::connect(rpc_url).await?.with_signer(signer);
+    let provider = Provider::<Http>::try_from(rpc_url)
+        .map_err(|e| format!("Invalid RPC URL: {}", e))?
+        .with_signer(signer);
     let gas_payer_address = provider.signer().address();
     let account_balance = provider.get_balance(gas_payer_address, None).await?;
 
@@ -302,7 +302,7 @@ pub async fn runtime_config_validation(
 pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::error::Error>> {
     let config_file = read_generator_config_file().await?;
     let runtime_config = read_runtime_config_file().await?;
-    let rpc_url = runtime_config.runtime_config.ws_url;
+    let rpc_url = runtime_config.runtime_config.http_url;
     let private_key = runtime_config.runtime_config.private_key;
     let chain_id = runtime_config.runtime_config.chain_id;
     let generator_registry_contract_address = runtime_config.runtime_config.generator_registry;
@@ -314,11 +314,14 @@ pub async fn contract_validation() -> Result<ValidationResponse, Box<dyn std::er
         .unwrap()
         .with_chain_id(U64::from_dec_str(&chain_id.to_string()).unwrap().as_u64());
 
-    let provider = Arc::new(Provider::<Ws>::connect(rpc_url).await?.with_signer(signer));
-    let client = Arc::new(Arc::clone(&provider));
+    let provider = Provider::<Http>::try_from(rpc_url)
+        .map_err(|e| format!("Invalid RPC URL: {}", e))?
+        .with_signer(signer);
 
     let gas_payer_address = provider.signer().address();
     let account_balance = provider.get_balance(gas_payer_address, None).await?;
+
+    let client = Arc::new(provider);
 
     log::info!("Trying to fetch account balance");
     // TODO: Latter Check if the balance is greater than 0.05 ETH
