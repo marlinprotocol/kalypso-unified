@@ -37,6 +37,9 @@ async fn load_config(
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(reqwest::header::CONTENT_TYPE, "application/json".parse()?);
 
+    println!("Sending Generator Config to Generator in plain text");
+    println!("{}", serde_json::to_string_pretty(&config).unwrap());
+
     // Send the POST request
     let response = client
         .post(&full_url)
