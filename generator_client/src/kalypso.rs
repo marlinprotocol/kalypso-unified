@@ -132,7 +132,6 @@ pub async fn generate_runtime_file(
             .as_ref()
             .unwrap()
             .to_string(),
-        params_path: "./params/".to_string(),
         private_key: runtime_config_body
             .private_key
             .as_ref()

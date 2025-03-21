@@ -35,7 +35,6 @@ pub struct RuntimeConfig {
     pub generator_registry: String,
     pub start_block: i32,
     pub chain_id: i32,
-    pub params_path: String,
     pub payment_token: String,
     pub staking_token: String,
     pub attestation_verifier: String,
