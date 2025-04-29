@@ -126,7 +126,7 @@ pub fn get_matching_scores(
             log::debug!("Generator: {:?} weight: {}", gen.address, weight);
 
             log::debug!("============#================");
-            weight
+            weight.sqrt()
         })
         .collect();
 
@@ -401,7 +401,7 @@ mod tests {
             }
         }
 
-        let expected_ratio = 2_f64.powi(5);
+        let expected_ratio = 2_f64.powi(5).sqrt();
         let actual_ratio = generator2_count as f64 / generator1_count as f64;
         assert!(
             (actual_ratio - expected_ratio).abs() < 0.1 * expected_ratio,
@@ -433,7 +433,7 @@ mod tests {
             }
         }
 
-        let expected_ratio = 12.0;
+        let expected_ratio = (12.0 as f64).sqrt();
         let actual_ratio = generator1_count as f64 / generator2_count as f64;
 
         assert!(
@@ -466,7 +466,7 @@ mod tests {
             }
         }
 
-        let expected_ratio = 98.0;
+        let expected_ratio = (98.0 as f64).sqrt();
         let actual_ratio = generator1_count as f64 / generator2_count as f64;
 
         assert!(
@@ -499,7 +499,7 @@ mod tests {
             }
         }
 
-        let expected_ratio = 1.0;
+        let expected_ratio = (1.0 as f64).sqrt();
         let actual_ratio = generator1_count as f64 / generator2_count as f64;
 
         assert!(
