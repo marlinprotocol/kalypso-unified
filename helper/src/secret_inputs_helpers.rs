@@ -270,7 +270,8 @@ pub fn parse_ecies_pubkey(
         .map_err(|_| "Failed to convert Vec<u8> to &[u8; 65]")?;
 
     // Parse the public key
-    let ecies_pubkey_parsed = ecies::PublicKey::parse(ecies_pubkey_array)?;
+    let ecies_pubkey_parsed = ecies::PublicKey::parse(&ecies_pubkey_array)
+        .map_err(|e| Box::<dyn Error>::from(format!("ECIES key parse failed: {:?}", e)))?;
 
     Ok(ecies_pubkey_parsed)
 }
