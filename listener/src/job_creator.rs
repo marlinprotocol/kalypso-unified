@@ -222,6 +222,7 @@ pub struct JobCreator {
     skip_input_verification: bool,
     metrics: Data<Arc<Mutex<TaskMetrics>>>,
     polling_interval: Duration,
+    block_range: i32,
 }
 
 impl JobCreator {
@@ -233,6 +234,7 @@ impl JobCreator {
         skip_input_verification: bool,
         prometheus_port: u16,
         polling_interval_in_ms: u64,
+        block_range: i32,
     ) -> Self {
         Self::initialize(
             config,
@@ -242,6 +244,7 @@ impl JobCreator {
             max_threads,
             prometheus_port,
             Duration::from_millis(polling_interval_in_ms),
+            block_range,
         )
     }
 
@@ -253,6 +256,7 @@ impl JobCreator {
         max_threads: usize,
         prometheus_port: u16,
         polling_interval: Duration,
+        block_range: i32,
     ) -> Self {
         let service_name = Uuid::new_v4().to_string();
         let shared_latest_block = Arc::new(Mutex::new(U64::zero()));
@@ -312,6 +316,7 @@ impl JobCreator {
                 skip_input_verification,
                 metrics: task_metrics,
                 polling_interval,
+                block_range,
             }
         } else {
             Self {
@@ -324,6 +329,7 @@ impl JobCreator {
                 skip_input_verification,
                 metrics: task_metrics,
                 polling_interval,
+                block_range,
             }
         }
     }
@@ -369,6 +375,7 @@ impl JobCreator {
         skip_input_verification: bool,
         prometheus_port: u16,
         polling_interval_in_ms: u64,
+        block_range: i32,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -415,6 +422,7 @@ impl JobCreator {
             max_threads,
             prometheus_port,
             Duration::from_millis(polling_interval_in_ms),
+            block_range,
         )
     }
 
@@ -434,6 +442,7 @@ impl JobCreator {
         skip_input_verification: bool,
         prometheus_port: u16,
         polling_interval_in_ms: u64,
+        block_range: i32,
     ) -> Self {
         let config = Config {
             generator_config: generator_configs,
@@ -476,6 +485,7 @@ impl JobCreator {
             max_threads,
             prometheus_port,
             Duration::from_millis(polling_interval_in_ms),
+            block_range,
         )
     }
 
@@ -496,6 +506,7 @@ impl JobCreator {
         skip_input_verification: bool,
         prometheus_port: u16,
         polling_interval_in_ms: u64,
+        block_range: i32,
     ) -> Self {
         let generator_config_models = vec![GeneratorConfigModel {
             address: generator_address,
@@ -542,6 +553,7 @@ impl JobCreator {
             max_threads,
             prometheus_port,
             Duration::from_millis(polling_interval_in_ms),
+            block_range,
         )
     }
 
@@ -553,6 +565,7 @@ impl JobCreator {
         skip_input_verification: bool,
         prometheus_port: u16,
         polling_interval_in_ms: u64,
+        block_range: i32,
     ) -> anyhow::Result<Self> {
         let file_content = std::fs::read_to_string(generator_config_path)?;
         let config: Config = serde_json::from_str(&file_content)?;
@@ -568,6 +581,7 @@ impl JobCreator {
             max_threads,
             prometheus_port,
             Duration::from_millis(polling_interval_in_ms),
+            block_range,
         ))
     }
 
@@ -689,7 +703,7 @@ impl JobCreator {
             U64::from_dec_str(&runtime_config.start_block.to_string()).unwrap_or(block_to_use);
         let mut start_block = runtime_start_block;
 
-        let blocks_at_once = 10000;
+        let blocks_at_once = self.block_range;
 
         let stop_handle = self.should_stop.clone();
         tokio::spawn(async move {

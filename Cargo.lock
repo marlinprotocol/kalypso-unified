@@ -3032,6 +3032,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "dotenv",
  "ecies",
  "env_logger 0.10.2",
  "ethers",
