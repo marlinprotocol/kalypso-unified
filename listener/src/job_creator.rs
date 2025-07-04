@@ -864,6 +864,18 @@ impl JobCreator {
 
                                 if cfg!(feature = "force_transactions") {
                                     tx = tx.gas(10_000_000);
+                                } else {
+                                    let gas_estimate =
+                                        tx.clone().estimate_gas().await.unwrap_or(U256::from(0));
+                                    let gas_limit = {
+                                        if gas_estimate == U256::zero() {
+                                            U256::from_dec_str("60000").unwrap()
+                                        } else {
+                                            gas_estimate + U256::from(10000)
+                                        }
+                                    };
+
+                                    tx = tx.gas(gas_limit);
                                 }
                                 send_tx_with_retries(tx, 5, metrics_arc.clone()).await
                             }
