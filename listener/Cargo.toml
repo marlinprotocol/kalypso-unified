@@ -9,6 +9,7 @@ edition = "2021"
 actix-web = {version = "4.5.1", features = ["rustls"] }
 anyhow = "1.0.86"
 bindings = { path = "../bindings", package = "foundry-contracts" }
+dotenv = "0.15.0"
 ecies = "0.2.6"
 env_logger = "0.10"
 ethers ={version = "2", features = ["abigen", "ws", "rustls"] }

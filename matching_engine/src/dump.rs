@@ -151,14 +151,16 @@ impl ToEncryptedDump for Dump {
 
         // Now, `extended_pub_key` is a 65-byte vector with `04` prepended.
         let pub_key_array: &[u8; 65] = extended_pub_key.as_slice().try_into()?;
-        let me_public_key = ecies::PublicKey::parse(pub_key_array)?;
+        let me_public_key = ecies::PublicKey::parse(pub_key_array)
+            .map_err(|e| anyhow::anyhow!("invalid ECIES/secp256k1 public key: {e}"))?;
         let me_public_key = me_public_key.serialize_compressed();
         ecies_public_keys.push(me_public_key.to_vec());
 
         // Ensure this matching engine can decrypt
         let private_key = hex::decode(config.matching_engine_key)?;
         let private_key: &[u8; 32] = private_key.as_slice().try_into()?;
-        let sk = SecretKey::parse(private_key)?;
+        let sk = SecretKey::parse(private_key)
+            .map_err(|e| anyhow::anyhow!("invalid ECIES/secp256k1 private key: {e}"))?;
 
         let public_key = PublicKey::from_secret_key(&sk);
         let public_key = public_key.serialize_compressed();
