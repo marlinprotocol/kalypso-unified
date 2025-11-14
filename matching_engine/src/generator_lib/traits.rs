@@ -16,6 +16,7 @@ use super::SlashingRecord;
 
 /// GeneratorRegistration:
 /// Handles registration, removal, and basic queries for generators.
+/// implemented by generator store for in memory
 pub trait GeneratorRegistration {
     fn register_generator(&mut self, generator: Generator);
     fn register_generator_in_market(&mut self, generator_market: GeneratorInfoPerMarket);
@@ -28,6 +29,7 @@ pub trait GeneratorRegistration {
 /// GeneratorStakeComputeManagement:
 /// Handles stake and compute operations such as adding, updating, and removing stakes
 /// as well as compute amounts.
+/// implemented by generator store for in memory
 pub trait GeneratorStakeComputeManagement {
     fn add_extra_stake(
         &mut self,
@@ -62,6 +64,7 @@ pub trait GeneratorStakeComputeManagement {
 /// GeneratorMarketManagement:
 /// Handles market participation and state updates such as assignment,
 /// proof submission, and pausing/resuming participation.
+/// implemented by generator store for in memory
 pub trait GeneratorMarketManagement {
     fn update_state(&mut self, address: &Address, market_id: &U256, new_state: GeneratorState);
     fn update_on_assigned_task(&mut self, address: &Address, market_id: &U256);
@@ -79,6 +82,7 @@ pub trait GeneratorMarketManagement {
 
 /// GeneratorSlashingManagement:
 /// Encapsulates functionality for recording slashing events.
+/// implemented by generator store for in memory
 pub trait GeneratorSlashingManagement {
     fn note_entry_slashing(
         &mut self,

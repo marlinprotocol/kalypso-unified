@@ -434,6 +434,7 @@ where
             .call()
             .await
             .unwrap();
+        // double check what above market does
 
         let market = MarketMetadata {
             market_id,
