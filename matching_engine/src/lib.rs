@@ -9,6 +9,9 @@ pub mod in_memory_stores;
 pub mod latest_block_store;
 pub mod market_metadata;
 pub mod models;
+pub mod postgres_matching_engine;
+pub mod postgres_stores;
+pub mod schema;
 pub mod utility;
 
 mod jobs;

@@ -4,7 +4,36 @@ use std::io;
 use dotenv::dotenv;
 use matching_engine::dump::Dump;
 use matching_engine::encrypted_dump::EncryptedDump;
-use matching_engine::{in_memory_matching_engine::InMemoryMatchingEngine, MatchingEngineConfig};
+use matching_engine::{
+    in_memory_matching_engine::InMemoryMatchingEngine,
+    postgres_matching_engine::PostgresMatchingEngine, MatchingEngineConfig,
+};
+
+// #[tokio::main]
+// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//     dotenv().ok();
+//     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+//     // Load matching engine configuration
+//     let config_paths = [
+//         "../matching_engine_config/matching_engine_config.json",
+//         "./matching_engine_config/matching_engine_config.json",
+//     ];
+//     let config_content = read_file_from_paths(&config_paths)?;
+//     let config: MatchingEngineConfig = serde_json::from_str(&config_content)?;
+
+//     // Get the indexer port from environment variables
+//     let indexer_port =
+//         std::env::var("INDEXER_PORT").expect("INDEXER_PORT environment variable is not set");
+//     let indexer_port: Option<u16> = indexer_port.parse().ok();
+
+//     // Initialize the matching engine
+//     let matching_engine = PostgresMatchingEngine::from_config(config, indexer_port);
+
+//     matching_engine.run("".into()).await?;
+
+//     Ok(())
+// }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

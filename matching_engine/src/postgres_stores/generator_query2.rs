@@ -1,13 +1,16 @@
-use super::{generator_state::GeneratorState, generator_store::GeneratorInfoPerMarket};
-use ethers::prelude::*;
+use ethers::types::U256;
+
+use crate::generator_lib::{
+    generator_state::GeneratorState, generator_store::GeneratorInfoPerMarket,
+};
 
 #[derive(Clone)]
-pub struct GeneratorQueryResult {
+pub struct GeneratorQueryResult2 {
     generator_markets: Vec<GeneratorInfoPerMarket>,
 }
 
-impl GeneratorQueryResult {
-    // Initialize with a collection of generators
+impl GeneratorQueryResult2 {
+    // Initialize with a collection of generators (owned values)
     pub fn new(generator_markets: Vec<GeneratorInfoPerMarket>) -> Self {
         Self { generator_markets }
     }
@@ -53,19 +56,19 @@ impl GeneratorQueryResult {
 
     // Filter by state
     pub fn filter_by_state(mut self, states: Vec<GeneratorState>) -> Self {
-        let states_set: std::collections::HashSet<_> = states.into_iter().collect(); // Convert Vec to HashSet for fast lookup
+        let states_set: std::collections::HashSet<_> = states.into_iter().collect();
 
         self.generator_markets = self
             .generator_markets
-            .into_iter() // Use rayon's parallel iterator
+            .into_iter()
             .filter(|gen| {
                 if let Some(gen_state) = gen.state {
-                    states_set.contains(&gen_state) // Check if the generator state is in the provided states
+                    states_set.contains(&gen_state)
                 } else {
-                    false // If the generator has no state, exclude it
+                    false
                 }
             })
-            .collect(); // Collect the filtered generator markets into a Vec
+            .collect();
 
         log::debug!(
             "Generators with state: {:?} = {}",
@@ -75,21 +78,18 @@ impl GeneratorQueryResult {
         self
     }
 
-    #[allow(unused)]
     pub fn filter_by_market_id(mut self, market_id: U256) -> Self {
         log::debug!("Filter by market id");
-        // Use rayon's par_iter_mut to process the vector in parallel
         self.generator_markets = self
             .generator_markets
-            .into_iter() // Convert to a parallel iterator
-            .filter(|gen| gen.market_id == market_id) // Filter in parallel
-            .collect(); // Collect back into a Vec
+            .into_iter()
+            .filter(|gen| gen.market_id == market_id)
+            .collect();
         self
     }
 
-    // Final getter to consume the object and retrieve the filtered generators
+    // Final getter: returns the owned vector.
     pub fn result(self) -> Vec<GeneratorInfoPerMarket> {
-        // Clone the elements or map them to owned values
         self.generator_markets
     }
 }

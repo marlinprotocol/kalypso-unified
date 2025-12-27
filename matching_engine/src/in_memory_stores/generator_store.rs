@@ -844,7 +844,7 @@ impl GeneratorAvailability for GeneratorStore {
 impl GeneratorQuery for GeneratorStore {
     #[allow(unused)]
     fn query(&self) -> GeneratorQueryResult {
-        GeneratorQueryResult::new(self.generator_markets.values().collect())
+        GeneratorQueryResult::new(self.generator_markets.values().cloned().collect())
     }
 
     fn query_by_market_id_and_only_active(&self, market_id: &U256) -> GeneratorQueryResult {
@@ -867,7 +867,7 @@ impl GeneratorQuery for GeneratorStore {
             })
             .collect(); // Collect matching generator markets into a Vec
 
-        GeneratorQueryResult::new(generator_markets)
+        GeneratorQueryResult::new(generator_markets.into_iter().cloned().collect())
     }
 
     #[allow(unused)]
@@ -888,7 +888,7 @@ impl GeneratorQuery for GeneratorStore {
             })
             .collect();
 
-        GeneratorQueryResult::new(generators_market)
+        GeneratorQueryResult::new(generators_market.into_iter().cloned().collect())
     }
 
     #[allow(unused)]
@@ -896,7 +896,7 @@ impl GeneratorQuery for GeneratorStore {
         let generators = match self.address_index.get(&address) {
             Some(market_ids) => market_ids
                 .par_iter()
-                .filter_map(|m_id| self.generator_markets.get(&(address, *m_id)))
+                .filter_map(|m_id| self.generator_markets.get(&(address, *m_id)).cloned())
                 .collect(),
             None => Vec::new(),
         };
@@ -933,7 +933,7 @@ impl GeneratorFilter for GeneratorStore {
             .collect(); // Collect the results into a Vec
 
         log::debug!("Generator with idle compute: {}", generator_result.len());
-        GeneratorQueryResult::new(generator_result)
+        GeneratorQueryResult::new(generator_result.into_iter().cloned().collect())
     }
 
     fn filter_by_available_native_stake(
@@ -991,7 +991,7 @@ impl GeneratorFilter for GeneratorStore {
             min_stake,
             generator_result.len()
         );
-        GeneratorQueryResult::new(generator_result)
+        GeneratorQueryResult::new(generator_result.into_iter().cloned().collect())
     }
 
     fn filter_by_available_symbiotic_stake(
@@ -1049,7 +1049,7 @@ impl GeneratorFilter for GeneratorStore {
             min_stake,
             generator_result.len()
         );
-        GeneratorQueryResult::new(generator_result)
+        GeneratorQueryResult::new(generator_result.into_iter().cloned().collect())
     }
 }
 
@@ -1079,7 +1079,7 @@ impl<KS: KeyStoreOperations> GeneratorKeyStoreFilterInterfaceTrait<KS> for Gener
             })
             .collect(); // Collect the results into a Vec
 
-        GeneratorQueryResult::new(generator_result)
+        GeneratorQueryResult::new(generator_result.into_iter().cloned().collect())
     }
 }
 
